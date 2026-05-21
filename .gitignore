@@ -20,6 +20,7 @@ coverage
 .cache
 .cta.json
 .cursorrules
+.firecrawl/
 
 .dev.vars*
 !.dev.vars.example
