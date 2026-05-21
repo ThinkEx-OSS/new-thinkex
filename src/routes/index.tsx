@@ -159,7 +159,12 @@ function LandingPage() {
 						<ModeToggle className="shrink-0" />
 						<div aria-hidden="true" className="h-6 w-px shrink-0 bg-border" />
 						<div className="flex items-center gap-2">
-							<Button asChild variant="ghost" size="default">
+							<Button
+								asChild
+								variant="ghost"
+								size="default"
+								className="text-muted-foreground"
+							>
 								<Link to="/login">Sign in</Link>
 							</Button>
 							<Button asChild size="default">
@@ -243,15 +248,14 @@ function LandingPage() {
 							</div>
 						</div>
 
-						<div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground/80">
-							<span>Terms of Service</span>
-							<span>Privacy Policy</span>
-							<span>Cookie Policy</span>
+						<div className="mt-14 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground/55 sm:mt-16 sm:text-sm">
+							<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:gap-x-5">
+								<span>Terms of Service</span>
+								<span>Privacy Policy</span>
+								<span>Cookie Policy</span>
+							</div>
+							<p>© 2026 ThinkEx Inc. All rights reserved.</p>
 						</div>
-					</div>
-
-					<div className="mt-8 pt-4 text-center text-sm text-muted-foreground/80">
-						<p>© 2026 ThinkEx Inc. All rights reserved.</p>
 					</div>
 				</div>
 			</footer>

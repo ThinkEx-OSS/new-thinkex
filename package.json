@@ -7,6 +7,7 @@
 	},
 	"scripts": {
 		"dev": "vite dev --port 3000",
+		"dev:remote": "wrangler dev --remote",
 		"build": "vite build",
 		"preview": "pnpm run build && vite preview",
 		"test": "vitest run",
@@ -24,7 +25,6 @@
 	},
 	"dependencies": {
 		"@cloudflare/vite-plugin": "^1.26.0",
-		"@fontsource-variable/inter": "^5.2.8",
 		"@posthog/react": "^1.7.0",
 		"@t3-oss/env-core": "^0.13.10",
 		"@tailwindcss/vite": "^4.1.18",

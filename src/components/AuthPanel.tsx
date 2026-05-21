@@ -50,9 +50,10 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 	const queryClient = useQueryClient();
 	const { data: session } = authClient.useSession();
 	const alternateHref = mode === "signin" ? "/signup" : "/login";
-	const alternateLabel = mode === "signin" ? "Sign up" : "Sign in";
-	const footerLabel =
-		mode === "signin" ? "Don't have an account?" : "Already have an account?";
+	const alternateAccountCta =
+		mode === "signin"
+			? "Don't have an account? Sign up"
+			: "Already have an account? Sign in";
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -120,19 +121,21 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 				{errorMessage ? (
 					<p className="text-center text-xs text-destructive">{errorMessage}</p>
 				) : null}
-				<div className="text-center text-sm">
-					{footerLabel}{" "}
-					<Button asChild variant="link" className="h-auto px-0">
-						<Link
-							to={alternateHref}
-							search={{
-								redirect: callbackURL === "/home" ? undefined : callbackURL,
-							}}
-						>
-							{alternateLabel}
-						</Link>
-					</Button>
-				</div>
+				<Button
+					asChild
+					variant="ghost"
+					size="default"
+					className="w-full text-muted-foreground hover:text-foreground"
+				>
+					<Link
+						to={alternateHref}
+						search={{
+							redirect: callbackURL === "/home" ? undefined : callbackURL,
+						}}
+					>
+						{alternateAccountCta}
+					</Link>
+				</Button>
 			</div>
 		</div>
 	);

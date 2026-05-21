@@ -28,16 +28,16 @@ function getDirectConnectionString() {
 export function getRuntimeConnectionString() {
 	const connectionString =
 		getBindingConnectionString() ||
-		getLocalHyperdriveConnectionString() ||
-		getDirectConnectionString();
+		getDirectConnectionString() ||
+		getLocalHyperdriveConnectionString();
 
 	if (!connectionString) {
 		throw new Error(
 			[
 				"No database connection string is configured.",
 				`Set the ${HYPERDRIVE_BINDING_NAME} Hyperdrive binding for the Worker runtime,`,
-				`or ${LOCAL_HYPERDRIVE_ENV_KEY} for local Hyperdrive development,`,
-				"or DATABASE_URL for direct local Postgres access.",
+				"or DATABASE_URL for local database access,",
+				`or ${LOCAL_HYPERDRIVE_ENV_KEY} to override the local connection string used by wrangler dev.`,
 			].join(" "),
 		);
 	}

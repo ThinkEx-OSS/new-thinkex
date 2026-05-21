@@ -30,6 +30,12 @@ pnpm dev
 
 The app runs on `http://localhost:3000`.
 
+To test the deployed Worker path with the real Hyperdrive binding, run:
+
+```bash
+pnpm dev:remote
+```
+
 ## Environment Variables
 
 The main env vars currently used by the app are:
@@ -46,6 +52,13 @@ The main env vars currently used by the app are:
 - `VITE_POSTHOG_HOST`
 
 Use `.env.example` as the tracked reference. Keep real values in `.env.local`.
+
+Recommended setup:
+
+- Set `DATABASE_URL` to the Supabase pooler URL with `?sslmode=require` for day-to-day local development.
+- Set `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` to the same local-development database URL when running `pnpm dev`. Wrangler requires this because the project declares a `HYPERDRIVE` binding, even though local development still connects directly to the database.
+- Use `pnpm dev` for normal local work.
+- Use `pnpm dev:remote` when you specifically want to exercise the Cloudflare Worker runtime and Hyperdrive binding.
 
 ## Database
 
