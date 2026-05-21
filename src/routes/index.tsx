@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { ModeToggle } from "#/components/mode-toggle";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
-import { getAuthSessionQueryOptions } from "#/lib/session-query";
+import { type AuthSession, authSessionQueryKey } from "#/lib/session-query";
 import { smoothScrollViewportTop } from "#/lib/smooth-scroll";
 
 export const Route = createFileRoute("/")({
@@ -18,10 +18,7 @@ export const Route = createFileRoute("/")({
 		const session =
 			typeof window === "undefined"
 				? context.session
-				: await context.queryClient.fetchQuery({
-						...getAuthSessionQueryOptions(),
-						staleTime: 0,
-					});
+				: context.queryClient.getQueryData<AuthSession>(authSessionQueryKey);
 
 		if (session) {
 			throw redirect({ to: "/home" });
