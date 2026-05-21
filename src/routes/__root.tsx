@@ -15,6 +15,7 @@ import {
 	getAuthSessionQueryOptions,
 } from "#/lib/session-query";
 
+import { Toaster } from "#/components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -77,6 +78,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<ThemeProvider defaultTheme="system" storageKey="theme">
 					{/* <PostHogProvider> */}
 					{children}
+					<Toaster />
 					<TanStackDevtools
 						config={{
 							position: "bottom-right",
