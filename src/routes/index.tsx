@@ -4,16 +4,26 @@ import {
 	redirect,
 	useRouterState,
 } from "@tanstack/react-router";
-import { Mail } from "lucide-react";
+import { Check, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { ModeToggle } from "#/components/mode-toggle";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { smoothScrollViewportTop } from "#/lib/smooth-scroll";
 
 export const Route = createFileRoute("/")({
 	beforeLoad: async ({ context }) => {
-		if (context.session) {
+		const session =
+			typeof window === "undefined"
+				? context.session
+				: await context.queryClient.fetchQuery({
+						...getAuthSessionQueryOptions(),
+						staleTime: 0,
+					});
+
+		if (session) {
 			throw redirect({ to: "/home" });
 		}
 	},
@@ -105,6 +115,48 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
 	);
 }
 
+const CONTACT_EMAIL = "hello@thinkex.app";
+
+function FooterEmailLink() {
+	const [copied, setCopied] = useState(false);
+
+	useEffect(() => {
+		if (!copied) return;
+		const id = window.setTimeout(() => setCopied(false), 2000);
+		return () => window.clearTimeout(id);
+	}, [copied]);
+
+	async function handleCopy() {
+		try {
+			await navigator.clipboard.writeText(CONTACT_EMAIL);
+			setCopied(true);
+		} catch {
+			// Clipboard API unavailable; leave label unchanged.
+		}
+	}
+
+	return (
+		<button
+			type="button"
+			onClick={handleCopy}
+			className="flex items-center gap-3 transition-colors hover:text-foreground"
+			aria-label={copied ? "Email copied" : `Copy ${CONTACT_EMAIL}`}
+		>
+			{copied ? (
+				<>
+					<Check className="size-5" />
+					<span>Copied</span>
+				</>
+			) : (
+				<>
+					<Mail className="size-5" />
+					<span>Email</span>
+				</>
+			)}
+		</button>
+	);
+}
+
 function LandingPage() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -190,7 +242,7 @@ function LandingPage() {
 						</div>
 
 						<div className="mt-16 overflow-hidden rounded-md border border-border bg-card shadow-2xl">
-							<div className="aspect-[16/10] border border-dashed border-border bg-background p-6 sm:p-8">
+							<div className="aspect-[16/10] bg-background p-6 sm:p-8">
 								<div className="flex h-full flex-col justify-between">
 									<div className="flex items-center justify-end">
 										<p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
@@ -226,26 +278,43 @@ function LandingPage() {
 						<ThinkExLogo size={32} />
 
 						<div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-5 text-base text-muted-foreground">
-							<div className="flex items-center gap-3">
-								<Mail className="size-5" />
-								<span>Email</span>
-							</div>
-							<div className="flex items-center gap-3">
+							<FooterEmailLink />
+							<a
+								href="https://github.com/thinkex-oss/thinkex"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 transition-colors hover:text-foreground"
+							>
 								<GitHubIcon className="size-5" />
 								<span>GitHub</span>
-							</div>
-							<div className="flex items-center gap-3">
+							</a>
+							<a
+								href="https://discord.gg/p56ZZDYf"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 transition-colors hover:text-foreground"
+							>
 								<DiscordIcon className="size-5" />
 								<span>Discord</span>
-							</div>
-							<div className="flex items-center gap-3">
+							</a>
+							<a
+								href="https://www.reddit.com/r/thinkex"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 transition-colors hover:text-foreground"
+							>
 								<RedditIcon className="size-5" />
 								<span>Reddit</span>
-							</div>
-							<div className="flex items-center gap-3">
+							</a>
+							<a
+								href="https://x.com/trythinkex"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 transition-colors hover:text-foreground"
+							>
 								<XIcon className="size-[18px]" />
 								<span>Twitter / X</span>
-							</div>
+							</a>
 						</div>
 
 						<div className="mt-14 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground/55 sm:mt-16 sm:text-sm">

@@ -19,3 +19,7 @@ export function getAuthSessionQueryOptions() {
 export function removeAuthSession(queryClient: QueryClient) {
 	queryClient.removeQueries({ queryKey: authSessionQueryKey });
 }
+
+export function refreshAuthSession(queryClient: QueryClient) {
+	return queryClient.invalidateQueries({ queryKey: authSessionQueryKey });
+}

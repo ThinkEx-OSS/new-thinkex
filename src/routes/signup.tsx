@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
 import AuthScreen from "#/components/AuthScreen";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/signup")({
 	validateSearch: z.object({
@@ -10,9 +11,17 @@ export const Route = createFileRoute("/signup")({
 			.refine((value) => value.startsWith("/") && !value.startsWith("//"))
 			.optional(),
 	}),
-	beforeLoad: async ({ context }) => {
-		if (context.session) {
-			throw redirect({ to: "/home" });
+	beforeLoad: async ({ context, search }) => {
+		const session =
+			typeof window === "undefined"
+				? context.session
+				: await context.queryClient.fetchQuery({
+						...getAuthSessionQueryOptions(),
+						staleTime: 0,
+					});
+
+		if (session) {
+			throw redirect({ to: search.redirect || "/home" });
 		}
 	},
 	head: () => ({

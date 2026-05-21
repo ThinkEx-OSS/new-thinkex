@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
-import { removeAuthSession } from "#/lib/session-query";
+import { refreshAuthSession, removeAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
 
@@ -103,6 +103,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 								provider: "google",
 								callbackURL,
 							});
+							await refreshAuthSession(queryClient);
 						} catch {
 							setErrorMessage("Failed to sign in with Google");
 							setIsLoading(false);
