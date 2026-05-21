@@ -9,13 +9,11 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 // import PostHogProvider from '../integrations/posthog/provider'
 
 import type { QueryClient } from "@tanstack/react-query";
-
+import { Toaster } from "#/components/ui/sonner";
 import {
 	type AuthSession,
 	getAuthSessionQueryOptions,
 } from "#/lib/session-query";
-
-import { Toaster } from "#/components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -27,9 +25,7 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async ({ context: { queryClient } }) => {
-		const session = await queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+		const session = await queryClient.fetchQuery(getAuthSessionQueryOptions());
 		return { session };
 	},
 	head: () => ({
