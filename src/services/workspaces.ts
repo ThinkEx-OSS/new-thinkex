@@ -7,24 +7,34 @@ const MOCK_WORKSPACES: WorkspaceSummary[] = [
 	{
 		id: "workspace-research-atlas",
 		name: "Research Atlas",
-		description: "Gather sources, compare claims, and build a study outline.",
+		icon: "compass",
+		accent: "sky",
 		updatedAt: "Updated 2 hours ago",
 		status: "ready",
 	},
 	{
 		id: "workspace-thesis-lab",
 		name: "Thesis Lab",
-		description: "Track notes, citations, and writing tasks in one place.",
+		icon: "flask-conical",
+		accent: "violet",
 		updatedAt: "Updated yesterday",
 		status: "draft",
 	},
 	{
 		id: "workspace-exam-sprint",
 		name: "Exam Sprint",
-		description:
-			"Turn scattered reading into a revision checklist and quizzes.",
+		icon: "zap",
+		accent: "amber",
 		updatedAt: "Updated 3 days ago",
 		status: "draft",
+	},
+	{
+		id: "workspace-reading-queue",
+		name: "Reading Queue",
+		icon: "book-marked",
+		accent: "emerald",
+		updatedAt: "Updated 5 days ago",
+		status: "ready",
 	},
 ];
 

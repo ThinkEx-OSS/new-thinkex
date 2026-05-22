@@ -5,8 +5,8 @@ import ThinkExLogo from "#/components/ThinkExLogo";
 import BetterAuthHeader from "#/integrations/better-auth/header-user";
 
 interface AppShellProps {
-	title: string;
-	subtitle: string;
+	title?: string;
+	subtitle?: string;
 	children: React.ReactNode;
 }
 
@@ -33,17 +33,25 @@ export default function AppShell({ title, subtitle, children }: AppShellProps) {
 			</header>
 
 			<div className="flex min-h-[calc(100vh-4.5rem)] w-full flex-col">
-				<main className="flex-1 px-6 py-10 md:px-8">
-					<section className="space-y-2">
-						<h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-							{title}
-						</h1>
-						<p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-							{subtitle}
-						</p>
-					</section>
+				<main className="flex-1 px-4 py-4">
+					{title || subtitle ? (
+						<section className="space-y-2">
+							{title ? (
+								<h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+									{title}
+								</h1>
+							) : null}
+							{subtitle ? (
+								<p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+									{subtitle}
+								</p>
+							) : null}
+						</section>
+					) : null}
 
-					<div className="mt-8">{children}</div>
+					<div className={title || subtitle ? "mt-8" : undefined}>
+						{children}
+					</div>
 				</main>
 			</div>
 		</div>
