@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { LogOut, Settings } from "lucide-react";
 
@@ -12,14 +13,17 @@ import {
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { authClient } from "#/lib/auth-client";
+import { removeAuthSession } from "#/lib/session-query";
 
 export default function BetterAuthHeader() {
 	const navigate = useNavigate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const { data: session, isPending, refetch } = authClient.useSession();
 	const handleSignOut = async () => {
 		await authClient.signOut();
 		await refetch();
+		removeAuthSession(queryClient);
 		await router.invalidate();
 		await navigate({ to: "/" });
 	};

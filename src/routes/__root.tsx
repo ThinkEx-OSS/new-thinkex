@@ -9,22 +9,20 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 // import PostHogProvider from '../integrations/posthog/provider'
 
 import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
-import { type AuthSession, getSession } from "#/lib/auth.functions";
+import type { AuthSession } from "#/lib/auth.functions";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { ThemeProvider } from "../components/theme-provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
-	session: AuthSession | null;
+	session?: AuthSession | null;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	beforeLoad: async () => {
-		const session = await getSession();
-		return { session };
-	},
 	head: () => ({
 		meta: [
 			{
@@ -70,6 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="theme">
 					{/* <PostHogProvider> */}
+					<AuthSessionRefresher />
 					{children}
 					<Toaster />
 					<TanStackDevtools
@@ -90,4 +89,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</body>
 		</html>
 	);
+}
+
+function AuthSessionRefresher() {
+	useQuery(getAuthSessionQueryOptions());
+	return null;
 }

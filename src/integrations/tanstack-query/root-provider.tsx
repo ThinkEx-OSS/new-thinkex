@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 
-import type { AuthSession } from "#/lib/auth.functions";
+import type { AuthSession } from "#/lib/session-query";
 
 export function getContext() {
 	const queryClient = new QueryClient();

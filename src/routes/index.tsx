@@ -1,10 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import LandingPage from "#/components/LandingPage";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/")({
 	beforeLoad: async ({ context }) => {
-		if (context.session) {
+		const session = await context.queryClient.ensureQueryData(
+			getAuthSessionQueryOptions(),
+		);
+
+		if (session) {
 			throw redirect({ to: "/home" });
 		}
 	},
