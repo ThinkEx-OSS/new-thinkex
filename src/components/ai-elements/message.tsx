@@ -22,7 +22,6 @@ import { ButtonGroup, ButtonGroupText } from "#/components/ui/button-group.tsx";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipProvider,
 	TooltipTrigger,
 } from "#/components/ui/tooltip.tsx";
 import { cn } from "#/lib/utils.ts";
@@ -96,14 +95,12 @@ export const MessageAction = ({
 
 	if (tooltip) {
 		return (
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>{button}</TooltipTrigger>
-					<TooltipContent>
-						<p>{tooltip}</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>{button}</TooltipTrigger>
+				<TooltipContent>
+					<p>{tooltip}</p>
+				</TooltipContent>
+			</Tooltip>
 		);
 	}
 

@@ -6,6 +6,13 @@ import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { Button } from "#/components/ui/button.tsx";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "#/components/ui/empty.tsx";
 import { cn } from "#/lib/utils.ts";
 
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
@@ -48,25 +55,17 @@ export const ConversationEmptyState = ({
 	children,
 	...props
 }: ConversationEmptyStateProps) => (
-	<div
-		className={cn(
-			"flex size-full flex-col items-center justify-center gap-3 p-8 text-center",
-			className,
-		)}
-		{...props}
-	>
+	<Empty className={cn("size-full min-h-0 rounded-none", className)} {...props}>
 		{children ?? (
-			<>
-				{icon && <div className="text-muted-foreground">{icon}</div>}
-				<div className="space-y-1">
-					<h3 className="font-medium text-sm">{title}</h3>
-					{description && (
-						<p className="text-muted-foreground text-sm">{description}</p>
-					)}
-				</div>
-			</>
+			<EmptyHeader>
+				{icon ? <EmptyMedia variant="icon">{icon}</EmptyMedia> : null}
+				<EmptyTitle className="text-sm">{title}</EmptyTitle>
+				{description ? (
+					<EmptyDescription>{description}</EmptyDescription>
+				) : null}
+			</EmptyHeader>
 		)}
-	</div>
+	</Empty>
 );
 
 export type ConversationScrollButtonProps = ComponentProps<typeof Button>;

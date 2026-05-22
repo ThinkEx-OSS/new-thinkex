@@ -73,7 +73,7 @@ export default function AiChatPanel() {
 
 	return (
 		<aside className="relative flex min-h-screen flex-col bg-background">
-			<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
+			<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
