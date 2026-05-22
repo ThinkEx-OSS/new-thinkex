@@ -11,6 +11,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
+import { TooltipProvider } from "#/components/ui/tooltip";
 import type { AuthSession } from "#/lib/auth.functions";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { ThemeProvider } from "../components/theme-provider";
@@ -67,23 +68,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="theme">
-					{/* <PostHogProvider> */}
-					<AuthSessionRefresher />
-					{children}
-					<Toaster />
-					<TanStackDevtools
-						config={{
-							position: "bottom-right",
-						}}
-						plugins={[
-							{
-								name: "Tanstack Router",
-								render: <TanStackRouterDevtoolsPanel />,
-							},
-							TanStackQueryDevtools,
-						]}
-					/>
-					{/* </PostHogProvider> */}
+					<TooltipProvider>
+						{/* <PostHogProvider> */}
+						<AuthSessionRefresher />
+						{children}
+						<Toaster />
+						<TanStackDevtools
+							config={{
+								position: "bottom-right",
+							}}
+							plugins={[
+								{
+									name: "Tanstack Router",
+									render: <TanStackRouterDevtoolsPanel />,
+								},
+								TanStackQueryDevtools,
+							]}
+						/>
+						{/* </PostHogProvider> */}
+					</TooltipProvider>
 				</ThemeProvider>
 				<Scripts />
 			</body>
