@@ -1,0 +1,199 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo } from "react";
+
+import type { WorkspaceItem } from "#/components/workspace/types";
+import type { WorkspaceSummary } from "#/lib/api/contracts";
+import {
+	getTabViewKey,
+	getWorkspaceTabSearch,
+	WORKSPACE_ROOT_VIEW,
+} from "#/lib/workspace-tabs";
+import {
+	useWorkspaceTabsStore,
+	type WorkspaceTab,
+} from "#/stores/workspace-tabs";
+
+interface UseWorkspaceNavigationInput {
+	workspace: WorkspaceSummary;
+	items: WorkspaceItem[];
+	activeTabIdFromUrl?: string;
+	activeViewFromUrl?: string;
+}
+
+export function useWorkspaceNavigation({
+	workspace,
+	items,
+	activeTabIdFromUrl,
+	activeViewFromUrl,
+}: UseWorkspaceNavigationInput) {
+	const navigate = useNavigate();
+	const scopedItems = useMemo(
+		() => items.filter((item) => item.workspaceId === workspace.id),
+		[items, workspace.id],
+	);
+	const itemsById = useMemo(
+		() => new Map(scopedItems.map((item) => [item.id, item])),
+		[scopedItems],
+	);
+	const session = useWorkspaceTabsStore(
+		(state) => state.sessionsByWorkspaceId[workspace.id],
+	);
+	const ensureWorkspaceSession = useWorkspaceTabsStore(
+		(state) => state.ensureWorkspaceSession,
+	);
+	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
+	const replaceTabView = useWorkspaceTabsStore((state) => state.replaceTabView);
+	const activateTab = useWorkspaceTabsStore((state) => state.activateTab);
+	const closeTab = useWorkspaceTabsStore((state) => state.closeTab);
+	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
+	const activeItem = activeTab?.viewItemId
+		? itemsById.get(activeTab.viewItemId)
+		: undefined;
+	const validItemIds = useMemo(() => new Set(itemsById.keys()), [itemsById]);
+
+	const navigateToTab = useCallback(
+		(tab: WorkspaceTab, replace = false) => {
+			navigate({
+				to: "/workspaces/$workspaceId",
+				params: { workspaceId: workspace.id },
+				search: getWorkspaceTabSearch(tab),
+				replace,
+			});
+		},
+		[navigate, workspace.id],
+	);
+
+	const replaceActiveTabView = useCallback(
+		(input: { item?: WorkspaceItem; tabId?: string }) =>
+			replaceTabView({
+				workspaceId: workspace.id,
+				tabId: input.tabId ?? activeTab?.id ?? "",
+				title: input.item?.name ?? workspace.name,
+				viewItemId: input.item?.id,
+			}),
+		[activeTab?.id, replaceTabView, workspace.id, workspace.name],
+	);
+
+	useEffect(() => {
+		const nextSession = ensureWorkspaceSession({
+			workspaceId: workspace.id,
+			workspaceName: workspace.name,
+			requestedTabId: activeTabIdFromUrl,
+			validItemIds,
+		});
+		let nextActiveTab =
+			nextSession.tabs.find((tab) => tab.id === nextSession.activeTabId) ??
+			nextSession.tabs[0];
+		const requestedTabExists =
+			!activeTabIdFromUrl ||
+			nextSession.tabs.some((tab) => tab.id === activeTabIdFromUrl);
+		const hasExplicitView = typeof activeViewFromUrl === "string";
+		const shouldApplyView = hasExplicitView || Boolean(activeTabIdFromUrl);
+
+		if (shouldApplyView) {
+			const requestedItem =
+				activeViewFromUrl && activeViewFromUrl !== WORKSPACE_ROOT_VIEW
+					? itemsById.get(activeViewFromUrl)
+					: undefined;
+			const nextViewItemId = hasExplicitView
+				? requestedItem?.id
+				: nextActiveTab.viewItemId;
+
+			if (nextActiveTab.viewItemId !== nextViewItemId) {
+				nextActiveTab = replaceTabView({
+					workspaceId: workspace.id,
+					tabId: nextActiveTab.id,
+					title: requestedItem?.name ?? workspace.name,
+					viewItemId: nextViewItemId,
+				});
+			}
+		}
+
+		const shouldReplaceSearch =
+			!activeTabIdFromUrl ||
+			!requestedTabExists ||
+			activeTabIdFromUrl !== nextActiveTab.id ||
+			activeViewFromUrl !== getTabViewKey(nextActiveTab);
+
+		if (shouldReplaceSearch) {
+			navigateToTab(nextActiveTab, true);
+		}
+	}, [
+		activeTabIdFromUrl,
+		activeViewFromUrl,
+		ensureWorkspaceSession,
+		itemsById,
+		navigateToTab,
+		replaceTabView,
+		validItemIds,
+		workspace.id,
+		workspace.name,
+	]);
+
+	const createWorkspaceTab = () => {
+		const tab = createRootTab({
+			workspaceId: workspace.id,
+			workspaceName: workspace.name,
+		});
+
+		navigateToTab(tab);
+	};
+	const activateWorkspaceTab = (tab: WorkspaceTab) => {
+		activateTab({ workspaceId: workspace.id, tabId: tab.id });
+		navigateToTab(tab);
+	};
+	const closeWorkspaceTab = (tab: WorkspaceTab) => {
+		const nextSession = closeTab({ workspaceId: workspace.id, tabId: tab.id });
+		const nextActiveTab =
+			nextSession.tabs.find((item) => item.id === nextSession.activeTabId) ??
+			nextSession.tabs[0];
+
+		if (nextActiveTab && nextActiveTab.id !== activeTab?.id) {
+			navigateToTab(nextActiveTab);
+		}
+	};
+	const openItem = (item: WorkspaceItem) => {
+		if (activeTab?.viewItemId === item.id) {
+			return;
+		}
+
+		const tab = replaceActiveTabView({ item });
+
+		navigateToTab(tab);
+	};
+	const openWorkspaceRoot = () => {
+		if (!activeTab?.viewItemId) {
+			return;
+		}
+
+		const tab = replaceActiveTabView({});
+
+		navigateToTab(tab);
+	};
+	const closeCurrentView = () => {
+		if (!activeItem) {
+			return;
+		}
+
+		const parent = activeItem.parentId
+			? itemsById.get(activeItem.parentId)
+			: undefined;
+		const tab = replaceActiveTabView({ item: parent });
+
+		navigateToTab(tab);
+	};
+
+	return {
+		activeItem,
+		activeTab,
+		closeCurrentView,
+		closeWorkspaceTab,
+		createWorkspaceTab,
+		itemsById,
+		openItem,
+		openWorkspaceRoot,
+		scopedItems,
+		session,
+		activateWorkspaceTab,
+	};
+}

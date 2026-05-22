@@ -6,14 +6,10 @@ import {
 	normalizeWorkspaceTabSession,
 } from "#/lib/workspace-tab-state";
 
-export type WorkspaceTabKind = "root" | "item";
-
 export type WorkspaceTab = {
 	id: string;
-	kind: WorkspaceTabKind;
 	title: string;
-	itemId?: string;
-	itemTitle?: string;
+	viewItemId?: string;
 	createdAt: number;
 	updatedAt: number;
 };
@@ -27,6 +23,7 @@ type EnsureWorkspaceSessionInput = {
 	workspaceId: string;
 	workspaceName: string;
 	requestedTabId?: string;
+	validItemIds?: ReadonlySet<string>;
 };
 
 type WorkspaceTabsState = {
@@ -38,16 +35,11 @@ type WorkspaceTabsState = {
 		workspaceId: string;
 		workspaceName: string;
 	}) => WorkspaceTab;
-	replaceTabWithItem: (input: {
+	replaceTabView: (input: {
 		workspaceId: string;
 		tabId: string;
-		itemId: string;
-		itemTitle: string;
-	}) => WorkspaceTab;
-	replaceTabWithRoot: (input: {
-		workspaceId: string;
-		tabId: string;
-		workspaceName: string;
+		title: string;
+		viewItemId?: string;
 	}) => WorkspaceTab;
 	activateTab: (input: { workspaceId: string; tabId: string }) => void;
 	closeTab: (input: {
@@ -65,11 +57,13 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 				workspaceId,
 				workspaceName,
 				requestedTabId,
+				validItemIds,
 			}) => {
 				const currentSession = get().sessionsByWorkspaceId[workspaceId];
 				const normalizedSession = normalizeWorkspaceTabSession(
 					currentSession,
 					workspaceName,
+					validItemIds,
 				);
 				const requestedTabExists =
 					requestedTabId &&
@@ -110,52 +104,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 
 				return rootTab;
 			},
-			replaceTabWithItem: ({ workspaceId, tabId, itemId, itemTitle }) => {
-				const now = Date.now();
-				let updatedTab: WorkspaceTab | undefined;
-
-				set((state) => {
-					const session = state.sessionsByWorkspaceId[workspaceId];
-
-					if (!session) {
-						return state;
-					}
-
-					const nextTabs = session.tabs.map((tab) => {
-						if (tab.id !== tabId) {
-							return tab;
-						}
-
-						updatedTab = {
-							...tab,
-							kind: "item",
-							title: itemTitle,
-							itemId,
-							itemTitle,
-							updatedAt: now,
-						};
-
-						return updatedTab;
-					});
-
-					return {
-						sessionsByWorkspaceId: {
-							...state.sessionsByWorkspaceId,
-							[workspaceId]: {
-								activeTabId: tabId,
-								tabs: nextTabs,
-							},
-						},
-					};
-				});
-
-				if (!updatedTab) {
-					throw new Error(`Unable to replace missing tab: ${tabId}`);
-				}
-
-				return updatedTab;
-			},
-			replaceTabWithRoot: ({ workspaceId, tabId, workspaceName }) => {
+			replaceTabView: ({ workspaceId, tabId, title, viewItemId }) => {
 				const now = Date.now();
 				let updatedTab: WorkspaceTab | undefined;
 
@@ -173,8 +122,8 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 
 						updatedTab = {
 							id: tab.id,
-							kind: "root",
-							title: workspaceName,
+							title,
+							viewItemId,
 							createdAt: tab.createdAt,
 							updatedAt: now,
 						};
@@ -194,7 +143,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 				});
 
 				if (!updatedTab) {
-					throw new Error(`Unable to replace missing tab: ${tabId}`);
+					throw new Error(`Unable to replace missing tab view: ${tabId}`);
 				}
 
 				return updatedTab;
@@ -258,7 +207,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 			getSession: (workspaceId) => get().sessionsByWorkspaceId[workspaceId],
 		}),
 		{
-			name: "thinkex.workspace-tabs.v1",
+			name: "thinkex.workspace-tabs.v2",
 			partialize: (state) => ({
 				sessionsByWorkspaceId: state.sessionsByWorkspaceId,
 			}),

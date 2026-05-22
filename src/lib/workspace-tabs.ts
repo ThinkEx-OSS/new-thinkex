@@ -1,13 +1,15 @@
 import type { WorkspaceItem } from "#/components/workspace/types";
 import type { WorkspaceTab } from "#/stores/workspace-tabs";
 
+export const WORKSPACE_ROOT_VIEW = "root";
+
 export type WorkspaceTabSearch = {
 	tab: string | undefined;
-	view: string | undefined;
+	view: string;
 };
 
 export function getTabViewKey(tab: WorkspaceTab) {
-	return tab.kind === "item" && tab.itemId ? tab.itemId : "root";
+	return tab.viewItemId ?? WORKSPACE_ROOT_VIEW;
 }
 
 export function getWorkspaceTabSearch(tab: WorkspaceTab): WorkspaceTabSearch {
@@ -21,9 +23,9 @@ export function findItemForTab(
 	tab: WorkspaceTab,
 	itemsById: Map<string, WorkspaceItem>,
 ) {
-	if (!tab.itemId) {
+	if (!tab.viewItemId) {
 		return undefined;
 	}
 
-	return itemsById.get(tab.itemId);
+	return itemsById.get(tab.viewItemId);
 }

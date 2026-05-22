@@ -5,6 +5,7 @@ import type { WorkspaceItem } from "#/components/workspace/types";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
 import { getWorkspaceDisplay } from "#/lib/workspace-display";
+import { getWorkspaceItemDisplay } from "#/lib/workspace-item-display";
 import { findItemForTab } from "#/lib/workspace-tabs";
 import type { WorkspaceTab } from "#/stores/workspace-tabs";
 
@@ -47,15 +48,22 @@ export default function WorkspaceTabBar({
 			>
 				{tabs.map((tab, index) => {
 					const item = findItemForTab(tab, itemsById);
-					const TabIcon =
-						tab.kind === "root" ? Icon : (item?.icon ?? FileQuestion);
+					const isRootTab = !tab.viewItemId;
+					const TabIcon = isRootTab ? Icon : (item?.icon ?? FileQuestion);
+					const title = item?.name ?? (isRootTab ? workspace.name : tab.title);
+					const iconClassName = isRootTab
+						? accent.text
+						: item
+							? getWorkspaceItemDisplay(item).iconClassName
+							: "text-muted-foreground";
 
 					return (
 						<WorkspaceTabItem
 							key={tab.id}
 							tab={tab}
+							title={title}
 							TabIcon={TabIcon}
-							iconClassName={tab.kind === "root" ? accent.text : undefined}
+							iconClassName={iconClassName}
 							isActive={tab.id === activeTab.id}
 							showDivider={index > 0}
 							showClose={tabs.length > 1}
@@ -80,6 +88,7 @@ export default function WorkspaceTabBar({
 
 interface WorkspaceTabItemProps {
 	tab: WorkspaceTab;
+	title: string;
 	TabIcon: LucideIcon;
 	iconClassName?: string;
 	isActive: boolean;
@@ -90,7 +99,7 @@ interface WorkspaceTabItemProps {
 }
 
 function WorkspaceTabItem({
-	tab,
+	title,
 	TabIcon,
 	iconClassName,
 	isActive,
@@ -118,14 +127,11 @@ function WorkspaceTabItem({
 					onClick={onActivate}
 				>
 					<TabIcon
-						className={cn(
-							"size-3.5 shrink-0 text-muted-foreground",
-							iconClassName,
-						)}
+						className={cn("size-3.5 shrink-0", iconClassName)}
 						strokeWidth={1.75}
 						aria-hidden="true"
 					/>
-					<span className="truncate">{tab.title}</span>
+					<span className="truncate">{title}</span>
 				</button>
 				{showClose ? (
 					<button
@@ -134,7 +140,7 @@ function WorkspaceTabItem({
 							"mr-1 flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-focus-within/tab:opacity-100 group-hover/tab:opacity-100",
 							isActive && "opacity-100",
 						)}
-						aria-label={`Close ${tab.title}`}
+						aria-label={`Close ${title}`}
 						onClick={onClose}
 					>
 						<X className="size-3" aria-hidden="true" />

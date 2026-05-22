@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { MessageCircle, Share2 } from "lucide-react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
+import UserProfileDropdown from "#/components/UserProfileDropdown";
 import {
 	Avatar,
 	AvatarFallback,
@@ -11,7 +12,6 @@ import {
 import { Button } from "#/components/ui/button";
 import type { WorkspaceItem } from "#/components/workspace/types";
 import WorkspaceTabBar from "#/components/workspace/WorkspaceTabBar";
-import BetterAuthHeader from "#/integrations/better-auth/header-user";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
 import { useAiChatPanelStore } from "#/stores/ai-chat-panel";
@@ -68,7 +68,7 @@ export default function WorkspaceTopBar({
 
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
-			<div className="flex h-12 w-full items-center justify-between gap-3 px-3">
+			<div className="flex h-12 w-full items-center justify-between gap-3 px-4">
 				<div className="flex min-w-0 flex-1 items-center gap-3">
 					<Link
 						to="/home"
@@ -108,7 +108,7 @@ export default function WorkspaceTopBar({
 							<Share2 className="size-3.5" />
 						</Button>
 						<WorkspaceCollaborators />
-						<BetterAuthHeader />
+						<UserProfileDropdown />
 						<Button
 							variant="outline"
 							size="sm"
@@ -135,7 +135,7 @@ export default function WorkspaceTopBar({
 							<Share2 className="size-3.5" />
 						</Button>
 						<WorkspaceCollaborators />
-						<BetterAuthHeader />
+						<UserProfileDropdown />
 					</nav>
 				)}
 			</div>
