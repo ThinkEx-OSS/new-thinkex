@@ -18,6 +18,8 @@
 			"**/vitest.config.ts",
 			"**/drizzle.config.ts",
 			"**/wrangler.jsonc",
+			"!references/**/*",
+			"!**/references/**/*",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/styles.css"
 		]
