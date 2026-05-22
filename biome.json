@@ -1,9 +1,10 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
 	"vcs": {
-		"enabled": false,
+		"enabled": true,
 		"clientKind": "git",
-		"useIgnoreFile": false
+		"useIgnoreFile": true,
+		"defaultBranch": "main"
 	},
 	"files": {
 		"ignoreUnknown": false,
@@ -11,7 +12,12 @@
 			"**/src/**/*",
 			"**/.vscode/**/*",
 			"**/index.html",
+			"**/package.json",
+			"**/tsconfig.json",
 			"**/vite.config.ts",
+			"**/vitest.config.ts",
+			"**/drizzle.config.ts",
+			"**/wrangler.jsonc",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/styles.css"
 		]
@@ -20,7 +26,10 @@
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"enabled": true,
+		"actions": { "source": { "organizeImports": "on" } }
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {

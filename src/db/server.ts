@@ -9,7 +9,7 @@ const LOCAL_HYPERDRIVE_ENV_KEY =
 	"CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
 
 function getBindingConnectionString() {
-	const bindings = workerEnv as Record<string, unknown>;
+	const bindings = workerEnv as unknown as Record<string, unknown>;
 	const hyperdrive = bindings[HYPERDRIVE_BINDING_NAME] as
 		| { connectionString?: string }
 		| undefined;

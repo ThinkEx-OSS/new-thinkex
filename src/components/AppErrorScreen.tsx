@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
@@ -12,10 +12,7 @@ function getErrorMessage(error: ErrorComponentProps["error"]) {
 	return "Something went wrong while loading this page.";
 }
 
-export default function AppErrorScreen({
-	error,
-	reset,
-}: ErrorComponentProps) {
+export default function AppErrorScreen({ error, reset }: ErrorComponentProps) {
 	const message = getErrorMessage(error);
 
 	return (
@@ -30,9 +27,7 @@ export default function AppErrorScreen({
 						<h1 className="text-2xl font-medium tracking-tight">
 							This page couldn&apos;t load
 						</h1>
-						<p className="text-sm leading-6 text-muted-foreground">
-							{message}
-						</p>
+						<p className="text-sm leading-6 text-muted-foreground">{message}</p>
 					</div>
 
 					<div className="flex w-full max-w-xs flex-col gap-3">

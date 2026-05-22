@@ -6,9 +6,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "new-thinkex",
 	"compatibility_date": "2025-09-02",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"main": "@tanstack/react-start/server-entry",
 	"observability": {
 		"enabled": true

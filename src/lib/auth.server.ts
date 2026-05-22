@@ -45,7 +45,7 @@ function createAuth(
 }
 
 export async function withAuth<T>(
-	run: (auth: ReturnType<typeof betterAuth>) => Promise<T>,
+	run: (auth: ReturnType<typeof createAuth>) => Promise<T>,
 ) {
 	const dbContext = await createDbContext();
 	const auth = createAuth(dbContext.db);

@@ -1,5 +1,5 @@
-import { config as loadEnv } from "dotenv";
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "vitest/config";
 
 // Vitest boots the Cloudflare worker pool before app code runs, so load local
