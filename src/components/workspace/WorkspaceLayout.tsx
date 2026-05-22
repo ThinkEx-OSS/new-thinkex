@@ -7,6 +7,7 @@ import AiChatPanel, {
 } from "#/components/workspace/AiChatPanel";
 import type { WorkspaceItem } from "#/components/workspace/types";
 import WorkspaceContent from "#/components/workspace/WorkspaceContent";
+import WorkspaceContextBar from "#/components/workspace/WorkspaceContextBar";
 import WorkspaceTopBar from "#/components/workspace/WorkspaceTopBar";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { getTabViewKey, getWorkspaceTabSearch } from "#/lib/workspace-tabs";
@@ -54,6 +55,10 @@ export function WorkspaceShell({
 	const activateTab = useWorkspaceTabsStore((state) => state.activateTab);
 	const closeTab = useWorkspaceTabsStore((state) => state.closeTab);
 	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
+	const activeItem =
+		activeTab?.kind === "item" && activeTab.itemId
+			? itemsById.get(activeTab.itemId)
+			: undefined;
 
 	useEffect(() => {
 		const nextSession = ensureWorkspaceSession({
@@ -171,6 +176,19 @@ export function WorkspaceShell({
 
 		navigateToTab(tab);
 	};
+	const handleCloseItem = () => {
+		if (activeTab.kind !== "item") {
+			return;
+		}
+
+		const tab = replaceTabWithRoot({
+			workspaceId: workspace.id,
+			tabId: activeTab.id,
+			workspaceName: workspace.name,
+		});
+
+		navigateToTab(tab);
+	};
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -193,12 +211,20 @@ export function WorkspaceShell({
 							onCloseTab={handleCloseTab}
 							onCreateRootTab={handleCreateRootTab}
 						/>
-						<WorkspaceContent
-							items={items}
-							itemsById={itemsById}
-							activeTab={activeTab}
-							onOpenItem={handleOpenItem}
-						/>
+						<main className="bg-background">
+							<WorkspaceContextBar
+								workspace={workspace}
+								activeTab={activeTab}
+								activeItem={activeItem}
+								onCloseItem={handleCloseItem}
+							/>
+							<WorkspaceContent
+								items={items}
+								itemsById={itemsById}
+								activeTab={activeTab}
+								onOpenItem={handleOpenItem}
+							/>
+						</main>
 					</div>
 				</Panel>
 

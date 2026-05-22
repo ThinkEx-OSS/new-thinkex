@@ -15,6 +15,11 @@ import {
 import { authClient } from "#/lib/auth-client";
 import { removeAuthSession } from "#/lib/session-query";
 
+const userMenuTriggerClassName =
+	"size-7 overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none hover:scale-105 hover:bg-transparent focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0";
+const userMenuAvatarClassName =
+	"size-full after:border-transparent after:shadow-[inset_0_0_0_1px_var(--border)]";
+
 export default function BetterAuthHeader() {
 	const navigate = useNavigate();
 	const router = useRouter();
@@ -29,7 +34,7 @@ export default function BetterAuthHeader() {
 	};
 
 	if (isPending) {
-		return <div className="size-9 animate-pulse rounded-full bg-muted" />;
+		return <div className="size-7 animate-pulse rounded-full bg-muted" />;
 	}
 
 	if (session?.user) {
@@ -39,12 +44,12 @@ export default function BetterAuthHeader() {
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="icon"
-						className="rounded-full p-0"
+						className={userMenuTriggerClassName}
 						aria-label="Open account menu"
 					>
-						<Avatar>
+						<Avatar className={userMenuAvatarClassName}>
 							<AvatarImage src={session.user.image ?? undefined} alt="" />
 							<AvatarFallback>
 								{displayName.charAt(0).toUpperCase()}

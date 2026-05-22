@@ -1,5 +1,16 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { BookOpen, FileText, MessageSquare } from "lucide-react";
+import {
+	BookOpen,
+	ChartNoAxesColumn,
+	FileText,
+	FolderOpen,
+	HelpCircle,
+	Layers3,
+	MessageSquare,
+	Paperclip,
+	Presentation,
+	Sparkles,
+} from "lucide-react";
 
 import {
 	type WorkspaceItem,
@@ -43,6 +54,78 @@ const workspaceItems: WorkspaceItem[] = [
 		title: "Open Questions",
 		meta: "6 prompts",
 		icon: MessageSquare,
+	},
+	{
+		id: "bibliography",
+		title: "Bibliography",
+		meta: "32 citations",
+		icon: BookOpen,
+	},
+	{
+		id: "quote-bank",
+		title: "Quote Bank",
+		meta: "18 excerpts",
+		icon: FileText,
+	},
+	{
+		id: "data-snapshots",
+		title: "Data Snapshots",
+		meta: "5 charts",
+		icon: ChartNoAxesColumn,
+	},
+	{
+		id: "attachments",
+		title: "Attachments",
+		meta: "11 uploads",
+		icon: Paperclip,
+	},
+	{
+		id: "presentation",
+		title: "Presentation",
+		meta: "14 slides",
+		icon: Presentation,
+	},
+	{
+		id: "topic-map",
+		title: "Topic Map",
+		meta: "9 clusters",
+		icon: Layers3,
+	},
+	{
+		id: "ai-digests",
+		title: "AI Digests",
+		meta: "3 summaries",
+		icon: Sparkles,
+	},
+	{
+		id: "archive",
+		title: "Archive",
+		meta: "17 saved items",
+		icon: FolderOpen,
+	},
+	{
+		id: "practice-quiz",
+		title: "Practice Quiz",
+		meta: "20 questions",
+		icon: HelpCircle,
+	},
+	{
+		id: "meeting-notes",
+		title: "Meeting Notes",
+		meta: "Updated yesterday",
+		icon: MessageSquare,
+	},
+	{
+		id: "final-draft",
+		title: "Final Draft",
+		meta: "Ready for review",
+		icon: FileText,
+	},
+	{
+		id: "reading-queue",
+		title: "Reading Queue",
+		meta: "13 unread",
+		icon: BookOpen,
 	},
 ];
 

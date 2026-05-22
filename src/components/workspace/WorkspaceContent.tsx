@@ -1,6 +1,5 @@
-import { FileQuestion } from "lucide-react";
-
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
+import { ScrollArea, ScrollBar } from "#/components/ui/scroll-area";
 import type { WorkspaceItem } from "#/components/workspace/types";
 import { findItemForTab } from "#/lib/workspace-tabs";
 import type { WorkspaceTab } from "#/stores/workspace-tabs";
@@ -21,21 +20,24 @@ export default function WorkspaceContent({
 	if (activeTab.kind === "item") {
 		const item = findItemForTab(activeTab, itemsById);
 
-		return <WorkspaceItemView tab={activeTab} item={item} />;
+		return <WorkspaceItemView item={item} />;
 	}
 
 	return (
-		<main className="px-4 py-4">
-			<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
-				{items.map((item) => (
-					<WorkspaceItemCard
-						key={item.id}
-						item={item}
-						onOpenItem={onOpenItem}
-					/>
-				))}
-			</section>
-		</main>
+		<ScrollArea className="h-[calc(100vh-5.75rem)]">
+			<div className="px-4 py-3">
+				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
+					{items.map((item) => (
+						<WorkspaceItemCard
+							key={item.id}
+							item={item}
+							onOpenItem={onOpenItem}
+						/>
+					))}
+				</section>
+			</div>
+			<ScrollBar className="w-1.5" />
+		</ScrollArea>
 	);
 }
 
@@ -71,32 +73,12 @@ function WorkspaceItemCard({
 	);
 }
 
-function WorkspaceItemView({
-	tab,
-	item,
-}: {
-	tab: WorkspaceTab;
-	item: WorkspaceItem | undefined;
-}) {
-	const ItemIcon = item?.icon ?? FileQuestion;
-
+function WorkspaceItemView({ item }: { item: WorkspaceItem | undefined }) {
 	return (
-		<main className="px-4 py-4">
-			<section className="space-y-4">
-				<div className="flex items-center gap-2">
-					<ItemIcon
-						className="size-5 text-muted-foreground"
-						strokeWidth={1.75}
-						aria-hidden="true"
-					/>
-					<h1 className="truncate text-xl font-semibold tracking-tight">
-						{tab.title}
-					</h1>
-				</div>
-				<div className="flex min-h-64 items-center justify-center rounded-md border bg-background text-sm text-muted-foreground">
-					{item ? "Item content placeholder" : "Item unavailable"}
-				</div>
+		<div className="px-4 py-3">
+			<section className="flex min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20 text-sm text-muted-foreground">
+				{item ? "Item content placeholder" : "Item unavailable"}
 			</section>
-		</main>
+		</div>
 	);
 }
