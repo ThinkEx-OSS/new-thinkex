@@ -19,6 +19,8 @@ export const getSession = createServerFn({ method: "GET" }).handler(
 	},
 );
 
+export type AuthSession = Awaited<ReturnType<typeof getSession>>;
+
 export const ensureSession = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const session = await getSessionFromHeaders(getRequestHeaders());

@@ -10,10 +10,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
-import {
-	type AuthSession,
-	getAuthSessionQueryOptions,
-} from "#/lib/session-query";
+import { type AuthSession, getSession } from "#/lib/auth.functions";
 import { ThemeProvider } from "../components/theme-provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -24,10 +21,8 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	beforeLoad: async ({ context: { queryClient } }) => {
-		const session = await queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+	beforeLoad: async () => {
+		const session = await getSession();
 		return { session };
 	},
 	head: () => ({

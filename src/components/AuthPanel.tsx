@@ -1,13 +1,11 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
-import { refreshAuthSession, removeAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
 
@@ -36,8 +34,8 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const { data: session } = authClient.useSession();
+	const router = useRouter();
+	const { data: session, refetch } = authClient.useSession();
 	const alternateHref = mode === "signin" ? "/signup" : "/login";
 	const alternateAccountCta =
 		mode === "signin"
@@ -66,7 +64,8 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							variant="outline"
 							onClick={async () => {
 								await authClient.signOut();
-								removeAuthSession(queryClient);
+								await refetch();
+								await router.invalidate();
 								await navigate({ to: "/" });
 							}}
 						>
@@ -92,7 +91,8 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 								provider: "google",
 								callbackURL,
 							});
-							await refreshAuthSession(queryClient);
+							await refetch();
+							await router.invalidate();
 						} catch {
 							setErrorMessage("Failed to sign in with Google");
 							setIsLoading(false);

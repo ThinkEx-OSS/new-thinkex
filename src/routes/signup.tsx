@@ -2,7 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
 import AuthScreen from "#/components/AuthScreen";
-import { type AuthSession, authSessionQueryKey } from "#/lib/session-query";
 
 export const Route = createFileRoute("/signup")({
 	validateSearch: z.object({
@@ -12,12 +11,7 @@ export const Route = createFileRoute("/signup")({
 			.optional(),
 	}),
 	beforeLoad: async ({ context, search }) => {
-		const session =
-			typeof window === "undefined"
-				? context.session
-				: context.queryClient.getQueryData<AuthSession>(authSessionQueryKey);
-
-		if (session) {
+		if (context.session) {
 			throw redirect({ to: search.redirect || "/home" });
 		}
 	},
