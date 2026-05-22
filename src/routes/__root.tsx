@@ -25,7 +25,9 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	beforeLoad: async ({ context: { queryClient } }) => {
-		const session = await queryClient.fetchQuery(getAuthSessionQueryOptions());
+		const session = await queryClient.ensureQueryData(
+			getAuthSessionQueryOptions(),
+		);
 		return { session };
 	},
 	head: () => ({
