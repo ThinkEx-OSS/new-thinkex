@@ -1,8 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { WorkspaceShell } from "#/components/workspace/WorkspaceLayout";
-import { listMockWorkspaceItems } from "#/services/workspace-items";
-import { listMockWorkspaces } from "#/services/workspaces";
+import {
+	listMockWorkspaceItems,
+	listMockWorkspaces,
+	WorkspaceShell,
+} from "#/features/workspaces";
 
 export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 	validateSearch: (search) => ({

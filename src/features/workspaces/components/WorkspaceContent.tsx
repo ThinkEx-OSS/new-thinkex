@@ -9,14 +9,14 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { ScrollArea, ScrollBar } from "#/components/ui/scroll-area";
-import type { WorkspaceItem } from "#/components/workspace/types";
-import { cn } from "#/lib/utils";
-import { getWorkspaceItemDisplay } from "#/lib/workspace-item-display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import {
 	getWorkspaceChildren,
 	getWorkspaceItemMeta,
 	splitWorkspaceChildren,
-} from "#/lib/workspace-tree";
+} from "#/features/workspaces/model/tree";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
 	items: WorkspaceItem[];

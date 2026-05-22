@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 import {
 	createRootWorkspaceTab,
 	normalizeWorkspaceTabSession,
-} from "#/lib/workspace-tab-state";
+} from "#/features/workspaces/model/tab-state";
 
 export type WorkspaceTab = {
 	id: string;

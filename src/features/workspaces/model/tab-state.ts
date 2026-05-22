@@ -1,7 +1,7 @@
 import type {
 	WorkspaceTab,
 	WorkspaceTabSession,
-} from "#/stores/workspace-tabs";
+} from "#/features/workspaces/state/workspace-tabs-store";
 
 export function createTabId() {
 	if (globalThis.crypto?.randomUUID) {

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-
+import { listMockWorkspaces } from "#/features/workspaces/data/mock-workspaces";
 import {
 	apiErrorSchema,
 	workspaceListResponseSchema,
 } from "#/lib/api/contracts";
-import { listMockWorkspaces } from "#/services/workspaces";
 
 describe("workspace contracts", () => {
 	it("returns a valid workspace list shape", () => {

@@ -3,7 +3,6 @@ import { ListFilter, Search, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import AppShell from "#/components/AppShell";
-import CreateWorkspaceCard from "#/components/CreateWorkspaceCard";
 import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
@@ -23,14 +22,15 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { Input } from "#/components/ui/input";
-import WorkspaceCard from "#/components/WorkspaceCard";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 import {
+	CreateWorkspaceCard,
 	getWorkspaceTabSearch,
+	listMockWorkspaces,
+	useWorkspaceTabsStore,
 	WORKSPACE_ROOT_VIEW,
-} from "#/lib/workspace-tabs";
-import { listMockWorkspaces } from "#/services/workspaces";
-import { useWorkspaceTabsStore } from "#/stores/workspace-tabs";
+	WorkspaceCard,
+} from "#/features/workspaces";
+import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 type WorkspaceStatusFilter = "all" | WorkspaceSummary["status"];
 

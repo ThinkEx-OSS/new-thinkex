@@ -1,17 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo } from "react";
-
-import type { WorkspaceItem } from "#/components/workspace/types";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 import {
 	getTabViewKey,
 	getWorkspaceTabSearch,
 	WORKSPACE_ROOT_VIEW,
-} from "#/lib/workspace-tabs";
+} from "#/features/workspaces/model/tabs";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	useWorkspaceTabsStore,
 	type WorkspaceTab,
-} from "#/stores/workspace-tabs";
+} from "#/features/workspaces/state/workspace-tabs-store";
+import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 interface UseWorkspaceNavigationInput {
 	workspace: WorkspaceSummary;

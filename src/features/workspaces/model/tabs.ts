@@ -1,5 +1,5 @@
-import type { WorkspaceItem } from "#/components/workspace/types";
-import type { WorkspaceTab } from "#/stores/workspace-tabs";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 
 export const WORKSPACE_ROOT_VIEW = "root";
 

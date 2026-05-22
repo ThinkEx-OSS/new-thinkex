@@ -1,13 +1,13 @@
 import { FileQuestion, type LucideIcon, Plus, X } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
-import type { WorkspaceItem } from "#/components/workspace/types";
+import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
+import { findItemForTab } from "#/features/workspaces/model/tabs";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
-import { getWorkspaceDisplay } from "#/lib/workspace-display";
-import { getWorkspaceItemDisplay } from "#/lib/workspace-item-display";
-import { findItemForTab } from "#/lib/workspace-tabs";
-import type { WorkspaceTab } from "#/stores/workspace-tabs";
 
 const TAB_MAX_WIDTH = "16rem";
 const TAB_ITEM_CLASS = "flex min-w-0 items-center gap-1";

@@ -5,16 +5,16 @@ import {
 } from "#/components/ui/resizable";
 import AiChatPanel, {
 	AiChatPanelMaximized,
-} from "#/components/workspace/AiChatPanel";
-import type { WorkspaceItem } from "#/components/workspace/types";
-import { useWorkspaceNavigation } from "#/components/workspace/useWorkspaceNavigation";
-import WorkspaceContent from "#/components/workspace/WorkspaceContent";
-import WorkspaceContextBar from "#/components/workspace/WorkspaceContextBar";
-import WorkspaceTopBar from "#/components/workspace/WorkspaceTopBar";
+} from "#/features/workspaces/components/AiChatPanel";
+import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
+import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
+import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { useAiChatPanelStore } from "#/stores/ai-chat-panel";
 
-export type { WorkspaceItem } from "#/components/workspace/types";
+export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;

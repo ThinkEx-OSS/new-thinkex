@@ -13,7 +13,7 @@ import {
 import type {
 	WorkspaceItem,
 	WorkspaceItemType,
-} from "#/components/workspace/types";
+} from "#/features/workspaces/model/types";
 
 interface WorkspaceItemTypeDisplay {
 	label: string;

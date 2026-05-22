@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { listMockWorkspaces } from "#/features/workspaces";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth.functions";
-import { listMockWorkspaces } from "#/services/workspaces";
 
 async function handleListWorkspaces(request: Request) {
 	const requestId = getRequestId(request);

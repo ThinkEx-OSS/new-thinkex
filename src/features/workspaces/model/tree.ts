@@ -1,4 +1,4 @@
-import type { WorkspaceItem } from "#/components/workspace/types";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 export function getWorkspaceChildren(
 	items: WorkspaceItem[],

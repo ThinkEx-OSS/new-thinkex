@@ -14,9 +14,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
-import { getWorkspaceDisplay } from "#/lib/workspace-display";
 
 interface WorkspaceCardProps {
 	workspace: WorkspaceSummary;

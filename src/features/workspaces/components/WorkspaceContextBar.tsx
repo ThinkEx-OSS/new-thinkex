@@ -26,15 +26,15 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import type { WorkspaceItem } from "#/components/workspace/types";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
-import { getWorkspaceDisplay } from "#/lib/workspace-display";
+import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
 	getWorkspaceItemDisplay,
 	workspaceItemLearnCreateActions,
 	workspaceItemPrimaryCreateActions,
-} from "#/lib/workspace-item-display";
-import { getWorkspaceBreadcrumbItems } from "#/lib/workspace-tree";
+} from "#/features/workspaces/model/item-display";
+import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;

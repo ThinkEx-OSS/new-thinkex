@@ -10,12 +10,12 @@ import {
 	AvatarGroupCount,
 } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
-import type { WorkspaceItem } from "#/components/workspace/types";
-import WorkspaceTabBar from "#/components/workspace/WorkspaceTabBar";
+import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
 import { useAiChatPanelStore } from "#/stores/ai-chat-panel";
-import type { WorkspaceTab } from "#/stores/workspace-tabs";
 
 const workspaceCollaborators = [
 	{

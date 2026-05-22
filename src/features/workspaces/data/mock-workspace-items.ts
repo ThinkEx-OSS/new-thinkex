@@ -10,7 +10,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 
-import type { WorkspaceItem } from "#/components/workspace/types";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 type WorkspaceItemTemplate = Omit<WorkspaceItem, "workspaceId">;
 
