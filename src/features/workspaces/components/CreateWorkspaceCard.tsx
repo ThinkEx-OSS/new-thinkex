@@ -10,11 +10,13 @@ import { cn } from "#/lib/utils";
 
 interface CreateWorkspaceCardProps {
 	className?: string;
+	disabled?: boolean;
 	onCreate?: () => void;
 }
 
 export default function CreateWorkspaceCard({
 	className,
+	disabled = false,
 	onCreate,
 }: CreateWorkspaceCardProps) {
 	return (
@@ -27,6 +29,7 @@ export default function CreateWorkspaceCard({
 			<button
 				type="button"
 				className="flex w-full cursor-pointer flex-col rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+				disabled={disabled}
 				onClick={onCreate}
 			>
 				<div className="flex aspect-[5/2] items-center justify-center bg-muted/30 transition-all duration-200 group-hover/card:bg-muted/70">

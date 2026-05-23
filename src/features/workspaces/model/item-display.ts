@@ -86,7 +86,7 @@ export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 
 	return {
 		...typeDisplay,
-		Icon: item.icon,
+		Icon: typeDisplay.icon,
 	};
 }
 

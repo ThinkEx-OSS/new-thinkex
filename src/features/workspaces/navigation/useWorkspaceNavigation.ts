@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo } from "react";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceDragCommand } from "#/features/workspaces/model/drag";
 import {
 	getTabViewKey,
@@ -11,7 +12,6 @@ import {
 	useWorkspaceTabsStore,
 	type WorkspaceTab,
 } from "#/features/workspaces/state/workspace-tabs-store";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 interface UseWorkspaceNavigationInput {
 	workspace: WorkspaceSummary;

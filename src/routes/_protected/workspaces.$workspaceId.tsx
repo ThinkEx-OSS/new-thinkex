@@ -1,32 +1,40 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 
 import {
-	listMockWorkspaceItems,
-	listMockWorkspaces,
+	useRecordWorkspaceOpenedMutation,
+	WorkspacePageSkeleton,
 	WorkspaceShell,
 } from "#/features/workspaces";
+import { seedWorkspaceCaches } from "#/features/workspaces/cache";
+import { workspacePageQueryOptions } from "#/features/workspaces/query-options";
 
 export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 	validateSearch: (search) => ({
 		tab: typeof search.tab === "string" ? search.tab : undefined,
 		view: typeof search.view === "string" ? search.view : undefined,
 	}),
-	beforeLoad: async ({ params }) => {
-		const workspaces = listMockWorkspaces();
-		const workspace = workspaces.find((item) => item.id === params.workspaceId);
+	loader: async ({ context, params }) => {
+		const page = await context.queryClient.ensureQueryData(
+			workspacePageQueryOptions(params.workspaceId),
+		);
 
-		if (!workspace) {
+		if (!page) {
 			throw notFound();
 		}
 
-		return {
-			workspace,
-		};
+		seedWorkspaceCaches(context.queryClient, page, {
+			listMode: "update-existing",
+		});
 	},
-	head: ({ match }) => ({
+	pendingComponent: WorkspacePageSkeleton,
+	pendingMs: 0,
+	pendingMinMs: 300,
+	head: () => ({
 		meta: [
 			{
-				title: `Thinkex | ${match.context.workspace.name}`,
+				title: "Thinkex | Workspace",
 			},
 		],
 	}),
@@ -34,14 +42,31 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 });
 
 function WorkspacePage() {
-	const { workspace } = Route.useRouteContext();
+	const { workspaceId } = Route.useParams();
 	const { tab, view } = Route.useSearch();
-	const workspaceItems = listMockWorkspaceItems(workspace.id);
+	const recordedWorkspaceIds = useRef(new Set<string>());
+	const recordWorkspaceOpenedMutation = useRecordWorkspaceOpenedMutation();
+	const { data: page } = useSuspenseQuery(
+		workspacePageQueryOptions(workspaceId),
+	);
+
+	useEffect(() => {
+		if (recordedWorkspaceIds.current.has(workspaceId)) {
+			return;
+		}
+
+		recordedWorkspaceIds.current.add(workspaceId);
+		recordWorkspaceOpenedMutation.mutate({ workspaceId });
+	}, [recordWorkspaceOpenedMutation, workspaceId]);
+
+	if (!page) {
+		throw notFound();
+	}
 
 	return (
 		<WorkspaceShell
-			workspace={workspace}
-			items={workspaceItems}
+			workspace={page.workspace}
+			items={page.items}
 			activeTabIdFromUrl={tab}
 			activeViewFromUrl={view}
 		/>

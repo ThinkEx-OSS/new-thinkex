@@ -15,6 +15,13 @@
       "when": 1779505095945,
       "tag": "0001_confused_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779514458500,
+      "tag": "0002_good_proteus",
+      "breakpoints": true
     }
   ]
 }

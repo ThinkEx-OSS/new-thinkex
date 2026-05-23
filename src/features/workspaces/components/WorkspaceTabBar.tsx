@@ -3,13 +3,13 @@ import { FileQuestion, type LucideIcon, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import { WORKSPACE_TAB_DRAG_TYPE } from "#/features/workspaces/model/drag";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { findItemForTab } from "#/features/workspaces/model/tabs";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
 
 const TAB_MAX_WIDTH = "16rem";
@@ -34,7 +34,7 @@ export default function WorkspaceTabBar({
 	onCloseTab,
 	onCreateRootTab,
 }: WorkspaceTabBarProps) {
-	const { Icon, accent } = getWorkspaceDisplay(workspace);
+	const { Icon, color } = getWorkspaceDisplay(workspace);
 
 	return (
 		<nav
@@ -52,13 +52,14 @@ export default function WorkspaceTabBar({
 				{tabs.map((tab, index) => {
 					const item = findItemForTab(tab, itemsById);
 					const isRootTab = !tab.viewItemId;
-					const TabIcon = isRootTab ? Icon : (item?.icon ?? FileQuestion);
+					const itemDisplay = item ? getWorkspaceItemDisplay(item) : null;
+					const TabIcon = isRootTab
+						? Icon
+						: (itemDisplay?.Icon ?? FileQuestion);
 					const title = item?.name ?? (isRootTab ? workspace.name : tab.title);
 					const iconClassName = isRootTab
-						? accent.text
-						: item
-							? getWorkspaceItemDisplay(item).iconClassName
-							: "text-muted-foreground";
+						? color.text
+						: (itemDisplay?.iconClassName ?? "text-muted-foreground");
 
 					return (
 						<WorkspaceTabItem

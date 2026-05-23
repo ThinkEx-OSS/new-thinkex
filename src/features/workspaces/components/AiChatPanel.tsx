@@ -7,23 +7,29 @@ import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatP
 import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
-export default function AiChatPanel() {
-	const presentation = useWorkspaceUiStore((state) => state.presentation);
+interface AiChatPanelProps {
+	workspaceId: string;
+}
+
+export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
+	const presentation = useWorkspaceUiStore(
+		(state) => state.sessionsByWorkspaceId[workspaceId]?.presentation,
+	);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
 	const restorePresentation = useWorkspaceUiStore(
 		(state) => state.restorePresentation,
 	);
 	const isMaximized =
-		presentation.mode === "maximized" && presentation.pane.kind === "chat";
+		presentation?.mode === "maximized" && presentation.pane.kind === "chat";
 
 	return (
 		<aside className="relative flex min-h-screen flex-col bg-background">
 			<AiChatPanelToolbar
 				isMaximized={isMaximized}
-				onClose={closeChatPanel}
-				onMaximize={maximizeChat}
-				onRestore={restorePresentation}
+				onClose={() => closeChatPanel(workspaceId)}
+				onMaximize={() => maximizeChat(workspaceId)}
+				onRestore={() => restorePresentation(workspaceId)}
 			/>
 
 			<Conversation className="min-h-0">

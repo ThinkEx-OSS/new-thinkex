@@ -93,6 +93,7 @@ id
 workspaceId
 userId
 role        // owner | admin | editor | viewer
+lastOpenedAt // per-user recency for home ordering
 createdAt
 updatedAt
 ```

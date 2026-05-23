@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { listMockWorkspaces } from "#/features/workspaces";
+import { createDbContext } from "#/db/server";
+import { listWorkspacesForUser } from "#/features/workspaces/server/queries";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth.functions";
 
@@ -19,7 +20,17 @@ async function handleListWorkspaces(request: Request) {
 			);
 		}
 
-		return apiJson({ workspaces: listMockWorkspaces() }, requestId);
+		const dbContext = await createDbContext();
+
+		try {
+			const workspaces = await listWorkspacesForUser(
+				dbContext.db,
+				session.user.id,
+			);
+			return apiJson({ workspaces }, requestId);
+		} finally {
+			await dbContext.dispose();
+		}
 	} catch (error) {
 		return apiError(
 			requestId,

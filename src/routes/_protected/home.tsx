@@ -1,18 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ListFilter, Search, SearchX } from "lucide-react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Search, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import AppShell from "#/components/AppShell";
 import { Button } from "#/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
 import {
 	Empty,
 	EmptyContent,
@@ -24,22 +16,22 @@ import {
 import { Input } from "#/components/ui/input";
 import {
 	CreateWorkspaceCard,
+	createWorkspaceMutationInput,
 	getWorkspaceTabSearch,
-	listMockWorkspaces,
+	useCreateWorkspaceMutation,
 	useWorkspaceTabsStore,
 	WORKSPACE_ROOT_VIEW,
 	WorkspaceCard,
 } from "#/features/workspaces";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
-
-type WorkspaceStatusFilter = "all" | WorkspaceSummary["status"];
+import { workspacesQueryOptions } from "#/features/workspaces/query-options";
 
 export const Route = createFileRoute("/_protected/home")({
-	beforeLoad: async () => {
-		return {
-			workspaces: listMockWorkspaces(),
-		};
+	loader: async ({ context }) => {
+		await context.queryClient.ensureQueryData(workspacesQueryOptions());
 	},
+	pendingComponent: HomePageSkeleton,
+	pendingMs: 0,
+	pendingMinMs: 300,
 	head: () => ({
 		meta: [
 			{
@@ -51,99 +43,41 @@ export const Route = createFileRoute("/_protected/home")({
 });
 
 function HomePage() {
-	const { workspaces } = Route.useRouteContext();
-	const navigate = useNavigate();
+	const { data: workspaces } = useSuspenseQuery(workspacesQueryOptions());
 	const [query, setQuery] = useState("");
-	const [statusFilter, setStatusFilter] =
-		useState<WorkspaceStatusFilter>("all");
+	const createWorkspaceMutation = useCreateWorkspaceMutation();
 
 	const filteredWorkspaces = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
 
 		return workspaces.filter((workspace) => {
-			const matchesQuery =
+			return (
 				normalizedQuery.length === 0 ||
-				workspace.name.toLowerCase().includes(normalizedQuery);
-			const matchesStatus =
-				statusFilter === "all" || workspace.status === statusFilter;
-
-			return matchesQuery && matchesStatus;
+				workspace.name.toLowerCase().includes(normalizedQuery)
+			);
 		});
-	}, [query, statusFilter, workspaces]);
-	const hasActiveFilters = query.trim().length > 0 || statusFilter !== "all";
-
-	const navbarControls = (
-		<>
-			<div className="relative min-w-0 flex-1">
-				<Search
-					className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-					aria-hidden="true"
-				/>
-				<Input
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-					placeholder="Search workspaces"
-					className="h-8 pl-8"
-					aria-label="Search workspaces"
-				/>
-			</div>
-
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="outline"
-						size="sm"
-						className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-					>
-						<ListFilter className="size-3.5" />
-						<span className="hidden sm:inline">Filter</span>
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-40">
-					<DropdownMenuLabel>Status</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					<DropdownMenuRadioGroup
-						value={statusFilter}
-						onValueChange={(value) =>
-							setStatusFilter(value as WorkspaceStatusFilter)
-						}
-					>
-						<DropdownMenuRadioItem value="all">
-							All workspaces
-						</DropdownMenuRadioItem>
-						<DropdownMenuRadioItem value="ready">Ready</DropdownMenuRadioItem>
-						<DropdownMenuRadioItem value="draft">Draft</DropdownMenuRadioItem>
-					</DropdownMenuRadioGroup>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</>
-	);
+	}, [query, workspaces]);
+	const hasSearch = query.trim().length > 0;
 
 	return (
-		<AppShell navbarControls={navbarControls}>
+		<AppShell
+			navbarControls={
+				<HomeSearchControl value={query} onChange={setQuery} disabled={false} />
+			}
+		>
 			<div className="space-y-4">
 				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
-					<CreateWorkspaceCard />
+					<CreateWorkspaceCard
+						disabled={createWorkspaceMutation.isPending}
+						onCreate={() =>
+							createWorkspaceMutation.mutate(createWorkspaceMutationInput())
+						}
+					/>
 					{filteredWorkspaces.map((workspace) => (
 						<WorkspaceCard
 							key={workspace.id}
 							workspace={workspace}
-							onSelect={() => {
-								const session = useWorkspaceTabsStore
-									.getState()
-									.getSession(workspace.id);
-								const activeTab = session?.tabs.find(
-									(tab) => tab.id === session.activeTabId,
-								);
-
-								navigate({
-									to: "/workspaces/$workspaceId",
-									params: { workspaceId: workspace.id },
-									search: activeTab
-										? getWorkspaceTabSearch(activeTab)
-										: { tab: undefined, view: WORKSPACE_ROOT_VIEW },
-								});
-							}}
+							search={getWorkspaceCardSearch(workspace.id)}
 						/>
 					))}
 				</section>
@@ -154,28 +88,23 @@ function HomePage() {
 								<SearchX />
 							</EmptyMedia>
 							<EmptyTitle>
-								{hasActiveFilters
-									? "No matching workspaces"
-									: "No workspaces yet"}
+								{hasSearch ? "No matching workspaces" : "No workspaces yet"}
 							</EmptyTitle>
 							<EmptyDescription>
-								{hasActiveFilters
-									? "Try a different search or clear the current filters."
+								{hasSearch
+									? "Try a different search."
 									: "Create a workspace to start organizing your research."}
 							</EmptyDescription>
 						</EmptyHeader>
-						{hasActiveFilters ? (
+						{hasSearch ? (
 							<EmptyContent>
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
-									onClick={() => {
-										setQuery("");
-										setStatusFilter("all");
-									}}
+									onClick={() => setQuery("")}
 								>
-									Clear filters
+									Clear search
 								</Button>
 							</EmptyContent>
 						) : null}
@@ -184,4 +113,73 @@ function HomePage() {
 			</div>
 		</AppShell>
 	);
+}
+
+function HomePageSkeleton() {
+	return (
+		<AppShell
+			navbarControls={
+				<HomeSearchControl value="" onChange={() => {}} disabled={true} />
+			}
+		>
+			<div className="space-y-4">
+				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+					<CreateWorkspaceCard disabled={true} />
+					{homeWorkspaceSkeletonCardIds.map((id) => (
+						<WorkspaceCardSkeleton key={id} />
+					))}
+				</section>
+			</div>
+		</AppShell>
+	);
+}
+
+function HomeSearchControl({
+	value,
+	onChange,
+	disabled,
+}: {
+	value: string;
+	onChange: (value: string) => void;
+	disabled: boolean;
+}) {
+	return (
+		<div className="relative min-w-0 flex-1">
+			<Search
+				className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+				aria-hidden="true"
+			/>
+			<Input
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				placeholder="Search workspaces"
+				className="h-8 pl-8"
+				aria-label="Search workspaces"
+				disabled={disabled}
+			/>
+		</div>
+	);
+}
+
+const homeWorkspaceSkeletonCardIds = ["recent", "research", "notes"] as const;
+
+function WorkspaceCardSkeleton() {
+	return (
+		<div className="overflow-hidden rounded-md border border-border bg-card">
+			<div className="aspect-[5/2] animate-pulse bg-muted" />
+			<div className="space-y-3 p-5">
+				<div className="h-5 w-3/4 animate-pulse rounded-sm bg-muted" />
+				<div className="h-3 w-1/2 animate-pulse rounded-sm bg-muted" />
+			</div>
+		</div>
+	);
+}
+
+function getWorkspaceCardSearch(workspaceId: string) {
+	const session = useWorkspaceTabsStore.getState().getSession(workspaceId);
+	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
+
+	return activeTab
+		? getWorkspaceTabSearch(activeTab)
+		: { tab: undefined, view: WORKSPACE_ROOT_VIEW };
 }

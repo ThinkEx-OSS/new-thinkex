@@ -4,7 +4,7 @@ import {
 	KeyboardSensor,
 	PointerSensor,
 } from "@dnd-kit/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -14,6 +14,7 @@ import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDragCommand } from "#/features/workspaces/model/drag";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
@@ -22,7 +23,6 @@ import {
 	type WorkspacePane,
 	type WorkspacePresentation,
 } from "#/features/workspaces/state/workspace-ui-store";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -42,15 +42,22 @@ interface WorkspaceShellProps {
 	activeViewFromUrl?: string;
 }
 
+interface WorkspaceFrameProps {
+	topBar: ReactNode;
+	contextBar: ReactNode;
+	content: ReactNode;
+	chatPanel?: ReactNode;
+}
+
 export function WorkspaceShell({
 	workspace,
 	items,
 	activeTabIdFromUrl,
 	activeViewFromUrl,
 }: WorkspaceShellProps) {
-	const isCollapsed = useWorkspaceUiStore((state) => state.chatPanelCollapsed);
-	const presentation = useWorkspaceUiStore((state) => state.presentation);
-	const presentationHasChat = hasPaneKind(presentation, "chat");
+	const ensureWorkspaceUiSession = useWorkspaceUiStore(
+		(state) => state.ensureWorkspaceSession,
+	);
 	const {
 		activeItem,
 		activeTab,
@@ -70,6 +77,27 @@ export function WorkspaceShell({
 		activeTabIdFromUrl,
 		activeViewFromUrl,
 	});
+	const validItemIds = useMemo(() => new Set(itemsById.keys()), [itemsById]);
+	const uiSession = useWorkspaceUiStore(
+		(state) => state.sessionsByWorkspaceId[workspace.id],
+	);
+	const normalizedUiSession = useMemo(
+		() =>
+			uiSession ?? {
+				chatPanelCollapsed: false,
+				presentation: { mode: "standard" } as WorkspacePresentation,
+			},
+		[uiSession],
+	);
+	const { chatPanelCollapsed, presentation } = normalizedUiSession;
+	const presentationHasChat = hasPaneKind(presentation, "chat");
+
+	useEffect(() => {
+		ensureWorkspaceUiSession({
+			workspaceId: workspace.id,
+			validItemIds,
+		});
+	}, [ensureWorkspaceUiSession, validItemIds, workspace.id]);
 
 	if (!session || !activeTab) {
 		return <div className="min-h-screen bg-background text-foreground" />;
@@ -79,6 +107,7 @@ export function WorkspaceShell({
 		return (
 			<MaximizedWorkspaceSurface>
 				<WorkspacePaneRenderer
+					workspaceId={workspace.id}
 					pane={presentation.pane}
 					itemsById={itemsById}
 					scopedItems={scopedItems}
@@ -99,75 +128,102 @@ export function WorkspaceShell({
 				}
 			}}
 		>
-			<div className="min-h-screen bg-background text-foreground">
-				<ResizablePanelGroup
-					id="workspace-layout"
-					orientation="horizontal"
-					className="min-h-screen"
-					resizeTargetMinimumSize={{ coarse: 37, fine: 27 }}
-				>
-					<ResizablePanel id="workspace" minSize="45%">
-						<div className="min-h-screen min-w-0">
-							<WorkspaceTopBar
-								workspace={workspace}
-								itemsById={itemsById}
-								tabs={session.tabs}
-								activeTab={activeTab}
-								onActivateTab={activateWorkspaceTab}
-								onCloseTab={closeWorkspaceTab}
-								onCreateRootTab={createWorkspaceTab}
-							/>
-							<main className="bg-background">
-								<WorkspaceContextBar
-									workspace={workspace}
-									activeItem={activeItem}
-									itemsById={itemsById}
-									onCloseCurrentView={closeCurrentView}
-									onNavigateToRoot={openWorkspaceRoot}
-									onNavigateToItem={openItem}
-								/>
-								{presentation.mode === "split" ? (
-									<WorkspaceSplitPresentation
-										panes={presentation.panes}
-										direction={presentation.direction}
-										itemsById={itemsById}
-										scopedItems={scopedItems}
-										onOpenItem={openItem}
-									/>
-								) : (
-									<WorkspaceContent
-										items={scopedItems}
-										activeItem={activeItem}
-										onOpenItem={openItem}
-									/>
-								)}
-							</main>
-						</div>
-					</ResizablePanel>
-
-					{isCollapsed || presentationHasChat ? null : (
-						<>
-							<ResizableHandle
-								id="workspace-ai-chat-separator"
-								className="relative z-[45] -mx-[13px] hidden w-[27px] items-stretch justify-center bg-transparent outline-none after:hidden [&[data-separator=active]>div]:w-[3px] [&[data-separator=active]>div]:bg-ring [&[data-separator=hover]>div]:w-[3px] [&[data-separator=hover]>div]:bg-ring/70 lg:flex"
-								onPointerUp={(event) => event.currentTarget.blur()}
-							>
-								<div className="my-0 w-px bg-border transition-[background-color,width] duration-150" />
-							</ResizableHandle>
-							<ResizablePanel
-								id="ai-chat"
-								defaultSize="30rem"
-								minSize="26rem"
-								maxSize="60%"
-								className="hidden lg:block"
-							>
-								<AiChatPanel />
-							</ResizablePanel>
-						</>
-					)}
-				</ResizablePanelGroup>
-			</div>
+			<WorkspaceFrame
+				topBar={
+					<WorkspaceTopBar
+						workspace={workspace}
+						itemsById={itemsById}
+						tabs={session.tabs}
+						activeTab={activeTab}
+						onActivateTab={activateWorkspaceTab}
+						onCloseTab={closeWorkspaceTab}
+						onCreateRootTab={createWorkspaceTab}
+					/>
+				}
+				contextBar={
+					<WorkspaceContextBar
+						workspace={workspace}
+						activeItem={activeItem}
+						itemsById={itemsById}
+						onCloseCurrentView={closeCurrentView}
+						onNavigateToRoot={openWorkspaceRoot}
+						onNavigateToItem={openItem}
+					/>
+				}
+				content={
+					presentation.mode === "split" ? (
+						<WorkspaceSplitPresentation
+							workspaceId={workspace.id}
+							panes={presentation.panes}
+							direction={presentation.direction}
+							itemsById={itemsById}
+							scopedItems={scopedItems}
+							onOpenItem={openItem}
+						/>
+					) : (
+						<WorkspaceContent
+							items={scopedItems}
+							activeItem={activeItem}
+							onOpenItem={openItem}
+						/>
+					)
+				}
+				chatPanel={
+					chatPanelCollapsed || presentationHasChat ? undefined : (
+						<AiChatPanel workspaceId={workspace.id} />
+					)
+				}
+			/>
 		</DragDropProvider>
+	);
+}
+
+export function WorkspaceFrame({
+	topBar,
+	contextBar,
+	content,
+	chatPanel,
+}: WorkspaceFrameProps) {
+	return (
+		<div className="min-h-screen bg-background text-foreground">
+			<ResizablePanelGroup
+				id="workspace-layout"
+				orientation="horizontal"
+				className="min-h-screen"
+				resizeTargetMinimumSize={{ coarse: 37, fine: 27 }}
+			>
+				<ResizablePanel id="workspace" minSize="45%">
+					<div className="min-h-screen min-w-0">
+						{topBar}
+						<main className="bg-background">
+							{contextBar}
+							{content}
+						</main>
+					</div>
+				</ResizablePanel>
+
+				{chatPanel ? (
+					<>
+						<ResizableHandle
+							id="workspace-ai-chat-separator"
+							className="relative z-[45] -mx-[13px] hidden w-[27px] items-stretch justify-center bg-transparent outline-none after:hidden [&[data-separator=active]>div]:w-[3px] [&[data-separator=active]>div]:bg-ring [&[data-separator=hover]>div]:w-[3px] [&[data-separator=hover]>div]:bg-ring/70 lg:flex"
+							onPointerUp={(event) => event.currentTarget.blur()}
+						>
+							<div className="my-0 w-px bg-border transition-[background-color,width] duration-150" />
+						</ResizableHandle>
+						<ResizablePanel
+							id="ai-chat"
+							defaultSize="30rem"
+							minSize="26rem"
+							maxSize="60%"
+							className="hidden lg:block"
+						>
+							{chatPanel}
+						</ResizablePanel>
+					</>
+				) : null}
+			</ResizablePanelGroup>
+		</div>
 	);
 }
 
@@ -178,11 +234,13 @@ function MaximizedWorkspaceSurface({ children }: { children: ReactNode }) {
 }
 
 function WorkspacePaneRenderer({
+	workspaceId,
 	pane,
 	itemsById,
 	scopedItems,
 	onOpenItem,
 }: {
+	workspaceId: string;
 	pane: WorkspacePane;
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
@@ -190,7 +248,7 @@ function WorkspacePaneRenderer({
 }) {
 	switch (pane.kind) {
 		case "chat":
-			return <AiChatPanel />;
+			return <AiChatPanel workspaceId={workspaceId} />;
 		case "item": {
 			const item = itemsById.get(pane.itemId);
 
@@ -214,12 +272,14 @@ function WorkspacePaneRenderer({
 }
 
 function WorkspaceSplitPresentation({
+	workspaceId,
 	panes,
 	direction,
 	itemsById,
 	scopedItems,
 	onOpenItem,
 }: {
+	workspaceId: string;
 	panes: [WorkspacePane, WorkspacePane];
 	direction: "horizontal" | "vertical";
 	itemsById: Map<string, WorkspaceItem>;
@@ -234,6 +294,7 @@ function WorkspaceSplitPresentation({
 		>
 			<ResizablePanel id={panes[0].id} minSize="18rem">
 				<WorkspacePaneRenderer
+					workspaceId={workspaceId}
 					pane={panes[0]}
 					itemsById={itemsById}
 					scopedItems={scopedItems}
@@ -243,6 +304,7 @@ function WorkspaceSplitPresentation({
 			<ResizableHandle withHandle={true} />
 			<ResizablePanel id={panes[1].id} minSize="18rem">
 				<WorkspacePaneRenderer
+					workspaceId={workspaceId}
 					pane={panes[1]}
 					itemsById={itemsById}
 					scopedItems={scopedItems}

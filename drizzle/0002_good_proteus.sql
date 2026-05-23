@@ -1,0 +1,2 @@
+ALTER TABLE "workspace_members" ADD COLUMN "last_opened_at" timestamp;--> statement-breakpoint
+CREATE INDEX "workspace_members_user_last_opened_at_idx" ON "workspace_members" USING btree ("user_id","last_opened_at");

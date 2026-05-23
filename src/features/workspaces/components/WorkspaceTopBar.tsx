@@ -28,10 +28,10 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
 
 const workspaceCollaborators = [
@@ -80,7 +80,10 @@ export default function WorkspaceTopBar({
 	onCloseTab,
 	onCreateRootTab,
 }: WorkspaceTopBarProps) {
-	const isCollapsed = useWorkspaceUiStore((state) => state.chatPanelCollapsed);
+	const isCollapsed = useWorkspaceUiStore(
+		(state) =>
+			state.sessionsByWorkspaceId[workspace.id]?.chatPanelCollapsed ?? false,
+	);
 	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
 	const [shareOpen, setShareOpen] = useState(false);
 
@@ -130,7 +133,7 @@ export default function WorkspaceTopBar({
 							size="sm"
 							type="button"
 							className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-							onClick={openAiChat}
+							onClick={() => openAiChat(workspace.id)}
 						>
 							<MessageCircle className="size-3.5" />
 							<span className="hidden lg:inline">AI Chat</span>

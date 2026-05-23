@@ -17,29 +17,53 @@ export type WorkspacePresentation =
 	| {
 			mode: "maximized";
 			pane: WorkspacePane;
-			restorePresentation: Exclude<
-				WorkspacePresentation,
-				{ mode: "maximized" }
-			>;
+			restorePresentation: RestorableWorkspacePresentation;
 	  };
 
-type WorkspaceUiState = {
+type RestorableWorkspacePresentation = Exclude<
+	WorkspacePresentation,
+	{ mode: "maximized" }
+>;
+
+export type WorkspaceUiSession = {
 	chatPanelCollapsed: boolean;
 	presentation: WorkspacePresentation;
-	closeChatPanel: () => void;
-	openChatPanel: () => void;
-	toggleChatPanelCollapsed: () => void;
-	maximizeChat: () => void;
-	maximizeItem: (itemId: string) => void;
-	restorePresentation: () => void;
-	setSplitPresentation: (input: {
-		direction: "horizontal" | "vertical";
-		panes: [WorkspacePane, WorkspacePane];
-		activePaneId: string;
-	}) => void;
 };
 
-const standardPresentation: WorkspacePresentation = { mode: "standard" };
+type EnsureWorkspaceUiSessionInput = {
+	workspaceId: string;
+	validItemIds?: ReadonlySet<string>;
+};
+
+type WorkspaceUiState = {
+	sessionsByWorkspaceId: Record<string, WorkspaceUiSession>;
+	ensureWorkspaceSession: (
+		input: EnsureWorkspaceUiSessionInput,
+	) => WorkspaceUiSession;
+	closeChatPanel: (workspaceId: string) => void;
+	openChatPanel: (workspaceId: string) => void;
+	toggleChatPanelCollapsed: (workspaceId: string) => void;
+	maximizeChat: (workspaceId: string) => void;
+	maximizeItem: (workspaceId: string, itemId: string) => void;
+	restorePresentation: (workspaceId: string) => void;
+	setSplitPresentation: (
+		workspaceId: string,
+		input: {
+			direction: "horizontal" | "vertical";
+			panes: [WorkspacePane, WorkspacePane];
+			activePaneId: string;
+		},
+	) => void;
+	getSession: (workspaceId: string) => WorkspaceUiSession | undefined;
+};
+
+const standardPresentation: RestorableWorkspacePresentation = {
+	mode: "standard",
+};
+const defaultWorkspaceUiSession: WorkspaceUiSession = {
+	chatPanelCollapsed: false,
+	presentation: standardPresentation,
+};
 const chatPane: WorkspacePane = { id: "chat", kind: "chat" };
 
 function getRestorablePresentation(presentation: WorkspacePresentation) {
@@ -50,73 +74,189 @@ function getRestorablePresentation(presentation: WorkspacePresentation) {
 	return presentation;
 }
 
+function normalizeWorkspaceUiSession(
+	session: WorkspaceUiSession | undefined,
+	validItemIds?: ReadonlySet<string>,
+): WorkspaceUiSession {
+	const nextSession = session ?? defaultWorkspaceUiSession;
+	const presentation = normalizePresentation(
+		nextSession.presentation,
+		validItemIds,
+	);
+
+	return {
+		chatPanelCollapsed: nextSession.chatPanelCollapsed,
+		presentation,
+	};
+}
+
+function normalizePresentation(
+	presentation: WorkspacePresentation,
+	validItemIds?: ReadonlySet<string>,
+): WorkspacePresentation {
+	if (!validItemIds) {
+		return presentation;
+	}
+
+	if (presentation.mode === "standard") {
+		return presentation;
+	}
+
+	if (presentation.mode === "maximized") {
+		if (!isValidPane(presentation.pane, validItemIds)) {
+			return standardPresentation;
+		}
+
+		const normalizedRestorePresentation = normalizePresentation(
+			presentation.restorePresentation,
+			validItemIds,
+		);
+
+		if (normalizedRestorePresentation.mode === "maximized") {
+			return {
+				mode: "maximized",
+				pane: presentation.pane,
+				restorePresentation: standardPresentation,
+			};
+		}
+
+		return {
+			mode: "maximized",
+			pane: presentation.pane,
+			restorePresentation: normalizedRestorePresentation,
+		};
+	}
+
+	if (!presentation.panes.every((pane) => isValidPane(pane, validItemIds))) {
+		return standardPresentation;
+	}
+
+	return presentation;
+}
+
+function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
+	return pane.kind !== "item" || validItemIds.has(pane.itemId);
+}
+
+function updateWorkspaceUiSession(
+	state: WorkspaceUiState,
+	workspaceId: string,
+	updateSession: (session: WorkspaceUiSession) => WorkspaceUiSession,
+) {
+	const session = normalizeWorkspaceUiSession(
+		state.sessionsByWorkspaceId[workspaceId],
+	);
+
+	return {
+		sessionsByWorkspaceId: {
+			...state.sessionsByWorkspaceId,
+			[workspaceId]: updateSession(session),
+		},
+	};
+}
+
 export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 	persist(
-		(set) => ({
-			chatPanelCollapsed: false,
-			presentation: standardPresentation,
-			closeChatPanel: () =>
+		(set, get) => ({
+			sessionsByWorkspaceId: {},
+			ensureWorkspaceSession: ({ workspaceId, validItemIds }) => {
+				const nextSession = normalizeWorkspaceUiSession(
+					get().sessionsByWorkspaceId[workspaceId],
+					validItemIds,
+				);
+
 				set((state) => ({
-					chatPanelCollapsed: true,
-					presentation:
-						state.presentation.mode === "maximized" &&
-						state.presentation.pane.kind === "chat"
-							? state.presentation.restorePresentation
-							: state.presentation,
-				})),
-			openChatPanel: () =>
-				set((state) => ({
-					chatPanelCollapsed: false,
-					presentation: state.presentation,
-				})),
-			toggleChatPanelCollapsed: () =>
-				set((state) => ({
-					chatPanelCollapsed: !state.chatPanelCollapsed,
-					presentation:
-						state.presentation.mode === "maximized" &&
-						state.presentation.pane.kind === "chat"
-							? state.presentation.restorePresentation
-							: state.presentation,
-				})),
-			maximizeChat: () =>
-				set((state) => ({
-					chatPanelCollapsed: false,
-					presentation: {
-						mode: "maximized",
-						pane: chatPane,
-						restorePresentation: getRestorablePresentation(state.presentation),
+					sessionsByWorkspaceId: {
+						...state.sessionsByWorkspaceId,
+						[workspaceId]: nextSession,
 					},
-				})),
-			maximizeItem: (itemId) =>
-				set((state) => ({
-					presentation: {
-						mode: "maximized",
-						pane: { id: `item:${itemId}`, kind: "item", itemId },
-						restorePresentation: getRestorablePresentation(state.presentation),
-					},
-				})),
-			restorePresentation: () =>
-				set((state) => ({
-					presentation:
-						state.presentation.mode === "maximized"
-							? state.presentation.restorePresentation
-							: standardPresentation,
-				})),
-			setSplitPresentation: ({ direction, panes, activePaneId }) =>
-				set({
-					presentation: {
-						mode: "split",
-						direction,
-						panes,
-						activePaneId,
-					},
-				}),
+				}));
+
+				return nextSession;
+			},
+			closeChatPanel: (workspaceId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: true,
+						presentation:
+							session.presentation.mode === "maximized" &&
+							session.presentation.pane.kind === "chat"
+								? session.presentation.restorePresentation
+								: session.presentation,
+					})),
+				),
+			openChatPanel: (workspaceId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: false,
+						presentation: session.presentation,
+					})),
+				),
+			toggleChatPanelCollapsed: (workspaceId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: !session.chatPanelCollapsed,
+						presentation:
+							session.presentation.mode === "maximized" &&
+							session.presentation.pane.kind === "chat"
+								? session.presentation.restorePresentation
+								: session.presentation,
+					})),
+				),
+			maximizeChat: (workspaceId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: false,
+						presentation: {
+							mode: "maximized",
+							pane: chatPane,
+							restorePresentation: getRestorablePresentation(
+								session.presentation,
+							),
+						},
+					})),
+				),
+			maximizeItem: (workspaceId, itemId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: session.chatPanelCollapsed,
+						presentation: {
+							mode: "maximized",
+							pane: { id: `item:${itemId}`, kind: "item", itemId },
+							restorePresentation: getRestorablePresentation(
+								session.presentation,
+							),
+						},
+					})),
+				),
+			restorePresentation: (workspaceId) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: session.chatPanelCollapsed,
+						presentation:
+							session.presentation.mode === "maximized"
+								? session.presentation.restorePresentation
+								: standardPresentation,
+					})),
+				),
+			setSplitPresentation: (workspaceId, { direction, panes, activePaneId }) =>
+				set((state) =>
+					updateWorkspaceUiSession(state, workspaceId, (session) => ({
+						chatPanelCollapsed: session.chatPanelCollapsed,
+						presentation: {
+							mode: "split",
+							direction,
+							panes,
+							activePaneId,
+						},
+					})),
+				),
+			getSession: (workspaceId) => get().sessionsByWorkspaceId[workspaceId],
 		}),
 		{
-			name: "thinkex.workspace-ui.v1",
-			partialize: ({ chatPanelCollapsed, presentation }) => ({
-				chatPanelCollapsed,
-				presentation,
+			name: "thinkex.workspace-ui.v2",
+			partialize: (state) => ({
+				sessionsByWorkspaceId: state.sessionsByWorkspaceId,
 			}),
 		},
 	),

@@ -35,6 +35,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
 	getWorkspaceItemDisplay,
@@ -43,7 +44,6 @@ import {
 } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import type { WorkspaceSummary } from "#/lib/api/contracts";
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
@@ -65,7 +65,7 @@ export default function WorkspaceContextBar({
 	const isDocumentLikeView = Boolean(
 		activeItem && activeItem.type !== "folder",
 	);
-	const { Icon: WorkspaceIcon, accent } = getWorkspaceDisplay(workspace);
+	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchableItems = useMemo(
@@ -85,7 +85,7 @@ export default function WorkspaceContextBar({
 							<CrumbButton
 								icon={WorkspaceIcon}
 								label={workspace.name}
-								iconClassName={accent.text}
+								iconClassName={color.text}
 								isCurrent={!activeItem}
 								onClick={onNavigateToRoot}
 							/>
@@ -203,7 +203,7 @@ export default function WorkspaceContextBar({
 					<CommandInput placeholder="Search workspace..." />
 					<CommandList>
 						<CommandEmpty>No items found.</CommandEmpty>
-						<CommandGroup heading={workspace.name}>
+						<CommandGroup>
 							{searchableItems.map((item) => {
 								const { Icon, iconClassName, label } =
 									getWorkspaceItemDisplay(item);

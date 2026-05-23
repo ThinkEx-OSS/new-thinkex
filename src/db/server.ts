@@ -1,4 +1,3 @@
-import { env as workerEnv } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 
@@ -8,7 +7,12 @@ const HYPERDRIVE_BINDING_NAME = "HYPERDRIVE";
 const LOCAL_HYPERDRIVE_ENV_KEY =
 	"CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
 
-function getBindingConnectionString() {
+async function getBindingConnectionString() {
+	const importRuntime = new Function(
+		"specifier",
+		"return import(specifier)",
+	) as (specifier: string) => Promise<{ env: unknown }>;
+	const { env: workerEnv } = await importRuntime("cloudflare:workers");
 	const bindings = workerEnv as unknown as Record<string, unknown>;
 	const hyperdrive = bindings[HYPERDRIVE_BINDING_NAME] as
 		| { connectionString?: string }
@@ -25,11 +29,11 @@ function getDirectConnectionString() {
 	return process.env.DATABASE_URL?.trim() || null;
 }
 
-export function getRuntimeConnectionString() {
+export async function getRuntimeConnectionString() {
 	const connectionString =
-		getBindingConnectionString() ||
 		getDirectConnectionString() ||
-		getLocalHyperdriveConnectionString();
+		getLocalHyperdriveConnectionString() ||
+		(await getBindingConnectionString());
 
 	if (!connectionString) {
 		throw new Error(
@@ -47,7 +51,7 @@ export function getRuntimeConnectionString() {
 
 export async function createDbContext() {
 	const client = new Client({
-		connectionString: getRuntimeConnectionString(),
+		connectionString: await getRuntimeConnectionString(),
 	});
 
 	await client.connect();

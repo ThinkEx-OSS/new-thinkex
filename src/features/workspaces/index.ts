@@ -1,8 +1,8 @@
 export { default as CreateWorkspaceCard } from "./components/CreateWorkspaceCard";
 export { default as WorkspaceCard } from "./components/WorkspaceCard";
 export { WorkspaceShell } from "./components/WorkspaceLayout";
-export { listMockWorkspaceItems } from "./data/mock-workspace-items";
-export { listMockWorkspaces } from "./data/mock-workspaces";
+export { default as WorkspacePageSkeleton } from "./components/WorkspacePageSkeleton";
+export { default as WorkspaceSettingsDialog } from "./components/WorkspaceSettingsDialog";
 export {
 	getWorkspaceTabSearch,
 	WORKSPACE_ROOT_VIEW,
@@ -14,3 +14,10 @@ export {
 	type WorkspacePane,
 	type WorkspacePresentation,
 } from "./state/workspace-ui-store";
+export {
+	createWorkspaceMutationInput,
+	useCreateWorkspaceMutation,
+} from "./use-create-workspace";
+export { useDeleteWorkspaceMutation } from "./use-delete-workspace";
+export { useRecordWorkspaceOpenedMutation } from "./use-record-workspace-opened";
+export { useUpdateWorkspaceMutation } from "./use-update-workspace";

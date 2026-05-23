@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Laptop, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { toast } from "sonner";
 
 import { type Theme, useTheme } from "#/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
@@ -16,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { authClient } from "#/lib/auth-client";
+import { getErrorMessage } from "#/lib/error-message";
 import { removeAuthSession } from "#/lib/session-query";
 
 const userMenuTriggerClassName =
@@ -47,11 +49,16 @@ export default function UserProfileDropdown() {
 	const { theme, setTheme } = useTheme();
 	const { data: session, isPending, refetch } = authClient.useSession();
 	const handleSignOut = async () => {
-		await authClient.signOut();
-		await refetch();
-		removeAuthSession(queryClient);
-		await router.invalidate();
-		await navigate({ to: "/" });
+		try {
+			await authClient.signOut();
+			await refetch();
+			removeAuthSession(queryClient);
+			await router.invalidate();
+			await navigate({ to: "/" });
+			toast.success("Signed out");
+		} catch (error) {
+			toast.error(getErrorMessage(error, "Unable to sign out right now."));
+		}
 	};
 
 	if (isPending) {

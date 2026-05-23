@@ -40,11 +40,11 @@ export default function AppShell({
 					) : null}
 
 					<nav
-						className="flex shrink-0 items-center justify-end gap-2"
+						className="flex shrink-0 items-center justify-end"
 						aria-label="Site"
 					>
 						<Button
-							variant="outline"
+							variant="ghost"
 							size="sm"
 							type="button"
 							className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
@@ -57,7 +57,9 @@ export default function AppShell({
 							<span>Feedback</span>
 						</Button>
 						<ModeToggle className="shrink-0" />
-						<UserProfileDropdown />
+						<div className="ml-2 flex shrink-0">
+							<UserProfileDropdown />
+						</div>
 					</nav>
 				</div>
 			</header>

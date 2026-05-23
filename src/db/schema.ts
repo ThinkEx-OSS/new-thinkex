@@ -188,6 +188,7 @@ export const workspaceMembers = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		role: workspaceRole("role").default("viewer").notNull(),
+		lastOpenedAt: timestamp("last_opened_at"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -200,6 +201,10 @@ export const workspaceMembers = pgTable(
 			table.userId,
 		),
 		index("workspace_members_user_id_idx").on(table.userId),
+		index("workspace_members_user_last_opened_at_idx").on(
+			table.userId,
+			table.lastOpenedAt,
+		),
 	],
 );
 

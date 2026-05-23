@@ -4,9 +4,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
+import { getErrorMessage } from "#/lib/error-message";
 import { refreshAuthSession, removeAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
@@ -66,11 +68,18 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							type="button"
 							variant="outline"
 							onClick={async () => {
-								await authClient.signOut();
-								await refetch();
-								removeAuthSession(queryClient);
-								await router.invalidate();
-								await navigate({ to: "/" });
+								try {
+									await authClient.signOut();
+									await refetch();
+									removeAuthSession(queryClient);
+									await router.invalidate();
+									await navigate({ to: "/" });
+									toast.success("Signed out");
+								} catch (error) {
+									toast.error(
+										getErrorMessage(error, "Unable to sign out right now."),
+									);
+								}
 							}}
 						>
 							Sign out
@@ -98,8 +107,11 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							await refetch();
 							await refreshAuthSession(queryClient);
 							await router.invalidate();
-						} catch {
+						} catch (error) {
 							setErrorMessage("Failed to sign in with Google");
+							toast.error(
+								getErrorMessage(error, "Failed to sign in with Google"),
+							);
 							setIsLoading(false);
 						}
 					}}

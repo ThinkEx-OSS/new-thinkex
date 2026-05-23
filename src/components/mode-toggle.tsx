@@ -12,7 +12,7 @@ export function ModeToggle({ className }: { className?: string }) {
 
 	return (
 		<Button
-			variant="outline"
+			variant="ghost"
 			size="icon-sm"
 			className={cn(
 				"size-8 text-muted-foreground hover:text-foreground",
