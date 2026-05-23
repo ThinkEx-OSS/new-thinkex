@@ -55,7 +55,12 @@ export default function UserProfileDropdown() {
 	};
 
 	if (isPending) {
-		return <div className="size-7 animate-pulse rounded-full bg-muted" />;
+		return (
+			<div
+				className="size-8 shrink-0 animate-pulse rounded-full bg-muted"
+				aria-hidden="true"
+			/>
+		);
 	}
 
 	if (session?.user) {
