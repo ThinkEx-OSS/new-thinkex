@@ -9,3 +9,8 @@ export {
 } from "./model/tabs";
 export type { WorkspaceItem } from "./model/types";
 export { useWorkspaceTabsStore } from "./state/workspace-tabs-store";
+export {
+	useWorkspaceUiStore,
+	type WorkspacePane,
+	type WorkspacePresentation,
+} from "./state/workspace-ui-store";
