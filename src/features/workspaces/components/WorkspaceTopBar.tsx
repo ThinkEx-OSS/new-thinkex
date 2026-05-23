@@ -4,12 +4,6 @@ import { type ReactNode, useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarGroup,
-	AvatarGroupCount,
-} from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import {
 	Dialog,
@@ -20,46 +14,15 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "#/components/ui/hover-card";
+import { Field, FieldGroup } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePresence";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
-import { cn } from "#/lib/utils";
-
-const workspaceCollaborators = [
-	{
-		name: "Urjit",
-		role: "Owner",
-		initials: "U",
-		className: "bg-sky-500 text-white",
-	},
-	{
-		name: "Avery",
-		role: "Editor",
-		initials: "A",
-		className: "bg-emerald-500 text-white",
-	},
-	{
-		name: "Mira",
-		role: "Viewer",
-		initials: "M",
-		className: "bg-violet-500 text-white",
-	},
-	{
-		name: "Noah",
-		role: "Viewer",
-		initials: "N",
-		className: "bg-amber-500 text-white",
-	},
-];
 
 interface WorkspaceTopBarProps {
 	workspace: WorkspaceSummary;
@@ -127,7 +90,7 @@ export default function WorkspaceTopBar({
 					>
 						<Share2 className="size-3.5" />
 					</Button>
-					<WorkspaceCollaborators />
+					<WorkspacePresence workspaceId={workspace.id} />
 					<UserProfileDropdown />
 					{isCollapsed ? (
 						<Button
@@ -152,22 +115,22 @@ export default function WorkspaceTopBar({
 							Invite people to collaborate on {workspace.name}.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-4">
-						<div className="space-y-2">
+					<FieldGroup className="min-w-0 gap-4">
+						<Field>
 							<Label htmlFor="workspace-share-email">Email address</Label>
 							<Input
 								id="workspace-share-email"
 								type="email"
 								placeholder="teammate@example.com"
 							/>
-						</div>
-						<div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+						</Field>
+						<div className="min-w-0 rounded-md border bg-muted/30 px-3 py-2 text-sm">
 							<div className="font-medium">Workspace link</div>
 							<div className="truncate text-muted-foreground">
 								thinkex.app/workspaces/{workspace.id}
 							</div>
 						</div>
-					</div>
+					</FieldGroup>
 					<DialogFooter>
 						<DialogClose asChild>
 							<Button type="button" variant="outline">
@@ -181,57 +144,5 @@ export default function WorkspaceTopBar({
 				</DialogContent>
 			</Dialog>
 		</header>
-	);
-}
-
-function WorkspaceCollaborators() {
-	return (
-		<HoverCard openDelay={300}>
-			<HoverCardTrigger asChild>
-				<AvatarGroup
-					tabIndex={0}
-					aria-label="Workspace collaborators"
-					className="cursor-default rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					{workspaceCollaborators.slice(0, 2).map((collaborator) => (
-						<Avatar key={collaborator.name} size="sm">
-							<AvatarFallback className={collaborator.className}>
-								{collaborator.initials}
-							</AvatarFallback>
-						</Avatar>
-					))}
-					<AvatarGroupCount className="size-6 text-xs">
-						+{workspaceCollaborators.length - 2}
-					</AvatarGroupCount>
-				</AvatarGroup>
-			</HoverCardTrigger>
-
-			<HoverCardContent align="end" className="w-56 rounded-md p-2">
-				<div className="space-y-1">
-					{workspaceCollaborators.map((collaborator) => (
-						<div
-							key={collaborator.name}
-							className="flex items-center gap-2 rounded-sm px-2 py-1.5"
-						>
-							<Avatar size="sm">
-								<AvatarFallback
-									className={cn("text-xs", collaborator.className)}
-								>
-									{collaborator.initials}
-								</AvatarFallback>
-							</Avatar>
-							<div className="min-w-0">
-								<p className="truncate text-sm font-medium">
-									{collaborator.name}
-								</p>
-								<p className="truncate text-xs text-muted-foreground">
-									{collaborator.role}
-								</p>
-							</div>
-						</div>
-					))}
-				</div>
-			</HoverCardContent>
-		</HoverCard>
 	);
 }

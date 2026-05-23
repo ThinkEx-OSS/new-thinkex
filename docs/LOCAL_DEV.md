@@ -1,51 +1,37 @@
 # Local Development
 
-ThinkEx has two local runtime modes on purpose.
+Use three commands. Do not set database driver flags manually.
 
-## Default App Development
-
-Use this for normal product work:
+## Normal App Work
 
 ```bash
 pnpm dev
 ```
 
-`pnpm dev` is equivalent to `pnpm dev:node`. It runs TanStack Start through Vite in the local Node runtime and uses `DATABASE_URL`.
+Use this for UI, routes, server functions, auth, Drizzle, TanStack Query, and general product work. It uses `DATABASE_URL` directly and does not run Durable Objects.
 
-This is the fastest and most reliable inner loop for UI, route, server-function, auth, and Drizzle work. It avoids the local Cloudflare Workers socket path, which has been unstable with our Supabase/Postgres connection during development.
-
-## Cloudflare Runtime Testing
-
-Use this only when you need to test Workers-specific behavior, bindings, or runtime compatibility:
+## Realtime / Worker Work
 
 ```bash
 pnpm dev:cloudflare
 ```
 
-This enables the Cloudflare Vite plugin with `CLOUDFLARE_DEV=true`. For local Hyperdrive testing, set:
+Use this when you need local Cloudflare Worker behavior, especially Durable Objects and workspace presence. The script still forces direct database access through `DATABASE_URL`, so local realtime testing does not depend on Hyperdrive.
+
+## Production-Like Hyperdrive Check
 
 ```bash
-CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://...
+pnpm dev:hyperdrive
 ```
 
-Local Hyperdrive mode still connects to the configured database directly; it does not exercise Cloudflare's production Hyperdrive caching layer.
+Use this rarely, only to validate the deployed Hyperdrive path. It runs through Cloudflare remote development and can touch remote resources.
 
-## Remote Worker Validation
+Do not use this as the main presence test. Wrangler remote development currently warns that SQLite Durable Objects are local-only in remote mode. Use `pnpm dev:cloudflare` for workspace presence.
 
-Use this for production-like Cloudflare validation:
-
-```bash
-pnpm dev:remote
-```
-
-Remote dev runs against Cloudflare's remote runtime and real bindings. It is slower than local Vite dev, so it should be used as a validation step rather than the default development loop.
-
-## Deployment
-
-Production builds use the Cloudflare Vite plugin and deploy through Wrangler:
+## Deploy
 
 ```bash
 pnpm deploy
 ```
 
-Production should use the `HYPERDRIVE` binding from `wrangler.jsonc`. Do not add a production `DATABASE_URL` Worker secret unless you intentionally want to bypass Hyperdrive.
+Deploy uses Hyperdrive through the `HYPERDRIVE` binding. The default Worker variable in `wrangler.jsonc` is `THINKEX_DB_DRIVER=hyperdrive`, while local dev scripts override it to direct database access.

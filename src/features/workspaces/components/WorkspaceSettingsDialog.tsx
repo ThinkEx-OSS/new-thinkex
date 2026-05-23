@@ -18,6 +18,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
+import { Field, FieldGroup } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import type {
@@ -100,8 +101,8 @@ export default function WorkspaceSettingsDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-5">
-					<div className="space-y-2">
+				<FieldGroup className="gap-5">
+					<Field>
 						<Label htmlFor={nameInputId}>Name</Label>
 						<Input
 							id={nameInputId}
@@ -110,9 +111,9 @@ export default function WorkspaceSettingsDialog({
 							maxLength={120}
 							aria-invalid={normalizedName.length === 0}
 						/>
-					</div>
+					</Field>
 
-					<div className="space-y-2">
+					<Field>
 						<Label>Icon</Label>
 						<div className="grid grid-cols-4 gap-2">
 							{workspaceIconOptions.map(({ value, label, Icon }) => (
@@ -133,9 +134,9 @@ export default function WorkspaceSettingsDialog({
 								</button>
 							))}
 						</div>
-					</div>
+					</Field>
 
-					<div className="space-y-2">
+					<Field>
 						<Label>Color</Label>
 						<div className="grid grid-cols-4 gap-2">
 							{workspaceColorOptions.map((option) => (
@@ -159,14 +160,14 @@ export default function WorkspaceSettingsDialog({
 								</button>
 							))}
 						</div>
-					</div>
+					</Field>
 
 					{updateError || deleteError ? (
 						<p className="text-destructive text-sm">
 							{deleteError ?? updateError}
 						</p>
 					) : null}
-				</div>
+				</FieldGroup>
 
 				<DialogFooter className="items-center sm:justify-between">
 					<HoldToDeleteButton

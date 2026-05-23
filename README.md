@@ -39,7 +39,7 @@ pnpm dev:cloudflare
 To test the deployed Worker path with the real Hyperdrive binding, run:
 
 ```bash
-pnpm dev:remote
+pnpm dev:hyperdrive
 ```
 
 See `docs/LOCAL_DEV.md` for the full local runtime split.
@@ -53,7 +53,6 @@ The main env vars currently used by the app are:
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `DATABASE_URL`
-- `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` for local Hyperdrive development
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `VITE_POSTHOG_KEY`
@@ -64,10 +63,9 @@ Use `.env.example` as the tracked reference. Keep real values in `.env.local`.
 Recommended setup:
 
 - Set `DATABASE_URL` to the Supabase pooler URL with `?sslmode=require` for day-to-day local development.
-- Set `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` only when running `pnpm dev:cloudflare` and you need a local Hyperdrive connection override.
-- Use `pnpm dev` or `pnpm dev:node` for normal local work.
-- Use `pnpm dev:cloudflare` when you specifically want to exercise the local Cloudflare runtime.
-- Use `pnpm dev:remote` when you specifically want to exercise the remote Cloudflare Worker runtime and Hyperdrive binding.
+- Use `pnpm dev` for normal local work.
+- Use `pnpm dev:cloudflare` when you need local Durable Objects or Worker runtime behavior.
+- Use `pnpm dev:hyperdrive` only when you specifically want to exercise the remote Cloudflare Worker runtime and Hyperdrive binding.
 
 ## Database
 
@@ -85,13 +83,11 @@ For local Drizzle commands, `drizzle.config.ts` loads `.env.local` and `.env`.
 ```bash
 pnpm dev
 pnpm dev:cloudflare
+pnpm dev:hyperdrive
 pnpm build
-pnpm test
 pnpm check
 pnpm deploy
 ```
-
-`pnpm test` uses the Cloudflare worker test pool and needs either `DATABASE_URL` or `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` set locally.
 
 ## Git Hygiene
 

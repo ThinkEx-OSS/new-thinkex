@@ -4,6 +4,8 @@
 declare namespace Cloudflare {
 	interface Env {
 		HYPERDRIVE: Hyperdrive;
+		WorkspaceRoom: DurableObjectNamespace<import("./src/features/workspaces/realtime/workspace-room").WorkspaceRoom>;
+		THINKEX_DB_DRIVER: string;
 		ANTHROPIC_API_KEY: string;
 		DATABASE_URL: string;
 		CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: string;
@@ -19,7 +21,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ANTHROPIC_API_KEY" | "DATABASE_URL" | "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE" | "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "VITE_POSTHOG_KEY" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "THINKEX_DB_DRIVER" | "ANTHROPIC_API_KEY" | "DATABASE_URL" | "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE" | "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "VITE_POSTHOG_KEY" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">> {}
 }
 
 // Begin runtime types

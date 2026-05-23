@@ -7,13 +7,28 @@
 	"name": "new-thinkex",
 	"compatibility_date": "2025-09-02",
 	"compatibility_flags": ["nodejs_compat"],
-	"main": "@tanstack/react-start/server-entry",
+	"main": "src/server.ts",
 	"observability": {
 		"enabled": true
 	},
+	"vars": {
+		"THINKEX_DB_DRIVER": "hyperdrive"
+	},
 	"upload_source_maps": true,
-	// Local dev: set CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE in .dev.vars
-	// (or export it) so the HYPERDRIVE binding can reach Supabase without committing the URL here.
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "WorkspaceRoom",
+				"class_name": "WorkspaceRoom"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1_workspace_room",
+			"new_sqlite_classes": ["WorkspaceRoom"]
+		}
+	],
 	"hyperdrive": [
 		{
 			"binding": "HYPERDRIVE",

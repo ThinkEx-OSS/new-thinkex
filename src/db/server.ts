@@ -4,15 +4,17 @@ import { Client } from "pg";
 import * as schema from "./schema";
 
 const HYPERDRIVE_BINDING_NAME = "HYPERDRIVE";
-const LOCAL_HYPERDRIVE_ENV_KEY =
-	"CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
+const DATABASE_DRIVER_ENV_KEY = "THINKEX_DB_DRIVER";
 
 async function getBindingConnectionString() {
-	const importRuntime = new Function(
-		"specifier",
-		"return import(specifier)",
-	) as (specifier: string) => Promise<{ env: unknown }>;
-	const { env: workerEnv } = await importRuntime("cloudflare:workers");
+	let workerEnv: unknown;
+
+	try {
+		({ env: workerEnv } = await import("cloudflare:workers"));
+	} catch {
+		return null;
+	}
+
 	const bindings = workerEnv as unknown as Record<string, unknown>;
 	const hyperdrive = bindings[HYPERDRIVE_BINDING_NAME] as
 		| { connectionString?: string }
@@ -21,27 +23,27 @@ async function getBindingConnectionString() {
 	return hyperdrive?.connectionString?.trim() || null;
 }
 
-function getLocalHyperdriveConnectionString() {
-	return process.env[LOCAL_HYPERDRIVE_ENV_KEY]?.trim() || null;
-}
-
 function getDirectConnectionString() {
 	return process.env.DATABASE_URL?.trim() || null;
 }
 
+function shouldUseHyperdrive() {
+	return (
+		process.env[DATABASE_DRIVER_ENV_KEY]?.trim().toLowerCase() === "hyperdrive"
+	);
+}
+
 export async function getRuntimeConnectionString() {
-	const connectionString =
-		getDirectConnectionString() ||
-		getLocalHyperdriveConnectionString() ||
-		(await getBindingConnectionString());
+	const connectionString = shouldUseHyperdrive()
+		? await getBindingConnectionString()
+		: getDirectConnectionString();
 
 	if (!connectionString) {
 		throw new Error(
 			[
 				"No database connection string is configured.",
-				`Set the ${HYPERDRIVE_BINDING_NAME} Hyperdrive binding for the Worker runtime,`,
-				"or DATABASE_URL for local database access,",
-				`or ${LOCAL_HYPERDRIVE_ENV_KEY} to override the local connection string used by wrangler dev.`,
+				`Set DATABASE_URL for local development,`,
+				`or set ${DATABASE_DRIVER_ENV_KEY}=hyperdrive with the ${HYPERDRIVE_BINDING_NAME} binding.`,
 			].join(" "),
 		);
 	}
