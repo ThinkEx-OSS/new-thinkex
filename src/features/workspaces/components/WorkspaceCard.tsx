@@ -82,6 +82,7 @@ export default function WorkspaceCard({
 					<Button
 						variant="ghost"
 						size="icon-sm"
+						className="text-muted-foreground hover:text-foreground"
 						aria-label={`Open settings for ${workspace.name}`}
 						onClick={(event) => {
 							event.stopPropagation();
