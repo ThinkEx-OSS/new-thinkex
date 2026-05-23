@@ -175,9 +175,9 @@ function WorkspaceTabItem({
 			{showDivider ? <WorkspaceTabDivider isVisible={showDividerLine} /> : null}
 			<div
 				className={cn(
-					"group/tab flex min-w-0 flex-1 touch-none items-center border text-sm",
+					"workspace-tab-chrome group/tab flex min-w-0 flex-1 touch-none items-center border text-sm",
 					showAttachedChrome
-						? "workspace-tab-active h-8 text-foreground"
+						? "workspace-tab-chrome-attached h-8 text-foreground"
 						: isActive
 							? "h-8 rounded-md border-transparent bg-workspace-chrome-active text-foreground"
 							: "h-8 rounded-md border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
