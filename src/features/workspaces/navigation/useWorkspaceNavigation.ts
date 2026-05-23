@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo } from "react";
+import type { WorkspaceDragCommand } from "#/features/workspaces/model/drag";
 import {
 	getTabViewKey,
 	getWorkspaceTabSearch,
@@ -43,6 +44,8 @@ export function useWorkspaceNavigation({
 	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
 	const replaceTabView = useWorkspaceTabsStore((state) => state.replaceTabView);
 	const activateTab = useWorkspaceTabsStore((state) => state.activateTab);
+	const reorderTabs = useWorkspaceTabsStore((state) => state.reorderTabs);
+	const moveTab = useWorkspaceTabsStore((state) => state.moveTab);
 	const closeTab = useWorkspaceTabsStore((state) => state.closeTab);
 	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
 	const activeItem = activeTab?.viewItemId
@@ -141,6 +144,30 @@ export function useWorkspaceNavigation({
 		activateTab({ workspaceId: workspace.id, tabId: tab.id });
 		navigateToTab(tab);
 	};
+	const reorderWorkspaceTabs = (activeTabId: string, overTabId: string) => {
+		reorderTabs({
+			workspaceId: workspace.id,
+			activeTabId,
+			overTabId,
+		});
+	};
+	const dispatchWorkspaceDragCommand = (command: WorkspaceDragCommand) => {
+		switch (command.type) {
+			case "move-tab-in-strip":
+				moveTab({
+					workspaceId: workspace.id,
+					tabId: command.tabId,
+					toIndex: command.toIndex,
+				});
+				break;
+			case "reorder-tabs-over-tab":
+				reorderWorkspaceTabs(command.activeTabId, command.overTabId);
+				break;
+			case "split-tab":
+			case "move-tab-to-pane":
+				break;
+		}
+	};
 	const closeWorkspaceTab = (tab: WorkspaceTab) => {
 		const nextSession = closeTab({ workspaceId: workspace.id, tabId: tab.id });
 		const nextActiveTab =
@@ -194,5 +221,7 @@ export function useWorkspaceNavigation({
 		scopedItems,
 		session,
 		activateWorkspaceTab,
+		dispatchWorkspaceDragCommand,
+		reorderWorkspaceTabs,
 	};
 }

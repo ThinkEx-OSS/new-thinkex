@@ -1,7 +1,10 @@
+import { useSortable } from "@dnd-kit/react/sortable";
 import { FileQuestion, type LucideIcon, Plus, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
+import { WORKSPACE_TAB_DRAG_TYPE } from "#/features/workspaces/model/drag";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { findItemForTab } from "#/features/workspaces/model/tabs";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -61,6 +64,7 @@ export default function WorkspaceTabBar({
 						<WorkspaceTabItem
 							key={tab.id}
 							tab={tab}
+							index={index}
 							title={title}
 							TabIcon={TabIcon}
 							iconClassName={iconClassName}
@@ -73,6 +77,7 @@ export default function WorkspaceTabBar({
 					);
 				})}
 			</div>
+			<WorkspaceTabDivider />
 			<Button
 				variant="ghost"
 				size="icon-sm"
@@ -86,8 +91,13 @@ export default function WorkspaceTabBar({
 	);
 }
 
+export function WorkspaceTabDivider() {
+	return <div className="h-4 w-px shrink-0 bg-border/70" aria-hidden="true" />;
+}
+
 interface WorkspaceTabItemProps {
 	tab: WorkspaceTab;
+	index: number;
 	title: string;
 	TabIcon: LucideIcon;
 	iconClassName?: string;
@@ -99,6 +109,8 @@ interface WorkspaceTabItemProps {
 }
 
 function WorkspaceTabItem({
+	tab,
+	index,
 	title,
 	TabIcon,
 	iconClassName,
@@ -108,22 +120,50 @@ function WorkspaceTabItem({
 	onActivate,
 	onClose,
 }: WorkspaceTabItemProps) {
+	const [element, setElement] = useState<Element | null>(null);
+	const handleRef = useRef<HTMLButtonElement | null>(null);
+	const { isDragSource, isDropTarget } = useSortable({
+		id: tab.id,
+		index,
+		element,
+		handle: handleRef,
+		type: WORKSPACE_TAB_DRAG_TYPE,
+		transition: {
+			duration: 160,
+			easing: "cubic-bezier(0.2, 0, 0, 1)",
+			idle: false,
+		},
+		data: {
+			tabId: tab.id,
+		},
+	});
+
 	return (
-		<div className={TAB_ITEM_CLASS}>
-			{showDivider ? (
-				<div className="h-4 w-px shrink-0 bg-border/70" aria-hidden="true" />
-			) : null}
+		<div
+			ref={setElement}
+			className={cn(
+				TAB_ITEM_CLASS,
+				isDragSource && "opacity-70",
+				isDropTarget && "rounded-md bg-muted/50",
+			)}
+		>
+			{showDivider ? <WorkspaceTabDivider /> : null}
 			<div
 				className={cn(
-					"group/tab flex h-7 min-w-0 flex-1 items-center rounded-md border text-sm",
+					"group/tab flex h-7 min-w-0 flex-1 touch-none items-center rounded-md border text-sm",
 					isActive
 						? "border-transparent bg-muted/30 text-foreground"
 						: "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+					isDragSource && "cursor-grabbing",
 				)}
 			>
 				<button
+					ref={handleRef}
 					type="button"
-					className="flex h-full min-w-0 flex-1 items-center gap-1.5 py-0 pr-px pl-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					className={cn(
+						"flex h-full min-w-0 flex-1 touch-none items-center gap-1.5 py-0 pr-px pl-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+						isDragSource && "cursor-grabbing",
+					)}
 					onClick={onActivate}
 				>
 					<TabIcon

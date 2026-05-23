@@ -42,6 +42,16 @@ type WorkspaceTabsState = {
 		viewItemId?: string;
 	}) => WorkspaceTab;
 	activateTab: (input: { workspaceId: string; tabId: string }) => void;
+	reorderTabs: (input: {
+		workspaceId: string;
+		activeTabId: string;
+		overTabId: string;
+	}) => void;
+	moveTab: (input: {
+		workspaceId: string;
+		tabId: string;
+		toIndex: number;
+	}) => void;
 	closeTab: (input: {
 		workspaceId: string;
 		tabId: string;
@@ -162,6 +172,75 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 							[workspaceId]: {
 								...session,
 								activeTabId: tabId,
+							},
+						},
+					};
+				});
+			},
+			reorderTabs: ({ workspaceId, activeTabId, overTabId }) => {
+				if (activeTabId === overTabId) {
+					return;
+				}
+
+				set((state) => {
+					const session = state.sessionsByWorkspaceId[workspaceId];
+
+					if (!session) {
+						return state;
+					}
+
+					const activeIndex = session.tabs.findIndex(
+						(tab) => tab.id === activeTabId,
+					);
+					const overIndex = session.tabs.findIndex(
+						(tab) => tab.id === overTabId,
+					);
+
+					if (activeIndex === -1 || overIndex === -1) {
+						return state;
+					}
+
+					const nextTabs = session.tabs.slice();
+					nextTabs.splice(overIndex, 0, nextTabs.splice(activeIndex, 1)[0]);
+
+					return {
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: {
+								...session,
+								tabs: nextTabs,
+							},
+						},
+					};
+				});
+			},
+			moveTab: ({ workspaceId, tabId, toIndex }) => {
+				set((state) => {
+					const session = state.sessionsByWorkspaceId[workspaceId];
+
+					if (!session) {
+						return state;
+					}
+
+					const fromIndex = session.tabs.findIndex((tab) => tab.id === tabId);
+					const boundedToIndex = Math.max(
+						0,
+						Math.min(toIndex, session.tabs.length - 1),
+					);
+
+					if (fromIndex === -1 || fromIndex === boundedToIndex) {
+						return state;
+					}
+
+					const nextTabs = session.tabs.slice();
+					nextTabs.splice(boundedToIndex, 0, nextTabs.splice(fromIndex, 1)[0]);
+
+					return {
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: {
+								...session,
+								tabs: nextTabs,
 							},
 						},
 					};

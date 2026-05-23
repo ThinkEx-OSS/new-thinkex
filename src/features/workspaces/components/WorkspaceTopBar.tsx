@@ -10,12 +10,17 @@ import {
 	AvatarGroupCount,
 } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "#/components/ui/hover-card";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
+import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 import type { WorkspaceSummary } from "#/lib/api/contracts";
 import { cn } from "#/lib/utils";
-import { useAiChatPanelStore } from "#/stores/ai-chat-panel";
 
 const workspaceCollaborators = [
 	{
@@ -63,8 +68,8 @@ export default function WorkspaceTopBar({
 	onCloseTab,
 	onCreateRootTab,
 }: WorkspaceTopBarProps) {
-	const isCollapsed = useAiChatPanelStore((state) => state.isCollapsed);
-	const openAiChat = useAiChatPanelStore((state) => state.open);
+	const isCollapsed = useWorkspaceUiStore((state) => state.chatPanelCollapsed);
+	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
 
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
@@ -79,9 +84,6 @@ export default function WorkspaceTopBar({
 							ThinkEx
 						</span>
 					</Link>
-
-					<div className="h-5 w-px bg-border/70" aria-hidden="true" />
-
 					<WorkspaceTabBar
 						workspace={workspace}
 						itemsById={itemsById}
@@ -145,25 +147,27 @@ export default function WorkspaceTopBar({
 
 function WorkspaceCollaborators() {
 	return (
-		<div className="group/collaborators relative">
-			<AvatarGroup
-				tabIndex={0}
-				aria-label="Workspace collaborators"
-				className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-			>
-				{workspaceCollaborators.slice(0, 2).map((collaborator) => (
-					<Avatar key={collaborator.name} size="sm">
-						<AvatarFallback className={collaborator.className}>
-							{collaborator.initials}
-						</AvatarFallback>
-					</Avatar>
-				))}
-				<AvatarGroupCount className="size-6 text-xs">
-					+{workspaceCollaborators.length - 2}
-				</AvatarGroupCount>
-			</AvatarGroup>
+		<HoverCard openDelay={300}>
+			<HoverCardTrigger asChild>
+				<AvatarGroup
+					tabIndex={0}
+					aria-label="Workspace collaborators"
+					className="cursor-default rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				>
+					{workspaceCollaborators.slice(0, 2).map((collaborator) => (
+						<Avatar key={collaborator.name} size="sm">
+							<AvatarFallback className={collaborator.className}>
+								{collaborator.initials}
+							</AvatarFallback>
+						</Avatar>
+					))}
+					<AvatarGroupCount className="size-6 text-xs">
+						+{workspaceCollaborators.length - 2}
+					</AvatarGroupCount>
+				</AvatarGroup>
+			</HoverCardTrigger>
 
-			<div className="pointer-events-none absolute top-full right-0 z-50 mt-2 w-56 rounded-md bg-popover p-2 text-popover-foreground opacity-0 shadow-md ring-1 ring-foreground/10 transition-opacity delay-0 duration-150 group-hover/collaborators:pointer-events-auto group-hover/collaborators:delay-300 group-hover/collaborators:opacity-100 group-focus-within/collaborators:pointer-events-auto group-focus-within/collaborators:opacity-100">
+			<HoverCardContent align="end" className="w-56 rounded-md p-2">
 				<div className="space-y-1">
 					{workspaceCollaborators.map((collaborator) => (
 						<div
@@ -188,7 +192,7 @@ function WorkspaceCollaborators() {
 						</div>
 					))}
 				</div>
-			</div>
-		</div>
+			</HoverCardContent>
+		</HoverCard>
 	);
 }
