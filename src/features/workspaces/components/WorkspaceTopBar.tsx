@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, Share2 } from "lucide-react";
+import { useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
@@ -11,10 +12,21 @@ import {
 } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
+import {
 	HoverCard,
 	HoverCardContent,
 	HoverCardTrigger,
 } from "#/components/ui/hover-card";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
@@ -70,6 +82,7 @@ export default function WorkspaceTopBar({
 }: WorkspaceTopBarProps) {
 	const isCollapsed = useWorkspaceUiStore((state) => state.chatPanelCollapsed);
 	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
+	const [shareOpen, setShareOpen] = useState(false);
 
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
@@ -95,22 +108,23 @@ export default function WorkspaceTopBar({
 					/>
 				</div>
 
-				{isCollapsed ? (
-					<nav
-						className="flex shrink-0 items-center gap-2"
-						aria-label="Workspace global actions"
+				<nav
+					className="flex shrink-0 items-center gap-2"
+					aria-label="Workspace global actions"
+				>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						type="button"
+						className="text-muted-foreground hover:text-foreground"
+						aria-label="Share workspace"
+						onClick={() => setShareOpen(true)}
 					>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							type="button"
-							className="text-muted-foreground hover:text-foreground"
-							aria-label="Share workspace"
-						>
-							<Share2 className="size-3.5" />
-						</Button>
-						<WorkspaceCollaborators />
-						<UserProfileDropdown />
+						<Share2 className="size-3.5" />
+					</Button>
+					<WorkspaceCollaborators />
+					<UserProfileDropdown />
+					{isCollapsed ? (
 						<Button
 							variant="outline"
 							size="sm"
@@ -121,26 +135,45 @@ export default function WorkspaceTopBar({
 							<MessageCircle className="size-3.5" />
 							<span className="hidden lg:inline">AI Chat</span>
 						</Button>
-					</nav>
-				) : (
-					<nav
-						className="flex shrink-0 items-center gap-2"
-						aria-label="Workspace global actions"
-					>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							type="button"
-							className="text-muted-foreground hover:text-foreground"
-							aria-label="Share workspace"
-						>
-							<Share2 className="size-3.5" />
-						</Button>
-						<WorkspaceCollaborators />
-						<UserProfileDropdown />
-					</nav>
-				)}
+					) : null}
+				</nav>
 			</div>
+			<Dialog open={shareOpen} onOpenChange={setShareOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Share workspace</DialogTitle>
+						<DialogDescription>
+							Invite people to collaborate on {workspace.name}.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="workspace-share-email">Email address</Label>
+							<Input
+								id="workspace-share-email"
+								type="email"
+								placeholder="teammate@example.com"
+							/>
+						</div>
+						<div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+							<div className="font-medium">Workspace link</div>
+							<div className="truncate text-muted-foreground">
+								thinkex.app/workspaces/{workspace.id}
+							</div>
+						</div>
+					</div>
+					<DialogFooter>
+						<DialogClose asChild>
+							<Button type="button" variant="outline">
+								Cancel
+							</Button>
+						</DialogClose>
+						<Button type="button" onClick={() => setShareOpen(false)}>
+							Send invite
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</header>
 	);
 }
