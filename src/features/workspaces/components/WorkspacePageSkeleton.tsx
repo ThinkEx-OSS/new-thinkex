@@ -17,19 +17,18 @@ const workspaceSkeletonCardIds = [
 export default function WorkspacePageSkeleton() {
 	return (
 		<WorkspaceFrame
-			topBar={<WorkspaceTopBarSkeleton />}
-			contextBar={<WorkspaceContextBarSkeleton />}
+			chrome={<WorkspaceChromeSkeleton />}
 			content={<WorkspaceContentSkeleton />}
 			chatPanel={<AiChatPanelSkeleton />}
 		/>
 	);
 }
 
-function WorkspaceTopBarSkeleton() {
+function WorkspaceChromeSkeleton() {
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
-			<div className="flex h-12 w-full items-center justify-between gap-3 px-4">
-				<div className="flex min-w-0 flex-1 items-center gap-3">
+			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
+				<div className="flex min-w-0 flex-1 items-stretch gap-3">
 					<Link
 						to="/home"
 						preload="intent"
@@ -40,10 +39,12 @@ function WorkspaceTopBarSkeleton() {
 							ThinkEx
 						</span>
 					</Link>
-					<div className="flex h-9 min-w-0 flex-1 items-center gap-1 px-1">
-						<SkeletonBlock className="h-6 w-32 rounded-sm" />
-						<SkeletonBlock className="h-6 w-28 rounded-sm" />
-						<SkeletonBlock className="hidden h-6 w-24 rounded-sm sm:block" />
+					<div className="flex min-w-0 flex-1 items-center gap-1 px-1">
+						<SkeletonBlock className="h-8 w-32 rounded-md" />
+						<SkeletonBlock className="h-4 w-px shrink-0 rounded-none" />
+						<SkeletonBlock className="h-8 w-28 rounded-md" />
+						<SkeletonBlock className="hidden h-4 w-px shrink-0 rounded-none sm:block" />
+						<SkeletonBlock className="hidden h-8 w-24 rounded-md sm:block" />
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
@@ -53,13 +54,14 @@ function WorkspaceTopBarSkeleton() {
 					<SkeletonBlock className="hidden h-8 w-24 rounded-md lg:block" />
 				</div>
 			</div>
+			<WorkspaceContextBarSkeleton />
 		</header>
 	);
 }
 
 function WorkspaceContextBarSkeleton() {
 	return (
-		<div className="flex h-11 items-center justify-between gap-3 border-b border-border/70 bg-muted/30 px-4 text-sm">
+		<div className="flex h-11 items-center justify-between gap-3 bg-workspace-chrome-active px-4 text-sm">
 			<div className="flex min-w-0 items-center gap-2">
 				<SkeletonBlock className="size-5 rounded-sm" />
 				<SkeletonBlock className="h-4 w-32 rounded-sm" />
