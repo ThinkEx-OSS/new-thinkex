@@ -1,0 +1,122 @@
+import { ArrowUp, Plus } from "lucide-react";
+import { useState } from "react";
+
+import {
+	PromptInput,
+	PromptInputActionAddAttachments,
+	PromptInputActionMenu,
+	PromptInputActionMenuContent,
+	PromptInputActionMenuTrigger,
+	PromptInputBody,
+	PromptInputFooter,
+	type PromptInputMessage,
+	PromptInputSelect,
+	PromptInputSelectContent,
+	PromptInputSelectItem,
+	PromptInputSelectTrigger,
+	PromptInputSelectValue,
+	PromptInputSubmit,
+	PromptInputTextarea,
+	PromptInputTools,
+} from "#/components/ai-elements/prompt-input";
+import { buttonVariants } from "#/components/ui/button";
+import { AI_CHAT_MODELS } from "#/features/workspaces/components/ai-chat/constants";
+import { cn } from "#/lib/utils";
+
+// InputGroup defaults to a single horizontal row. Stack vertically so the
+// footer toolbar stays visible below the textarea instead of being clipped.
+const PROMPT_INPUT_GROUP_CLASSNAME =
+	"h-auto flex-col border-border/70 bg-muted/30 shadow-none dark:bg-muted/30";
+const PROMPT_INPUT_PADDING_X = "px-3.5";
+const PROMPT_INPUT_FOOTER_PADDING_X = "pl-2 pr-3.5";
+const TOOLBAR_CONTROL_SIZE = "size-9";
+const TOOLBAR_CONTROL_HEIGHT = "h-9";
+const TOOLBAR_ICON_SIZE = "size-5";
+const TOOLBAR_MUTED_TEXT = "text-muted-foreground";
+const SEND_BUTTON_SIZE = "size-8";
+const SEND_ICON_SIZE = "size-4";
+
+interface AiChatPromptInputProps {
+	onSubmit?: (message: PromptInputMessage) => void;
+}
+
+export default function AiChatPromptInput({
+	onSubmit,
+}: AiChatPromptInputProps) {
+	const [input, setInput] = useState("");
+	const [model, setModel] = useState<string>(AI_CHAT_MODELS[0].id);
+
+	const handleSubmit = (message: PromptInputMessage) => {
+		if (!message.text.trim()) {
+			return;
+		}
+
+		onSubmit?.(message);
+		setInput("");
+	};
+
+	return (
+		<PromptInput
+			inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
+			onSubmit={handleSubmit}
+		>
+			<PromptInputBody>
+				<PromptInputTextarea
+					value={input}
+					placeholder="Ask anything"
+					onChange={(event) => setInput(event.currentTarget.value)}
+					className={cn(
+						"min-h-12 text-base md:text-base",
+						PROMPT_INPUT_PADDING_X,
+					)}
+				/>
+			</PromptInputBody>
+
+			<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
+				<PromptInputTools>
+					<PromptInputActionMenu>
+						<PromptInputActionMenuTrigger
+							aria-label="Add attachments"
+							className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
+						>
+							<Plus className={TOOLBAR_ICON_SIZE} />
+						</PromptInputActionMenuTrigger>
+						<PromptInputActionMenuContent>
+							<PromptInputActionAddAttachments />
+						</PromptInputActionMenuContent>
+					</PromptInputActionMenu>
+				</PromptInputTools>
+
+				<div className="ml-auto flex items-center gap-1">
+					<PromptInputSelect onValueChange={setModel} value={model}>
+						<PromptInputSelectTrigger
+							size="sm"
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "sm" }),
+								TOOLBAR_CONTROL_HEIGHT,
+								"w-auto px-2.5 border-none shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
+							)}
+						>
+							<PromptInputSelectValue />
+						</PromptInputSelectTrigger>
+						<PromptInputSelectContent side="top" align="end">
+							{AI_CHAT_MODELS.map((item) => (
+								<PromptInputSelectItem key={item.id} value={item.id}>
+									{item.name}
+								</PromptInputSelectItem>
+							))}
+						</PromptInputSelectContent>
+					</PromptInputSelect>
+
+					<PromptInputSubmit
+						className={cn(SEND_BUTTON_SIZE, "rounded-full")}
+						disabled={!input.trim()}
+						status="ready"
+					>
+						<ArrowUp className={SEND_ICON_SIZE} />
+					</PromptInputSubmit>
+				</div>
+			</PromptInputFooter>
+		</PromptInput>
+	);
+}

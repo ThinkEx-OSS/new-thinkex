@@ -509,10 +509,12 @@ export type PromptInputProps = Omit<
 		message: PromptInputMessage,
 		event: FormEvent<HTMLFormElement>,
 	) => void | Promise<void>;
+	inputGroupClassName?: string;
 };
 
 export const PromptInput = ({
 	className,
+	inputGroupClassName,
 	accept,
 	multiple,
 	globalDrop,
@@ -921,7 +923,14 @@ export const PromptInput = ({
 				ref={formRef}
 				{...props}
 			>
-				<InputGroup className="overflow-hidden">{children}</InputGroup>
+				<InputGroup
+					className={cn(
+						"has-[[data-slot=input-group-control]:focus-visible]:!border-ring/60 has-[[data-slot=input-group-control]:focus-visible]:!ring-2 has-[[data-slot=input-group-control]:focus-visible]:!ring-ring/35",
+						inputGroupClassName,
+					)}
+				>
+					{children}
+				</InputGroup>
 			</form>
 		</>
 	);
