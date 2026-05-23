@@ -27,7 +27,9 @@ export default function AiChatPanel() {
 			/>
 
 			<Conversation className="min-h-0">
-				<ConversationContent className="gap-5 px-4 pt-14 pb-5" />
+				<ConversationContent className="gap-5 px-4 pt-14 pb-5">
+					{""}
+				</ConversationContent>
 				<ConversationScrollButton />
 			</Conversation>
 

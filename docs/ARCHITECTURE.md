@@ -46,7 +46,7 @@ Do not make the whole workspace one giant Yjs document. Use Yjs only for collabo
 
 ## Storage Shape
 
-Keep three separate concepts:
+Keep four separate concepts:
 
 ```txt
 workspace_items
@@ -57,11 +57,14 @@ content_snapshots
 
 item_assets
   binary/object-storage metadata for uploaded files
+
+workspace_item_search
+  one-row-per-item keyword search projection for current visible state
 ```
 
-Do not create type-specific tables at first for documents, flashcards, or quizzes. Their current state and history should live in `content_snapshots`, with `workspace_items.currentSnapshotId` pointing at the latest snapshot.
+Do not create type-specific tables at first for documents, flashcards, quizzes, PDFs, or audio. Authored, extracted, and generated content history should live in `content_snapshots`, with `workspace_items.currentAuthoredSnapshotId` and `workspace_items.currentExtractedSnapshotId` pointing at the latest relevant snapshots.
 
-Use `item_assets` only when the item has an uploaded binary in R2. A PDF item should have a `workspace_items` row and an `item_assets` row. A document, flashcard, quiz, or folder should not need an `item_assets` row.
+Use `item_assets` only when the item has an uploaded binary in R2. PDF and audio items should have a `workspace_items` row and an `item_assets` row. A document, flashcard, quiz, or folder should not need an `item_assets` row.
 
 ## Workspace Tables
 
@@ -73,6 +76,7 @@ Stores the workspace itself.
 id
 name
 icon
+color
 description
 ownerId
 createdAt
@@ -103,11 +107,17 @@ Every visible item in the workspace tree is a row.
 id
 workspaceId
 parentId              // null for root-level items
-type                  // folder | document | flashcard | quiz | pdf
+type                  // folder | document | audio | flashcard | quiz | pdf
 name
+color
 sortOrder
+layoutJson
 metadataJson
-currentSnapshotId
+indexingPolicy        // default | disabled
+sourceVersion
+contentHash
+currentAuthoredSnapshotId
+currentExtractedSnapshotId
 createdByUserId
 updatedByUserId
 createdAt
@@ -123,11 +133,11 @@ index(workspaceId, type)
 unique(workspaceId, parentId, name) where deletedAt is null
 ```
 
-Paths should be derived from `parentId` relationships. A cached path can be added later if needed for search or agent ergonomics.
+Paths should be derived from `parentId` relationships. Do not make path the authoritative hierarchy. Search and future agent retrieval can store derived path-like display/scope data in projections if needed.
 
 ## Editable Content
 
-Documents, flashcards, and quizzes are editable. They should all produce versioned snapshots. PDFs can also produce snapshots later for extracted text, but their original file lives in `item_assets`.
+Documents, flashcards, and quizzes are editable. They should all produce versioned authored snapshots. PDFs and audio files can produce extracted snapshots, but their original files live in `item_assets`.
 
 ### `content_snapshots`
 
@@ -135,32 +145,35 @@ Documents, flashcards, and quizzes are editable. They should all produce version
 id
 workspaceId
 itemId
+kind                   // authored | extracted | generated
 versionNumber
-contentFormat          // markdown | flashcard_json | quiz_json | pdf_text
-contentText            // markdown/plain text/searchable text
-contentJson            // structured flashcards/quizzes
+contentFormat          // markdown | plain_text | transcript_json | flashcard_json | quiz_json
+contentText            // markdown/plain/searchable text; also derived text for JSON formats
+contentJson            // structured transcripts/flashcards/quizzes
 yjsStateRef            // optional later if storing Yjs state separately
 createdByType          // user | agent | system
 createdByUserId
 createdByAgentSessionId
-reason                 // autosave | ai_edit | import | restore
+reason                 // autosave | ai_edit | import | restore | ocr | transcription | manual
 createdAt
 ```
 
 Initial assumptions:
 
-- Documents are probably Markdown, but the exact editor can be decided later.
+- Documents are Markdown authored snapshots.
+- PDF OCR/extracted content is Markdown extracted snapshots.
+- Audio transcripts are structured JSON extracted snapshots, with derived text for search.
 - Flashcards are edited through structured UI and stored as structured JSON.
 - Quizzes are edited through structured UI and stored as structured JSON.
 - Version history is based on autosaved snapshots.
 - Folders do not have content snapshots.
-- PDFs do not have editable snapshots initially, but can have extracted text snapshots later.
+- PDFs and audio do not have editable authored snapshots initially, but can have extracted snapshots.
 
 Autosave should be throttled so every keystroke does not create a permanent version. Important AI edits should also create snapshots.
 
 ## Item Assets
 
-PDFs are uploaded/reference-only for now. No annotation or editing in the initial version.
+PDFs and audio are uploaded/reference-only for now. No annotation or editing in the initial version.
 
 ### `item_assets`
 
@@ -173,12 +186,13 @@ filename
 mimeType
 sizeBytes
 checksum
-extractedTextSnapshotId
 createdByUserId
 createdAt
+replacedAt
+deletedAt
 ```
 
-PDF text extraction can be added later by creating a `content_snapshots` row with `contentFormat = pdf_text` and setting `item_assets.extractedTextSnapshotId`.
+PDF text extraction and audio transcription should create `content_snapshots` rows with `kind = extracted`. The active extracted snapshot pointer lives on `workspace_items.currentExtractedSnapshotId`.
 
 This keeps the model simple:
 
@@ -198,6 +212,43 @@ quiz
 pdf
   workspace_items + item_assets
   optional later: content_snapshots for extracted text
+
+audio
+  workspace_items + item_assets
+  optional later: content_snapshots for transcript JSON
+```
+
+## Keyword Search
+
+Normal user search should be fast keyword search across the current visible workspace state. Title/name matches should rank ahead of body/content matches, but the same result list should include matches from authored content, OCR text, transcripts, flashcards, and quizzes.
+
+### `workspace_item_search`
+
+```txt
+itemId
+workspaceId
+nameText
+metadataText           // derived from metadataJson and lightweight file metadata
+contentText
+extractedText
+searchVector           // generated weighted tsvector
+currentAuthoredSnapshotId
+currentExtractedSnapshotId
+status                 // pending | ready | failed
+indexError
+indexedAt
+updatedAt
+```
+
+This table is a derived projection, not the source of truth. Name and metadata changes can update it synchronously with item mutations. Heavy content, OCR, and transcript indexing can be eventually consistent.
+
+Keyword search should use a generated PostgreSQL `tsvector` column with a GIN index. Weight matches by source:
+
+```txt
+A  name/title text
+B  derived metadata text
+C  authored content text
+D  extracted OCR/transcript text
 ```
 
 ## Realtime Rooms
@@ -313,16 +364,26 @@ Keep initial permission checks behind helper functions so this table can be intr
 
 ## Future Semantic Search
 
-Do not build semantic search or vector indexing now. The current requirement is only to keep clean `content_snapshots` and `workspace_events` so a later indexing phase can process existing workspace content without reshaping the core data model.
+Do not build semantic search or vector indexing now. The current requirement is to keep clean `content_snapshots`, `workspace_events`, and `workspace_item_search` so a later indexing phase can process existing workspace content without reshaping the core data model.
+
+Future AI retrieval should support explicit modes:
+
+```txt
+keyword
+semantic
+hybrid
+```
+
+Semantic/hybrid retrieval should use separate chunk/index tables when implemented. Do not add chunk tables until chunking strategy, embedding model, vector dimensions, and indexing job semantics are decided.
 
 ## Initial Implementation Order
 
-1. Add workspace, member, item, snapshot, asset, and event tables.
+1. Add workspace, member, item, snapshot, asset, event, and keyword search projection tables.
 2. Build workspace tree CRUD with soft delete and autosaved content snapshots.
 3. Add PartyServer workspace room for realtime tree updates.
 4. Add Yjs/Y-PartyServer rooms for open documents.
 5. Extend Yjs editing to flashcards and quizzes.
-6. Add R2-backed PDF uploads.
+6. Add R2-backed PDF and audio uploads.
 7. Add private AI chat sessions later.
 8. Route AI edits through the same item/content mutation APIs.
 9. Add semantic indexing later from existing snapshots/events.
