@@ -78,7 +78,7 @@ export default function WorkspaceContextBar({
 
 	return (
 		<>
-			<div className="flex h-11 items-center justify-between gap-3 border-b border-border/70 bg-muted/30 px-4 text-sm">
+			<div className="flex h-11 items-center justify-between gap-3 bg-workspace-chrome-active px-4 text-sm">
 				<Breadcrumb className="min-w-0">
 					<BreadcrumbList className="flex-nowrap gap-1.5 overflow-hidden sm:gap-1.5">
 						<BreadcrumbItem className="min-w-0">

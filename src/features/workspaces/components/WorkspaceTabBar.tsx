@@ -35,6 +35,7 @@ export default function WorkspaceTabBar({
 	onCreateRootTab,
 }: WorkspaceTabBarProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
+	const lastTab = tabs[tabs.length - 1];
 
 	return (
 		<nav
@@ -42,7 +43,7 @@ export default function WorkspaceTabBar({
 			aria-label="Workspace tabs"
 		>
 			<div
-				className="grid min-w-0 max-w-full items-center gap-1 overflow-hidden"
+				className="grid min-w-0 max-w-full items-center gap-1 overflow-visible"
 				style={{
 					gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
 					width: "100%",
@@ -60,6 +61,13 @@ export default function WorkspaceTabBar({
 					const iconClassName = isRootTab
 						? color.text
 						: (itemDisplay?.iconClassName ?? "text-muted-foreground");
+					const isActive = tab.id === activeTab.id;
+					const previousTab = tabs[index - 1];
+					const showDivider = index > 0;
+					const showDividerLine =
+						showDivider &&
+						tab.id !== activeTab.id &&
+						previousTab?.id !== activeTab.id;
 
 					return (
 						<WorkspaceTabItem
@@ -69,8 +77,9 @@ export default function WorkspaceTabBar({
 							title={title}
 							TabIcon={TabIcon}
 							iconClassName={iconClassName}
-							isActive={tab.id === activeTab.id}
-							showDivider={index > 0}
+							isActive={isActive}
+							showDivider={showDivider}
+							showDividerLine={showDividerLine}
 							showClose={tabs.length > 1}
 							onActivate={() => onActivateTab(tab)}
 							onClose={() => onCloseTab(tab)}
@@ -78,7 +87,7 @@ export default function WorkspaceTabBar({
 					);
 				})}
 			</div>
-			<WorkspaceTabDivider />
+			<WorkspaceTabDivider isVisible={lastTab?.id !== activeTab.id} />
 			<Button
 				variant="ghost"
 				size="icon-sm"
@@ -92,8 +101,20 @@ export default function WorkspaceTabBar({
 	);
 }
 
-export function WorkspaceTabDivider() {
-	return <div className="h-4 w-px shrink-0 bg-border/70" aria-hidden="true" />;
+export function WorkspaceTabDivider({
+	isVisible = true,
+}: {
+	isVisible?: boolean;
+}) {
+	return (
+		<div
+			className={cn(
+				"relative z-10 h-4 w-px shrink-0 bg-border/70",
+				!isVisible && "opacity-0",
+			)}
+			aria-hidden="true"
+		/>
+	);
 }
 
 interface WorkspaceTabItemProps {
@@ -104,6 +125,7 @@ interface WorkspaceTabItemProps {
 	iconClassName?: string;
 	isActive: boolean;
 	showDivider: boolean;
+	showDividerLine: boolean;
 	showClose: boolean;
 	onActivate: () => void;
 	onClose: () => void;
@@ -117,6 +139,7 @@ function WorkspaceTabItem({
 	iconClassName,
 	isActive,
 	showDivider,
+	showDividerLine,
 	showClose,
 	onActivate,
 	onClose,
@@ -138,6 +161,7 @@ function WorkspaceTabItem({
 			tabId: tab.id,
 		},
 	});
+	const showAttachedChrome = isActive && !isDragSource;
 
 	return (
 		<div
@@ -148,13 +172,15 @@ function WorkspaceTabItem({
 				isDropTarget && "rounded-md bg-muted/50",
 			)}
 		>
-			{showDivider ? <WorkspaceTabDivider /> : null}
+			{showDivider ? <WorkspaceTabDivider isVisible={showDividerLine} /> : null}
 			<div
 				className={cn(
-					"group/tab flex h-7 min-w-0 flex-1 touch-none items-center rounded-md border text-sm",
-					isActive
-						? "border-transparent bg-muted/30 text-foreground"
-						: "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+					"group/tab flex min-w-0 flex-1 touch-none items-center border text-sm",
+					showAttachedChrome
+						? "workspace-tab-active h-8 text-foreground"
+						: isActive
+							? "h-8 rounded-md border-transparent bg-workspace-chrome-active text-foreground"
+							: "h-8 rounded-md border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
 					isDragSource && "cursor-grabbing",
 				)}
 			>

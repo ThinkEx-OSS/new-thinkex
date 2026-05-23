@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, Share2 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
@@ -66,6 +66,7 @@ interface WorkspaceTopBarProps {
 	itemsById: Map<string, WorkspaceItem>;
 	tabs: WorkspaceTab[];
 	activeTab: WorkspaceTab;
+	contextBar: ReactNode;
 	onActivateTab: (tab: WorkspaceTab) => void;
 	onCloseTab: (tab: WorkspaceTab) => void;
 	onCreateRootTab: () => void;
@@ -76,6 +77,7 @@ export default function WorkspaceTopBar({
 	itemsById,
 	tabs,
 	activeTab,
+	contextBar,
 	onActivateTab,
 	onCloseTab,
 	onCreateRootTab,
@@ -89,8 +91,8 @@ export default function WorkspaceTopBar({
 
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
-			<div className="flex h-12 w-full items-center justify-between gap-3 px-4">
-				<div className="flex min-w-0 flex-1 items-center gap-3">
+			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
+				<div className="flex min-w-0 flex-1 items-stretch gap-3">
 					<Link
 						to="/home"
 						className="flex shrink-0 items-center gap-3 rounded-md text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -141,6 +143,7 @@ export default function WorkspaceTopBar({
 					) : null}
 				</nav>
 			</div>
+			{contextBar}
 			<Dialog open={shareOpen} onOpenChange={setShareOpen}>
 				<DialogContent>
 					<DialogHeader>

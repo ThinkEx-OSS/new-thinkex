@@ -43,8 +43,7 @@ interface WorkspaceShellProps {
 }
 
 interface WorkspaceFrameProps {
-	topBar: ReactNode;
-	contextBar: ReactNode;
+	chrome: ReactNode;
 	content: ReactNode;
 	chatPanel?: ReactNode;
 }
@@ -129,25 +128,25 @@ export function WorkspaceShell({
 			}}
 		>
 			<WorkspaceFrame
-				topBar={
+				chrome={
 					<WorkspaceTopBar
 						workspace={workspace}
 						itemsById={itemsById}
 						tabs={session.tabs}
 						activeTab={activeTab}
+						contextBar={
+							<WorkspaceContextBar
+								workspace={workspace}
+								activeItem={activeItem}
+								itemsById={itemsById}
+								onCloseCurrentView={closeCurrentView}
+								onNavigateToRoot={openWorkspaceRoot}
+								onNavigateToItem={openItem}
+							/>
+						}
 						onActivateTab={activateWorkspaceTab}
 						onCloseTab={closeWorkspaceTab}
 						onCreateRootTab={createWorkspaceTab}
-					/>
-				}
-				contextBar={
-					<WorkspaceContextBar
-						workspace={workspace}
-						activeItem={activeItem}
-						itemsById={itemsById}
-						onCloseCurrentView={closeCurrentView}
-						onNavigateToRoot={openWorkspaceRoot}
-						onNavigateToItem={openItem}
 					/>
 				}
 				content={
@@ -179,8 +178,7 @@ export function WorkspaceShell({
 }
 
 export function WorkspaceFrame({
-	topBar,
-	contextBar,
+	chrome,
 	content,
 	chatPanel,
 }: WorkspaceFrameProps) {
@@ -194,11 +192,8 @@ export function WorkspaceFrame({
 			>
 				<ResizablePanel id="workspace" minSize="45%">
 					<div className="min-h-screen min-w-0">
-						{topBar}
-						<main className="bg-background">
-							{contextBar}
-							{content}
-						</main>
+						{chrome}
+						<main className="bg-background">{content}</main>
 					</div>
 				</ResizablePanel>
 
