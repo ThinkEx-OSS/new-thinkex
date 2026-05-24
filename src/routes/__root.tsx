@@ -5,7 +5,6 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { useEffect } from "react";
 
 // import PostHogProvider from '../integrations/posthog/provider'
 
@@ -66,12 +65,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				{import.meta.env.DEV ? (
+					<script
+						src="https://unpkg.com/react-grab/dist/index.global.js"
+						crossOrigin="anonymous"
+					/>
+				) : null}
 			</head>
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="theme">
 					<TooltipProvider>
 						{/* <PostHogProvider> */}
-						<ReactGrabLoader />
 						<AuthSessionRefresher />
 						{children}
 						<Toaster />
@@ -94,16 +98,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</body>
 		</html>
 	);
-}
-
-function ReactGrabLoader() {
-	useEffect(() => {
-		if (import.meta.env.DEV) {
-			void import("react-grab");
-		}
-	}, []);
-
-	return null;
 }
 
 function AuthSessionRefresher() {
