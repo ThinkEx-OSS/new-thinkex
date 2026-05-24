@@ -150,16 +150,18 @@ function WorkspaceItemCard({
 				)}
 			>
 				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="text-muted-foreground hover:text-foreground"
-							aria-label={`Open actions for ${item.name}`}
-							onClick={(event) => event.stopPropagation()}
-						>
-							<EllipsisVertical className="size-4" />
-						</Button>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="text-muted-foreground hover:text-foreground"
+								aria-label={`Open actions for ${item.name}`}
+								onClick={(event) => event.stopPropagation()}
+							/>
+						}
+					>
+						<EllipsisVertical className="size-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-52">
 						<DropdownMenuItem>

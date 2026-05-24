@@ -45,29 +45,32 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 	const label = otherUsers.map((user) => user.name).join(", ");
 
 	return (
-		<HoverCard openDelay={250}>
-			<HoverCardTrigger asChild>
-				<button
-					type="button"
-					className="flex h-8 cursor-default items-center rounded-full bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					aria-label={label}
-				>
-					<AvatarGroup>
-						{visibleUsers.map((user) => (
-							<Avatar key={user.connectionId} size="sm">
-								<AvatarImage src={user.image ?? undefined} alt="" />
-								<AvatarFallback className="text-[10px]">
-									{getInitials(user.name)}
-								</AvatarFallback>
-							</Avatar>
-						))}
-						{overflowCount > 0 ? (
-							<AvatarGroupCount className="text-xs">
-								+{overflowCount}
-							</AvatarGroupCount>
-						) : null}
-					</AvatarGroup>
-				</button>
+		<HoverCard>
+			<HoverCardTrigger
+				delay={250}
+				render={
+					<button
+						type="button"
+						className="flex h-8 cursor-default items-center rounded-full bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						aria-label={label}
+					/>
+				}
+			>
+				<AvatarGroup>
+					{visibleUsers.map((user) => (
+						<Avatar key={user.connectionId} size="sm">
+							<AvatarImage src={user.image ?? undefined} alt="" />
+							<AvatarFallback className="text-[10px]">
+								{getInitials(user.name)}
+							</AvatarFallback>
+						</Avatar>
+					))}
+					{overflowCount > 0 ? (
+						<AvatarGroupCount className="text-xs">
+							+{overflowCount}
+						</AvatarGroupCount>
+					) : null}
+				</AvatarGroup>
 			</HoverCardTrigger>
 			<HoverCardContent align="end" className="w-56 rounded-md p-2">
 				<div className="space-y-1">

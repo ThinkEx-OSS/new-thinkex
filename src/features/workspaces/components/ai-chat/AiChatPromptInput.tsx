@@ -88,7 +88,10 @@ export default function AiChatPromptInput({
 				</PromptInputTools>
 
 				<div className="ml-auto flex items-center gap-1">
-					<PromptInputSelect onValueChange={setModel} value={model}>
+					<PromptInputSelect
+						onValueChange={(value) => setModel(String(value))}
+						value={model}
+					>
 						<PromptInputSelectTrigger
 							size="sm"
 							className={cn(

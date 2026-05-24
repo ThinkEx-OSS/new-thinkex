@@ -1,5 +1,3 @@
-"use client";
-
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -61,9 +59,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 						.
 					</p>
 					<div className="flex flex-wrap justify-center gap-3">
-						<Button asChild>
-							<Link to={callbackURL}>Continue</Link>
-						</Button>
+						<Button render={<Link to={callbackURL} />}>Continue</Button>
 						<Button
 							type="button"
 							variant="outline"
@@ -129,19 +125,19 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 					<p className="text-center text-xs text-destructive">{errorMessage}</p>
 				) : null}
 				<Button
-					asChild
+					render={
+						<Link
+							to={alternateHref}
+							search={{
+								redirect: callbackURL === "/home" ? undefined : callbackURL,
+							}}
+						/>
+					}
 					variant="ghost"
 					size="default"
 					className="w-full text-muted-foreground hover:text-foreground"
 				>
-					<Link
-						to={alternateHref}
-						search={{
-							redirect: callbackURL === "/home" ? undefined : callbackURL,
-						}}
-					>
-						{alternateAccountCta}
-					</Link>
+					{alternateAccountCta}
 				</Button>
 			</div>
 		</div>

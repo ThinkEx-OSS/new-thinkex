@@ -70,9 +70,11 @@ function Field({
 	className,
 	orientation = "vertical",
 	...props
-}: React.ComponentProps<"fieldset"> & VariantProps<typeof fieldVariants>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	return (
-		<fieldset
+		// biome-ignore lint/a11y/useSemanticElements: this wrapper groups arbitrary field content without fieldset semantics.
+		<div
+			role="group"
 			data-slot="field"
 			data-orientation={orientation}
 			className={cn(fieldVariants({ orientation }), className)}
@@ -196,8 +198,9 @@ function FieldError({
 
 		return (
 			<ul className="ml-4 flex list-disc flex-col gap-1">
-				{uniqueErrors.map((error) =>
-					error?.message ? <li key={error.message}>{error.message}</li> : null,
+				{uniqueErrors.map(
+					(error) =>
+						error?.message && <li key={error.message}>{error.message}</li>,
 				)}
 			</ul>
 		);

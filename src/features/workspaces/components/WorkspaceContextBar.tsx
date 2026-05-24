@@ -155,16 +155,18 @@ export default function WorkspaceContextBar({
 								<span className="hidden sm:inline">Search</span>
 							</Button>
 							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										type="button"
-										className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-									>
-										<FilePlus2 className="size-3.5" />
-										<span className="hidden sm:inline">New</span>
-									</Button>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
+										/>
+									}
+								>
+									<FilePlus2 className="size-3.5" />
+									<span className="hidden sm:inline">New</span>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end" className="w-56">
 									{workspaceItemPrimaryCreateActions.map(
@@ -304,15 +306,17 @@ function CrumbButton({
 	}
 
 	return (
-		<BreadcrumbLink asChild>
-			<button
-				type="button"
-				className="flex min-w-0 items-center gap-1.5 truncate rounded-sm font-normal text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-				onClick={onClick}
-			>
-				<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
-				<span className="truncate">{label}</span>
-			</button>
+		<BreadcrumbLink
+			render={
+				<button
+					type="button"
+					className="flex min-w-0 items-center gap-1.5 truncate rounded-sm font-normal text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+					onClick={onClick}
+				/>
+			}
+		>
+			<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
+			<span className="truncate">{label}</span>
 		</BreadcrumbLink>
 	);
 }

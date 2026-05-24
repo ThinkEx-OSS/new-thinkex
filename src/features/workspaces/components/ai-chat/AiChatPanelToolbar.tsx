@@ -31,15 +31,17 @@ export default function AiChatPanelToolbar({
 	return (
 		<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						className={floatingActionButtonClassName}
-						aria-label="Open chat history"
-					>
-						<RiChatHistoryLine className="size-4" aria-hidden="true" />
-					</Button>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							className={floatingActionButtonClassName}
+							aria-label="Open chat history"
+						/>
+					}
+				>
+					<RiChatHistoryLine className="size-4" aria-hidden="true" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-64">
 					<DropdownMenuItem>

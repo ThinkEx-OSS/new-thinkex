@@ -75,20 +75,22 @@ export default function UserProfileDropdown() {
 
 		return (
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="outline"
-						size="icon-sm"
-						className={userMenuTriggerClassName}
-						aria-label="Open account menu"
-					>
-						<Avatar className={userMenuAvatarClassName}>
-							<AvatarImage src={session.user.image ?? undefined} alt="" />
-							<AvatarFallback>
-								{displayName.charAt(0).toUpperCase()}
-							</AvatarFallback>
-						</Avatar>
-					</Button>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							variant="outline"
+							size="icon-sm"
+							className={userMenuTriggerClassName}
+							aria-label="Open account menu"
+						/>
+					}
+				>
+					<Avatar className={userMenuAvatarClassName}>
+						<AvatarImage src={session.user.image ?? undefined} alt="" />
+						<AvatarFallback>
+							{displayName.charAt(0).toUpperCase()}
+						</AvatarFallback>
+					</Avatar>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-64">
 					<DropdownMenuLabel>
@@ -139,8 +141,8 @@ export default function UserProfileDropdown() {
 	}
 
 	return (
-		<Button asChild variant="outline">
-			<Link to="/login">Sign in</Link>
+		<Button render={<Link to="/login" />} variant="outline">
+			Sign in
 		</Button>
 	);
 }

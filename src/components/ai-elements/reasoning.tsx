@@ -1,6 +1,3 @@
-"use client";
-
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -55,6 +52,32 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
 const AUTO_CLOSE_DELAY = 1000;
 const MS_IN_S = 1000;
 
+function useControllableValue<T>({
+	defaultValue,
+	onChange,
+	value,
+}: {
+	defaultValue: T;
+	onChange?: (value: T) => void;
+	value?: T;
+}) {
+	const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+	const isControlled = value !== undefined;
+	const resolvedValue = isControlled ? value : uncontrolledValue;
+
+	const setValue = useCallback(
+		(nextValue: T) => {
+			if (!isControlled) {
+				setUncontrolledValue(nextValue);
+			}
+			onChange?.(nextValue);
+		},
+		[isControlled, onChange],
+	);
+
+	return [resolvedValue, setValue] as const;
+}
+
 export const Reasoning = memo(
 	({
 		className,
@@ -70,14 +93,14 @@ export const Reasoning = memo(
 		// Track if defaultOpen was explicitly set to false (to prevent auto-open)
 		const isExplicitlyClosed = defaultOpen === false;
 
-		const [isOpen, setIsOpen] = useControllableState<boolean>({
-			defaultProp: resolvedDefaultOpen,
+		const [isOpen, setIsOpen] = useControllableValue<boolean>({
+			defaultValue: resolvedDefaultOpen,
 			onChange: onOpenChange,
-			prop: open,
+			value: open,
 		});
-		const [duration, setDuration] = useControllableState<number | undefined>({
-			defaultProp: undefined,
-			prop: durationProp,
+		const [duration, setDuration] = useControllableValue<number | undefined>({
+			defaultValue: undefined,
+			value: durationProp,
 		});
 
 		const hasEverStreamedRef = useRef(isStreaming);

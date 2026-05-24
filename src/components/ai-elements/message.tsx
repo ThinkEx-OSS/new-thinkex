@@ -1,5 +1,3 @@
-"use client";
-
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -96,7 +94,7 @@ export const MessageAction = ({
 	if (tooltip) {
 		return (
 			<Tooltip>
-				<TooltipTrigger asChild>{button}</TooltipTrigger>
+				<TooltipTrigger render={button} />
 				<TooltipContent>
 					<p>{tooltip}</p>
 				</TooltipContent>

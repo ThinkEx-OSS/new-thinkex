@@ -167,11 +167,15 @@ export default function LandingPage() {
 						<ModeToggle className="shrink-0" />
 						<div aria-hidden="true" className="h-6 w-px shrink-0 bg-border" />
 						<div className="flex items-center gap-2">
-							<Button asChild variant="outline" size="default">
-								<Link to="/login">Sign in</Link>
+							<Button
+								render={<Link to="/login" />}
+								variant="outline"
+								size="default"
+							>
+								Sign in
 							</Button>
-							<Button asChild size="default">
-								<Link to="/signup">Get started</Link>
+							<Button render={<Link to="/signup" />} size="default">
+								Get started
 							</Button>
 						</div>
 					</nav>

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
@@ -6,7 +6,7 @@ import { Button } from "#/components/ui/button";
 interface ErrorFallbackScreenProps {
 	message: string;
 	onReset: () => void;
-	homeLink: ReactNode;
+	homeLink: ReactElement;
 	stack?: string;
 }
 
@@ -36,11 +36,11 @@ export default function ErrorFallbackScreen({
 							Try again
 						</Button>
 						<Button
-							asChild
+							render={homeLink}
 							variant="ghost"
 							className="text-muted-foreground hover:text-foreground"
 						>
-							{homeLink}
+							Go home
 						</Button>
 					</div>
 
