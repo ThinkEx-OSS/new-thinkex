@@ -4,12 +4,24 @@ import {
 	KeyboardSensor,
 	PointerSensor,
 } from "@dnd-kit/react";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+	type ReactElement,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+} from "react";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "#/components/ui/resizable";
+import {
+	upsertWorkspaceItemInCaches,
+	workspaceItemsQueryKey,
+	workspacePageQueryKey,
+} from "#/features/workspaces/cache";
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
@@ -18,11 +30,17 @@ import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDragCommand } from "#/features/workspaces/model/drag";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
+import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
+import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import {
 	useWorkspaceUiStore,
 	type WorkspacePane,
 	type WorkspacePresentation,
 } from "#/features/workspaces/state/workspace-ui-store";
+import {
+	createWorkspaceItemMutationInput,
+	useCreateWorkspaceItemMutation,
+} from "#/features/workspaces/use-create-workspace-item";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -45,7 +63,7 @@ interface WorkspaceShellProps {
 interface WorkspaceFrameProps {
 	chrome: ReactNode;
 	content: ReactNode;
-	chatPanel?: ReactNode;
+	chatPanel?: ReactElement;
 }
 
 export function WorkspaceShell({
@@ -54,9 +72,33 @@ export function WorkspaceShell({
 	activeTabIdFromUrl,
 	activeViewFromUrl,
 }: WorkspaceShellProps) {
+	const queryClient = useQueryClient();
+	const createWorkspaceItemMutation = useCreateWorkspaceItemMutation();
 	const ensureWorkspaceUiSession = useWorkspaceUiStore(
 		(state) => state.ensureWorkspaceSession,
 	);
+	const handleWorkspaceRealtimeEvent = useCallback(
+		(event: WorkspaceRealtimeEvent) => {
+			if (event.workspaceId !== workspace.id) {
+				return;
+			}
+
+			upsertWorkspaceItemInCaches(queryClient, event.payload.item);
+		},
+		[queryClient, workspace.id],
+	);
+	const realtime = useWorkspaceRealtime({
+		workspaceId: workspace.id,
+		onEvent: handleWorkspaceRealtimeEvent,
+		onReconnect: () => {
+			queryClient.invalidateQueries({
+				queryKey: workspaceItemsQueryKey(workspace.id),
+			});
+			queryClient.invalidateQueries({
+				queryKey: workspacePageQueryKey(workspace.id),
+			});
+		},
+	});
 	const {
 		activeItem,
 		activeTab,
@@ -142,8 +184,19 @@ export function WorkspaceShell({
 								onCloseCurrentView={closeCurrentView}
 								onNavigateToRoot={openWorkspaceRoot}
 								onNavigateToItem={openItem}
+								onCreateItem={(input) => {
+									createWorkspaceItemMutation.mutate(
+										createWorkspaceItemMutationInput({
+											workspaceId: workspace.id,
+											type: input.type,
+											parentId: input.parentId,
+											existingItems: scopedItems,
+										}),
+									);
+								}}
 							/>
 						}
+						presence={realtime}
 						onActivateTab={activateWorkspaceTab}
 						onCloseTab={closeWorkspaceTab}
 						onCreateRootTab={createWorkspaceTab}

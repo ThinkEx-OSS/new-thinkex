@@ -45,7 +45,7 @@ export function useCreateWorkspaceMutation() {
 				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 
 			seedWorkspaceCaches(queryClient, { workspace, items: [] });
-			navigate({
+			void navigate({
 				to: "/workspaces/$workspaceId",
 				params: { workspaceId: id },
 				search: { tab: undefined, view: WORKSPACE_ROOT_VIEW },
@@ -67,7 +67,7 @@ export function useCreateWorkspaceMutation() {
 				removeWorkspaceDetailCaches(queryClient, context.workspaceId);
 			}
 
-			navigate({ to: "/home" });
+			void navigate({ to: "/home" });
 			toast.error(
 				getErrorMessage(error, "Unable to create workspace right now."),
 			);

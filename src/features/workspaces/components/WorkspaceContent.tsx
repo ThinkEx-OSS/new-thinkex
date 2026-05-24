@@ -1,6 +1,25 @@
-import { FolderOpen } from "lucide-react";
+import {
+	Copy,
+	EllipsisVertical,
+	FolderInput,
+	FolderOpen,
+	Palette,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 
+import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import {
 	Empty,
 	EmptyDescription,
@@ -99,7 +118,7 @@ function WorkspaceItemCard({
 	} = getWorkspaceItemDisplay(item);
 
 	return (
-		<Card className="gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md dark:hover:bg-accent/60">
+		<Card className="group/item relative gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md dark:hover:bg-accent/60">
 			<button
 				type="button"
 				className="flex w-full flex-col text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -122,9 +141,75 @@ function WorkspaceItemCard({
 					<p className="text-xs text-muted-foreground">{meta}</p>
 				</CardHeader>
 			</button>
+			<div
+				className={cn(
+					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
+					"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
+					"group-focus-within/item:pointer-events-auto group-focus-within/item:opacity-100",
+					"has-[button[data-state=open]]:pointer-events-auto has-[button[data-state=open]]:opacity-100",
+				)}
+			>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							className="text-muted-foreground hover:text-foreground"
+							aria-label={`Open actions for ${item.name}`}
+							onClick={(event) => event.stopPropagation()}
+						>
+							<EllipsisVertical className="size-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-52">
+						<DropdownMenuItem>
+							<Pencil className="size-4" />
+							<span>Rename</span>
+						</DropdownMenuItem>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								<Palette className="size-4" />
+								<span>Change color</span>
+							</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent className="w-40">
+								{workspaceItemColorOptions.map((option) => (
+									<DropdownMenuItem key={option.label}>
+										<span
+											className={cn("size-3 rounded-full", option.className)}
+											aria-hidden="true"
+										/>
+										<span>{option.label}</span>
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+						<DropdownMenuItem>
+							<Copy className="size-4" />
+							<span>Duplicate</span>
+						</DropdownMenuItem>
+						<DropdownMenuItem>
+							<FolderInput className="size-4" />
+							<span>Move to folder</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem variant="destructive">
+							<Trash2 className="size-4" />
+							<span>Delete</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
 		</Card>
 	);
 }
+
+const workspaceItemColorOptions = [
+	{ label: "Default", className: "bg-muted ring-1 ring-border" },
+	{ label: "Sky", className: "bg-sky-500" },
+	{ label: "Emerald", className: "bg-emerald-500" },
+	{ label: "Amber", className: "bg-amber-500" },
+	{ label: "Rose", className: "bg-rose-500" },
+] as const;
 
 function WorkspaceItemView({ item }: { item: WorkspaceItem }) {
 	return (

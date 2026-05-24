@@ -90,6 +90,14 @@ export const deleteWorkspaceInputSchema = z.object({
 	confirmationName: z.string().trim().min(1),
 });
 
+export const createWorkspaceItemInputSchema = z.object({
+	id: z.string().uuid().optional(),
+	workspaceId: z.string().min(1),
+	parentId: z.string().min(1).nullable().optional(),
+	type: workspaceItemTypeSchema,
+	name: z.string().trim().min(1).max(160).optional(),
+});
+
 export const workspaceListResponseSchema = z.object({
 	workspaces: z.array(workspaceSummarySchema),
 });
@@ -108,5 +116,8 @@ export type WorkspaceItemSummary = z.infer<typeof workspaceItemSummarySchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceInputSchema>;
 export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;
 export type DeleteWorkspaceInput = z.infer<typeof deleteWorkspaceInputSchema>;
+export type CreateWorkspaceItemInput = z.infer<
+	typeof createWorkspaceItemInputSchema
+>;
 export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;

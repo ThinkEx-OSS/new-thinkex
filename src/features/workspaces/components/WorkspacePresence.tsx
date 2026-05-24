@@ -12,11 +12,12 @@ import {
 	HoverCardContent,
 	HoverCardTrigger,
 } from "#/components/ui/hover-card";
-import { useWorkspacePresence } from "#/features/workspaces/realtime/use-workspace-presence";
+import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 interface WorkspacePresenceProps {
-	workspaceId: string;
+	status: "connecting" | "connected" | "disconnected";
+	users: WorkspacePresenceUser[];
 }
 
 function getInitials(name: string) {
@@ -28,8 +29,7 @@ function getInitials(name: string) {
 	return `${first}${second}`.toUpperCase() || fallback.toUpperCase();
 }
 
-export function WorkspacePresence({ workspaceId }: WorkspacePresenceProps) {
-	const { users, status } = useWorkspacePresence(workspaceId);
+export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 	const { data: session } = useQuery(getAuthSessionQueryOptions());
 	const currentUserId = session?.user.id;
 	const otherUsers = currentUserId

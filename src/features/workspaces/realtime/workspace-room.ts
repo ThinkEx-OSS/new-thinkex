@@ -6,6 +6,11 @@ import type {
 	WorkspaceRealtimeServerMessage,
 } from "./messages";
 
+type WorkspaceEventMessage = Extract<
+	WorkspaceRealtimeServerMessage,
+	{ type: "workspace.event" }
+>;
+
 const USER_ID_HEADER = "x-thinkex-user-id";
 const USER_NAME_HEADER = "x-thinkex-user-name";
 const USER_IMAGE_HEADER = "x-thinkex-user-image";
@@ -73,6 +78,10 @@ export class WorkspaceRoom extends Server<Env> {
 			users: this.getPresenceUsers(),
 		};
 
+		this.broadcast(JSON.stringify(message));
+	}
+
+	broadcastWorkspaceEvent(message: WorkspaceEventMessage) {
 		this.broadcast(JSON.stringify(message));
 	}
 

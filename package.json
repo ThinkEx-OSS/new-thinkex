@@ -13,7 +13,11 @@
 		"preview": "pnpm run build && vite preview",
 		"format": "biome format",
 		"lint": "biome lint",
+		"lint:types": "biome lint --only=nursery/noFloatingPromises --only=nursery/noMisusedPromises src",
 		"check": "biome check",
+		"test": "vitest run --passWithNoTests",
+		"typecheck": "tsgo --noEmit",
+		"typecheck:tsc": "tsc --noEmit",
 		"deploy": "THINKEX_DB_DRIVER=hyperdrive pnpm run build && wrangler deploy",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
@@ -84,7 +88,7 @@
 		"zustand": "^5.0.13"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.5",
+		"@biomejs/biome": "2.4.15",
 		"@cloudflare/vitest-pool-workers": "^0.16.4",
 		"@rolldown/plugin-babel": "^0.2.3",
 		"@tailwindcss/typography": "^0.5.16",
@@ -96,6 +100,7 @@
 		"@types/pg": "^8.15.6",
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
+		"@typescript/native-preview": "7.0.0-dev.20260421.2",
 		"@vitejs/plugin-react": "^6.0.1",
 		"babel-plugin-react-compiler": "^1.0.0",
 		"dotenv": "^17.3.1",

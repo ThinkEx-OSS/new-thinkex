@@ -18,6 +18,10 @@ export {
 	createWorkspaceMutationInput,
 	useCreateWorkspaceMutation,
 } from "./use-create-workspace";
+export {
+	createWorkspaceItemMutationInput,
+	useCreateWorkspaceItemMutation,
+} from "./use-create-workspace-item";
 export { useDeleteWorkspaceMutation } from "./use-delete-workspace";
 export { useRecordWorkspaceOpenedMutation } from "./use-record-workspace-opened";
 export { useUpdateWorkspaceMutation } from "./use-update-workspace";

@@ -3,9 +3,11 @@ import { z } from "zod";
 
 import {
 	createWorkspaceInputSchema,
+	createWorkspaceItemInputSchema,
 	deleteWorkspaceInputSchema,
 	updateWorkspaceInputSchema,
 } from "#/features/workspaces/contracts";
+import { createWorkspaceItemForCurrentUser } from "#/features/workspaces/server/item-mutations";
 import {
 	createWorkspaceForCurrentUser,
 	deleteWorkspaceForCurrentUser,
@@ -46,6 +48,10 @@ export const getWorkspacePageFn = createServerFn({ method: "GET" })
 export const createWorkspaceFn = createServerFn({ method: "POST" })
 	.inputValidator(createWorkspaceInputSchema)
 	.handler(async ({ data }) => createWorkspaceForCurrentUser(data));
+
+export const createWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(createWorkspaceItemInputSchema)
+	.handler(async ({ data }) => createWorkspaceItemForCurrentUser(data));
 
 export const recordWorkspaceOpenedFn = createServerFn({ method: "POST" })
 	.inputValidator(workspaceIdInputSchema)

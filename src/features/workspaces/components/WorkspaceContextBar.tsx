@@ -43,7 +43,10 @@ import {
 	workspaceItemPrimaryCreateActions,
 } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
-import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type {
+	WorkspaceItem,
+	WorkspaceItemType,
+} from "#/features/workspaces/model/types";
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
@@ -52,6 +55,10 @@ interface WorkspaceContextBarProps {
 	onCloseCurrentView: () => void;
 	onNavigateToRoot: () => void;
 	onNavigateToItem: (item: WorkspaceItem) => void;
+	onCreateItem: (input: {
+		type: WorkspaceItemType;
+		parentId: string | null;
+	}) => void;
 }
 
 export default function WorkspaceContextBar({
@@ -61,11 +68,13 @@ export default function WorkspaceContextBar({
 	onCloseCurrentView,
 	onNavigateToRoot,
 	onNavigateToItem,
+	onCreateItem,
 }: WorkspaceContextBarProps) {
 	const isDocumentLikeView = Boolean(
 		activeItem && activeItem.type !== "folder",
 	);
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
+	const createParentId = activeItem?.type === "folder" ? activeItem.id : null;
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchableItems = useMemo(
@@ -160,7 +169,12 @@ export default function WorkspaceContextBar({
 								<DropdownMenuContent align="end" className="w-56">
 									{workspaceItemPrimaryCreateActions.map(
 										({ type, label, description, Icon, iconClassName }) => (
-											<DropdownMenuItem key={type}>
+											<DropdownMenuItem
+												key={type}
+												onClick={() =>
+													onCreateItem({ type, parentId: createParentId })
+												}
+											>
 												<Icon className={`size-4 ${iconClassName}`} />
 												<span>{label}</span>
 												{description ? (
@@ -179,7 +193,12 @@ export default function WorkspaceContextBar({
 										<DropdownMenuSubContent className="w-48">
 											{workspaceItemLearnCreateActions.map(
 												({ type, label, Icon, iconClassName }) => (
-													<DropdownMenuItem key={type}>
+													<DropdownMenuItem
+														key={type}
+														onClick={() =>
+															onCreateItem({ type, parentId: createParentId })
+														}
+													>
 														<Icon className={`size-4 ${iconClassName}`} />
 														<span>{label}</span>
 													</DropdownMenuItem>

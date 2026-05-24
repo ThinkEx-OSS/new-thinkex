@@ -1,76 +1,152 @@
-# Thinkex Workspace Architecture Plan
+# Thinkex Workspace Architecture
 
-## Goal
+## Purpose
 
-Thinkex workspaces should feel like a collaborative filesystem. Users can create folders, upload PDFs, edit documents, build flashcard decks, build quizzes, and move items around the workspace in real time. Each user also has a private AI chat assistant that can see their current context and make changes to the shared workspace on their behalf.
+Thinkex is a generic collaborative workspace for students, researchers, teams, and businesses. Users work with curated item types such as folders, documents, PDFs, audio, flashcards, quizzes, and future first-party objects. Users do not define arbitrary custom database schemas.
 
-The architecture should support semantic search later, but the initial schema does not need vector indexing.
+The architecture should make common workspace operations fast and reliable now while leaving room for richer item types, AI actions, file extraction, semantic search, and live collaboration later.
 
-## Core Model
+## Current Implementation Alignment
 
-Use a virtual filesystem model backed by database records.
+This document describes the target architecture and calls out what is already implemented.
 
-Example workspace:
+Implemented in the current codebase:
+
+- `workspaces`
+- `workspace_members`
+- `workspace_items`
+- `content_snapshots`
+- `item_assets`
+- `workspace_item_search`
+- `workspace_events`
+- TanStack Start server functions in `src/features/workspaces/server/functions.ts`
+- TanStack Query options and hierarchical query keys in `src/features/workspaces/query-options.ts` and `src/features/workspaces/cache.ts`
+- Route loader prefetching for home and workspace pages
+- Create-only workspace item mutation with optimistic cache rollback
+- PartyServer/Durable Object workspace room for presence and `workspace.item.created` broadcasts
+
+Planned next schema primitives:
+
+- `workspace_item_user_state`
+- `workspace_jobs`
+
+Future-only primitives:
+
+- `workspace_item_permissions`
+- semantic/vector chunk tables
+- item records/interactions or item-type-specific tables, only after a workflow proves it needs them
+
+## Hard Decisions
+
+Use Postgres as the durable source of truth.
+
+Use JSONB only for typed payloads inside well-scoped tables. Every JSONB payload must have a code-owned schema and mapper. JSONB is an extension point inside Postgres, not a NoSQL escape hatch.
+
+Do not create type-specific tables for every item type up front. Start with the core primitives: item, content snapshot, asset, event, search projection, user state, and job.
+
+Do not make the whole workspace one giant Yjs document. Use Durable Objects for realtime coordination and use Yjs later only for live collaborative editing of an open item.
+
+Do not use Durable Objects as the primary database. Postgres owns durable workspace state; Durable Objects coordinate realtime connections and broadcast committed changes.
+
+Do not treat `workspace_events` as the current-state query model. Events are audit/activity/realtime facts.
+
+## Runtime Architecture
 
 ```txt
-/notes/week-1.md
-/flashcards/spanish.cards.json
-/quizzes/cell-division.quiz.json
-/sources/chapter-4.pdf
+React UI
+  TanStack Router routes
+  TanStack Query cache
+  Zustand local workspace UI state
+
+TanStack Start
+  server functions for app RPCs
+  route loaders for initial data
+  server modules for DB logic
+
+Postgres
+  durable workspace, item, content, event, search, state, and job data
+
+Cloudflare Workers
+  production server runtime
+  Hyperdrive for production database path
+  R2 for binary objects
+  Workflows and Queues for async jobs later
+  Workers AI, AI Gateway, AI Search, and Vectorize for AI workflows later
+
+Durable Objects / PartyServer
+  one workspace room per workspace for presence and committed item events
+  future item rooms for live collaborative editing
 ```
 
-The user sees folders and files, but the source of truth is Postgres. Large uploaded files live in object storage.
+Local development:
 
-## Runtime Split
+- `pnpm dev` is the default app workflow and uses direct `DATABASE_URL`.
+- `pnpm dev:cloudflare` is for local Worker/Durable Object behavior and still uses direct database access.
+- `pnpm dev:hyperdrive` is a rare production-like Hyperdrive check and can touch remote resources.
 
-Use different realtime systems for different jobs:
+## Cloudflare Product Strategy
+
+Prefer Cloudflare platform products when they map directly to the product need. Do not build custom infrastructure before checking whether Cloudflare already provides the primitive.
+
+Use now:
+
+- Workers: production server runtime.
+- Hyperdrive: production database path to Postgres.
+- Durable Objects / PartyServer: workspace realtime rooms.
+- R2: uploaded binary/object storage.
+- Workers Observability: Worker runtime visibility.
+
+Use next when the workflow exists:
+
+- Workflows: durable multi-step jobs such as PDF extraction, audio transcription, AI generation, indexing, and human-in-the-loop flows.
+- Queues: simple background fanout, batching, and retry transport, especially when a workflow does not need durable step orchestration.
+- Workers AI: native Cloudflare inference and platform services such as markdown conversion where they fit quality and cost.
+- AI Gateway: model request logging, analytics, caching, rate limiting, retries, and model fallback for Workers AI and external providers.
+- AI Search: managed retrieval for workspace/tenant knowledge if it satisfies permission filtering, metadata filtering, freshness, and product control needs.
+- Vectorize: lower-level vector database if AI Search is too managed or if Thinkex needs custom chunking, retrieval, metadata, or ranking behavior.
+- Browser Run: web import, rendered-page extraction, screenshots, PDFs, and future AI browsing workflows.
+
+Future candidates:
+
+- Cloudflare Agents: private AI workspace/session agents if the built-in state, scheduling, realtime, and tool model fits better than custom chat/session tables.
+- Images: image optimization if image-heavy item types or public media delivery become important.
+- Stream or RealtimeKit: video/audio workflows only if Thinkex adds rich media playback, recording, or realtime communications.
+- Turnstile, Rate Limiting, WAF, and AI Security for Apps: abuse protection and AI safety hardening when public entry points expand.
+
+Cloudflare products are infrastructure primitives, not source-of-truth replacements. Postgres still owns durable application state unless a product is explicitly chosen as the source of truth for a narrow concern.
+
+## TanStack Data Rules
+
+Server functions are the app RPC boundary. Client components and route loaders may call server functions; server functions must enforce auth and permissions themselves.
+
+Routes should load page-level data through TanStack Router loaders and `queryClient.ensureQueryData`. Components should read the same data through TanStack Query.
+
+Prefer page query options for direct route loads when multiple pieces of data are needed together. The current workspace route uses `workspacePageQueryOptions(workspaceId)` to fetch `{ workspace, items }`.
+
+Query keys must stay hierarchical:
 
 ```txt
-Workspace tree updates
-  PartyServer / Durable Object room per workspace
-
-Collaborative item editing
-  Yjs + Y-PartyServer / Durable Object room per editable item
-
-Private AI chat
-  Later phase; private per user, can act on the shared workspace
-
-Durable data
-  Postgres
-
-Large uploads
-  R2
+["workspaces"]
+["workspaces", workspaceId]
+["workspaces", workspaceId, "items"]
+["workspaces", workspaceId, "page"]
 ```
 
-Do not make the whole workspace one giant Yjs document. Use Yjs only for collaborative editable item content.
+Optimistic cache updates are allowed for actions where instant feedback matters, such as creating a workspace or item. They must:
 
-## Storage Shape
+- cancel relevant queries
+- snapshot previous cache values
+- write the optimistic value
+- rollback on error
+- reconcile with the server result on success
 
-Keep four separate concepts:
+Do not add success toasts for routine optimistic actions. Use error toasts when an action fails.
 
-```txt
-workspace_items
-  tree node and shared metadata for every item
-
-content_snapshots
-  versioned content for editable items and extracted text
-
-item_assets
-  binary/object-storage metadata for uploaded files
-
-workspace_item_search
-  one-row-per-item keyword search projection for current visible state
-```
-
-Do not create type-specific tables at first for documents, flashcards, quizzes, PDFs, or audio. Authored, extracted, and generated content history should live in `content_snapshots`, with `workspace_items.currentAuthoredSnapshotId` and `workspace_items.currentExtractedSnapshotId` pointing at the latest relevant snapshots.
-
-Use `item_assets` only when the item has an uploaded binary in R2. PDF and audio items should have a `workspace_items` row and an `item_assets` row. A document, flashcard, quiz, or folder should not need an `item_assets` row.
-
-## Workspace Tables
+## Core Data Primitives
 
 ### `workspaces`
 
-Stores the workspace itself.
+Workspace identity and shared settings.
 
 ```txt
 id
@@ -86,28 +162,28 @@ archivedAt
 
 ### `workspace_members`
 
-Permissions are workspace-level for now. Item-level permissions can be added later.
+Workspace-level membership and role. Item-level permissions are future-only.
 
 ```txt
 id
 workspaceId
 userId
-role        // owner | admin | editor | viewer
-lastOpenedAt // per-user recency for home ordering
+role          // owner | admin | editor | viewer
+lastOpenedAt // per-user home ordering
 createdAt
 updatedAt
 ```
 
-## Workspace Filesystem
+Use `workspace_members.lastOpenedAt` for home recency. Updating workspace settings should not change home ordering.
 
 ### `workspace_items`
 
-Every visible item in the workspace tree is a row.
+The universal visible node. This is the Drive-like primitive: what exists, where it lives, what type it is, and which snapshots currently represent its content.
 
 ```txt
 id
 workspaceId
-parentId              // null for root-level items
+parentId
 type                  // folder | document | audio | flashcard | quiz | pdf
 name
 color
@@ -126,21 +202,27 @@ updatedAt
 deletedAt
 ```
 
-Recommended indexes and constraints:
+Rules:
 
-```txt
-index(workspaceId, parentId)
-index(workspaceId, type)
-unique(workspaceId, parentId, name) where deletedAt is null
-```
-
-Paths should be derived from `parentId` relationships. Do not make path the authoritative hierarchy. Search and future agent retrieval can store derived path-like display/scope data in projections if needed.
-
-## Editable Content
-
-Documents, flashcards, and quizzes are editable. They should all produce versioned authored snapshots. PDFs and audio files can produce extracted snapshots, but their original files live in `item_assets`.
+- Paths are derived from `parentId`; path strings are not authoritative.
+- Folders are regular items.
+- List views should query `workspace_items`, not subtype tables.
+- `metadataJson` is for lightweight typed metadata only, not file assets or content bodies.
+- Parent must be null or a non-deleted folder in the same workspace.
+- Names should be unique among non-deleted siblings.
 
 ### `content_snapshots`
+
+The durable content/version primitive.
+
+Use snapshots for authored, extracted, and generated content:
+
+- document markdown
+- PDF extracted text
+- audio transcript JSON plus derived text
+- flashcard deck JSON plus derived text
+- quiz definition JSON plus derived text
+- AI-generated summaries or converted content
 
 ```txt
 id
@@ -148,10 +230,10 @@ workspaceId
 itemId
 kind                   // authored | extracted | generated
 versionNumber
-contentFormat          // markdown | plain_text | transcript_json | flashcard_json | quiz_json
-contentText            // markdown/plain/searchable text; also derived text for JSON formats
-contentJson            // structured transcripts/flashcards/quizzes
-yjsStateRef            // optional later if storing Yjs state separately
+format                 // markdown | plain_text | transcript_json | flashcard_json | quiz_json
+contentText
+contentJson
+yjsStateRef
 createdByType          // user | agent | system
 createdByUserId
 createdByAgentSessionId
@@ -159,24 +241,35 @@ reason                 // autosave | ai_edit | import | restore | ocr | transcri
 createdAt
 ```
 
-Initial assumptions:
+Snapshots are not a live keystroke log. Autosave should be throttled so each snapshot is a meaningful checkpoint. Future live collaboration can use Yjs while open, then persist durable checkpoints as snapshots.
 
-- Documents are Markdown authored snapshots.
-- PDF OCR/extracted content is Markdown extracted snapshots.
-- Audio transcripts are structured JSON extracted snapshots, with derived text for search.
-- Flashcards are edited through structured UI and stored as structured JSON.
-- Quizzes are edited through structured UI and stored as structured JSON.
-- Version history is based on autosaved snapshots.
-- Folders do not have content snapshots.
-- PDFs and audio do not have editable authored snapshots initially, but can have extracted snapshots.
+Every structured `format` must have a schema:
 
-Autosave should be throttled so every keystroke does not create a permanent version. Important AI edits should also create snapshots.
+```txt
+markdown
+  contentText required
 
-## Item Assets
+plain_text
+  contentText required
 
-PDFs and audio are uploaded/reference-only for now. No annotation or editing in the initial version.
+transcript_json
+  contentJson validated as transcript data
+  contentText contains derived searchable text
+
+flashcard_json
+  contentJson validated as a deck definition
+  contentText contains derived searchable text
+
+quiz_json
+  contentJson validated as a quiz definition
+  contentText contains derived searchable text
+```
+
+Do not write arbitrary objects to `contentJson`.
 
 ### `item_assets`
+
+Binary/object storage metadata for uploaded or referenced files. Keep this separate from `workspace_items.metadataJson`.
 
 ```txt
 id
@@ -193,46 +286,52 @@ replacedAt
 deletedAt
 ```
 
-PDF text extraction and audio transcription should create `content_snapshots` rows with `kind = extracted`. The active extracted snapshot pointer lives on `workspace_items.currentExtractedSnapshotId`.
+Use cases:
 
-This keeps the model simple:
+- PDFs
+- audio
+- future image/video/source files
+
+PDF text extraction and audio transcription should create extracted `content_snapshots`; the active pointer lives on `workspace_items.currentExtractedSnapshotId`.
+
+### `workspace_events`
+
+Append-only audit/activity/realtime facts.
 
 ```txt
-folder
-  workspace_items only
-
-document
-  workspace_items + content_snapshots
-
-flashcard
-  workspace_items + content_snapshots
-
-quiz
-  workspace_items + content_snapshots
-
-pdf
-  workspace_items + item_assets
-  optional later: content_snapshots for extracted text
-
-audio
-  workspace_items + item_assets
-  optional later: content_snapshots for transcript JSON
+id
+workspaceId
+itemId
+actorType
+actorUserId
+actorAgentSessionId
+eventType
+payloadJson
+createdAt
 ```
 
-## Keyword Search
+Use events for:
 
-Normal user search should be fast keyword search across the current visible workspace state. Title/name matches should rank ahead of body/content matches, but the same result list should include matches from authored content, OCR text, transcripts, flashcards, and quizzes.
+- activity feeds
+- audit/debug history
+- realtime fanout after a committed DB transaction
+- async job provenance
+- future AI action traces
+
+Events are not the current query model. Current item state comes from `workspace_items`, current content from snapshot pointers, current search from `workspace_item_search`, current job status from `workspace_jobs`, and current per-user resume state from `workspace_item_user_state`.
 
 ### `workspace_item_search`
+
+Derived keyword search projection. This is not source of truth.
 
 ```txt
 itemId
 workspaceId
 nameText
-metadataText           // derived from metadataJson and lightweight file metadata
+metadataText
 contentText
 extractedText
-searchVector           // generated weighted tsvector
+searchVector
 currentAuthoredSnapshotId
 currentExtractedSnapshotId
 status                 // pending | ready | failed
@@ -241,66 +340,203 @@ indexedAt
 updatedAt
 ```
 
-This table is a derived projection, not the source of truth. Name and metadata changes can update it synchronously with item mutations. Heavy content, OCR, and transcript indexing can be eventually consistent.
+Rules:
 
-Keyword search should use a generated PostgreSQL `tsvector` column with a GIN index. Weight matches by source:
+- Title/name matches should rank above metadata, authored content, and extracted content.
+- Name and lightweight metadata changes can update search synchronously.
+- Heavy content, OCR, transcription, and AI indexing can be eventually consistent.
+- Semantic search later should add separate chunk/index tables instead of reshaping this projection.
+
+### `workspace_item_user_state`
+
+Planned next primitive. Per-user, per-item resume and UI state. This must not pollute `workspace_items`, because item rows are shared workspace state.
 
 ```txt
-A  name/title text
-B  derived metadata text
-C  authored content text
-D  extracted OCR/transcript text
+id
+workspaceId
+itemId
+userId
+stateJson
+lastOpenedAt
+createdAt
+updatedAt
 ```
 
-## Realtime Rooms
+Use this for:
+
+- PDF last viewed page, zoom, and layout mode
+- document scroll/cursor restore
+- quiz draft/resume position before submission
+- flashcard current card or local review mode
+- per-user item view preferences
+
+Do not use this for:
+
+- submitted quiz attempts
+- quiz answers and scores
+- flashcard review history and due dates
+- comments
+- annotations
+- audit records
+
+Those become future typed workflows only when needed.
+
+### `workspace_jobs`
+
+Planned next primitive. Retryable async work.
+
+```txt
+id
+workspaceId
+itemId
+type                  // extract_pdf | transcribe_audio | index_item | ai_generate | process_asset
+status                // pending | running | completed | failed | canceled
+inputJson
+resultJson
+error
+attempts
+runAfter
+lockedAt
+createdAt
+updatedAt
+```
+
+Use jobs for:
+
+- PDF extraction
+- audio transcription
+- search projection rebuilds
+- AI-generated summaries, quizzes, flashcards, and cleanup passes
+- asset processing
+
+Use Cloudflare Workflows for durable multi-step jobs that need step retries, long-running orchestration, approval, or user-visible progress. Use Cloudflare Queues for simpler background fanout and batching. The DB job row remains useful either way so the app can show status, retry failures, and keep async work auditable. Configure a dead-letter path before treating queued work as production-critical.
+
+## Item Type Composition
+
+Start each curated item type from the shared primitives:
+
+```txt
+folder
+  workspace_items
+
+document
+  workspace_items
+  content_snapshots(authored markdown)
+
+pdf
+  workspace_items
+  item_assets
+  content_snapshots(extracted markdown/plain_text later)
+  workspace_item_user_state(page/zoom later)
+
+audio
+  workspace_items
+  item_assets
+  content_snapshots(extracted transcript_json later)
+  workspace_item_user_state(playback later)
+
+flashcard
+  workspace_items
+  content_snapshots(authored flashcard_json)
+  workspace_item_user_state(resume state later)
+
+quiz
+  workspace_items
+  content_snapshots(authored quiz_json)
+  workspace_item_user_state(draft/resume state later)
+```
+
+Do not add subtype tables merely because a type has content. Add future relational tables only when the workflow needs durable sub-item identity or query-heavy behavior.
+
+Good reasons to graduate a workflow:
+
+- quiz attempts need submitted answers, scores, reports, and analytics
+- flashcard reviews need due dates, ratings, and spaced repetition state
+- PDF annotations need stable anchors, replies, and permissions
+- board cards or table rows need filtering, assignment, movement, and independent comments
+
+Bad reasons:
+
+- the JSON shape feels large
+- a type might need more data someday
+- every item type should have symmetric tables
+
+## Type Schema Registry
+
+Item types are curated by Thinkex. Keep flexibility in code-owned schemas and capability maps.
+
+Each item type should define:
+
+```txt
+item type
+  supported content formats
+  supported asset types
+  metadataJson schema
+  user state schema
+  event payload schemas
+  search projection mapper
+  realtime capabilities
+```
+
+Do not write to `metadataJson`, `contentJson`, `stateJson`, or `payloadJson` without a matching schema and mapper.
+
+## Realtime Architecture
 
 ### Workspace Room
 
-One PartyServer room per workspace:
+One Durable Object / PartyServer room per workspace:
 
 ```txt
 workspace:{workspaceId}
 ```
 
-Broadcasts:
+Current use:
+
+- presence snapshots
+- committed `workspace.item.created` events
+
+Future workspace broadcasts:
 
 ```txt
-item.created
-item.renamed
-item.moved
-item.deleted
-item.restored
-item.reordered
-content.updated
-asset.uploaded
-agent.started
-agent.completed
-agent.failed
+workspace.item.created
+workspace.item.renamed
+workspace.item.moved
+workspace.item.deleted
+workspace.item.restored
+workspace.item.reordered
+workspace.content.updated
+workspace.asset.uploaded
+workspace.job.updated
+workspace.agent.started
+workspace.agent.completed
+workspace.agent.failed
 ```
 
-The database transaction should happen first. After commit, broadcast the event.
+Rules:
 
-### File Collaboration Room
+- Write to Postgres first.
+- Insert `workspace_events` inside the same transaction when possible.
+- After commit, schedule a realtime broadcast with `waitUntil`.
+- On reconnect, clients should invalidate or refetch the relevant workspace queries.
+- Durable Object rooms may hibernate, so do not rely on in-memory room state as durable truth.
 
-One Y-PartyServer room per editable item:
+### Item Collaboration Room
+
+Future only. One room per collaboratively edited item:
 
 ```txt
 workspace:{workspaceId}:item:{itemId}
 ```
 
-Used for:
+Use this only when live multi-user editing is required. For the next document primitive, a normal throttled snapshot save path is enough.
 
-```txt
-documents
-flashcards
-quizzes
-```
+## AI Workspace Actions
 
-The room handles live collaborative edits while the item is open. It periodically persists snapshots to Postgres.
+Do not model private AI conversations yet.
 
-## Future AI Workspace Actions
+When model calls are introduced, route them through Cloudflare AI Gateway when practical so Thinkex gets centralized logging, analytics, caching, rate limits, retries, and model fallback. Workers AI should be the first option for Cloudflare-native inference and markdown conversion when quality and model fit are acceptable. External providers can still be used behind AI Gateway when they are a better product fit.
 
-Do not model AI conversations yet. When AI workspace actions are added, agents should use the same workspace APIs as users:
+When AI workspace actions are added, agents should use the same workspace APIs as users:
 
 ```txt
 listWorkspaceItems
@@ -312,79 +548,90 @@ editDocument
 editFlashcard
 editQuiz
 uploadReference
+requestExtraction
+requestIndexing
 ```
 
-Every agent action should be permission-checked as the user and recorded in the audit log. The private chat/session data model can be designed later.
+Every AI action should:
 
-## Events And Version History
+- be permission-checked as the user
+- write normal item/content/job/event records
+- be visible in audit/activity where appropriate
+- avoid private chat/session data leaking into shared workspace records
 
-### `workspace_events`
+Cloudflare Agents is a future candidate for private AI workspace sessions. Evaluate it before designing custom long-lived agent runtime, scheduling, tool state, or realtime chat infrastructure. Do not adopt it until the AI chat/session product requirements are clear enough to know whether its Durable Object state model fits.
 
-Append-only event/audit log.
+## Search Strategy
+
+Initial search is keyword search from `workspace_item_search`.
+
+For future semantic or hybrid retrieval, evaluate Cloudflare AI Search first. It provides managed indexing, metadata filtering, and vector/keyword/hybrid modes. Use it if it can satisfy workspace permissions, tenant isolation, freshness, metadata filtering, and result control.
+
+Use Vectorize directly if Thinkex needs lower-level control than AI Search provides. In that case, add separate chunk/index tables:
 
 ```txt
-id
-workspaceId
-itemId
-actorType              // user | agent | system
-actorUserId
-actorAgentSessionId    // nullable; only needed when agent sessions exist
-eventType
-payloadJson
-createdAt
+workspace_item_chunks
+workspace_item_embeddings
 ```
 
-This powers:
+Do not add vector tables until these decisions are made:
 
-- workspace activity
-- version history
-- debugging
-- auditability
-- future indexing jobs
-
-Use this for both user and AI changes.
+- chunking strategy
+- embedding model
+- vector dimensions
+- reindexing semantics
+- permission filtering
+- stale-content handling
 
 ## Future Item-Level Permissions
 
-Permissions are workspace-level initially. To support item-level permissions later, add:
+Workspace-level permissions are enough initially. Keep permission checks behind helper functions so item-level permissions can be added later without rewriting every mutation.
+
+Future table:
 
 ```txt
 workspace_item_permissions
   id
   workspaceId
   itemId
-  subjectType      // user | group
+  subjectType
   subjectId
-  role             // owner | editor | viewer
+  role
   inheritedFromParentId
   createdAt
   updatedAt
 ```
 
-Keep initial permission checks behind helper functions so this table can be introduced without rewriting every mutation.
+Do not add this until users need private/shared subtrees inside a workspace.
 
-## Future Semantic Search
+## Implementation Order
 
-Do not build semantic search or vector indexing now. The current requirement is to keep clean `content_snapshots`, `workspace_events`, and `workspace_item_search` so a later indexing phase can process existing workspace content without reshaping the core data model.
+1. Keep the current workspace list/detail/create flows clean and covered.
+2. Add `workspace_item_user_state`.
+3. Build document open/read/save using throttled authored snapshots.
+4. Add `workspace_jobs`.
+5. Add search projection writes for item create/update and content snapshot changes.
+6. Add rename/move/delete/reorder item mutations only when the UI needs them.
+7. Add R2-backed PDF/audio uploads through `item_assets`.
+8. Add extraction/transcription jobs with Cloudflare Workflows or Queues as the executor and DB `workspace_jobs` as app-visible status.
+9. Extend realtime broadcasts beyond item create.
+10. Add Yjs item rooms only when live multi-user editing is required.
+11. Add private AI chat after evaluating Cloudflare Agents and route AI edits through the same item/content/job/event APIs.
+12. Add semantic indexing later after evaluating AI Search first, then Vectorize/custom chunks only if needed.
 
-Future AI retrieval should support explicit modes:
+## Research Anchors
 
-```txt
-keyword
-semantic
-hybrid
-```
-
-Semantic/hybrid retrieval should use separate chunk/index tables when implemented. Do not add chunk tables until chunking strategy, embedding model, vector dimensions, and indexing job semantics are decided.
-
-## Initial Implementation Order
-
-1. Add workspace, member, item, snapshot, asset, event, and keyword search projection tables.
-2. Build workspace tree CRUD with soft delete and autosaved content snapshots.
-3. Add PartyServer workspace room for realtime tree updates.
-4. Add Yjs/Y-PartyServer rooms for open documents.
-5. Extend Yjs editing to flashcards and quizzes.
-6. Add R2-backed PDF and audio uploads.
-7. Add private AI chat sessions later.
-8. Route AI edits through the same item/content mutation APIs.
-9. Add semantic indexing later from existing snapshots/events.
+- TanStack Start server functions are server-side RPCs callable from loaders, hooks, components, and other server functions. They are the app boundary for server-only logic.
+- TanStack Router loaders can preload route data, show pending components, and pair well with TanStack Query cache seeding.
+- TanStack Query optimistic updates support cancel/snapshot/set/rollback/invalidate patterns; use that pattern for instant workspace/item creation.
+- Cloudflare Durable Objects are appropriate for stateful realtime coordination and WebSocket rooms. Hibernation means in-memory state can reset, so durable state belongs in Postgres.
+- Cloudflare Workflows provide durable multi-step execution, retries, long-running orchestration, and observability for background workflows.
+- Cloudflare Queues support retries and dead-letter queues; use them as async transport when jobs become production-critical.
+- Cloudflare R2 is the object store for uploaded binaries; store object metadata in `item_assets`.
+- Cloudflare Hyperdrive should be the production database path. Local development should default to direct database access unless specifically testing Hyperdrive.
+- Cloudflare Workers AI can provide native inference and markdown conversion via Worker bindings.
+- Cloudflare AI Gateway provides AI logging, analytics, caching, rate limiting, retries, and model fallback across Workers AI and external providers.
+- Cloudflare AI Search provides managed retrieval with metadata filtering and vector/keyword/hybrid search modes; evaluate it before building custom retrieval.
+- Cloudflare Vectorize is the lower-level vector database option when custom retrieval control is required.
+- Cloudflare Browser Run is the preferred Cloudflare primitive for rendered webpage import, screenshots, PDFs, and future browser-based agent tasks.
+- PostgreSQL GIN indexes are the preferred index type for regular full-text search workloads.

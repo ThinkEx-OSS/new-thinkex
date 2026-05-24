@@ -162,7 +162,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 				set((state) => {
 					const session = state.sessionsByWorkspaceId[workspaceId];
 
-					if (!session || !session.tabs.some((tab) => tab.id === tabId)) {
+					if (!session?.tabs.some((tab) => tab.id === tabId)) {
 						return state;
 					}
 

@@ -21,8 +21,11 @@ import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePre
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+
+type PresenceStatus = "connecting" | "connected" | "disconnected";
 
 interface WorkspaceTopBarProps {
 	workspace: WorkspaceSummary;
@@ -30,6 +33,10 @@ interface WorkspaceTopBarProps {
 	tabs: WorkspaceTab[];
 	activeTab: WorkspaceTab;
 	contextBar: ReactNode;
+	presence: {
+		status: PresenceStatus;
+		users: WorkspacePresenceUser[];
+	};
 	onActivateTab: (tab: WorkspaceTab) => void;
 	onCloseTab: (tab: WorkspaceTab) => void;
 	onCreateRootTab: () => void;
@@ -41,6 +48,7 @@ export default function WorkspaceTopBar({
 	tabs,
 	activeTab,
 	contextBar,
+	presence,
 	onActivateTab,
 	onCloseTab,
 	onCreateRootTab,
@@ -90,7 +98,7 @@ export default function WorkspaceTopBar({
 					>
 						<Share2 className="size-3.5" />
 					</Button>
-					<WorkspacePresence workspaceId={workspace.id} />
+					<WorkspacePresence status={presence.status} users={presence.users} />
 					<UserProfileDropdown />
 					{isCollapsed ? (
 						<Button

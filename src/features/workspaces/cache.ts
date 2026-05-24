@@ -131,6 +131,61 @@ export function updateWorkspaceInCaches(
 	);
 }
 
+export function upsertWorkspaceItemInCaches(
+	queryClient: QueryClient,
+	item: WorkspaceItemSummary,
+) {
+	const upsertItem = (items: WorkspaceItemSummary[] | undefined) => {
+		if (!items) {
+			return undefined;
+		}
+
+		if (items.some((current) => current.id === item.id)) {
+			return items.map((current) => (current.id === item.id ? item : current));
+		}
+
+		return [...items, item];
+	};
+
+	queryClient.setQueryData<WorkspaceItemSummary[]>(
+		workspaceItemsQueryKey(item.workspaceId),
+		upsertItem,
+	);
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(item.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: upsertItem(current.items) ?? current.items,
+					}
+				: current,
+	);
+}
+
+export function removeWorkspaceItemFromCaches(
+	queryClient: QueryClient,
+	input: { workspaceId: string; itemId: string },
+) {
+	const removeItem = (items: WorkspaceItemSummary[] | undefined) =>
+		items?.filter((item) => item.id !== input.itemId);
+
+	queryClient.setQueryData<WorkspaceItemSummary[]>(
+		workspaceItemsQueryKey(input.workspaceId),
+		removeItem,
+	);
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: removeItem(current.items) ?? current.items,
+					}
+				: current,
+	);
+}
+
 export function removeWorkspaceCaches(
 	queryClient: QueryClient,
 	workspaceId: string,

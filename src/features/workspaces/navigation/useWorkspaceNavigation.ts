@@ -55,7 +55,7 @@ export function useWorkspaceNavigation({
 
 	const navigateToTab = useCallback(
 		(tab: WorkspaceTab, replace = false) => {
-			navigate({
+			void navigate({
 				to: "/workspaces/$workspaceId",
 				params: { workspaceId: workspace.id },
 				search: getWorkspaceTabSearch(tab),
