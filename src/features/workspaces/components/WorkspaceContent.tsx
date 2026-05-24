@@ -183,7 +183,6 @@ function WorkspaceItemCard({
 				className={cn(
 					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
 					"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
-					"group-focus-within/item:pointer-events-auto group-focus-within/item:opacity-100",
 					"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
 				)}
 			>
