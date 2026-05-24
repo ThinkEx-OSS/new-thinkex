@@ -254,7 +254,7 @@ export function WorkspaceFrame({
 					<>
 						<ResizableHandle
 							id="workspace-ai-chat-separator"
-							className="relative z-[45] -mx-[13px] hidden w-[27px] items-stretch justify-center bg-transparent outline-none after:hidden [&[data-separator=active]>div]:w-[3px] [&[data-separator=active]>div]:bg-ring [&[data-separator=hover]>div]:w-[3px] [&[data-separator=hover]>div]:bg-ring/70 lg:flex"
+							className="relative z-[45] -mx-[13px] flex w-[27px] items-stretch justify-center bg-transparent outline-none after:hidden [&[data-separator=active]>div]:w-[3px] [&[data-separator=active]>div]:bg-ring [&[data-separator=hover]>div]:w-[3px] [&[data-separator=hover]>div]:bg-ring/70"
 							onPointerUp={(event) => event.currentTarget.blur()}
 						>
 							<div className="my-0 w-px bg-border transition-[background-color,width] duration-150" />
@@ -264,7 +264,6 @@ export function WorkspaceFrame({
 							defaultSize="30rem"
 							minSize="26rem"
 							maxSize="60%"
-							className="hidden lg:block"
 						>
 							{chatPanel}
 						</ResizablePanel>
