@@ -78,7 +78,7 @@ export default function WorkspaceContent({
 								<WorkspaceItemCard
 									key={item.id}
 									item={item}
-									meta={getWorkspaceItemMeta(item, items)}
+									items={items}
 									onOpenItem={onOpenItem}
 									onRenameItem={setRenamingItem}
 									onDeleteItem={openDeleteAlert}
@@ -92,7 +92,7 @@ export default function WorkspaceContent({
 								<WorkspaceItemCard
 									key={item.id}
 									item={item}
-									meta={getWorkspaceItemMeta(item, items)}
+									items={items}
 									onOpenItem={onOpenItem}
 									onRenameItem={setRenamingItem}
 									onDeleteItem={openDeleteAlert}
@@ -138,17 +138,19 @@ export default function WorkspaceContent({
 
 function WorkspaceItemCard({
 	item,
-	meta,
+	items,
 	onOpenItem,
 	onRenameItem,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
-	meta: string;
+	items: WorkspaceItem[];
 	onOpenItem: (item: WorkspaceItem) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
+	const isFolder = item.type === "folder";
+	const meta = isFolder ? getWorkspaceItemMeta(item, items) : null;
 	const {
 		Icon: ItemIcon,
 		iconClassName,
@@ -156,29 +158,35 @@ function WorkspaceItemCard({
 	} = getWorkspaceItemDisplay(item);
 
 	return (
-		<Card className="group/item relative gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md dark:hover:bg-accent/60">
+		<Card className="group/item relative flex h-full min-h-44 flex-col gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md dark:hover:bg-accent/60">
 			<button
 				type="button"
-				className="flex w-full flex-col text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+				className={cn(
+					"flex min-h-20 flex-1 items-center justify-center bg-muted outline-none",
+					"focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+					surfaceClassName,
+				)}
 				onClick={() => onOpenItem(item)}
 			>
-				<div
-					className={cn(
-						"flex aspect-[5/2] items-center justify-center bg-muted",
-						surfaceClassName,
-					)}
-				>
-					<ItemIcon
-						className={cn("size-10", iconClassName)}
-						strokeWidth={1.75}
-						aria-hidden="true"
-					/>
-				</div>
-				<CardHeader className="gap-2 py-5">
-					<CardTitle>{item.name}</CardTitle>
-					<p className="text-xs text-muted-foreground">{meta}</p>
-				</CardHeader>
+				<ItemIcon
+					className={cn("size-10", iconClassName)}
+					strokeWidth={1.75}
+					aria-hidden="true"
+				/>
 			</button>
+			<CardHeader className="shrink-0 gap-2 px-4 py-3">
+				<CardTitle className="min-w-0">
+					<button
+						type="button"
+						className="block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+						aria-label={`Rename ${item.name}`}
+						onClick={() => onRenameItem(item)}
+					>
+						{item.name}
+					</button>
+				</CardTitle>
+				{meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
+			</CardHeader>
 			<div
 				className={cn(
 					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",

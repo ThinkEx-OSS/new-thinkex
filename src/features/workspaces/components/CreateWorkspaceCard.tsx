@@ -36,7 +36,7 @@ export default function CreateWorkspaceCard({
 					<Plus className="size-11 text-muted-foreground" strokeWidth={1.75} />
 				</div>
 
-				<CardHeader className="gap-2 py-5">
+				<CardHeader className="gap-2 px-4 py-3">
 					<CardTitle>Create workspace</CardTitle>
 					<CardDescription className="text-xs">
 						Start something new

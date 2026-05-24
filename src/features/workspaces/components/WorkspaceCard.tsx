@@ -61,7 +61,7 @@ export default function WorkspaceCard({
 						<Icon className={cn("size-11", color.text)} strokeWidth={1.75} />
 					</div>
 
-					<CardHeader className="gap-2 py-5">
+					<CardHeader className="gap-2 px-4 py-3">
 						<CardTitle className="truncate">{workspace.name}</CardTitle>
 						{recencyLabel ? (
 							<CardDescription className="truncate text-xs">
