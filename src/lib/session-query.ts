@@ -9,13 +9,12 @@ export function getAuthSessionQueryOptions() {
 	return queryOptions({
 		queryKey: authSessionQueryKey,
 		queryFn: () => getSession(),
-		staleTime: typeof window !== "undefined" ? 2 * 60_000 : 0,
-		gcTime: typeof window !== "undefined" ? 30 * 60 * 1000 : 0,
-		refetchInterval: typeof window !== "undefined" ? 60_000 : false,
-		refetchIntervalInBackground: false,
-		refetchOnWindowFocus: true,
-		refetchOnReconnect: true,
-		refetchOnMount: true,
+		staleTime: typeof window !== "undefined" ? Infinity : 0,
+		gcTime: typeof window !== "undefined" ? 60 * 60_000 : 0,
+		refetchInterval: false,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+		refetchOnMount: false,
 		retry: 1,
 	});
 }
