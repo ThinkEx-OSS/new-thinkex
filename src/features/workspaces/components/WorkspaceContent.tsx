@@ -1,5 +1,4 @@
 import {
-	Copy,
 	EllipsisVertical,
 	FolderInput,
 	FolderOpen,
@@ -224,10 +223,6 @@ function WorkspaceItemCard({
 								))}
 							</DropdownMenuSubContent>
 						</DropdownMenuSub>
-						<DropdownMenuItem>
-							<Copy className="size-4" />
-							<span>Duplicate</span>
-						</DropdownMenuItem>
 						<DropdownMenuItem>
 							<FolderInput className="size-4" />
 							<span>Move to folder</span>
