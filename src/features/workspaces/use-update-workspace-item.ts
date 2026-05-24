@@ -12,6 +12,7 @@ import type {
 	WorkspaceItemSummary,
 	WorkspacePage,
 } from "#/features/workspaces/contracts";
+import { getAvailableWorkspaceItemName } from "#/features/workspaces/defaults";
 import { updateWorkspaceItemFn } from "#/features/workspaces/server/functions";
 import { getErrorMessage } from "#/lib/error-message";
 
@@ -42,7 +43,19 @@ export function useUpdateWorkspaceItemMutation() {
 			const previousPage = queryClient.getQueryData<WorkspacePage>(
 				workspacePageQueryKey(input.workspaceId),
 			);
-			const name = input.name.trim();
+			const items = previousItems ?? previousPage?.items ?? [];
+			const name = getAvailableWorkspaceItemName({
+				type: input.item.type,
+				requestedName: input.name,
+				existingNames: items
+					.filter(
+						(item) =>
+							item.id !== input.itemId &&
+							item.parentId === input.item.parentId &&
+							!item.deletedAt,
+					)
+					.map((item) => item.name),
+			});
 
 			upsertWorkspaceItemInCaches(queryClient, {
 				...input.item,
