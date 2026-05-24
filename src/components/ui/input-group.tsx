@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/a11y/useKeyWithClickEvents: addon clicks focus the nested input; keyboard focus remains on the input itself. */
+/* biome-ignore-all lint/a11y/useSemanticElements: shadcn registry groups input adornments in div wrappers. */
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { Button } from "#/components/ui/button.tsx";
@@ -7,7 +9,6 @@ import { cn } from "#/lib/utils.ts";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: this wrapper groups input adornments without fieldset semantics.
 		<div
 			data-slot="input-group"
 			role="group"
@@ -47,8 +48,6 @@ function InputGroupAddon({
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: clicking the addon focuses the input; the input remains the keyboard target.
-		// biome-ignore lint/a11y/useSemanticElements: this wrapper groups input adornments without fieldset semantics.
 		<div
 			role="group"
 			data-slot="input-group-addon"

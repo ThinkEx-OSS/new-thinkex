@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/a11y/useSemanticElements: shadcn registry groups field controls in div wrappers. */
 import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
 import { Label } from "#/components/ui/label.tsx";
@@ -72,7 +73,6 @@ function Field({
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: this wrapper groups arbitrary field content without fieldset semantics.
 		<div
 			role="group"
 			data-slot="field"

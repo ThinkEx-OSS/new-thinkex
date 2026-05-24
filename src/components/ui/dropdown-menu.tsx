@@ -1,5 +1,6 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import type * as React from "react";
 import { cn } from "#/lib/utils.ts";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -75,12 +76,10 @@ function DropdownMenuLabel({
 function DropdownMenuItem({
 	className,
 	inset,
-	onSelect,
 	variant = "default",
 	...props
-}: Omit<MenuPrimitive.Item.Props, "onSelect"> & {
+}: MenuPrimitive.Item.Props & {
 	inset?: boolean;
-	onSelect?: MenuPrimitive.Item.Props["onClick"];
 	variant?: "default" | "destructive";
 }) {
 	return (
@@ -93,7 +92,6 @@ function DropdownMenuItem({
 				className,
 			)}
 			{...props}
-			onClick={onSelect ?? props.onClick}
 		/>
 	);
 }

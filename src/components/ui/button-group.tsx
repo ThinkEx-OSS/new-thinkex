@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/a11y/useSemanticElements: shadcn registry groups arbitrary controls in div wrappers. */
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -27,7 +28,6 @@ function ButtonGroup({
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: this wrapper groups arbitrary controls without fieldset semantics.
 		<div
 			role="group"
 			data-slot="button-group"

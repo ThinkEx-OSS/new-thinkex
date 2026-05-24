@@ -1,10 +1,10 @@
+/* biome-ignore-all lint/a11y/noLabelWithoutControl: callers provide htmlFor or wrap controls at usage sites. */
 import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
 	return (
-		// biome-ignore lint/a11y/noLabelWithoutControl: this primitive is associated by callers through htmlFor or nested controls.
 		<label
 			data-slot="label"
 			className={cn(
