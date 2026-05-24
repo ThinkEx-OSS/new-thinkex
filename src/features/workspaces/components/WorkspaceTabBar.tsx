@@ -184,11 +184,12 @@ function WorkspaceTabItem({
 					isDragSource && "cursor-grabbing",
 				)}
 			>
-				<button
-					ref={handleRef}
+				<Button
+					render={<button ref={handleRef} type="button" />}
 					type="button"
+					variant="ghost"
 					className={cn(
-						"flex h-full min-w-0 flex-1 touch-none items-center gap-1.5 py-0 pr-px pl-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+						"h-full min-w-0 flex-1 touch-none justify-start gap-1.5 rounded-none bg-transparent py-0 pr-px pl-2 text-left hover:bg-transparent active:translate-y-0",
 						isDragSource && "cursor-grabbing",
 					)}
 					onClick={onActivate}
@@ -199,19 +200,21 @@ function WorkspaceTabItem({
 						aria-hidden="true"
 					/>
 					<span className="truncate">{title}</span>
-				</button>
+				</Button>
 				{showClose ? (
-					<button
+					<Button
 						type="button"
+						variant="ghost"
+						size="icon-xs"
 						className={cn(
-							"mr-1 flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-focus-within/tab:opacity-100 group-hover/tab:opacity-100",
+							"mr-1 size-4 shrink-0 rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100",
 							isActive && "opacity-100",
 						)}
 						aria-label={`Close ${title}`}
 						onClick={onClose}
 					>
 						<X className="size-3" aria-hidden="true" />
-					</button>
+					</Button>
 				) : null}
 			</div>
 		</div>

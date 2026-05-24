@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
+import { Skeleton } from "#/components/ui/skeleton";
 import { WorkspaceFrame } from "#/features/workspaces/components/WorkspaceLayout";
 
 const workspaceSkeletonCardIds = [
@@ -40,18 +41,14 @@ function WorkspaceChromeSkeleton() {
 						</span>
 					</Link>
 					<div className="flex min-w-0 flex-1 items-center gap-1 px-1">
-						<SkeletonBlock className="h-8 w-32 rounded-md" />
-						<SkeletonBlock className="h-4 w-px shrink-0 rounded-none" />
-						<SkeletonBlock className="h-8 w-28 rounded-md" />
-						<SkeletonBlock className="hidden h-4 w-px shrink-0 rounded-none sm:block" />
-						<SkeletonBlock className="hidden h-8 w-24 rounded-md sm:block" />
+						<Skeleton className="h-8 w-32 rounded-md" />
+						<Skeleton className="h-4 w-px shrink-0 rounded-none" />
+						<Skeleton className="h-8 w-28 rounded-md" />
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					<SkeletonBlock className="size-8 rounded-md" />
-					<SkeletonBlock className="size-8 rounded-full" />
-					<SkeletonBlock className="size-8 rounded-full" />
-					<SkeletonBlock className="hidden h-8 w-24 rounded-md lg:block" />
+					<Skeleton className="size-8 rounded-md" />
+					<Skeleton className="size-8 rounded-full" />
 				</div>
 			</div>
 			<WorkspaceContextBarSkeleton />
@@ -62,14 +59,13 @@ function WorkspaceChromeSkeleton() {
 function WorkspaceContextBarSkeleton() {
 	return (
 		<div className="flex h-11 items-center justify-between gap-3 bg-workspace-chrome-active px-4 text-sm">
-			<div className="flex min-w-0 items-center gap-2">
-				<SkeletonBlock className="size-5 rounded-sm" />
-				<SkeletonBlock className="h-4 w-32 rounded-sm" />
-				<SkeletonBlock className="h-4 w-20 rounded-sm" />
+			<div className="flex min-w-0 items-center gap-1.5">
+				<Skeleton className="size-3.5 rounded-sm" />
+				<Skeleton className="h-4 w-36 rounded-sm" />
 			</div>
-			<div className="flex shrink-0 items-center gap-2">
-				<SkeletonBlock className="h-8 w-24 rounded-md" />
-				<SkeletonBlock className="size-8 rounded-md" />
+			<div className="flex shrink-0 items-center gap-1">
+				<Skeleton className="h-8 w-20 rounded-md" />
+				<Skeleton className="size-8 rounded-md" />
 			</div>
 		</div>
 	);
@@ -83,12 +79,12 @@ function WorkspaceContentSkeleton() {
 					{workspaceSkeletonCardIds.map((id) => (
 						<div
 							key={id}
-							className="overflow-hidden rounded-md border border-border bg-card"
+							className="overflow-hidden rounded-md border border-border/70 bg-card"
 						>
-							<SkeletonBlock className="aspect-[5/2] rounded-none" />
+							<Skeleton className="aspect-[5/2] rounded-none bg-muted/45" />
 							<div className="space-y-3 p-5">
-								<SkeletonBlock className="h-5 w-3/4 rounded-sm" />
-								<SkeletonBlock className="h-3 w-1/2 rounded-sm" />
+								<Skeleton className="h-5 w-3/4 rounded-sm bg-muted/55" />
+								<Skeleton className="h-3 w-1/2 rounded-sm bg-muted/45" />
 							</div>
 						</div>
 					))}
@@ -102,34 +98,20 @@ function AiChatPanelSkeleton() {
 	return (
 		<aside className="relative flex min-h-screen flex-col bg-background">
 			<div className="flex h-12 items-center justify-between border-b border-border/70 px-4">
-				<SkeletonBlock className="h-5 w-28 rounded-sm" />
+				<Skeleton className="h-5 w-28 rounded-sm" />
 				<div className="flex items-center gap-1">
-					<SkeletonBlock className="size-8 rounded-md" />
-					<SkeletonBlock className="size-8 rounded-md" />
+					<Skeleton className="size-8 rounded-md" />
+					<Skeleton className="size-8 rounded-md" />
 				</div>
 			</div>
-			<div className="min-h-0 flex-1 px-4 pt-14 pb-5">
-				<div className="space-y-3">
-					<SkeletonBlock className="h-3 w-1/3 rounded-sm" />
-					<SkeletonBlock className="h-3 w-1/2 rounded-sm" />
-				</div>
-			</div>
+			<div className="min-h-0 flex-1" />
 			<div className="px-4 pb-4">
 				<div className="mx-auto w-full max-w-2xl">
 					<div className="rounded-md border border-border/70 bg-muted/30 p-3">
-						<SkeletonBlock className="h-16 rounded-sm" />
+						<Skeleton className="h-16 rounded-sm" />
 					</div>
 				</div>
 			</div>
 		</aside>
-	);
-}
-
-function SkeletonBlock({ className }: { className?: string }) {
-	return (
-		<div
-			className={`animate-pulse bg-muted ${className ?? ""}`}
-			aria-hidden="true"
-		/>
 	);
 }

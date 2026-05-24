@@ -14,6 +14,7 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { Input } from "#/components/ui/input";
+import { Skeleton } from "#/components/ui/skeleton";
 import {
 	CreateWorkspaceCard,
 	createWorkspaceMutationInput,
@@ -166,10 +167,10 @@ const homeWorkspaceSkeletonCardIds = ["recent", "research", "notes"] as const;
 function WorkspaceCardSkeleton() {
 	return (
 		<div className="overflow-hidden rounded-md border border-border bg-card">
-			<div className="aspect-[5/2] animate-pulse bg-muted" />
+			<Skeleton className="aspect-[5/2] rounded-none" />
 			<div className="space-y-3 p-5">
-				<div className="h-5 w-3/4 animate-pulse rounded-sm bg-muted" />
-				<div className="h-3 w-1/2 animate-pulse rounded-sm bg-muted" />
+				<Skeleton className="h-5 w-3/4 rounded-sm" />
+				<Skeleton className="h-3 w-1/2 rounded-sm" />
 			</div>
 		</div>
 	);

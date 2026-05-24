@@ -16,6 +16,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
 import { getErrorMessage } from "#/lib/error-message";
 import { removeAuthSession } from "#/lib/session-query";
@@ -62,12 +63,7 @@ export default function UserProfileDropdown() {
 	};
 
 	if (isPending) {
-		return (
-			<div
-				className="size-8 shrink-0 animate-pulse rounded-full bg-muted"
-				aria-hidden="true"
-			/>
-		);
+		return <Skeleton className="size-8 shrink-0 rounded-full" />;
 	}
 
 	if (session?.user) {

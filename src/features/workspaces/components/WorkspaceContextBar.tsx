@@ -18,14 +18,20 @@ import {
 } from "#/components/ui/breadcrumb";
 import { Button } from "#/components/ui/button";
 import {
-	Command,
-	CommandDialog,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "#/components/ui/command";
+	Combobox,
+	ComboboxEmpty,
+	ComboboxGroup,
+	ComboboxInput,
+	ComboboxItem,
+	ComboboxList,
+} from "#/components/ui/combobox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -214,44 +220,68 @@ export default function WorkspaceContextBar({
 					)}
 				</div>
 			</div>
-			<CommandDialog
-				open={searchOpen}
-				onOpenChange={setSearchOpen}
-				title="Search workspace"
-				description="Search files and folders in this workspace."
-			>
-				<Command>
-					<CommandInput placeholder="Search workspace..." />
-					<CommandList>
-						<CommandEmpty>No items found.</CommandEmpty>
-						<CommandGroup>
-							{searchableItems.map((item) => {
-								const { Icon, iconClassName, label } =
-									getWorkspaceItemDisplay(item);
+			<Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+				<DialogContent
+					className="gap-3 p-3 sm:max-w-lg"
+					showCloseButton={false}
+				>
+					<DialogHeader className="sr-only">
+						<DialogTitle>Search workspace</DialogTitle>
+						<DialogDescription>
+							Search files and folders in this workspace.
+						</DialogDescription>
+					</DialogHeader>
+					<Combobox<WorkspaceItem>
+						items={searchableItems}
+						itemToStringLabel={getSearchableItemLabel}
+						itemToStringValue={(item) => item.id}
+						isItemEqualToValue={(item, value) => item.id === value.id}
+						value={null}
+						inline
+						autoHighlight
+						onValueChange={(item) => {
+							if (!item) {
+								return;
+							}
+							onNavigateToItem(item);
+							setSearchOpen(false);
+						}}
+					>
+						<ComboboxInput
+							autoFocus
+							showTrigger={false}
+							placeholder="Search workspace..."
+							className="w-full"
+						/>
+						<ComboboxList className="max-h-80 p-1">
+							<ComboboxEmpty>No items found.</ComboboxEmpty>
+							<ComboboxGroup>
+								{searchableItems.map((item, index) => {
+									const { Icon, iconClassName, label } =
+										getWorkspaceItemDisplay(item);
 
-								return (
-									<CommandItem
-										key={item.id}
-										value={`${item.name} ${label}`}
-										onSelect={() => {
-											onNavigateToItem(item);
-											setSearchOpen(false);
-										}}
-									>
-										<Icon className={`size-4 ${iconClassName}`} />
-										<span className="truncate">{item.name}</span>
-										<span className="ml-auto text-xs text-muted-foreground">
-											{label}
-										</span>
-									</CommandItem>
-								);
-							})}
-						</CommandGroup>
-					</CommandList>
-				</Command>
-			</CommandDialog>
+									return (
+										<ComboboxItem key={item.id} value={item} index={index}>
+											<Icon className={`size-4 ${iconClassName}`} />
+											<span className="truncate">{item.name}</span>
+											<span className="ml-auto text-xs text-muted-foreground">
+												{label}
+											</span>
+										</ComboboxItem>
+									);
+								})}
+							</ComboboxGroup>
+						</ComboboxList>
+					</Combobox>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
+}
+
+function getSearchableItemLabel(item: WorkspaceItem) {
+	const { label } = getWorkspaceItemDisplay(item);
+	return `${item.name} ${label}`;
 }
 
 function WorkspaceBreadcrumbItem({
@@ -308,9 +338,11 @@ function CrumbButton({
 	return (
 		<BreadcrumbLink
 			render={
-				<button
+				<Button
+					variant="ghost"
+					size="sm"
 					type="button"
-					className="flex min-w-0 items-center gap-1.5 truncate rounded-sm font-normal text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+					className="h-auto min-w-0 justify-start gap-1.5 truncate rounded-sm px-0 py-0 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground active:translate-y-0"
 					onClick={onClick}
 				/>
 			}

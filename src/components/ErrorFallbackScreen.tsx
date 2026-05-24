@@ -2,6 +2,11 @@ import type { ReactElement } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "#/components/ui/collapsible";
 
 interface ErrorFallbackScreenProps {
 	message: string;
@@ -45,14 +50,25 @@ export default function ErrorFallbackScreen({
 					</div>
 
 					{stack ? (
-						<details className="w-full max-w-xs text-left text-xs text-muted-foreground">
-							<summary className="cursor-pointer list-none text-center">
+						<Collapsible className="w-full max-w-xs text-left text-xs text-muted-foreground">
+							<CollapsibleTrigger
+								render={
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="mx-auto h-auto px-2 py-1 text-xs text-muted-foreground"
+									/>
+								}
+							>
 								Technical details
-							</summary>
-							<pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-card p-4 leading-5">
-								{stack}
-							</pre>
-						</details>
+							</CollapsibleTrigger>
+							<CollapsibleContent className="mt-3 overflow-hidden">
+								<pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-card p-4 leading-5">
+									{stack}
+								</pre>
+							</CollapsibleContent>
+						</Collapsible>
 					) : null}
 				</div>
 			</main>
