@@ -10,6 +10,31 @@ export function getWorkspaceChildren(
 		.sort(compareWorkspaceItems);
 }
 
+export function getWorkspaceDescendantIds(
+	items: WorkspaceItem[],
+	itemId: string,
+) {
+	const descendantIds: string[] = [];
+	const parentIds = [itemId];
+
+	for (let index = 0; index < parentIds.length; index += 1) {
+		const parentId = parentIds[index];
+
+		if (!parentId) {
+			continue;
+		}
+
+		for (const item of items) {
+			if (item.parentId === parentId) {
+				descendantIds.push(item.id);
+				parentIds.push(item.id);
+			}
+		}
+	}
+
+	return descendantIds;
+}
+
 export function splitWorkspaceChildren(items: WorkspaceItem[]) {
 	return {
 		folders: items.filter((item) => item.type === "folder"),

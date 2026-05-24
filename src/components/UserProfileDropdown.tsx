@@ -113,18 +113,13 @@ export default function UserProfileDropdown() {
 						))}
 					</DropdownMenuRadioGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem
-						onSelect={(event) => {
-							event.preventDefault();
-						}}
-					>
+					<DropdownMenuItem>
 						<Settings className="size-4" />
 						Settings
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						variant="destructive"
-						onSelect={(event) => {
-							event.preventDefault();
+						onClick={() => {
 							void handleSignOut();
 						}}
 					>

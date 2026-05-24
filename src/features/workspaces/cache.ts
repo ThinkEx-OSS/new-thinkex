@@ -167,8 +167,19 @@ export function removeWorkspaceItemFromCaches(
 	queryClient: QueryClient,
 	input: { workspaceId: string; itemId: string },
 ) {
+	removeWorkspaceItemsFromCaches(queryClient, {
+		workspaceId: input.workspaceId,
+		itemIds: [input.itemId],
+	});
+}
+
+export function removeWorkspaceItemsFromCaches(
+	queryClient: QueryClient,
+	input: { workspaceId: string; itemIds: string[] },
+) {
+	const itemIds = new Set(input.itemIds);
 	const removeItem = (items: WorkspaceItemSummary[] | undefined) =>
-		items?.filter((item) => item.id !== input.itemId);
+		items?.filter((item) => !itemIds.has(item.id));
 
 	queryClient.setQueryData<WorkspaceItemSummary[]>(
 		workspaceItemsQueryKey(input.workspaceId),
@@ -184,6 +195,24 @@ export function removeWorkspaceItemFromCaches(
 					}
 				: current,
 	);
+}
+
+export function applyWorkspaceItemDeletionInCaches(
+	queryClient: QueryClient,
+	input: {
+		workspaceId: string;
+		deletedItemIds: string[];
+		reparentedItems: WorkspaceItemSummary[];
+	},
+) {
+	removeWorkspaceItemsFromCaches(queryClient, {
+		workspaceId: input.workspaceId,
+		itemIds: input.deletedItemIds,
+	});
+
+	for (const item of input.reparentedItems) {
+		upsertWorkspaceItemInCaches(queryClient, item);
+	}
 }
 
 export function removeWorkspaceCaches(

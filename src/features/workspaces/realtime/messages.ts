@@ -10,15 +10,26 @@ export interface WorkspacePresenceUser {
 	image: string | null;
 }
 
-export interface WorkspaceRealtimeEvent {
+interface WorkspaceRealtimeEventBase {
 	id: string;
-	type: "workspace.item.created";
 	workspaceId: string;
 	itemId: string;
 	actorUserId: string | null;
 	createdAt: string;
-	payload: { item: WorkspaceItemSummary };
 }
+
+export type WorkspaceRealtimeEvent =
+	| (WorkspaceRealtimeEventBase & {
+			type: "workspace.item.created" | "workspace.item.renamed";
+			payload: { item: WorkspaceItemSummary };
+	  })
+	| (WorkspaceRealtimeEventBase & {
+			type: "workspace.item.deleted";
+			payload: {
+				deletedItemIds: string[];
+				reparentedItems: WorkspaceItemSummary[];
+			};
+	  });
 
 export type WorkspaceRealtimeServerMessage =
 	| {

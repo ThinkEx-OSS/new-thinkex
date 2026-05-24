@@ -61,7 +61,7 @@ export default function WorkspaceCard({
 						<Icon className={cn("size-11", color.text)} strokeWidth={1.75} />
 					</div>
 
-					<CardHeader className="gap-2 py-5 pr-13">
+					<CardHeader className="gap-2 py-5">
 						<CardTitle className="truncate">{workspace.name}</CardTitle>
 						{recencyLabel ? (
 							<CardDescription className="truncate text-xs">
@@ -73,10 +73,9 @@ export default function WorkspaceCard({
 
 				<div
 					className={cn(
-						"pointer-events-none absolute right-3 bottom-4 z-10 opacity-0 transition-opacity",
+						"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
 						"group-hover/card:pointer-events-auto group-hover/card:opacity-100",
 						"group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100",
-						"has-[button[data-state=open]]:pointer-events-auto has-[button[data-state=open]]:opacity-100",
 					)}
 				>
 					<Button
@@ -89,7 +88,7 @@ export default function WorkspaceCard({
 							setSettingsOpen(true);
 						}}
 					>
-						<Settings />
+						<Settings className="size-4" />
 					</Button>
 				</div>
 			</Card>

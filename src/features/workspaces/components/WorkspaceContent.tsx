@@ -7,6 +7,7 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -27,7 +28,11 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "#/components/ui/empty";
-import { ScrollArea, ScrollBar } from "#/components/ui/scroll-area";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import {
+	DeleteWorkspaceItemAlert,
+	RenameWorkspaceItemDialog,
+} from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import {
 	getWorkspaceChildren,
@@ -48,6 +53,10 @@ export default function WorkspaceContent({
 	activeItem,
 	onOpenItem,
 }: WorkspaceContentProps) {
+	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
+	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
+	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+
 	if (activeItem && activeItem.type !== "folder") {
 		return <WorkspaceItemView item={activeItem} />;
 	}
@@ -55,50 +64,76 @@ export default function WorkspaceContent({
 	const parentId = activeItem?.type === "folder" ? activeItem.id : null;
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
+	const openDeleteAlert = (item: WorkspaceItem) => {
+		setDeletingItem(item);
+		setDeleteAlertOpen(true);
+	};
 
 	return (
-		<ScrollArea className="h-[calc(100vh-5.75rem)]">
-			<div className="space-y-5 px-4 py-3">
-				{folders.length > 0 ? (
-					<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
-						{folders.map((item) => (
-							<WorkspaceItemCard
-								key={item.id}
-								item={item}
-								meta={getWorkspaceItemMeta(item, items)}
-								onOpenItem={onOpenItem}
-							/>
-						))}
-					</section>
-				) : null}
-				{nonFolderItems.length > 0 ? (
-					<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
-						{nonFolderItems.map((item) => (
-							<WorkspaceItemCard
-								key={item.id}
-								item={item}
-								meta={getWorkspaceItemMeta(item, items)}
-								onOpenItem={onOpenItem}
-							/>
-						))}
-					</section>
-				) : null}
-				{children.length === 0 ? (
-					<Empty className="border border-dashed bg-muted/20">
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<FolderOpen />
-							</EmptyMedia>
-							<EmptyTitle>No items in this folder</EmptyTitle>
-							<EmptyDescription>
-								Items you add here will appear in this workspace view.
-							</EmptyDescription>
-						</EmptyHeader>
-					</Empty>
-				) : null}
-			</div>
-			<ScrollBar className="w-1.5" />
-		</ScrollArea>
+		<>
+			<ScrollArea className="h-[calc(100vh-5.75rem)]">
+				<div className="space-y-5 px-4 py-3">
+					{folders.length > 0 ? (
+						<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
+							{folders.map((item) => (
+								<WorkspaceItemCard
+									key={item.id}
+									item={item}
+									meta={getWorkspaceItemMeta(item, items)}
+									onOpenItem={onOpenItem}
+									onRenameItem={setRenamingItem}
+									onDeleteItem={openDeleteAlert}
+								/>
+							))}
+						</section>
+					) : null}
+					{nonFolderItems.length > 0 ? (
+						<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
+							{nonFolderItems.map((item) => (
+								<WorkspaceItemCard
+									key={item.id}
+									item={item}
+									meta={getWorkspaceItemMeta(item, items)}
+									onOpenItem={onOpenItem}
+									onRenameItem={setRenamingItem}
+									onDeleteItem={openDeleteAlert}
+								/>
+							))}
+						</section>
+					) : null}
+					{children.length === 0 ? (
+						<Empty className="border border-dashed bg-muted/20">
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<FolderOpen />
+								</EmptyMedia>
+								<EmptyTitle>No items in this folder</EmptyTitle>
+								<EmptyDescription>
+									Items you add here will appear in this workspace view.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					) : null}
+				</div>
+			</ScrollArea>
+			<RenameWorkspaceItemDialog
+				item={renamingItem}
+				onOpenChange={(open) => {
+					if (!open) {
+						setRenamingItem(null);
+					}
+				}}
+			/>
+			<DeleteWorkspaceItemAlert
+				open={deleteAlertOpen}
+				item={deletingItem}
+				items={items}
+				onOpenChange={(open) => {
+					setDeleteAlertOpen(open);
+				}}
+				onClosed={() => setDeletingItem(null)}
+			/>
+		</>
 	);
 }
 
@@ -106,10 +141,14 @@ function WorkspaceItemCard({
 	item,
 	meta,
 	onOpenItem,
+	onRenameItem,
+	onDeleteItem,
 }: {
 	item: WorkspaceItem;
 	meta: string;
 	onOpenItem: (item: WorkspaceItem) => void;
+	onRenameItem: (item: WorkspaceItem) => void;
+	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
 	const {
 		Icon: ItemIcon,
@@ -146,7 +185,7 @@ function WorkspaceItemCard({
 					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
 					"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
 					"group-focus-within/item:pointer-events-auto group-focus-within/item:opacity-100",
-					"has-[button[data-state=open]]:pointer-events-auto has-[button[data-state=open]]:opacity-100",
+					"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
 				)}
 			>
 				<DropdownMenu>
@@ -164,7 +203,7 @@ function WorkspaceItemCard({
 						<EllipsisVertical className="size-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-52">
-						<DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onRenameItem(item)}>
 							<Pencil className="size-4" />
 							<span>Rename</span>
 						</DropdownMenuItem>
@@ -194,7 +233,10 @@ function WorkspaceItemCard({
 							<span>Move to folder</span>
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem variant="destructive">
+						<DropdownMenuItem
+							variant="destructive"
+							onClick={() => onDeleteItem(item)}
+						>
 							<Trash2 className="size-4" />
 							<span>Delete</span>
 						</DropdownMenuItem>

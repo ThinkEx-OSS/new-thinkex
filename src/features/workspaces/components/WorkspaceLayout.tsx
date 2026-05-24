@@ -18,6 +18,7 @@ import {
 	ResizablePanelGroup,
 } from "#/components/ui/resizable";
 import {
+	applyWorkspaceItemDeletionInCaches,
 	upsertWorkspaceItemInCaches,
 	workspaceItemsQueryKey,
 	workspacePageQueryKey,
@@ -80,6 +81,15 @@ export function WorkspaceShell({
 	const handleWorkspaceRealtimeEvent = useCallback(
 		(event: WorkspaceRealtimeEvent) => {
 			if (event.workspaceId !== workspace.id) {
+				return;
+			}
+
+			if (event.type === "workspace.item.deleted") {
+				applyWorkspaceItemDeletionInCaches(queryClient, {
+					workspaceId: event.workspaceId,
+					deletedItemIds: event.payload.deletedItemIds,
+					reparentedItems: event.payload.reparentedItems,
+				});
 				return;
 			}
 

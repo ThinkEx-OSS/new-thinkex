@@ -23,5 +23,7 @@ export {
 	useCreateWorkspaceItemMutation,
 } from "./use-create-workspace-item";
 export { useDeleteWorkspaceMutation } from "./use-delete-workspace";
+export { useDeleteWorkspaceItemMutation } from "./use-delete-workspace-item";
 export { useRecordWorkspaceOpenedMutation } from "./use-record-workspace-opened";
 export { useUpdateWorkspaceMutation } from "./use-update-workspace";
+export { useUpdateWorkspaceItemMutation } from "./use-update-workspace-item";

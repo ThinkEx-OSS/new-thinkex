@@ -184,12 +184,12 @@ function WorkspaceTabItem({
 					isDragSource && "cursor-grabbing",
 				)}
 			>
-				<Button
-					render={<button ref={handleRef} type="button" />}
+				<button
+					ref={handleRef}
 					type="button"
-					variant="ghost"
 					className={cn(
-						"h-full min-w-0 flex-1 touch-none justify-start gap-1.5 rounded-none bg-transparent py-0 pr-px pl-2 text-left hover:bg-transparent active:translate-y-0",
+						"flex h-full min-w-0 flex-1 touch-none items-center justify-start gap-1.5 bg-transparent py-0 pr-px pl-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+						isActive && "cursor-default",
 						isDragSource && "cursor-grabbing",
 					)}
 					onClick={onActivate}
@@ -200,7 +200,7 @@ function WorkspaceTabItem({
 						aria-hidden="true"
 					/>
 					<span className="truncate">{title}</span>
-				</Button>
+				</button>
 				{showClose ? (
 					<Button
 						type="button"
