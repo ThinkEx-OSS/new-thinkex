@@ -7,7 +7,7 @@
 	},
 	"scripts": {
 		"dev": "vite dev --port 3000",
-		"dev:cloudflare": "THINKEX_DB_DRIVER=direct CLOUDFLARE_DEV=true vite dev --port 3000",
+		"dev:cloudflare": "pnpm run dev",
 		"dev:hyperdrive": "THINKEX_DB_DRIVER=hyperdrive wrangler dev --remote",
 		"build": "vite build",
 		"preview": "pnpm run build && vite preview",
