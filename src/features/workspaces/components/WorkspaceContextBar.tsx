@@ -325,10 +325,11 @@ function CrumbButton({
 	onClick: () => void;
 }) {
 	const iconColor = iconClassName ?? "text-muted-foreground";
+	const crumbClassName = "flex min-w-0 items-center gap-1.5 truncate";
 
 	if (isCurrent) {
 		return (
-			<BreadcrumbPage className="flex min-w-0 items-center gap-1.5 truncate">
+			<BreadcrumbPage className={crumbClassName}>
 				<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
 				<span className="truncate">{label}</span>
 			</BreadcrumbPage>
@@ -338,11 +339,9 @@ function CrumbButton({
 	return (
 		<BreadcrumbLink
 			render={
-				<Button
-					variant="ghost"
-					size="sm"
+				<button
 					type="button"
-					className="h-auto min-w-0 justify-start gap-1.5 truncate rounded-sm px-0 py-0 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground active:translate-y-0"
+					className={`${crumbClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`}
 					onClick={onClick}
 				/>
 			}
