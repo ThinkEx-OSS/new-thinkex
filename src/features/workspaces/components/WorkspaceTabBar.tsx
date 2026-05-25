@@ -38,7 +38,9 @@ const WORKSPACE_PROJECTED_TAB_ANIMATION = {
 	duration: 240,
 	easing: "cubic-bezier(0.25, 1, 0.5, 1)",
 } as const;
+const WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS = 1200;
 const WORKSPACE_NEW_TAB_ANIMATION_WINDOW_MS = 750;
+const WORKSPACE_TAB_GAP_WIDTH = "0.25rem";
 const WORKSPACE_TAB_LAYOUT_ANIMATION_DELTA_THRESHOLD = 0.5;
 const WORKSPACE_TAB_COLLISION_TYPE_HORIZONTAL_CENTER = 3;
 const WORKSPACE_TAB_COLLISION_PRIORITY_HIGH = 3;
@@ -93,10 +95,15 @@ export default function WorkspaceTabBar({
 		tabs,
 		projection: tabProjection,
 	});
+	const closeResizeLock = useWorkspaceTabCloseResizeLock();
 	const renderItemKeys = renderItems.map(getWorkspaceTabRenderItemKey);
 	const setLayoutElement = useWorkspaceTabLayoutAnimation({
 		itemKeys: renderItemKeys,
 		isProjectionActive: Boolean(tabProjection),
+	});
+	const gridStyle = getWorkspaceTabGridStyle({
+		tabCount: renderItems.length,
+		lockedTabWidth: closeResizeLock.lockedTabWidth,
 	});
 	const lastRenderItem = renderItems[renderItems.length - 1];
 
@@ -104,14 +111,11 @@ export default function WorkspaceTabBar({
 		<nav
 			className="flex min-w-0 flex-1 items-center gap-1"
 			aria-label="Workspace tabs"
+			onPointerLeave={closeResizeLock.release}
 		>
 			<div
-				className="grid min-w-0 max-w-full items-center gap-1 overflow-visible"
-				style={{
-					gridTemplateColumns: `repeat(${renderItems.length}, minmax(0, 1fr))`,
-					width: "100%",
-					maxWidth: `calc(${renderItems.length} * ${TAB_MAX_WIDTH})`,
-				}}
+				className="grid min-w-0 max-w-full items-center gap-1 overflow-visible transition-[width,max-width] duration-150 ease-out"
+				style={gridStyle}
 			>
 				{renderItems.map((renderItem, visualIndex) => {
 					const renderItemKey = getWorkspaceTabRenderItemKey(renderItem);
@@ -161,6 +165,7 @@ export default function WorkspaceTabBar({
 							showDivider={showDivider}
 							showDividerLine={showDividerLine}
 							showClose={tabs.length > 1}
+							onClosePointerDown={closeResizeLock.lockFromElement}
 							onActivate={() => onActivateTab(tab)}
 							onClose={() => onCloseTab(tab)}
 						/>
@@ -254,6 +259,73 @@ type WorkspaceTabLayoutElementHandler = (
 	key: string,
 	element: HTMLDivElement | null,
 ) => void;
+
+function getWorkspaceTabGridStyle(input: {
+	tabCount: number;
+	lockedTabWidth: number | null;
+}) {
+	const normalMaxWidth = `calc(${input.tabCount} * ${TAB_MAX_WIDTH})`;
+
+	if (!input.lockedTabWidth) {
+		return {
+			gridTemplateColumns: `repeat(${input.tabCount}, minmax(0, 1fr))`,
+			width: "100%",
+			maxWidth: normalMaxWidth,
+		};
+	}
+
+	const gapCount = Math.max(input.tabCount - 1, 0);
+	const lockedWidth = `calc(${input.tabCount} * ${input.lockedTabWidth}px + ${gapCount} * ${WORKSPACE_TAB_GAP_WIDTH})`;
+
+	return {
+		gridTemplateColumns: `repeat(${input.tabCount}, minmax(0, ${input.lockedTabWidth}px))`,
+		width: lockedWidth,
+		maxWidth: lockedWidth,
+	};
+}
+
+function useWorkspaceTabCloseResizeLock() {
+	const [lockedTabWidth, setLockedTabWidth] = useState<number | null>(null);
+	const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const clearReleaseTimer = useCallback(() => {
+		if (!releaseTimerRef.current) {
+			return;
+		}
+
+		clearTimeout(releaseTimerRef.current);
+		releaseTimerRef.current = null;
+	}, []);
+	const release = useCallback(() => {
+		clearReleaseTimer();
+		setLockedTabWidth(null);
+	}, [clearReleaseTimer]);
+	const lockFromElement = useCallback(
+		(element: HTMLElement | null) => {
+			const width = element?.getBoundingClientRect().width;
+
+			if (!width) {
+				return;
+			}
+
+			clearReleaseTimer();
+			setLockedTabWidth(width);
+			releaseTimerRef.current = setTimeout(
+				release,
+				WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS,
+			);
+		},
+		[clearReleaseTimer, release],
+	);
+
+	useLayoutEffect(() => () => clearReleaseTimer(), [clearReleaseTimer]);
+
+	return {
+		lockedTabWidth,
+		lockFromElement,
+		release,
+	};
+}
 
 function useWorkspaceTabLayoutAnimation(input: {
 	itemKeys: string[];
@@ -378,6 +450,7 @@ interface WorkspaceTabItemProps {
 	showDivider: boolean;
 	showDividerLine: boolean;
 	showClose: boolean;
+	onClosePointerDown: (element: HTMLElement | null) => void;
 	onActivate: () => void;
 	onClose: () => void;
 }
@@ -394,19 +467,25 @@ function WorkspaceTabItem({
 	showDivider,
 	showDividerLine,
 	showClose,
+	onClosePointerDown,
 	onActivate,
 	onClose,
 }: WorkspaceTabItemProps) {
 	const [element, setElement] = useState<Element | null>(null);
+	const elementRef = useRef<HTMLDivElement | null>(null);
 	const handleRef = useRef<HTMLButtonElement | null>(null);
 	const shouldAnimateMount = useShouldAnimateNewTab(tab.createdAt);
 	const setTabElement = useCallback(
 		(nextElement: HTMLDivElement | null) => {
+			elementRef.current = nextElement;
 			setElement(nextElement);
 			setLayoutElement(layoutKey, nextElement);
 		},
 		[layoutKey, setLayoutElement],
 	);
+	const handleClosePointerDown = useCallback(() => {
+		onClosePointerDown(elementRef.current);
+	}, [onClosePointerDown]);
 	const { isDragSource, isDropTarget } = useSortable({
 		id: tab.id,
 		index,
@@ -449,6 +528,7 @@ function WorkspaceTabItem({
 				isDragSource={isDragSource}
 				showClose={showClose}
 				closeLabel={`Close ${title}`}
+				onClosePointerDown={handleClosePointerDown}
 				onActivate={onActivate}
 				onClose={onClose}
 			/>
@@ -521,6 +601,7 @@ function WorkspaceTabShell({
 	isDragSource = false,
 	showClose = false,
 	closeLabel,
+	onClosePointerDown,
 	onActivate,
 	onClose,
 }: {
@@ -532,6 +613,7 @@ function WorkspaceTabShell({
 	isDragSource?: boolean;
 	showClose?: boolean;
 	closeLabel?: string;
+	onClosePointerDown?: () => void;
 	onActivate?: () => void;
 	onClose?: () => void;
 }) {
@@ -582,6 +664,7 @@ function WorkspaceTabShell({
 						isActive && "opacity-100",
 					)}
 					aria-label={closeLabel}
+					onPointerDown={onClosePointerDown}
 					onClick={onClose}
 				>
 					<X className="size-3" aria-hidden="true" />
