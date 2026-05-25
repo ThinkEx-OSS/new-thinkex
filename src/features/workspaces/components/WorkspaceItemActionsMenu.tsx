@@ -18,6 +18,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
 
@@ -36,6 +37,8 @@ export default function WorkspaceItemActionsMenu({
 	onRenameItem,
 	onDeleteItem,
 }: WorkspaceItemActionsMenuProps) {
+	const { Icon, iconClassName } = getWorkspaceItemDisplay(item);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -53,8 +56,14 @@ export default function WorkspaceItemActionsMenu({
 				<EllipsisVertical className="size-4" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align={align} className="w-52">
-				<div className="truncate px-2 py-1.5 text-xs font-medium text-foreground">
-					{item.name}
+				<div className="flex min-w-0 items-center gap-2 px-2 py-1.5">
+					<Icon
+						className={cn("size-3.5 shrink-0", iconClassName)}
+						aria-hidden="true"
+					/>
+					<span className="truncate text-xs font-medium text-foreground">
+						{item.name}
+					</span>
 				</div>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem onClick={() => onRenameItem(item)}>
