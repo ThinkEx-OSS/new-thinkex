@@ -185,11 +185,7 @@ export default function WorkspaceTabBar({
 	);
 }
 
-export function WorkspaceTabDivider({
-	isVisible = true,
-}: {
-	isVisible?: boolean;
-}) {
+function WorkspaceTabDivider({ isVisible = true }: { isVisible?: boolean }) {
 	return (
 		<div
 			className={cn(
