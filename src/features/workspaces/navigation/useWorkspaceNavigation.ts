@@ -145,6 +145,12 @@ export function useWorkspaceNavigation({
 
 		navigateToTab(tab);
 	};
+	const getInsertIndexAfterActiveTab = () => {
+		const activeTabIndex =
+			session?.tabs.findIndex((tab) => tab.id === activeTab?.id) ?? -1;
+
+		return activeTabIndex >= 0 ? activeTabIndex + 1 : Number.MAX_SAFE_INTEGER;
+	};
 	const openItemInNewTab = (input: {
 		item: WorkspaceItem;
 		activate?: boolean;
@@ -155,7 +161,7 @@ export function useWorkspaceNavigation({
 			workspaceName: workspace.name,
 			itemId: input.item.id,
 			title: input.item.name,
-			insertIndex: input.insertIndex ?? Number.MAX_SAFE_INTEGER,
+			insertIndex: input.insertIndex ?? getInsertIndexAfterActiveTab(),
 			activate: input.activate,
 		});
 

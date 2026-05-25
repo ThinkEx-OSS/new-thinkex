@@ -38,6 +38,7 @@ const WORKSPACE_PROJECTED_TAB_ANIMATION = {
 	duration: 240,
 	easing: "cubic-bezier(0.25, 1, 0.5, 1)",
 } as const;
+const WORKSPACE_NEW_TAB_ANIMATION_WINDOW_MS = 750;
 const WORKSPACE_TAB_LAYOUT_ANIMATION_DELTA_THRESHOLD = 0.5;
 const WORKSPACE_TAB_COLLISION_TYPE_HORIZONTAL_CENTER = 3;
 const WORKSPACE_TAB_COLLISION_PRIORITY_HIGH = 3;
@@ -342,24 +343,13 @@ function useWorkspaceTabLayoutAnimation(input: {
 			);
 
 			activeAnimations.set(key, animation);
-			animation.addEventListener(
-				"finish",
-				() => {
+			void animation.finished
+				.catch(() => undefined)
+				.then(() => {
 					if (activeAnimations.get(key) === animation) {
 						activeAnimations.delete(key);
 					}
-				},
-				{ once: true },
-			);
-			animation.addEventListener(
-				"cancel",
-				() => {
-					if (activeAnimations.get(key) === animation) {
-						activeAnimations.delete(key);
-					}
-				},
-				{ once: true },
-			);
+				});
 		}
 
 		rectsRef.current = nextRects;
@@ -409,6 +399,7 @@ function WorkspaceTabItem({
 }: WorkspaceTabItemProps) {
 	const [element, setElement] = useState<Element | null>(null);
 	const handleRef = useRef<HTMLButtonElement | null>(null);
+	const shouldAnimateMount = useShouldAnimateNewTab(tab.createdAt);
 	const setTabElement = useCallback(
 		(nextElement: HTMLDivElement | null) => {
 			setElement(nextElement);
@@ -438,6 +429,8 @@ function WorkspaceTabItem({
 			className={cn(
 				"relative motion-safe:will-change-transform",
 				TAB_ITEM_CLASS,
+				shouldAnimateMount &&
+					"motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150",
 				isDragSource && "opacity-70",
 				isDropTarget && "rounded-md bg-muted/50",
 			)}
@@ -461,6 +454,14 @@ function WorkspaceTabItem({
 			/>
 		</div>
 	);
+}
+
+function useShouldAnimateNewTab(createdAt: number) {
+	const shouldAnimateRef = useRef(
+		Date.now() - createdAt < WORKSPACE_NEW_TAB_ANIMATION_WINDOW_MS,
+	);
+
+	return shouldAnimateRef.current;
 }
 
 function WorkspaceProjectedTabItem({
