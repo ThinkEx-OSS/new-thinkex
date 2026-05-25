@@ -196,7 +196,6 @@ function WorkspaceTabItem({
 				>
 					<TabIcon
 						className={cn("size-3.5 shrink-0", iconClassName)}
-						strokeWidth={1.75}
 						aria-hidden="true"
 					/>
 					<span className="truncate">{title}</span>

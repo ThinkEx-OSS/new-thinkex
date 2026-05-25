@@ -1,28 +1,11 @@
 import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation, useDroppable } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import {
-	EllipsisVertical,
-	FolderInput,
-	FolderOpen,
-	Palette,
-	Pencil,
-	Trash2,
-} from "lucide-react";
+import { FolderInput, FolderOpen } from "lucide-react";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
-	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
 import {
 	Empty,
 	EmptyDescription,
@@ -35,6 +18,7 @@ import {
 	DeleteWorkspaceItemAlert,
 	RenameWorkspaceItemDialog,
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
+import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import {
 	getWorkspaceFolderDropTargetId,
 	getWorkspaceItemSortableGroup,
@@ -334,10 +318,7 @@ function WorkspaceItemCard({
 					</div>
 				</div>
 			) : null}
-			<CardHeader
-				className="shrink-0 gap-2 px-4 py-3"
-				onClick={handleOpen}
-			>
+			<CardHeader className="shrink-0 gap-2 px-4 py-3" onClick={handleOpen}>
 				<CardTitle className="min-w-0">
 					<button
 						type="button"
@@ -357,68 +338,24 @@ function WorkspaceItemCard({
 					"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
 				)}
 			>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								className="text-muted-foreground hover:text-foreground"
-								aria-label={`Open actions for ${item.name}`}
-								onClick={(event) => event.stopPropagation()}
-							/>
-						}
-					>
-						<EllipsisVertical className="size-4" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-52">
-						<DropdownMenuItem onClick={() => onRenameItem(item)}>
-							<Pencil className="size-4" />
-							<span>Rename</span>
-						</DropdownMenuItem>
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<Palette className="size-4" />
-								<span>Change color</span>
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent className="w-40">
-								{workspaceItemColorOptions.map((option) => (
-									<DropdownMenuItem key={option.label}>
-										<span
-											className={cn("size-3 rounded-full", option.className)}
-											aria-hidden="true"
-										/>
-										<span>{option.label}</span>
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-						<DropdownMenuItem>
-							<FolderInput className="size-4" />
-							<span>Move to folder</span>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							variant="destructive"
-							onClick={() => onDeleteItem(item)}
-						>
-							<Trash2 className="size-4" />
-							<span>Delete</span>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<WorkspaceItemActionsMenu
+					item={item}
+					trigger={
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							className="text-muted-foreground hover:text-foreground"
+							aria-label={`Open actions for ${item.name}`}
+							onClick={(event) => event.stopPropagation()}
+						/>
+					}
+					onRenameItem={onRenameItem}
+					onDeleteItem={onDeleteItem}
+				/>
 			</div>
 		</Card>
 	);
 }
-
-const workspaceItemColorOptions = [
-	{ label: "Default", className: "bg-muted ring-1 ring-border" },
-	{ label: "Sky", className: "bg-sky-500" },
-	{ label: "Emerald", className: "bg-emerald-500" },
-	{ label: "Amber", className: "bg-amber-500" },
-	{ label: "Rose", className: "bg-rose-500" },
-] as const;
 
 function WorkspaceItemView({ item }: { item: WorkspaceItem }) {
 	return (

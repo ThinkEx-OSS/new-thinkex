@@ -1,9 +1,9 @@
 import {
 	BookOpen,
 	Download,
-	Ellipsis,
 	FilePlus2,
 	Search,
+	Settings,
 	X,
 } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
@@ -41,6 +41,12 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import {
+	DeleteWorkspaceItemAlert,
+	RenameWorkspaceItemDialog,
+} from "#/features/workspaces/components/WorkspaceItemActionDialogs";
+import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
+import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
@@ -83,13 +89,25 @@ export default function WorkspaceContextBar({
 	const createParentId = activeItem?.type === "folder" ? activeItem.id : null;
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const [searchOpen, setSearchOpen] = useState(false);
-	const searchableItems = useMemo(
-		() =>
-			Array.from(itemsById.values()).sort((first, second) =>
-				first.name.localeCompare(second.name),
-			),
+	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
+	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
+	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+	const workspaceItems = useMemo(
+		() => Array.from(itemsById.values()),
 		[itemsById],
 	);
+	const searchableItems = useMemo(
+		() =>
+			workspaceItems
+				.slice()
+				.sort((first, second) => first.name.localeCompare(second.name)),
+		[workspaceItems],
+	);
+	const openDeleteAlert = (item: WorkspaceItem) => {
+		setDeletingItem(item);
+		setDeleteAlertOpen(true);
+	};
 
 	return (
 		<>
@@ -128,15 +146,22 @@ export default function WorkspaceContextBar({
 								<Download className="size-3.5" />
 								<span className="hidden sm:inline">Export</span>
 							</Button>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								type="button"
-								className="size-8.5 text-muted-foreground hover:text-foreground"
-								aria-label="More item actions"
-							>
-								<Ellipsis className="size-4" />
-							</Button>
+							{activeItem ? (
+								<WorkspaceItemActionsMenu
+									item={activeItem}
+									trigger={
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											type="button"
+											className="size-8.5 text-muted-foreground hover:text-foreground"
+											aria-label={`Open actions for ${activeItem.name}`}
+										/>
+									}
+									onRenameItem={setRenamingItem}
+									onDeleteItem={openDeleteAlert}
+								/>
+							) : null}
 							<Button
 								variant="ghost"
 								size="icon-sm"
@@ -216,6 +241,33 @@ export default function WorkspaceContextBar({
 									</DropdownMenuSub>
 								</DropdownMenuContent>
 							</DropdownMenu>
+							{activeItem ? (
+								<WorkspaceItemActionsMenu
+									item={activeItem}
+									trigger={
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											type="button"
+											className="size-8.5 text-muted-foreground hover:text-foreground"
+											aria-label={`Open actions for ${activeItem.name}`}
+										/>
+									}
+									onRenameItem={setRenamingItem}
+									onDeleteItem={openDeleteAlert}
+								/>
+							) : (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									type="button"
+									className="size-8.5 text-muted-foreground hover:text-foreground"
+									aria-label={`Open settings for ${workspace.name}`}
+									onClick={() => setSettingsOpen(true)}
+								>
+									<Settings className="size-4" />
+								</Button>
+							)}
 						</>
 					)}
 				</div>
@@ -275,6 +327,26 @@ export default function WorkspaceContextBar({
 					</Combobox>
 				</DialogContent>
 			</Dialog>
+			<WorkspaceSettingsDialog
+				workspace={workspace}
+				open={settingsOpen}
+				onOpenChange={setSettingsOpen}
+			/>
+			<RenameWorkspaceItemDialog
+				item={renamingItem}
+				onOpenChange={(open) => {
+					if (!open) {
+						setRenamingItem(null);
+					}
+				}}
+			/>
+			<DeleteWorkspaceItemAlert
+				open={deleteAlertOpen}
+				item={deletingItem}
+				items={workspaceItems}
+				onOpenChange={setDeleteAlertOpen}
+				onClosed={() => setDeletingItem(null)}
+			/>
 		</>
 	);
 }
@@ -329,7 +401,7 @@ function CrumbButton({
 
 	if (isCurrent) {
 		return (
-			<BreadcrumbPage className={crumbClassName}>
+			<BreadcrumbPage className={`${crumbClassName} font-medium`}>
 				<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
 				<span className="truncate">{label}</span>
 			</BreadcrumbPage>
