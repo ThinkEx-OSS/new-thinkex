@@ -53,6 +53,10 @@ export default function WorkspaceItemActionsMenu({
 				<EllipsisVertical className="size-4" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align={align} className="w-52">
+				<div className="truncate px-2 py-1.5 text-xs font-medium text-foreground">
+					{item.name}
+				</div>
+				<DropdownMenuSeparator />
 				<DropdownMenuItem onClick={() => onRenameItem(item)}>
 					<Pencil className="size-4" />
 					<span>Rename</span>
