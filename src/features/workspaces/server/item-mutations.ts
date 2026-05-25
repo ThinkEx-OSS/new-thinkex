@@ -1,22 +1,27 @@
-import { and, asc, eq, inArray, isNull, max } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, ne, sql } from "drizzle-orm";
 
-import { workspaceEvents, workspaceItems } from "#/db/schema";
+import { workspaceItems } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemInput,
 	DeleteWorkspaceItemResult,
+	MoveWorkspaceItemInput,
+	MoveWorkspaceItemResult,
+	ReorderWorkspaceItemsInput,
+	ReorderWorkspaceItemsResult,
 	UpdateWorkspaceItemInput,
+	WorkspaceItemReorderRow,
 	WorkspaceItemSummary,
+	WorkspaceMutationActor,
 } from "#/features/workspaces/contracts";
 import { getAvailableWorkspaceItemName } from "#/features/workspaces/defaults";
 import { scheduleWorkspaceEventBroadcast } from "#/features/workspaces/realtime/broadcast.server";
-import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
+import { insertWorkspaceRealtimeEvent } from "#/features/workspaces/realtime/events.server";
 import { mapWorkspaceItemRow } from "#/features/workspaces/server/mappers";
-import {
-	assertCanMutateWorkspace,
-	getCurrentUserId,
-} from "#/features/workspaces/server/permissions";
+import { getCurrentUserWorkspaceMutationActor } from "#/features/workspaces/server/mutation-actor";
+import { assertCanMutateWorkspace } from "#/features/workspaces/server/permissions";
+import { WORKSPACE_ITEM_SORT_ORDER_STEP } from "#/features/workspaces/workspace-item-ordering";
 
 type WorkspaceDb = Awaited<ReturnType<typeof createDbContext>>["db"];
 type Transaction = Parameters<Parameters<WorkspaceDb["transaction"]>[0]>[0];
@@ -25,7 +30,17 @@ type WorkspaceItemRow = typeof workspaceItems.$inferSelect;
 export async function createWorkspaceItemForCurrentUser(
 	input: CreateWorkspaceItemInput,
 ): Promise<WorkspaceItemSummary> {
-	const userId = await getCurrentUserId();
+	return createWorkspaceItemForActor(
+		await getCurrentUserWorkspaceMutationActor(),
+		input,
+	);
+}
+
+export async function createWorkspaceItemForActor(
+	actor: WorkspaceMutationActor,
+	input: CreateWorkspaceItemInput,
+): Promise<WorkspaceItemSummary> {
+	const userId = actor.userId;
 	const dbContext = await createDbContext();
 	const itemId = input.id ?? crypto.randomUUID();
 
@@ -52,6 +67,7 @@ export async function createWorkspaceItemForCurrentUser(
 			const sortOrder = await getNextItemSortOrder(tx, {
 				workspaceId: input.workspaceId,
 				parentId,
+				type: input.type,
 			});
 			const [createdItem] = await tx
 				.insert(workspaceItems)
@@ -74,23 +90,13 @@ export async function createWorkspaceItemForCurrentUser(
 			}
 
 			const mappedItem = mapWorkspaceItemRow(createdItem);
-			const eventRow = await insertWorkspaceEvent(tx, {
+			const event = await insertWorkspaceRealtimeEvent(tx, {
 				workspaceId: input.workspaceId,
 				itemId: createdItem.id,
-				actorUserId: userId,
-				eventType: "workspace.item.created",
-				payloadJson: { item: mappedItem },
-			});
-
-			const event: WorkspaceRealtimeEvent = {
-				id: eventRow.id,
+				actor,
 				type: "workspace.item.created",
-				workspaceId: input.workspaceId,
-				itemId: createdItem.id,
-				actorUserId: userId,
-				createdAt: eventRow.createdAt.toISOString(),
 				payload: { item: mappedItem },
-			};
+			});
 
 			return {
 				item: mappedItem,
@@ -109,7 +115,17 @@ export async function createWorkspaceItemForCurrentUser(
 export async function updateWorkspaceItemForCurrentUser(
 	input: UpdateWorkspaceItemInput,
 ): Promise<WorkspaceItemSummary> {
-	const userId = await getCurrentUserId();
+	return updateWorkspaceItemForActor(
+		await getCurrentUserWorkspaceMutationActor(),
+		input,
+	);
+}
+
+export async function updateWorkspaceItemForActor(
+	actor: WorkspaceMutationActor,
+	input: UpdateWorkspaceItemInput,
+): Promise<WorkspaceItemSummary> {
+	const userId = actor.userId;
 	const dbContext = await createDbContext();
 
 	try {
@@ -141,6 +157,7 @@ export async function updateWorkspaceItemForCurrentUser(
 				.set({
 					name,
 					updatedByUserId: userId,
+					updatedAt: sql`now()`,
 				})
 				.where(
 					and(
@@ -156,23 +173,13 @@ export async function updateWorkspaceItemForCurrentUser(
 			}
 
 			const mappedItem = mapWorkspaceItemRow(updatedItem);
-			const eventRow = await insertWorkspaceEvent(tx, {
+			const event = await insertWorkspaceRealtimeEvent(tx, {
 				workspaceId: input.workspaceId,
 				itemId: updatedItem.id,
-				actorUserId: userId,
-				eventType: "workspace.item.renamed",
-				payloadJson: { item: mappedItem },
-			});
-
-			const event: WorkspaceRealtimeEvent = {
-				id: eventRow.id,
+				actor,
 				type: "workspace.item.renamed",
-				workspaceId: input.workspaceId,
-				itemId: updatedItem.id,
-				actorUserId: userId,
-				createdAt: eventRow.createdAt.toISOString(),
 				payload: { item: mappedItem },
-			};
+			});
 
 			return {
 				item: mappedItem,
@@ -191,7 +198,17 @@ export async function updateWorkspaceItemForCurrentUser(
 export async function deleteWorkspaceItemForCurrentUser(
 	input: DeleteWorkspaceItemInput,
 ): Promise<DeleteWorkspaceItemResult> {
-	const userId = await getCurrentUserId();
+	return deleteWorkspaceItemForActor(
+		await getCurrentUserWorkspaceMutationActor(),
+		input,
+	);
+}
+
+export async function deleteWorkspaceItemForActor(
+	actor: WorkspaceMutationActor,
+	input: DeleteWorkspaceItemInput,
+): Promise<DeleteWorkspaceItemResult> {
+	const userId = actor.userId;
 	const dbContext = await createDbContext();
 
 	try {
@@ -251,23 +268,13 @@ export async function deleteWorkspaceItemForCurrentUser(
 				deletedItemIds,
 				reparentedItems,
 			};
-			const eventRow = await insertWorkspaceEvent(tx, {
+			const event = await insertWorkspaceRealtimeEvent(tx, {
 				workspaceId: input.workspaceId,
 				itemId: item.id,
-				actorUserId: userId,
-				eventType: "workspace.item.deleted",
-				payloadJson: eventPayload,
-			});
-
-			const event: WorkspaceRealtimeEvent = {
-				id: eventRow.id,
+				actor,
 				type: "workspace.item.deleted",
-				workspaceId: input.workspaceId,
-				itemId: item.id,
-				actorUserId: userId,
-				createdAt: eventRow.createdAt.toISOString(),
 				payload: eventPayload,
-			};
+			});
 
 			return {
 				result: {
@@ -275,6 +282,230 @@ export async function deleteWorkspaceItemForCurrentUser(
 					itemId: item.id,
 					deletedItemIds,
 					reparentedItems,
+				},
+				event,
+			};
+		});
+
+		await scheduleWorkspaceEventBroadcast(result.event);
+
+		return result.result;
+	} finally {
+		await dbContext.dispose();
+	}
+}
+
+export async function reorderWorkspaceItemsForCurrentUser(
+	input: ReorderWorkspaceItemsInput,
+): Promise<ReorderWorkspaceItemsResult> {
+	return reorderWorkspaceItemsForActor(
+		await getCurrentUserWorkspaceMutationActor({
+			operationId: input.clientMutationId,
+		}),
+		input,
+	);
+}
+
+export async function reorderWorkspaceItemsForActor(
+	actor: WorkspaceMutationActor,
+	input: ReorderWorkspaceItemsInput,
+): Promise<ReorderWorkspaceItemsResult> {
+	const userId = actor.userId;
+	const dbContext = await createDbContext();
+
+	try {
+		await assertCanMutateWorkspace(dbContext.db, {
+			workspaceId: input.workspaceId,
+			userId,
+		});
+
+		const result = await dbContext.db.transaction(async (tx) => {
+			const siblings = await getReorderableSiblings(tx, input);
+			assertCompleteSiblingOrder(input, siblings);
+
+			const updatedItems: WorkspaceItemSummary[] = [];
+
+			for (const [index, itemId] of input.orderedItemIds.entries()) {
+				const [updatedItem] = await tx
+					.update(workspaceItems)
+					.set({
+						sortOrder: (index + 1) * WORKSPACE_ITEM_SORT_ORDER_STEP,
+						updatedByUserId: userId,
+						updatedAt: sql`now()`,
+					})
+					.where(
+						and(
+							eq(workspaceItems.id, itemId),
+							eq(workspaceItems.workspaceId, input.workspaceId),
+							isNull(workspaceItems.deletedAt),
+						),
+					)
+					.returning();
+
+				if (!updatedItem) {
+					throw new Error("Workspace item order could not be updated.");
+				}
+
+				updatedItems.push(mapWorkspaceItemRow(updatedItem));
+			}
+
+			const payload = {
+				parentId: input.parentId,
+				row: input.row,
+				items: updatedItems,
+				...(input.clientMutationId
+					? { clientMutationId: input.clientMutationId }
+					: {}),
+			};
+			const event = await insertWorkspaceRealtimeEvent(tx, {
+				workspaceId: input.workspaceId,
+				itemId: input.movedItemId,
+				actor,
+				type: "workspace.items.reordered",
+				payload,
+			});
+
+			return {
+				result: {
+					workspaceId: input.workspaceId,
+					parentId: input.parentId,
+					row: input.row,
+					items: updatedItems,
+					...(input.clientMutationId
+						? { clientMutationId: input.clientMutationId }
+						: {}),
+				},
+				event,
+			};
+		});
+
+		await scheduleWorkspaceEventBroadcast(result.event);
+
+		return result.result;
+	} finally {
+		await dbContext.dispose();
+	}
+}
+
+export async function moveWorkspaceItemForCurrentUser(
+	input: MoveWorkspaceItemInput,
+): Promise<MoveWorkspaceItemResult> {
+	return moveWorkspaceItemForActor(
+		await getCurrentUserWorkspaceMutationActor({
+			operationId: input.clientMutationId,
+		}),
+		input,
+	);
+}
+
+export async function moveWorkspaceItemForActor(
+	actor: WorkspaceMutationActor,
+	input: MoveWorkspaceItemInput,
+): Promise<MoveWorkspaceItemResult> {
+	const userId = actor.userId;
+	const dbContext = await createDbContext();
+
+	try {
+		await assertCanMutateWorkspace(dbContext.db, {
+			workspaceId: input.workspaceId,
+			userId,
+		});
+
+		const result = await dbContext.db.transaction(async (tx) => {
+			const item = await getWorkspaceItemById(tx, {
+				workspaceId: input.workspaceId,
+				itemId: input.itemId,
+			});
+
+			if (!item) {
+				throw new Error("Workspace item was not found.");
+			}
+
+			const targetParentId = input.targetParentId ?? null;
+
+			await assertValidItemMove(tx, {
+				workspaceId: input.workspaceId,
+				item,
+				targetParentId,
+			});
+
+			const sourceParentId = item.parentId;
+			const row = getWorkspaceItemReorderRow(item);
+			const sortOrder = await getNextItemSortOrder(tx, {
+				workspaceId: input.workspaceId,
+				parentId: targetParentId,
+				type: item.type,
+			});
+			const name = await getAvailableItemName(tx, {
+				workspaceId: input.workspaceId,
+				parentId: targetParentId,
+				requestedName: item.name,
+				type: item.type,
+				ignoreItemId: item.id,
+			});
+			const [updatedItem] = await tx
+				.update(workspaceItems)
+				.set({
+					parentId: targetParentId,
+					name,
+					sortOrder,
+					updatedByUserId: userId,
+					updatedAt: sql`now()`,
+				})
+				.where(
+					and(
+						eq(workspaceItems.id, item.id),
+						eq(workspaceItems.workspaceId, input.workspaceId),
+						isNull(workspaceItems.deletedAt),
+					),
+				)
+				.returning();
+
+			if (!updatedItem) {
+				throw new Error("Workspace item could not be moved.");
+			}
+
+			const [sourceItems, destinationItems] = await Promise.all([
+				getReorderableSiblings(tx, {
+					workspaceId: input.workspaceId,
+					parentId: sourceParentId,
+					row,
+				}),
+				getReorderableSiblings(tx, {
+					workspaceId: input.workspaceId,
+					parentId: targetParentId,
+					row,
+				}),
+			]);
+			const movedItem = mapWorkspaceItemRow(updatedItem);
+			const payload = {
+				item: movedItem,
+				source: {
+					parentId: sourceParentId,
+					row,
+					items: sourceItems.map(mapWorkspaceItemRow),
+				},
+				destination: {
+					parentId: targetParentId,
+					row,
+					items: destinationItems.map(mapWorkspaceItemRow),
+				},
+				...(input.clientMutationId
+					? { clientMutationId: input.clientMutationId }
+					: {}),
+			};
+			const event = await insertWorkspaceRealtimeEvent(tx, {
+				workspaceId: input.workspaceId,
+				itemId: item.id,
+				actor,
+				type: "workspace.item.moved",
+				payload,
+			});
+
+			return {
+				result: {
+					workspaceId: input.workspaceId,
+					...payload,
 				},
 				event,
 			};
@@ -310,6 +541,56 @@ async function assertValidItemParent(
 
 	if (!parent || parent.type !== "folder") {
 		throw new Error("Items can only be created inside folders.");
+	}
+}
+
+async function assertValidItemMove(
+	tx: Transaction,
+	input: {
+		workspaceId: string;
+		item: WorkspaceItemRow;
+		targetParentId: string | null;
+	},
+) {
+	if (input.item.parentId === input.targetParentId) {
+		throw new Error("Workspace item is already in that location.");
+	}
+
+	if (!input.targetParentId) {
+		return;
+	}
+
+	if (input.item.id === input.targetParentId) {
+		throw new Error("A folder cannot be moved into itself.");
+	}
+
+	const [targetParent] = await tx
+		.select({ id: workspaceItems.id, type: workspaceItems.type })
+		.from(workspaceItems)
+		.where(
+			and(
+				eq(workspaceItems.id, input.targetParentId),
+				eq(workspaceItems.workspaceId, input.workspaceId),
+				isNull(workspaceItems.deletedAt),
+			),
+		)
+		.limit(1);
+
+	if (!targetParent || targetParent.type !== "folder") {
+		throw new Error("Items can only be moved into folders.");
+	}
+
+	if (input.item.type !== "folder") {
+		return;
+	}
+
+	const descendantIds = await listItemSubtreeIds(tx, {
+		workspaceId: input.workspaceId,
+		rootItemId: input.item.id,
+	});
+
+	if (descendantIds.includes(input.targetParentId)) {
+		throw new Error("A folder cannot be moved into its own descendant.");
 	}
 }
 
@@ -363,6 +644,52 @@ async function getWorkspaceItemById(
 	return item;
 }
 
+function getWorkspaceItemReorderRow(
+	item: Pick<WorkspaceItemRow, "type">,
+): WorkspaceItemReorderRow {
+	return item.type === "folder" ? "folder" : "item";
+}
+
+async function getReorderableSiblings(
+	tx: Transaction,
+	input: Pick<ReorderWorkspaceItemsInput, "workspaceId" | "parentId" | "row">,
+) {
+	return tx
+		.select()
+		.from(workspaceItems)
+		.where(
+			and(
+				eq(workspaceItems.workspaceId, input.workspaceId),
+				input.parentId
+					? eq(workspaceItems.parentId, input.parentId)
+					: isNull(workspaceItems.parentId),
+				input.row === "folder"
+					? eq(workspaceItems.type, "folder")
+					: ne(workspaceItems.type, "folder"),
+				isNull(workspaceItems.deletedAt),
+			),
+		)
+		.orderBy(asc(workspaceItems.sortOrder), asc(workspaceItems.name));
+}
+
+function assertCompleteSiblingOrder(
+	input: ReorderWorkspaceItemsInput,
+	siblings: WorkspaceItemRow[],
+) {
+	const expectedIds = new Set(siblings.map((item) => item.id));
+	const orderedIds = new Set(input.orderedItemIds);
+	const hasMovedItem = expectedIds.has(input.movedItemId);
+	const hasDuplicateIds = orderedIds.size !== input.orderedItemIds.length;
+	const hasSameLength = expectedIds.size === input.orderedItemIds.length;
+	const hasSameIds = input.orderedItemIds.every((itemId) =>
+		expectedIds.has(itemId),
+	);
+
+	if (!hasMovedItem || hasDuplicateIds || !hasSameLength || !hasSameIds) {
+		throw new Error("Workspace item order is stale.");
+	}
+}
+
 async function getDirectChildItems(
 	tx: Transaction,
 	input: { workspaceId: string; parentId: string },
@@ -410,7 +737,8 @@ async function moveChildrenToDeletedFolderParent(
 		.filter((item) => item.id !== input.folder.id)
 		.map((item) => item.name);
 	let nextSortOrder =
-		Math.max(0, ...siblings.map((item) => item.sortOrder)) + 1000;
+		Math.max(0, ...siblings.map((item) => item.sortOrder)) +
+		WORKSPACE_ITEM_SORT_ORDER_STEP;
 
 	for (const child of input.children) {
 		const name = getAvailableWorkspaceItemName({
@@ -425,6 +753,7 @@ async function moveChildrenToDeletedFolderParent(
 				name,
 				sortOrder: nextSortOrder,
 				updatedByUserId: input.userId,
+				updatedAt: sql`now()`,
 			})
 			.where(
 				and(
@@ -440,7 +769,7 @@ async function moveChildrenToDeletedFolderParent(
 		}
 
 		existingNames.push(name);
-		nextSortOrder += 1000;
+		nextSortOrder += WORKSPACE_ITEM_SORT_ORDER_STEP;
 		reparentedItems.push(mapWorkspaceItemRow(updatedChild));
 	}
 
@@ -484,8 +813,9 @@ async function softDeleteItems(
 	await tx
 		.update(workspaceItems)
 		.set({
-			deletedAt: new Date(),
+			deletedAt: sql`now()`,
 			updatedByUserId: input.userId,
+			updatedAt: sql`now()`,
 		})
 		.where(
 			and(
@@ -498,7 +828,11 @@ async function softDeleteItems(
 
 async function getNextItemSortOrder(
 	tx: Transaction,
-	input: { workspaceId: string; parentId: string | null },
+	input: {
+		workspaceId: string;
+		parentId: string | null;
+		type: CreateWorkspaceItemInput["type"];
+	},
 ) {
 	const [row] = await tx
 		.select({ sortOrder: max(workspaceItems.sortOrder) })
@@ -509,42 +843,12 @@ async function getNextItemSortOrder(
 				input.parentId
 					? eq(workspaceItems.parentId, input.parentId)
 					: isNull(workspaceItems.parentId),
+				input.type === "folder"
+					? eq(workspaceItems.type, "folder")
+					: ne(workspaceItems.type, "folder"),
 				isNull(workspaceItems.deletedAt),
 			),
 		);
 
-	return (row?.sortOrder ?? 0) + 1000;
-}
-
-async function insertWorkspaceEvent(
-	tx: Transaction,
-	input: {
-		workspaceId: string;
-		itemId: string;
-		actorUserId: string;
-		eventType: WorkspaceRealtimeEvent["type"];
-		payloadJson: Record<string, unknown>;
-	},
-) {
-	const [event] = await tx
-		.insert(workspaceEvents)
-		.values({
-			id: crypto.randomUUID(),
-			workspaceId: input.workspaceId,
-			itemId: input.itemId,
-			actorType: "user",
-			actorUserId: input.actorUserId,
-			eventType: input.eventType,
-			payloadJson: input.payloadJson,
-		})
-		.returning({
-			id: workspaceEvents.id,
-			createdAt: workspaceEvents.createdAt,
-		});
-
-	if (!event) {
-		throw new Error("Workspace event was not created.");
-	}
-
-	return event;
+	return (row?.sortOrder ?? 0) + WORKSPACE_ITEM_SORT_ORDER_STEP;
 }

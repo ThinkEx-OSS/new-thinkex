@@ -6,12 +6,16 @@ import {
 	createWorkspaceItemInputSchema,
 	deleteWorkspaceInputSchema,
 	deleteWorkspaceItemInputSchema,
+	moveWorkspaceItemInputSchema,
+	reorderWorkspaceItemsInputSchema,
 	updateWorkspaceInputSchema,
 	updateWorkspaceItemInputSchema,
 } from "#/features/workspaces/contracts";
 import {
 	createWorkspaceItemForCurrentUser,
 	deleteWorkspaceItemForCurrentUser,
+	moveWorkspaceItemForCurrentUser,
+	reorderWorkspaceItemsForCurrentUser,
 	updateWorkspaceItemForCurrentUser,
 } from "#/features/workspaces/server/item-mutations";
 import {
@@ -66,6 +70,14 @@ export const updateWorkspaceItemFn = createServerFn({ method: "POST" })
 export const deleteWorkspaceItemFn = createServerFn({ method: "POST" })
 	.inputValidator(deleteWorkspaceItemInputSchema)
 	.handler(async ({ data }) => deleteWorkspaceItemForCurrentUser(data));
+
+export const reorderWorkspaceItemsFn = createServerFn({ method: "POST" })
+	.inputValidator(reorderWorkspaceItemsInputSchema)
+	.handler(async ({ data }) => reorderWorkspaceItemsForCurrentUser(data));
+
+export const moveWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(moveWorkspaceItemInputSchema)
+	.handler(async ({ data }) => moveWorkspaceItemForCurrentUser(data));
 
 export const recordWorkspaceOpenedFn = createServerFn({ method: "POST" })
 	.inputValidator(workspaceIdInputSchema)

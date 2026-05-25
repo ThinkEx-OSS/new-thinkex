@@ -115,6 +115,29 @@ export const deleteWorkspaceItemInputSchema = z.object({
 	mode: deleteWorkspaceItemModeSchema.optional(),
 });
 
+export const workspaceItemReorderRowSchema = z.enum(["folder", "item"]);
+export const workspaceMutationActorTypeSchema = z.enum([
+	"user",
+	"agent",
+	"system",
+]);
+
+export const reorderWorkspaceItemsInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	parentId: z.string().min(1).nullable(),
+	row: workspaceItemReorderRowSchema,
+	movedItemId: z.string().min(1),
+	orderedItemIds: z.array(z.string().min(1)).min(1),
+	clientMutationId: z.string().uuid().optional(),
+});
+
+export const moveWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+	targetParentId: z.string().min(1).nullable(),
+	clientMutationId: z.string().uuid().optional(),
+});
+
 export const workspaceListResponseSchema = z.object({
 	workspaces: z.array(workspaceSummarySchema),
 });
@@ -145,11 +168,52 @@ export type DeleteWorkspaceItemMode = z.infer<
 export type DeleteWorkspaceItemInput = z.infer<
 	typeof deleteWorkspaceItemInputSchema
 >;
+export type WorkspaceItemReorderRow = z.infer<
+	typeof workspaceItemReorderRowSchema
+>;
+export type WorkspaceMutationActorType = z.infer<
+	typeof workspaceMutationActorTypeSchema
+>;
+export interface WorkspaceMutationOperation {
+	id: string;
+	metadata?: Record<string, JsonValue>;
+}
+export interface WorkspaceMutationActor {
+	type: WorkspaceMutationActorType;
+	userId: string;
+	agentSessionId?: string;
+	operation: WorkspaceMutationOperation;
+}
+export type ReorderWorkspaceItemsInput = z.infer<
+	typeof reorderWorkspaceItemsInputSchema
+>;
+export type MoveWorkspaceItemInput = z.infer<
+	typeof moveWorkspaceItemInputSchema
+>;
 export interface DeleteWorkspaceItemResult {
 	workspaceId: string;
 	itemId: string;
 	deletedItemIds: string[];
 	reparentedItems: WorkspaceItemSummary[];
+}
+export interface WorkspaceItemMoveRowSnapshot {
+	parentId: string | null;
+	row: WorkspaceItemReorderRow;
+	items: WorkspaceItemSummary[];
+}
+export interface ReorderWorkspaceItemsResult {
+	workspaceId: string;
+	parentId: string | null;
+	row: WorkspaceItemReorderRow;
+	items: WorkspaceItemSummary[];
+	clientMutationId?: string;
+}
+export interface MoveWorkspaceItemResult {
+	workspaceId: string;
+	item: WorkspaceItemSummary;
+	source: WorkspaceItemMoveRowSnapshot;
+	destination: WorkspaceItemMoveRowSnapshot;
+	clientMutationId?: string;
 }
 export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;
