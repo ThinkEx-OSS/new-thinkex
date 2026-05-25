@@ -50,7 +50,7 @@ export default function ErrorFallbackScreen({
 					</div>
 
 					{stack ? (
-						<Collapsible className="w-full max-w-xs text-left text-xs text-muted-foreground">
+						<Collapsible className="flex w-full max-w-sm flex-col items-center text-center text-xs text-muted-foreground">
 							<CollapsibleTrigger
 								render={
 									<Button
@@ -63,8 +63,8 @@ export default function ErrorFallbackScreen({
 							>
 								Technical details
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-3 overflow-hidden">
-								<pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-card p-4 leading-5">
+							<CollapsibleContent className="mt-3 w-full overflow-hidden">
+								<pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-card p-4 text-left leading-5">
 									{stack}
 								</pre>
 							</CollapsibleContent>
