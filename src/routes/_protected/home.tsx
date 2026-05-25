@@ -87,33 +87,25 @@ function HomePage() {
 						/>
 					))}
 				</section>
-				{filteredWorkspaces.length === 0 ? (
+				{hasSearch && filteredWorkspaces.length === 0 ? (
 					<Empty className="border border-dashed bg-muted/20">
 						<EmptyHeader>
 							<EmptyMedia variant="icon">
 								<SearchX />
 							</EmptyMedia>
-							<EmptyTitle>
-								{hasSearch ? "No matching workspaces" : "No workspaces yet"}
-							</EmptyTitle>
-							<EmptyDescription>
-								{hasSearch
-									? "Try a different search."
-									: "Create a workspace to start organizing your research."}
-							</EmptyDescription>
+							<EmptyTitle>No matching workspaces</EmptyTitle>
+							<EmptyDescription>Try a different search.</EmptyDescription>
 						</EmptyHeader>
-						{hasSearch ? (
-							<EmptyContent>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => setQuery("")}
-								>
-									Clear search
-								</Button>
-							</EmptyContent>
-						) : null}
+						<EmptyContent>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setQuery("")}
+							>
+								Clear search
+							</Button>
+						</EmptyContent>
 					</Empty>
 				) : null}
 			</div>

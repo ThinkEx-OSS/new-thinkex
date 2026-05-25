@@ -57,7 +57,6 @@ export default function UserProfileDropdown() {
 			removeAuthSession(queryClient);
 			await router.invalidate();
 			await navigate({ to: "/" });
-			toast.success("Signed out");
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Unable to sign out right now."));
 		}

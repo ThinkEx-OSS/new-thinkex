@@ -58,7 +58,6 @@ export function useCreateWorkspaceMutation() {
 		},
 		onSuccess: (workspace) => {
 			seedWorkspaceCaches(queryClient, { workspace, items: [] });
-			toast.success("Workspace created");
 		},
 		onError: (error, _variables, context) => {
 			restoreWorkspaceListCache(queryClient, context?.previousWorkspaces);
