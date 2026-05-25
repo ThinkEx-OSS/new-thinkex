@@ -11,6 +11,8 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
+	useState,
 } from "react";
 import {
 	ResizableHandle,
@@ -19,6 +21,8 @@ import {
 } from "#/components/ui/resizable";
 import {
 	applyWorkspaceItemDeletionInCaches,
+	applyWorkspaceItemMoveInCaches,
+	applyWorkspaceItemReorderInCaches,
 	upsertWorkspaceItemInCaches,
 	workspaceItemsQueryKey,
 	workspacePageQueryKey,
@@ -26,13 +30,30 @@ import {
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
+import {
+	WorkspaceSkeletonAiChatPanel,
+	WorkspaceSkeletonChrome,
+	WorkspaceSkeletonContent,
+} from "#/features/workspaces/components/WorkspacePageSkeleton";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
-import type { WorkspaceSummary } from "#/features/workspaces/contracts";
-import { getWorkspaceDragCommand } from "#/features/workspaces/model/drag";
+import type {
+	ReorderWorkspaceItemsInput,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
+import {
+	debugWorkspaceDnd,
+	getSortableDebugFields,
+	getWorkspaceDragCommand,
+	getWorkspaceItemMoveResolution,
+	getWorkspaceItemReorderInput,
+	shouldPreventWorkspaceItemOptimisticSorting,
+	shouldPreventWorkspacePointerActivation,
+} from "#/features/workspaces/model/drag";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
+import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import {
 	useWorkspaceUiStore,
 	type WorkspacePane,
@@ -42,17 +63,38 @@ import {
 	createWorkspaceItemMutationInput,
 	useCreateWorkspaceItemMutation,
 } from "#/features/workspaces/use-create-workspace-item";
+import { useMoveWorkspaceItemMutation } from "#/features/workspaces/use-move-workspace-item";
+import { useReorderWorkspaceItemsMutation } from "#/features/workspaces/use-reorder-workspace-items";
+import {
+	arraysEqual,
+	getWorkspaceItemRowOrders,
+	mergeWorkspaceItemOrder,
+	WORKSPACE_ITEM_SORT_ORDER_STEP,
+} from "#/features/workspaces/workspace-item-ordering";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 const workspaceDragSensors = [
 	PointerSensor.configure({
-		activationConstraints: [
-			new PointerActivationConstraints.Distance({ value: 6 }),
-		],
+		activationConstraints(event) {
+			if (event.pointerType === "touch") {
+				return [
+					new PointerActivationConstraints.Delay({
+						value: 250,
+						tolerance: 5,
+					}),
+				];
+			}
+
+			return [new PointerActivationConstraints.Distance({ value: 6 })];
+		},
+		preventActivation(event, source) {
+			return shouldPreventWorkspacePointerActivation(event, source);
+		},
 	}),
 	KeyboardSensor,
 ];
+const WORKSPACE_ITEM_REORDER_SAVE_DEBOUNCE_MS = 450;
 
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;
@@ -75,6 +117,22 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
 	const queryClient = useQueryClient();
 	const createWorkspaceItemMutation = useCreateWorkspaceItemMutation();
+	const reorderWorkspaceItemsMutation = useReorderWorkspaceItemsMutation();
+	const moveWorkspaceItemMutation = useMoveWorkspaceItemMutation();
+	const shouldIgnoreWorkspaceItemReorderEvent =
+		reorderWorkspaceItemsMutation.shouldIgnoreReorderEvent;
+	const shouldIgnoreWorkspaceItemMoveEvent =
+		moveWorkspaceItemMutation.shouldIgnoreMoveEvent;
+	const persistedStoresHydrated = useWorkspacePersistedStoresHydrated();
+	const workspaceItemOrderRef = useRef(new Map<string, string[]>());
+	const reorderSaveTimers = useRef(
+		new Map<string, ReturnType<typeof setTimeout>>(),
+	);
+	const pendingReorderInputs = useRef(
+		new Map<string, ReorderWorkspaceItemsInput>(),
+	);
+	const [workspaceItemOrderOverrides, setWorkspaceItemOrderOverrides] =
+		useState(() => new Map<string, string[]>());
 	const ensureWorkspaceUiSession = useWorkspaceUiStore(
 		(state) => state.ensureWorkspaceSession,
 	);
@@ -93,9 +151,73 @@ export function WorkspaceShell({
 				return;
 			}
 
+			if (event.type === "workspace.items.reordered") {
+				if (shouldIgnoreWorkspaceItemReorderEvent(event.payload)) {
+					debugWorkspaceDnd("realtime:reorder:ignore-local-echo", {
+						eventId: event.id,
+						clientMutationId: event.payload.clientMutationId,
+						parentId: event.payload.parentId,
+						row: event.payload.row,
+						itemIds: event.payload.items.map((item) => item.id),
+					});
+					return;
+				}
+
+				debugWorkspaceDnd("realtime:reorder:apply", {
+					eventId: event.id,
+					clientMutationId: event.payload.clientMutationId,
+					parentId: event.payload.parentId,
+					row: event.payload.row,
+					itemIds: event.payload.items.map((item) => item.id),
+				});
+
+				applyWorkspaceItemReorderInCaches(queryClient, {
+					workspaceId: event.workspaceId,
+					parentId: event.payload.parentId,
+					row: event.payload.row,
+					items: event.payload.items,
+				});
+				return;
+			}
+
+			if (event.type === "workspace.item.moved") {
+				if (shouldIgnoreWorkspaceItemMoveEvent(event.payload)) {
+					debugWorkspaceDnd("realtime:move:ignore-local-echo", {
+						eventId: event.id,
+						clientMutationId: event.payload.clientMutationId,
+						itemId: event.payload.item.id,
+						sourceParentId: event.payload.source.parentId,
+						destinationParentId: event.payload.destination.parentId,
+					});
+					return;
+				}
+
+				debugWorkspaceDnd("realtime:move:apply", {
+					eventId: event.id,
+					clientMutationId: event.payload.clientMutationId,
+					itemId: event.payload.item.id,
+					sourceParentId: event.payload.source.parentId,
+					destinationParentId: event.payload.destination.parentId,
+				});
+
+				applyWorkspaceItemMoveInCaches(queryClient, {
+					workspaceId: event.workspaceId,
+					item: event.payload.item,
+					source: event.payload.source,
+					destination: event.payload.destination,
+					clientMutationId: event.payload.clientMutationId,
+				});
+				return;
+			}
+
 			upsertWorkspaceItemInCaches(queryClient, event.payload.item);
 		},
-		[queryClient, workspace.id],
+		[
+			queryClient,
+			shouldIgnoreWorkspaceItemMoveEvent,
+			shouldIgnoreWorkspaceItemReorderEvent,
+			workspace.id,
+		],
 	);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
@@ -142,6 +264,15 @@ export function WorkspaceShell({
 	);
 	const { chatPanelCollapsed, presentation } = normalizedUiSession;
 	const presentationHasChat = hasPaneKind(presentation, "chat");
+	const orderedScopedItems = useMemo(
+		() =>
+			applyWorkspaceItemOrderOverrides({
+				items: scopedItems,
+				orderOverrides: workspaceItemOrderOverrides,
+				workspaceId: workspace.id,
+			}),
+		[scopedItems, workspace.id, workspaceItemOrderOverrides],
+	);
 
 	useEffect(() => {
 		ensureWorkspaceUiSession({
@@ -150,8 +281,148 @@ export function WorkspaceShell({
 		});
 	}, [ensureWorkspaceUiSession, validItemIds, workspace.id]);
 
-	if (!session || !activeTab) {
-		return <div className="min-h-screen bg-background text-foreground" />;
+	useEffect(() => {
+		setWorkspaceItemOrderOverrides((current) =>
+			reconcileWorkspaceItemOrderOverrides({
+				items: scopedItems,
+				orderOverrides: current,
+				workspaceId: workspace.id,
+			}),
+		);
+	}, [scopedItems, workspace.id]);
+
+	useEffect(() => {
+		syncWorkspaceItemOrderRef({
+			items: orderedScopedItems,
+			orderRef: workspaceItemOrderRef.current,
+			workspaceId: workspace.id,
+		});
+	}, [orderedScopedItems, workspace.id]);
+
+	useEffect(
+		() => () => {
+			for (const timer of reorderSaveTimers.current.values()) {
+				clearTimeout(timer);
+			}
+		},
+		[],
+	);
+
+	const clearWorkspaceItemOrderOverride = useCallback(
+		(input: { orderScopeKey: string; orderedItemIds: string[] }) => {
+			setWorkspaceItemOrderOverrides((current) => {
+				const currentOrder = current.get(input.orderScopeKey);
+
+				if (!currentOrder || !arraysEqual(currentOrder, input.orderedItemIds)) {
+					return current;
+				}
+
+				const next = new Map(current);
+				next.delete(input.orderScopeKey);
+				return next;
+			});
+			workspaceItemOrderRef.current.delete(input.orderScopeKey);
+		},
+		[],
+	);
+
+	const cancelWorkspaceItemReorderSave = useCallback(
+		(input: { orderScopeKey: string }) => {
+			const existingTimer = reorderSaveTimers.current.get(input.orderScopeKey);
+
+			if (existingTimer) {
+				clearTimeout(existingTimer);
+			}
+
+			reorderSaveTimers.current.delete(input.orderScopeKey);
+			pendingReorderInputs.current.delete(input.orderScopeKey);
+			workspaceItemOrderRef.current.delete(input.orderScopeKey);
+			setWorkspaceItemOrderOverrides((current) => {
+				if (!current.has(input.orderScopeKey)) {
+					return current;
+				}
+
+				const next = new Map(current);
+				next.delete(input.orderScopeKey);
+				return next;
+			});
+			debugWorkspaceDnd("reorder:save-canceled", {
+				orderScopeKey: input.orderScopeKey,
+			});
+		},
+		[],
+	);
+
+	const scheduleWorkspaceItemReorderSave = useCallback(
+		(input: {
+			orderScopeKey: string;
+			mutationInput: ReorderWorkspaceItemsInput;
+		}) => {
+			const existingTimer = reorderSaveTimers.current.get(input.orderScopeKey);
+
+			if (existingTimer) {
+				clearTimeout(existingTimer);
+			}
+
+			pendingReorderInputs.current.set(
+				input.orderScopeKey,
+				input.mutationInput,
+			);
+
+			debugWorkspaceDnd("reorder:save-scheduled", {
+				orderScopeKey: input.orderScopeKey,
+				debounceMs: WORKSPACE_ITEM_REORDER_SAVE_DEBOUNCE_MS,
+				movedItemId: input.mutationInput.movedItemId,
+				orderedItemIds: input.mutationInput.orderedItemIds,
+			});
+
+			const timer = setTimeout(() => {
+				const latestInput = pendingReorderInputs.current.get(
+					input.orderScopeKey,
+				);
+
+				reorderSaveTimers.current.delete(input.orderScopeKey);
+				pendingReorderInputs.current.delete(input.orderScopeKey);
+
+				if (!latestInput) {
+					return;
+				}
+
+				debugWorkspaceDnd("reorder:save-fired", {
+					orderScopeKey: input.orderScopeKey,
+					movedItemId: latestInput.movedItemId,
+					orderedItemIds: latestInput.orderedItemIds,
+				});
+
+				reorderWorkspaceItemsMutation.mutate(latestInput, {
+					onError: () => {
+						clearWorkspaceItemOrderOverride({
+							orderScopeKey: input.orderScopeKey,
+							orderedItemIds: latestInput.orderedItemIds,
+						});
+					},
+					onSuccess: (result) => {
+						clearWorkspaceItemOrderOverride({
+							orderScopeKey: input.orderScopeKey,
+							orderedItemIds: result.items.map((item) => item.id),
+						});
+					},
+				});
+			}, WORKSPACE_ITEM_REORDER_SAVE_DEBOUNCE_MS);
+
+			reorderSaveTimers.current.set(input.orderScopeKey, timer);
+		},
+		[clearWorkspaceItemOrderOverride, reorderWorkspaceItemsMutation],
+	);
+
+	if (!persistedStoresHydrated || !session || !activeTab) {
+		return (
+			<WorkspaceFrame
+				chrome={<WorkspaceSkeletonChrome />}
+				content={<WorkspaceSkeletonContent />}
+				chatPanel={<WorkspaceSkeletonAiChatPanel />}
+			/>
+		);
 	}
 
 	if (presentation.mode === "maximized") {
@@ -161,7 +432,7 @@ export function WorkspaceShell({
 					workspaceId={workspace.id}
 					pane={presentation.pane}
 					itemsById={itemsById}
-					scopedItems={scopedItems}
+					scopedItems={orderedScopedItems}
 					onOpenItem={openItem}
 				/>
 			</MaximizedWorkspaceSurface>
@@ -171,12 +442,95 @@ export function WorkspaceShell({
 	return (
 		<DragDropProvider
 			sensors={workspaceDragSensors}
+			onDragOver={(event) => {
+				if (shouldPreventWorkspaceItemOptimisticSorting(event)) {
+					debugWorkspaceDnd("dragover:prevent-cross-row-sort", {
+						sourceId: event.operation.source?.id,
+						sourceType: event.operation.source?.type,
+						targetId: event.operation.target?.id,
+						targetType: event.operation.target?.type,
+					});
+					event.preventDefault();
+				}
+			}}
 			onDragEnd={(event) => {
 				const command = getWorkspaceDragCommand(event);
 
 				if (command) {
+					debugWorkspaceDnd("dragend:tab-command", { command });
 					dispatchWorkspaceDragCommand(command);
+					return;
 				}
+
+				const moveResolution = getWorkspaceItemMoveResolution({
+					event,
+					items: orderedScopedItems,
+					workspaceId: workspace.id,
+				});
+
+				if (moveResolution?.kind === "blocked") {
+					debugWorkspaceDnd("dragend:item-move-blocked", moveResolution);
+					return;
+				}
+
+				if (moveResolution?.kind === "move") {
+					cancelWorkspaceItemReorderSave({
+						orderScopeKey: moveResolution.sourceOrderScopeKey,
+					});
+					debugWorkspaceDnd("dragend:item-move", {
+						sourceId: event.operation.source?.id,
+						sourceType: event.operation.source?.type,
+						targetId: event.operation.target?.id,
+						targetType: event.operation.target?.type,
+						...getSortableDebugFields(event.operation),
+						moveInput: moveResolution.mutationInput,
+						sourceOrderScopeKey: moveResolution.sourceOrderScopeKey,
+					});
+					moveWorkspaceItemMutation.mutate(moveResolution.mutationInput);
+					return;
+				}
+
+				const reorderInput = getWorkspaceItemReorderInput({
+					event,
+					items: orderedScopedItems,
+					orderRef: workspaceItemOrderRef.current,
+					workspaceId: workspace.id,
+				});
+
+				if (reorderInput) {
+					workspaceItemOrderRef.current.set(
+						reorderInput.orderScopeKey,
+						reorderInput.mutationInput.orderedItemIds,
+					);
+					setWorkspaceItemOrderOverrides((current) => {
+						const next = new Map(current);
+						next.set(
+							reorderInput.orderScopeKey,
+							reorderInput.mutationInput.orderedItemIds,
+						);
+						return next;
+					});
+					debugWorkspaceDnd("dragend:item-reorder", {
+						sourceId: event.operation.source?.id,
+						sourceType: event.operation.source?.type,
+						targetId: event.operation.target?.id,
+						targetType: event.operation.target?.type,
+						...getSortableDebugFields(event.operation),
+						reorderInput: reorderInput.mutationInput,
+						orderScopeKey: reorderInput.orderScopeKey,
+					});
+					scheduleWorkspaceItemReorderSave(reorderInput);
+					return;
+				}
+
+				debugWorkspaceDnd("dragend:no-op", {
+					canceled: event.canceled ?? event.operation.canceled,
+					sourceId: event.operation.source?.id,
+					sourceType: event.operation.source?.type,
+					targetId: event.operation.target?.id,
+					targetType: event.operation.target?.type,
+					...getSortableDebugFields(event.operation),
+				});
 			}}
 		>
 			<WorkspaceFrame
@@ -200,7 +554,7 @@ export function WorkspaceShell({
 											workspaceId: workspace.id,
 											type: input.type,
 											parentId: input.parentId,
-											existingItems: scopedItems,
+											existingItems: orderedScopedItems,
 										}),
 									);
 								}}
@@ -219,12 +573,12 @@ export function WorkspaceShell({
 							panes={presentation.panes}
 							direction={presentation.direction}
 							itemsById={itemsById}
-							scopedItems={scopedItems}
+							scopedItems={orderedScopedItems}
 							onOpenItem={openItem}
 						/>
 					) : (
 						<WorkspaceContent
-							items={scopedItems}
+							items={orderedScopedItems}
 							activeItem={activeItem}
 							onOpenItem={openItem}
 						/>
@@ -238,6 +592,120 @@ export function WorkspaceShell({
 			/>
 		</DragDropProvider>
 	);
+}
+
+function syncWorkspaceItemOrderRef(input: {
+	items: WorkspaceItem[];
+	orderRef: Map<string, string[]>;
+	workspaceId: string;
+}) {
+	const nextOrders = getWorkspaceItemRowOrders(input.items, input.workspaceId);
+
+	for (const key of input.orderRef.keys()) {
+		if (!nextOrders.has(key)) {
+			input.orderRef.delete(key);
+		}
+	}
+
+	for (const [key, itemIds] of nextOrders) {
+		input.orderRef.set(key, itemIds);
+	}
+}
+
+function applyWorkspaceItemOrderOverrides(input: {
+	items: WorkspaceItem[];
+	orderOverrides: Map<string, string[]>;
+	workspaceId: string;
+}) {
+	if (input.orderOverrides.size === 0) {
+		return input.items;
+	}
+
+	const rowOrders = getWorkspaceItemRowOrders(input.items, input.workspaceId);
+	const itemsById = new Map(input.items.map((item) => [item.id, item]));
+	const updatedItemsById = new Map<string, WorkspaceItem>();
+
+	for (const [orderScopeKey, currentItemIds] of rowOrders) {
+		const overrideItemIds = input.orderOverrides.get(orderScopeKey);
+
+		if (!overrideItemIds) {
+			continue;
+		}
+
+		const orderedItemIds = mergeWorkspaceItemOrder(
+			overrideItemIds,
+			currentItemIds,
+		);
+
+		for (const [index, itemId] of orderedItemIds.entries()) {
+			const item = itemsById.get(itemId);
+
+			if (!item) {
+				continue;
+			}
+
+			updatedItemsById.set(itemId, {
+				...item,
+				sortOrder: (index + 1) * WORKSPACE_ITEM_SORT_ORDER_STEP,
+			});
+		}
+	}
+
+	if (updatedItemsById.size === 0) {
+		return input.items;
+	}
+
+	return input.items.map((item) => updatedItemsById.get(item.id) ?? item);
+}
+
+function reconcileWorkspaceItemOrderOverrides(input: {
+	items: WorkspaceItem[];
+	orderOverrides: Map<string, string[]>;
+	workspaceId: string;
+}) {
+	if (input.orderOverrides.size === 0) {
+		return input.orderOverrides;
+	}
+
+	const rowOrders = getWorkspaceItemRowOrders(input.items, input.workspaceId);
+	let next = input.orderOverrides;
+
+	for (const [orderScopeKey, overrideItemIds] of input.orderOverrides) {
+		const currentItemIds = rowOrders.get(orderScopeKey);
+
+		if (!currentItemIds) {
+			if (next === input.orderOverrides) {
+				next = new Map(input.orderOverrides);
+			}
+
+			next.delete(orderScopeKey);
+			continue;
+		}
+
+		const reconciledItemIds = mergeWorkspaceItemOrder(
+			overrideItemIds,
+			currentItemIds,
+		);
+
+		if (arraysEqual(reconciledItemIds, currentItemIds)) {
+			if (next === input.orderOverrides) {
+				next = new Map(input.orderOverrides);
+			}
+
+			next.delete(orderScopeKey);
+			continue;
+		}
+
+		if (!arraysEqual(reconciledItemIds, overrideItemIds)) {
+			if (next === input.orderOverrides) {
+				next = new Map(input.orderOverrides);
+			}
+
+			next.set(orderScopeKey, reconciledItemIds);
+		}
+	}
+
+	return next;
 }
 
 export function WorkspaceFrame({

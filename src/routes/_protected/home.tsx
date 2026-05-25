@@ -20,6 +20,7 @@ import {
 	createWorkspaceMutationInput,
 	getWorkspaceTabSearch,
 	useCreateWorkspaceMutation,
+	useWorkspacePersistedStoresHydrated,
 	useWorkspaceTabsStore,
 	WORKSPACE_ROOT_VIEW,
 	WorkspaceCard,
@@ -47,6 +48,7 @@ function HomePage() {
 	const { data: workspaces } = useSuspenseQuery(workspacesQueryOptions());
 	const [query, setQuery] = useState("");
 	const createWorkspaceMutation = useCreateWorkspaceMutation();
+	const persistedStoresHydrated = useWorkspacePersistedStoresHydrated();
 
 	const filteredWorkspaces = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
@@ -78,7 +80,10 @@ function HomePage() {
 						<WorkspaceCard
 							key={workspace.id}
 							workspace={workspace}
-							search={getWorkspaceCardSearch(workspace.id)}
+							search={getWorkspaceCardSearch(
+								workspace.id,
+								persistedStoresHydrated,
+							)}
 						/>
 					))}
 				</section>
@@ -177,7 +182,14 @@ function WorkspaceCardSkeleton() {
 	);
 }
 
-function getWorkspaceCardSearch(workspaceId: string) {
+function getWorkspaceCardSearch(
+	workspaceId: string,
+	persistedStoresHydrated: boolean,
+) {
+	if (!persistedStoresHydrated) {
+		return { tab: undefined, view: WORKSPACE_ROOT_VIEW };
+	}
+
 	const session = useWorkspaceTabsStore.getState().getSession(workspaceId);
 	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
 

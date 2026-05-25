@@ -18,14 +18,14 @@ const workspaceSkeletonCardIds = [
 export default function WorkspacePageSkeleton() {
 	return (
 		<WorkspaceFrame
-			chrome={<WorkspaceChromeSkeleton />}
-			content={<WorkspaceContentSkeleton />}
-			chatPanel={<AiChatPanelSkeleton />}
+			chrome={<WorkspaceSkeletonChrome />}
+			content={<WorkspaceSkeletonContent />}
+			chatPanel={<WorkspaceSkeletonAiChatPanel />}
 		/>
 	);
 }
 
-function WorkspaceChromeSkeleton() {
+export function WorkspaceSkeletonChrome() {
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
 			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
@@ -71,7 +71,7 @@ function WorkspaceContextBarSkeleton() {
 	);
 }
 
-function WorkspaceContentSkeleton() {
+export function WorkspaceSkeletonContent() {
 	return (
 		<div className="h-[calc(100vh-5.75rem)] overflow-hidden">
 			<div className="space-y-5 px-4 py-3">
@@ -95,7 +95,7 @@ function WorkspaceContentSkeleton() {
 	);
 }
 
-function AiChatPanelSkeleton() {
+export function WorkspaceSkeletonAiChatPanel() {
 	return (
 		<aside className="relative flex min-h-screen flex-col bg-background">
 			<div className="flex h-12 items-center justify-between border-b border-border/70 px-4">

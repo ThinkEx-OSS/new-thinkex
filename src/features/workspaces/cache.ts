@@ -1,10 +1,17 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
+	MoveWorkspaceItemInput,
+	MoveWorkspaceItemResult,
+	ReorderWorkspaceItemsResult,
 	WorkspaceItemSummary,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import {
+	isWorkspaceItemInOrderRow,
+	WORKSPACE_ITEM_SORT_ORDER_STEP,
+} from "#/features/workspaces/workspace-item-ordering";
 
 export const workspacesQueryKey = ["workspaces"] as const;
 
@@ -213,6 +220,154 @@ export function applyWorkspaceItemDeletionInCaches(
 	for (const item of input.reparentedItems) {
 		upsertWorkspaceItemInCaches(queryClient, item);
 	}
+}
+
+export function applyWorkspaceItemReorderInCaches(
+	queryClient: QueryClient,
+	input: ReorderWorkspaceItemsResult,
+) {
+	const updatedItemsById = new Map(input.items.map((item) => [item.id, item]));
+	const applyReorder = (items: WorkspaceItemSummary[] | undefined) =>
+		items?.map((item) => {
+			const updatedItem = updatedItemsById.get(item.id);
+
+			if (
+				updatedItem &&
+				isWorkspaceItemInOrderRow(item, {
+					parentId: input.parentId,
+					row: input.row,
+				})
+			) {
+				return updatedItem;
+			}
+
+			return item;
+		});
+
+	queryClient.setQueryData<WorkspaceItemSummary[]>(
+		workspaceItemsQueryKey(input.workspaceId),
+		applyReorder,
+	);
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: applyReorder(current.items) ?? current.items,
+					}
+				: current,
+	);
+}
+
+export function applyWorkspaceItemMoveInCaches(
+	queryClient: QueryClient,
+	input: MoveWorkspaceItemResult,
+) {
+	const sourceItemsById = new Map(
+		input.source.items.map((item) => [item.id, item]),
+	);
+	const destinationItemsById = new Map(
+		input.destination.items.map((item) => [item.id, item]),
+	);
+	const applyMove = (items: WorkspaceItemSummary[] | undefined) =>
+		items?.map((item) => {
+			if (item.id === input.item.id) {
+				return input.item;
+			}
+
+			if (
+				isWorkspaceItemInOrderRow(item, {
+					parentId: input.source.parentId,
+					row: input.source.row,
+				})
+			) {
+				return sourceItemsById.get(item.id) ?? item;
+			}
+
+			if (
+				isWorkspaceItemInOrderRow(item, {
+					parentId: input.destination.parentId,
+					row: input.destination.row,
+				})
+			) {
+				return destinationItemsById.get(item.id) ?? item;
+			}
+
+			return item;
+		});
+
+	queryClient.setQueryData<WorkspaceItemSummary[]>(
+		workspaceItemsQueryKey(input.workspaceId),
+		applyMove,
+	);
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: applyMove(current.items) ?? current.items,
+					}
+				: current,
+	);
+}
+
+export function optimisticallyMoveWorkspaceItemInCaches(
+	queryClient: QueryClient,
+	input: MoveWorkspaceItemInput,
+) {
+	const applyOptimisticMove = (items: WorkspaceItemSummary[] | undefined) => {
+		if (!items) {
+			return undefined;
+		}
+
+		const item = items.find((current) => current.id === input.itemId);
+
+		if (!item || item.parentId === input.targetParentId) {
+			return items;
+		}
+
+		const nextSortOrder =
+			Math.max(
+				0,
+				...items
+					.filter(
+						(current) =>
+							current.id !== item.id &&
+							isWorkspaceItemInOrderRow(current, {
+								parentId: input.targetParentId,
+								row: item.type === "folder" ? "folder" : "item",
+							}),
+					)
+					.map((current) => current.sortOrder),
+			) + WORKSPACE_ITEM_SORT_ORDER_STEP;
+		const movedItem: WorkspaceItemSummary = {
+			...item,
+			parentId: input.targetParentId,
+			sortOrder: nextSortOrder,
+			updatedAt: new Date().toISOString(),
+		};
+
+		return items.map((current) =>
+			current.id === input.itemId ? movedItem : current,
+		);
+	};
+
+	queryClient.setQueryData<WorkspaceItemSummary[]>(
+		workspaceItemsQueryKey(input.workspaceId),
+		applyOptimisticMove,
+	);
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: applyOptimisticMove(current.items) ?? current.items,
+					}
+				: current,
+	);
 }
 
 export function removeWorkspaceCaches(

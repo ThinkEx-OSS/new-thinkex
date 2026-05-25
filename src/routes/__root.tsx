@@ -12,6 +12,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
 import { TooltipProvider } from "#/components/ui/tooltip";
+import { WorkspacePersistedStoresHydrator } from "#/features/workspaces";
 import type { AuthSession } from "#/lib/auth.functions";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { ThemeProvider } from "../components/theme-provider";
@@ -76,6 +77,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<ThemeProvider defaultTheme="system" storageKey="theme">
 					<TooltipProvider>
 						{/* <PostHogProvider> */}
+						<WorkspacePersistedStoresHydrator />
 						<AuthSessionRefresher />
 						{children}
 						<Toaster />

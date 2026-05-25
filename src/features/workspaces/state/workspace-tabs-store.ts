@@ -287,6 +287,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 		}),
 		{
 			name: "thinkex.workspace-tabs.v2",
+			skipHydration: true,
 			partialize: (state) => ({
 				sessionsByWorkspaceId: state.sessionsByWorkspaceId,
 			}),

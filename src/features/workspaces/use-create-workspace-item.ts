@@ -16,6 +16,7 @@ import type {
 import { getAvailableWorkspaceItemName } from "#/features/workspaces/defaults";
 import { getWorkspaceItemTypeDisplay } from "#/features/workspaces/model/item-display";
 import { createWorkspaceItemFn } from "#/features/workspaces/server/functions";
+import { WORKSPACE_ITEM_SORT_ORDER_STEP } from "#/features/workspaces/workspace-item-ordering";
 import { getErrorMessage } from "#/lib/error-message";
 
 type CreateWorkspaceItemVariables = Omit<
@@ -24,6 +25,7 @@ type CreateWorkspaceItemVariables = Omit<
 > & {
 	id: NonNullable<CreateWorkspaceItemInput["id"]>;
 	name: string;
+	optimisticSortOrder: number;
 };
 
 export function useCreateWorkspaceItemMutation() {
@@ -31,8 +33,12 @@ export function useCreateWorkspaceItemMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: CreateWorkspaceItemVariables) =>
-			createWorkspaceItem({ data: input }),
+		mutationFn: (input: CreateWorkspaceItemVariables) => {
+			const { optimisticSortOrder: _optimisticSortOrder, ...serverInput } =
+				input;
+
+			return createWorkspaceItem({ data: serverInput });
+		},
 		onMutate: async (input) => {
 			await Promise.all([
 				queryClient.cancelQueries({
@@ -109,6 +115,11 @@ export function createWorkspaceItemMutationInput(
 		type: input.type,
 		name,
 		id: crypto.randomUUID() as NonNullable<CreateWorkspaceItemInput["id"]>,
+		optimisticSortOrder: getNextOptimisticSortOrder({
+			existingItems: input.existingItems ?? [],
+			parentId: input.parentId ?? null,
+			type: input.type,
+		}),
 	};
 }
 
@@ -128,9 +139,28 @@ function createOptimisticWorkspaceItem(
 		meta: getWorkspaceItemTypeDisplay(input.type).label,
 		color: null,
 		metadataJson: {},
-		sortOrder: Date.now(),
+		sortOrder: input.optimisticSortOrder,
 		createdAt: now,
 		updatedAt: now,
 		deletedAt: null,
 	};
+}
+
+function getNextOptimisticSortOrder(input: {
+	existingItems: WorkspaceItemSummary[];
+	parentId: string | null;
+	type: CreateWorkspaceItemInput["type"];
+}) {
+	const rowItems = input.existingItems.filter(
+		(item) =>
+			item.parentId === input.parentId &&
+			(input.type === "folder"
+				? item.type === "folder"
+				: item.type !== "folder"),
+	);
+
+	return (
+		Math.max(0, ...rowItems.map((item) => item.sortOrder)) +
+		WORKSPACE_ITEM_SORT_ORDER_STEP
+	);
 }

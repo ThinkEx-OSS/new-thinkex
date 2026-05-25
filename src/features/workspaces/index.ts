@@ -8,6 +8,10 @@ export {
 	WORKSPACE_ROOT_VIEW,
 } from "./model/tabs";
 export type { WorkspaceItem } from "./model/types";
+export {
+	useWorkspacePersistedStoresHydrated,
+	WorkspacePersistedStoresHydrator,
+} from "./state/persisted-store-hydration";
 export { useWorkspaceTabsStore } from "./state/workspace-tabs-store";
 export {
 	useWorkspaceUiStore,
@@ -24,6 +28,8 @@ export {
 } from "./use-create-workspace-item";
 export { useDeleteWorkspaceMutation } from "./use-delete-workspace";
 export { useDeleteWorkspaceItemMutation } from "./use-delete-workspace-item";
+export { useMoveWorkspaceItemMutation } from "./use-move-workspace-item";
 export { useRecordWorkspaceOpenedMutation } from "./use-record-workspace-opened";
+export { useReorderWorkspaceItemsMutation } from "./use-reorder-workspace-items";
 export { useUpdateWorkspaceMutation } from "./use-update-workspace";
 export { useUpdateWorkspaceItemMutation } from "./use-update-workspace-item";
