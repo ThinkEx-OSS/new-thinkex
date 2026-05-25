@@ -1,17 +1,16 @@
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { FileQuestion, type LucideIcon, Plus, X } from "lucide-react";
-import {
-	type ReactNode,
-	type Ref,
-	useCallback,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from "react";
+import { type ReactNode, type Ref, useCallback, useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
+import { useWorkspaceTabCloseResizeLock } from "#/features/workspaces/components/useWorkspaceTabCloseResizeLock";
+import {
+	useWorkspaceTabLayoutAnimation,
+	type WorkspaceTabLayoutElementHandler,
+} from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
+import { WORKSPACE_SORTABLE_TAB_TRANSITION } from "#/features/workspaces/components/workspace-tab-motion";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
@@ -30,22 +29,12 @@ import { cn } from "#/lib/utils";
 
 const TAB_MAX_WIDTH = "16rem";
 const TAB_ITEM_CLASS = "flex min-w-0 items-center gap-1";
-const WORKSPACE_SORTABLE_TAB_TRANSITION = {
-	duration: 160,
-	easing: "cubic-bezier(0.2, 0, 0, 1)",
-} as const;
-const WORKSPACE_PROJECTED_TAB_ANIMATION = {
-	duration: 240,
-	easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-} as const;
-const WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS = 1200;
-const WORKSPACE_NEW_TAB_ANIMATION_WINDOW_MS = 750;
 const WORKSPACE_TAB_GAP_WIDTH = "0.25rem";
-const WORKSPACE_TAB_LAYOUT_ANIMATION_DELTA_THRESHOLD = 0.5;
 const WORKSPACE_TAB_COLLISION_TYPE_HORIZONTAL_CENTER = 3;
 const WORKSPACE_TAB_COLLISION_PRIORITY_HIGH = 3;
 const WORKSPACE_TAB_SOURCE_RELEASE_RATIO = 0.58;
 const WORKSPACE_TAB_VERTICAL_COLLISION_OVERSCAN = 12;
+const WORKSPACE_PROJECTED_TAB_KEY_PREFIX = "projected-tab:";
 
 type WorkspaceTabInsertProjection = Extract<
 	WorkspaceDragProjection,
@@ -99,7 +88,7 @@ export default function WorkspaceTabBar({
 	const renderItemKeys = renderItems.map(getWorkspaceTabRenderItemKey);
 	const setLayoutElement = useWorkspaceTabLayoutAnimation({
 		itemKeys: renderItemKeys,
-		isProjectionActive: Boolean(tabProjection),
+		enabled: Boolean(tabProjection),
 	});
 	const gridStyle = getWorkspaceTabGridStyle({
 		tabCount: renderItems.length,
@@ -114,7 +103,11 @@ export default function WorkspaceTabBar({
 			onPointerLeave={closeResizeLock.release}
 		>
 			<div
-				className="grid min-w-0 max-w-full items-center gap-1 overflow-visible transition-[width,max-width] duration-150 ease-out"
+				className={cn(
+					"grid min-w-0 max-w-full items-center gap-1 overflow-visible",
+					closeResizeLock.shouldAnimateResize &&
+						"transition-[width,max-width] duration-150 ease-out",
+				)}
 				style={gridStyle}
 			>
 				{renderItems.map((renderItem, visualIndex) => {
@@ -251,14 +244,9 @@ function isWorkspaceTabRenderItemActive(
 
 function getWorkspaceTabRenderItemKey(renderItem: WorkspaceTabRenderItem) {
 	return renderItem.kind === "projected-tab"
-		? `projected-tab:${renderItem.projection.source.itemId}`
+		? `${WORKSPACE_PROJECTED_TAB_KEY_PREFIX}${renderItem.projection.source.itemId}`
 		: `tab:${renderItem.tab.id}`;
 }
-
-type WorkspaceTabLayoutElementHandler = (
-	key: string,
-	element: HTMLDivElement | null,
-) => void;
 
 function getWorkspaceTabGridStyle(input: {
 	tabCount: number;
@@ -282,160 +270,6 @@ function getWorkspaceTabGridStyle(input: {
 		width: lockedWidth,
 		maxWidth: lockedWidth,
 	};
-}
-
-function useWorkspaceTabCloseResizeLock() {
-	const [lockedTabWidth, setLockedTabWidth] = useState<number | null>(null);
-	const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	const clearReleaseTimer = useCallback(() => {
-		if (!releaseTimerRef.current) {
-			return;
-		}
-
-		clearTimeout(releaseTimerRef.current);
-		releaseTimerRef.current = null;
-	}, []);
-	const release = useCallback(() => {
-		clearReleaseTimer();
-		setLockedTabWidth(null);
-	}, [clearReleaseTimer]);
-	const lockFromElement = useCallback(
-		(element: HTMLElement | null) => {
-			const width = element?.getBoundingClientRect().width;
-
-			if (!width) {
-				return;
-			}
-
-			clearReleaseTimer();
-			setLockedTabWidth(width);
-			releaseTimerRef.current = setTimeout(
-				release,
-				WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS,
-			);
-		},
-		[clearReleaseTimer, release],
-	);
-
-	useLayoutEffect(() => () => clearReleaseTimer(), [clearReleaseTimer]);
-
-	return {
-		lockedTabWidth,
-		lockFromElement,
-		release,
-	};
-}
-
-function useWorkspaceTabLayoutAnimation(input: {
-	itemKeys: string[];
-	isProjectionActive: boolean;
-}) {
-	const { itemKeys, isProjectionActive } = input;
-	const itemKeySignature = itemKeys.join("\u0000");
-	const elementsRef = useRef(new Map<string, HTMLDivElement>());
-	const rectsRef = useRef(new Map<string, DOMRect>());
-	const animationsRef = useRef(new Map<string, Animation>());
-
-	const setItemElement = useCallback<WorkspaceTabLayoutElementHandler>(
-		(key, element) => {
-			if (element) {
-				elementsRef.current.set(key, element);
-				return;
-			}
-
-			elementsRef.current.delete(key);
-			animationsRef.current.get(key)?.cancel();
-			animationsRef.current.delete(key);
-		},
-		[],
-	);
-
-	// dnd-kit animates real sortable tab moves; this FLIP pass covers target-side projections that are not sortable sources.
-	useLayoutEffect(() => {
-		const currentKeys = itemKeySignature
-			? itemKeySignature.split("\u0000")
-			: [];
-		const nextRects = new Map<string, DOMRect>();
-		const activeAnimations = animationsRef.current;
-
-		for (const animation of activeAnimations.values()) {
-			animation.cancel();
-		}
-
-		activeAnimations.clear();
-
-		for (const key of currentKeys) {
-			const element = elementsRef.current.get(key);
-
-			if (element) {
-				nextRects.set(key, element.getBoundingClientRect());
-			}
-		}
-
-		if (prefersReducedWorkspaceMotion()) {
-			rectsRef.current = nextRects;
-			return;
-		}
-
-		if (!isProjectionActive) {
-			rectsRef.current = nextRects;
-			return;
-		}
-
-		for (const [key, nextRect] of nextRects) {
-			const previousRect = rectsRef.current.get(key);
-
-			if (!previousRect) {
-				continue;
-			}
-
-			const deltaX = previousRect.left - nextRect.left;
-			const deltaY = previousRect.top - nextRect.top;
-
-			if (
-				Math.abs(deltaX) < WORKSPACE_TAB_LAYOUT_ANIMATION_DELTA_THRESHOLD &&
-				Math.abs(deltaY) < WORKSPACE_TAB_LAYOUT_ANIMATION_DELTA_THRESHOLD
-			) {
-				continue;
-			}
-
-			const element = elementsRef.current.get(key);
-
-			if (!element || typeof element.animate !== "function") {
-				continue;
-			}
-
-			const animation = element.animate(
-				[
-					{ transform: `translate(${deltaX}px, ${deltaY}px)` },
-					{ transform: "translate(0, 0)" },
-				],
-				WORKSPACE_PROJECTED_TAB_ANIMATION,
-			);
-
-			activeAnimations.set(key, animation);
-			void animation.finished
-				.catch(() => undefined)
-				.then(() => {
-					if (activeAnimations.get(key) === animation) {
-						activeAnimations.delete(key);
-					}
-				});
-		}
-
-		rectsRef.current = nextRects;
-	}, [itemKeySignature, isProjectionActive]);
-
-	return setItemElement;
-}
-
-function prefersReducedWorkspaceMotion() {
-	return (
-		typeof window !== "undefined" &&
-		typeof window.matchMedia === "function" &&
-		window.matchMedia("(prefers-reduced-motion: reduce)").matches
-	);
 }
 
 interface WorkspaceTabItemProps {
@@ -474,7 +308,6 @@ function WorkspaceTabItem({
 	const [element, setElement] = useState<Element | null>(null);
 	const elementRef = useRef<HTMLDivElement | null>(null);
 	const handleRef = useRef<HTMLButtonElement | null>(null);
-	const shouldAnimateMount = useShouldAnimateNewTab(tab.createdAt);
 	const setTabElement = useCallback(
 		(nextElement: HTMLDivElement | null) => {
 			elementRef.current = nextElement;
@@ -508,8 +341,6 @@ function WorkspaceTabItem({
 			className={cn(
 				"relative motion-safe:will-change-transform",
 				TAB_ITEM_CLASS,
-				shouldAnimateMount &&
-					"motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150",
 				isDragSource && "opacity-70",
 				isDropTarget && "rounded-md bg-muted/50",
 			)}
@@ -534,14 +365,6 @@ function WorkspaceTabItem({
 			/>
 		</div>
 	);
-}
-
-function useShouldAnimateNewTab(createdAt: number) {
-	const shouldAnimateRef = useRef(
-		Date.now() - createdAt < WORKSPACE_NEW_TAB_ANIMATION_WINDOW_MS,
-	);
-
-	return shouldAnimateRef.current;
 }
 
 function WorkspaceProjectedTabItem({
@@ -577,7 +400,7 @@ function WorkspaceProjectedTabItem({
 			ref={setProjectedElement}
 			className={cn(
 				TAB_ITEM_CLASS,
-				"opacity-90 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150 motion-safe:will-change-transform",
+				"opacity-90 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-100 motion-safe:will-change-transform",
 			)}
 			aria-hidden
 		>

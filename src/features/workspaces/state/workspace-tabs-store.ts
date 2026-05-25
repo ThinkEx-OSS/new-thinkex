@@ -35,6 +35,7 @@ type WorkspaceTabsState = {
 	createRootTab: (input: {
 		workspaceId: string;
 		workspaceName: string;
+		insertIndex?: number;
 	}) => WorkspaceTab;
 	createItemTab: (input: {
 		workspaceId: string;
@@ -100,7 +101,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 
 				return nextSession;
 			},
-			createRootTab: ({ workspaceId, workspaceName }) => {
+			createRootTab: ({ workspaceId, workspaceName, insertIndex }) => {
 				const rootTab = createRootWorkspaceTab(workspaceName);
 
 				set((state) => {
@@ -110,7 +111,11 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 					);
 					const nextSession = {
 						activeTabId: rootTab.id,
-						tabs: [...session.tabs, rootTab],
+						tabs: insertWorkspaceTabByIndex({
+							tabs: session.tabs,
+							tab: rootTab,
+							insertIndex: insertIndex ?? Number.MAX_SAFE_INTEGER,
+						}),
 					};
 
 					return {
@@ -138,13 +143,11 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 						state.sessionsByWorkspaceId[workspaceId],
 						workspaceName,
 					);
-					const boundedInsertIndex = Math.max(
-						0,
-						Math.min(insertIndex, session.tabs.length),
-					);
-					const nextTabs = session.tabs.slice();
-
-					nextTabs.splice(boundedInsertIndex, 0, itemTab);
+					const nextTabs = insertWorkspaceTabByIndex({
+						tabs: session.tabs,
+						tab: itemTab,
+						insertIndex,
+					});
 
 					return {
 						sessionsByWorkspaceId: {
@@ -241,12 +244,19 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 						(tab) => tab.id === overTabId,
 					);
 
-					if (activeIndex === -1 || overIndex === -1) {
+					if (overIndex === -1) {
 						return state;
 					}
 
-					const nextTabs = session.tabs.slice();
-					nextTabs.splice(overIndex, 0, nextTabs.splice(activeIndex, 1)[0]);
+					const nextTabs = moveWorkspaceTabByIndex({
+						tabs: session.tabs,
+						fromIndex: activeIndex,
+						toIndex: overIndex,
+					});
+
+					if (!nextTabs) {
+						return state;
+					}
 
 					return {
 						sessionsByWorkspaceId: {
@@ -268,27 +278,23 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 					}
 
 					const fromIndex = session.tabs.findIndex((tab) => tab.id === tabId);
-					const boundedToIndex = Math.max(
-						0,
-						Math.min(toIndex, session.tabs.length - 1),
-					);
+					const nextTabs = moveWorkspaceTabByIndex({
+						tabs: session.tabs,
+						fromIndex,
+						toIndex,
+					});
 
-					if (fromIndex === -1 || fromIndex === boundedToIndex) {
-						return state;
-					}
-
-					const nextTabs = session.tabs.slice();
-					nextTabs.splice(boundedToIndex, 0, nextTabs.splice(fromIndex, 1)[0]);
-
-					return {
-						sessionsByWorkspaceId: {
-							...state.sessionsByWorkspaceId,
-							[workspaceId]: {
-								...session,
-								tabs: nextTabs,
-							},
-						},
-					};
+					return nextTabs
+						? {
+								sessionsByWorkspaceId: {
+									...state.sessionsByWorkspaceId,
+									[workspaceId]: {
+										...session,
+										tabs: nextTabs,
+									},
+								},
+							}
+						: state;
 				});
 			},
 			closeTab: ({ workspaceId, tabId }) => {
@@ -339,3 +345,47 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 		},
 	),
 );
+
+function moveWorkspaceTabByIndex(input: {
+	tabs: WorkspaceTab[];
+	fromIndex: number;
+	toIndex: number;
+}) {
+	const { tabs, fromIndex, toIndex } = input;
+	const boundedToIndex = Math.max(0, Math.min(toIndex, tabs.length - 1));
+
+	if (
+		fromIndex < 0 ||
+		fromIndex >= tabs.length ||
+		fromIndex === boundedToIndex
+	) {
+		return undefined;
+	}
+
+	const nextTabs = tabs.slice();
+	const [movedTab] = nextTabs.splice(fromIndex, 1);
+
+	if (!movedTab) {
+		return undefined;
+	}
+
+	nextTabs.splice(boundedToIndex, 0, movedTab);
+
+	return nextTabs;
+}
+
+function insertWorkspaceTabByIndex(input: {
+	tabs: WorkspaceTab[];
+	tab: WorkspaceTab;
+	insertIndex: number;
+}) {
+	const boundedInsertIndex = Math.max(
+		0,
+		Math.min(input.insertIndex, input.tabs.length),
+	);
+	const nextTabs = input.tabs.slice();
+
+	nextTabs.splice(boundedInsertIndex, 0, input.tab);
+
+	return nextTabs;
+}

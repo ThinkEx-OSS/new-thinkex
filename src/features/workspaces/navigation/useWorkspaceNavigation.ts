@@ -137,19 +137,20 @@ export function useWorkspaceNavigation({
 		workspace.name,
 	]);
 
-	const createWorkspaceTab = () => {
-		const tab = createRootTab({
-			workspaceId: workspace.id,
-			workspaceName: workspace.name,
-		});
-
-		navigateToTab(tab);
-	};
 	const getInsertIndexAfterActiveTab = () => {
 		const activeTabIndex =
 			session?.tabs.findIndex((tab) => tab.id === activeTab?.id) ?? -1;
 
 		return activeTabIndex >= 0 ? activeTabIndex + 1 : Number.MAX_SAFE_INTEGER;
+	};
+	const createWorkspaceTab = () => {
+		const tab = createRootTab({
+			workspaceId: workspace.id,
+			workspaceName: workspace.name,
+			insertIndex: getInsertIndexAfterActiveTab(),
+		});
+
+		navigateToTab(tab);
 	};
 	const openItemInNewTab = (input: {
 		item: WorkspaceItem;

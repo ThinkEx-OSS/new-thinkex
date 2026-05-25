@@ -1,9 +1,9 @@
 import {
 	BookOpen,
+	ChevronDown,
 	Download,
 	FilePlus2,
 	Search,
-	Settings,
 	X,
 } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
@@ -59,6 +59,10 @@ import type {
 	WorkspaceItem,
 	WorkspaceItemType,
 } from "#/features/workspaces/model/types";
+
+const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
+const breadcrumbCurrentClassName = `${breadcrumbContentClassName} font-medium text-foreground`;
+const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`;
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
@@ -121,6 +125,7 @@ export default function WorkspaceContextBar({
 								iconClassName={color.text}
 								isCurrent={!activeItem}
 								onClick={onNavigateToRoot}
+								onCurrentClick={() => setSettingsOpen(true)}
 							/>
 						</BreadcrumbItem>
 						{breadcrumbs.map((item) => (
@@ -129,6 +134,8 @@ export default function WorkspaceContextBar({
 								item={item}
 								isCurrent={item.id === activeItem?.id}
 								onClick={() => onNavigateToItem(item)}
+								onRenameItem={setRenamingItem}
+								onDeleteItem={openDeleteAlert}
 							/>
 						))}
 					</BreadcrumbList>
@@ -146,22 +153,6 @@ export default function WorkspaceContextBar({
 								<Download className="size-3.5" />
 								<span className="hidden sm:inline">Export</span>
 							</Button>
-							{activeItem ? (
-								<WorkspaceItemActionsMenu
-									item={activeItem}
-									trigger={
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											type="button"
-											className="size-8.5 text-muted-foreground hover:text-foreground"
-											aria-label={`Open actions for ${activeItem.name}`}
-										/>
-									}
-									onRenameItem={setRenamingItem}
-									onDeleteItem={openDeleteAlert}
-								/>
-							) : null}
 							<Button
 								variant="ghost"
 								size="icon-sm"
@@ -241,33 +232,6 @@ export default function WorkspaceContextBar({
 									</DropdownMenuSub>
 								</DropdownMenuContent>
 							</DropdownMenu>
-							{activeItem ? (
-								<WorkspaceItemActionsMenu
-									item={activeItem}
-									trigger={
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											type="button"
-											className="size-8.5 text-muted-foreground hover:text-foreground"
-											aria-label={`Open actions for ${activeItem.name}`}
-										/>
-									}
-									onRenameItem={setRenamingItem}
-									onDeleteItem={openDeleteAlert}
-								/>
-							) : (
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									type="button"
-									className="size-8.5 text-muted-foreground hover:text-foreground"
-									aria-label={`Open settings for ${workspace.name}`}
-									onClick={() => setSettingsOpen(true)}
-								>
-									<Settings className="size-4" />
-								</Button>
-							)}
 						</>
 					)}
 				</div>
@@ -360,10 +324,14 @@ function WorkspaceBreadcrumbItem({
 	item,
 	isCurrent,
 	onClick,
+	onRenameItem,
+	onDeleteItem,
 }: {
 	item: WorkspaceItem;
 	isCurrent: boolean;
 	onClick: () => void;
+	onRenameItem: (item: WorkspaceItem) => void;
+	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
 	const { Icon, iconClassName } = getWorkspaceItemDisplay(item);
 
@@ -371,13 +339,37 @@ function WorkspaceBreadcrumbItem({
 		<>
 			<BreadcrumbSeparator className="text-muted-foreground/60" />
 			<BreadcrumbItem className="min-w-0">
-				<CrumbButton
-					icon={Icon}
-					label={item.name}
-					iconClassName={iconClassName}
-					isCurrent={isCurrent}
-					onClick={onClick}
-				/>
+				{isCurrent ? (
+					<WorkspaceItemActionsMenu
+						item={item}
+						align="start"
+						trigger={
+							<button
+								type="button"
+								className={breadcrumbCurrentClassName}
+								aria-label={`Open actions for ${item.name}`}
+							/>
+						}
+						triggerChildren={
+							<CrumbContent
+								icon={Icon}
+								label={item.name}
+								iconClassName={iconClassName}
+								showDisclosure={true}
+							/>
+						}
+						onRenameItem={onRenameItem}
+						onDeleteItem={onDeleteItem}
+					/>
+				) : (
+					<CrumbButton
+						icon={Icon}
+						label={item.name}
+						iconClassName={iconClassName}
+						isCurrent={false}
+						onClick={onClick}
+					/>
+				)}
 			</BreadcrumbItem>
 		</>
 	);
@@ -389,21 +381,39 @@ function CrumbButton({
 	iconClassName,
 	isCurrent,
 	onClick,
+	onCurrentClick,
 }: {
 	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 	label: string;
 	iconClassName?: string;
 	isCurrent: boolean;
 	onClick: () => void;
+	onCurrentClick?: () => void;
 }) {
 	const iconColor = iconClassName ?? "text-muted-foreground";
-	const crumbClassName = "flex min-w-0 items-center gap-1.5 truncate";
 
 	if (isCurrent) {
+		if (onCurrentClick) {
+			return (
+				<button
+					type="button"
+					className={breadcrumbCurrentClassName}
+					onClick={onCurrentClick}
+					aria-label={`Open settings for ${label}`}
+				>
+					<CrumbContent
+						icon={Icon}
+						label={label}
+						iconClassName={iconColor}
+						showDisclosure={true}
+					/>
+				</button>
+			);
+		}
+
 		return (
-			<BreadcrumbPage className={`${crumbClassName} font-medium`}>
-				<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
-				<span className="truncate">{label}</span>
+			<BreadcrumbPage className={breadcrumbCurrentClassName}>
+				<CrumbContent icon={Icon} label={label} iconClassName={iconColor} />
 			</BreadcrumbPage>
 		);
 	}
@@ -413,13 +423,41 @@ function CrumbButton({
 			render={
 				<button
 					type="button"
-					className={`${crumbClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`}
+					className={breadcrumbLinkClassName}
 					onClick={onClick}
+					aria-label={`Open ${label}`}
 				/>
 			}
 		>
-			<Icon className={`size-3.5 shrink-0 ${iconColor}`} aria-hidden={true} />
-			<span className="truncate">{label}</span>
+			<CrumbContent icon={Icon} label={label} iconClassName={iconColor} />
 		</BreadcrumbLink>
+	);
+}
+
+function CrumbContent({
+	icon: Icon,
+	label,
+	iconClassName,
+	showDisclosure = false,
+}: {
+	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+	label: string;
+	iconClassName: string;
+	showDisclosure?: boolean;
+}) {
+	return (
+		<>
+			<Icon
+				className={`size-3.5 shrink-0 ${iconClassName}`}
+				aria-hidden={true}
+			/>
+			<span className="min-w-0 truncate">{label}</span>
+			{showDisclosure ? (
+				<ChevronDown
+					className="size-3 shrink-0 text-muted-foreground"
+					aria-hidden={true}
+				/>
+			) : null}
+		</>
 	);
 }
