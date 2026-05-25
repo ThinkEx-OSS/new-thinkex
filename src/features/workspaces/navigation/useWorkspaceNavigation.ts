@@ -13,6 +13,10 @@ import {
 	type WorkspaceTab,
 } from "#/features/workspaces/state/workspace-tabs-store";
 
+type OpenWorkspaceItemOptions = {
+	background?: boolean;
+};
+
 interface UseWorkspaceNavigationInput {
 	workspace: WorkspaceSummary;
 	items: WorkspaceItem[];
@@ -42,6 +46,7 @@ export function useWorkspaceNavigation({
 		(state) => state.ensureWorkspaceSession,
 	);
 	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
+	const createItemTab = useWorkspaceTabsStore((state) => state.createItemTab);
 	const replaceTabView = useWorkspaceTabsStore((state) => state.replaceTabView);
 	const activateTab = useWorkspaceTabsStore((state) => state.activateTab);
 	const reorderTabs = useWorkspaceTabsStore((state) => state.reorderTabs);
@@ -140,6 +145,26 @@ export function useWorkspaceNavigation({
 
 		navigateToTab(tab);
 	};
+	const openItemInNewTab = (input: {
+		item: WorkspaceItem;
+		activate?: boolean;
+		insertIndex?: number;
+	}) => {
+		const tab = createItemTab({
+			workspaceId: workspace.id,
+			workspaceName: workspace.name,
+			itemId: input.item.id,
+			title: input.item.name,
+			insertIndex: input.insertIndex ?? Number.MAX_SAFE_INTEGER,
+			activate: input.activate,
+		});
+
+		if (input.activate !== false) {
+			navigateToTab(tab);
+		}
+
+		return tab;
+	};
 	const activateWorkspaceTab = (tab: WorkspaceTab) => {
 		activateTab({ workspaceId: workspace.id, tabId: tab.id });
 		navigateToTab(tab);
@@ -178,7 +203,15 @@ export function useWorkspaceNavigation({
 			navigateToTab(nextActiveTab);
 		}
 	};
-	const openItem = (item: WorkspaceItem) => {
+	const openItem = (
+		item: WorkspaceItem,
+		options?: OpenWorkspaceItemOptions,
+	) => {
+		if (options?.background) {
+			openItemInNewTab({ item, activate: false });
+			return;
+		}
+
 		if (activeTab?.viewItemId === item.id) {
 			return;
 		}
@@ -217,6 +250,7 @@ export function useWorkspaceNavigation({
 		createWorkspaceTab,
 		itemsById,
 		openItem,
+		openItemInNewTab,
 		openWorkspaceRoot,
 		scopedItems,
 		session,

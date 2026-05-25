@@ -43,9 +43,7 @@ import type {
 import {
 	debugWorkspaceDnd,
 	getSortableDebugFields,
-	getWorkspaceDragCommand,
-	getWorkspaceItemMoveResolution,
-	getWorkspaceItemReorderInput,
+	getWorkspaceDragIntent,
 	shouldPreventWorkspaceItemOptimisticSorting,
 	shouldPreventWorkspacePointerActivation,
 } from "#/features/workspaces/model/drag";
@@ -241,6 +239,7 @@ export function WorkspaceShell({
 		dispatchWorkspaceDragCommand,
 		itemsById,
 		openItem,
+		openItemInNewTab,
 		openWorkspaceRoot,
 		scopedItems,
 		session,
@@ -454,73 +453,87 @@ export function WorkspaceShell({
 				}
 			}}
 			onDragEnd={(event) => {
-				const command = getWorkspaceDragCommand(event);
-
-				if (command) {
-					debugWorkspaceDnd("dragend:tab-command", { command });
-					dispatchWorkspaceDragCommand(command);
-					return;
-				}
-
-				const moveResolution = getWorkspaceItemMoveResolution({
-					event,
-					items: orderedScopedItems,
-					workspaceId: workspace.id,
-				});
-
-				if (moveResolution?.kind === "blocked") {
-					debugWorkspaceDnd("dragend:item-move-blocked", moveResolution);
-					return;
-				}
-
-				if (moveResolution?.kind === "move") {
-					cancelWorkspaceItemReorderSave({
-						orderScopeKey: moveResolution.sourceOrderScopeKey,
-					});
-					debugWorkspaceDnd("dragend:item-move", {
-						sourceId: event.operation.source?.id,
-						sourceType: event.operation.source?.type,
-						targetId: event.operation.target?.id,
-						targetType: event.operation.target?.type,
-						...getSortableDebugFields(event.operation),
-						moveInput: moveResolution.mutationInput,
-						sourceOrderScopeKey: moveResolution.sourceOrderScopeKey,
-					});
-					moveWorkspaceItemMutation.mutate(moveResolution.mutationInput);
-					return;
-				}
-
-				const reorderInput = getWorkspaceItemReorderInput({
+				const intent = getWorkspaceDragIntent({
 					event,
 					items: orderedScopedItems,
 					orderRef: workspaceItemOrderRef.current,
 					workspaceId: workspace.id,
 				});
 
-				if (reorderInput) {
-					workspaceItemOrderRef.current.set(
-						reorderInput.orderScopeKey,
-						reorderInput.mutationInput.orderedItemIds,
-					);
-					setWorkspaceItemOrderOverrides((current) => {
-						const next = new Map(current);
-						next.set(
-							reorderInput.orderScopeKey,
-							reorderInput.mutationInput.orderedItemIds,
-						);
-						return next;
-					});
-					debugWorkspaceDnd("dragend:item-reorder", {
-						sourceId: event.operation.source?.id,
-						sourceType: event.operation.source?.type,
-						targetId: event.operation.target?.id,
-						targetType: event.operation.target?.type,
-						...getSortableDebugFields(event.operation),
-						reorderInput: reorderInput.mutationInput,
-						orderScopeKey: reorderInput.orderScopeKey,
-					});
-					scheduleWorkspaceItemReorderSave(reorderInput);
-					return;
+				if (intent) {
+					switch (intent.kind) {
+						case "move-tab-in-strip":
+							debugWorkspaceDnd("dragend:tab-command", { intent });
+							dispatchWorkspaceDragCommand({
+								type: "move-tab-in-strip",
+								tabId: intent.tabId,
+								toIndex: intent.toIndex,
+							});
+							return;
+						case "reorder-tabs-over-tab":
+							debugWorkspaceDnd("dragend:tab-command", { intent });
+							dispatchWorkspaceDragCommand({
+								type: "reorder-tabs-over-tab",
+								activeTabId: intent.activeTabId,
+								overTabId: intent.overTabId,
+							});
+							return;
+						case "open-item-tab":
+							debugWorkspaceDnd("dragend:item-tab-insert", {
+								sourceId: event.operation.source?.id,
+								sourceType: event.operation.source?.type,
+								targetId: event.operation.target?.id,
+								targetType: event.operation.target?.type,
+								insertIndex: intent.insertIndex,
+							});
+							openItemInNewTab(intent);
+							return;
+						case "move-item-blocked":
+							debugWorkspaceDnd("dragend:item-move-blocked", intent.resolution);
+							return;
+						case "move-item":
+							cancelWorkspaceItemReorderSave({
+								orderScopeKey: intent.resolution.sourceOrderScopeKey,
+							});
+							debugWorkspaceDnd("dragend:item-move", {
+								sourceId: event.operation.source?.id,
+								sourceType: event.operation.source?.type,
+								targetId: event.operation.target?.id,
+								targetType: event.operation.target?.type,
+								...getSortableDebugFields(event.operation),
+								moveInput: intent.resolution.mutationInput,
+								sourceOrderScopeKey: intent.resolution.sourceOrderScopeKey,
+							});
+							moveWorkspaceItemMutation.mutate(intent.resolution.mutationInput);
+							return;
+						case "reorder-item":
+							workspaceItemOrderRef.current.set(
+								intent.orderScopeKey,
+								intent.mutationInput.orderedItemIds,
+							);
+							setWorkspaceItemOrderOverrides((current) => {
+								const next = new Map(current);
+								next.set(
+									intent.orderScopeKey,
+									intent.mutationInput.orderedItemIds,
+								);
+								return next;
+							});
+							debugWorkspaceDnd("dragend:item-reorder", {
+								sourceId: event.operation.source?.id,
+								sourceType: event.operation.source?.type,
+								targetId: event.operation.target?.id,
+								targetType: event.operation.target?.type,
+								...getSortableDebugFields(event.operation),
+								reorderInput: intent.mutationInput,
+								orderScopeKey: intent.orderScopeKey,
+							});
+							scheduleWorkspaceItemReorderSave({
+								orderScopeKey: intent.orderScopeKey,
+								mutationInput: intent.mutationInput,
+							});
+							return;
+					}
 				}
 
 				debugWorkspaceDnd("dragend:no-op", {
@@ -769,7 +782,7 @@ function WorkspacePaneRenderer({
 	pane: WorkspacePane;
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
-	onOpenItem: (item: WorkspaceItem) => void;
+	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
 	switch (pane.kind) {
 		case "chat":
@@ -809,7 +822,7 @@ function WorkspaceSplitPresentation({
 	direction: "horizontal" | "vertical";
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
-	onOpenItem: (item: WorkspaceItem) => void;
+	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
 	return (
 		<ResizablePanelGroup

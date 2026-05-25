@@ -22,6 +22,21 @@ export function createRootWorkspaceTab(workspaceName: string): WorkspaceTab {
 	};
 }
 
+export function createWorkspaceItemTab(input: {
+	itemId: string;
+	title: string;
+}): WorkspaceTab {
+	const now = Date.now();
+
+	return {
+		id: createTabId(),
+		title: input.title,
+		viewItemId: input.itemId,
+		createdAt: now,
+		updatedAt: now,
+	};
+}
+
 export function normalizeWorkspaceTabSession(
 	session: WorkspaceTabSession | undefined,
 	workspaceName: string,

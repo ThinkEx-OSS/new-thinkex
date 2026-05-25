@@ -1,5 +1,5 @@
 import { Feedback } from "@dnd-kit/dom";
-import { useDragOperation, useDroppable } from "@dnd-kit/react";
+import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { FolderInput, FolderOpen } from "lucide-react";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
@@ -14,16 +14,19 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { ScrollArea } from "#/components/ui/scroll-area";
+import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import {
 	DeleteWorkspaceItemAlert,
 	RenameWorkspaceItemDialog,
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import {
-	getWorkspaceFolderDropTargetId,
+	createWorkspaceItemDragData,
+	getWorkspaceDragSource,
 	getWorkspaceItemSortableGroup,
 	WORKSPACE_FOLDER_DRAG_TYPE,
 	WORKSPACE_ITEM_DRAG_TYPE,
+	WORKSPACE_ITEM_DRAG_TYPES,
 } from "#/features/workspaces/model/drag";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import {
@@ -37,7 +40,7 @@ import { cn } from "#/lib/utils";
 interface WorkspaceContentProps {
 	items: WorkspaceItem[];
 	activeItem?: WorkspaceItem;
-	onOpenItem: (item: WorkspaceItem) => void;
+	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 
 const WORKSPACE_COLLISION_PRIORITY_HIGH = 3;
@@ -146,13 +149,14 @@ function WorkspaceItemCard({
 	item: WorkspaceItem;
 	index: number;
 	items: WorkspaceItem[];
-	onOpenItem: (item: WorkspaceItem) => void;
+	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
 	const dragOperation = useDragOperation();
+	const dragSource = getWorkspaceDragSource(dragOperation.source);
 	const folderDropCollisionDetector = useMemo(
 		() =>
 			({
@@ -205,9 +209,7 @@ function WorkspaceItemCard({
 		id: item.id,
 		index,
 		type: isFolder ? WORKSPACE_FOLDER_DRAG_TYPE : WORKSPACE_ITEM_DRAG_TYPE,
-		accept: isFolder
-			? [WORKSPACE_FOLDER_DRAG_TYPE, WORKSPACE_ITEM_DRAG_TYPE]
-			: WORKSPACE_ITEM_DRAG_TYPE,
+		accept: isFolder ? WORKSPACE_ITEM_DRAG_TYPES : WORKSPACE_ITEM_DRAG_TYPE,
 		group: getWorkspaceItemSortableGroup({
 			workspaceId: item.workspaceId,
 			parentId: item.parentId,
@@ -222,25 +224,19 @@ function WorkspaceItemCard({
 			...defaults,
 			Feedback.configure({ feedback: "clone", dropAnimation: null }),
 		],
-		data: {
+		data: createWorkspaceItemDragData({
 			itemId: item.id,
 			parentId: item.parentId,
 			row,
-		},
+		}),
 	});
 	const { isDropTarget: isFolderDropTarget, ref: folderDropTargetRef } =
-		useDroppable({
-			id: getWorkspaceFolderDropTargetId(item.id),
-			type: WORKSPACE_FOLDER_DRAG_TYPE,
-			accept: [WORKSPACE_FOLDER_DRAG_TYPE, WORKSPACE_ITEM_DRAG_TYPE],
+		useWorkspaceFolderDropTarget({
+			folderId: item.id,
+			parentId: item.parentId,
 			disabled: !isFolder,
 			collisionPriority: WORKSPACE_COLLISION_PRIORITY_HIGHEST,
 			collisionDetector: folderDropCollisionDetector,
-			data: {
-				kind: "workspace-folder-drop-target",
-				folderId: item.id,
-				parentId: item.parentId,
-			},
 		});
 	const setCardRef = useCallback(
 		(element: HTMLDivElement | null) => {
@@ -252,23 +248,31 @@ function WorkspaceItemCard({
 	const showFolderDropAffordance =
 		isFolder &&
 		isFolderDropTarget &&
-		dragOperation.source?.id !== item.id &&
-		(dragOperation.source?.type === WORKSPACE_ITEM_DRAG_TYPE ||
-			dragOperation.source?.type === WORKSPACE_FOLDER_DRAG_TYPE);
+		dragSource?.kind === "workspace-item" &&
+		dragSource.itemId !== item.id;
 	const isFolderSortingTarget =
 		isFolder &&
 		isDropTarget &&
 		!isFolderDropTarget &&
-		dragOperation.source?.type === WORKSPACE_FOLDER_DRAG_TYPE;
+		dragSource?.kind === "workspace-item" &&
+		dragSource.row === "folder";
 	const meta = isFolder ? getWorkspaceItemMeta(item, items) : null;
 	const {
 		Icon: ItemIcon,
 		iconClassName,
 		surfaceClassName,
 	} = getWorkspaceItemDisplay(item);
-	const handleOpen = useCallback(() => {
-		onOpenItem(item);
-	}, [item, onOpenItem]);
+	const handleOpen = useCallback(
+		(event: MouseEvent<HTMLElement>) => {
+			if (event.metaKey || event.ctrlKey) {
+				onOpenItem(item, { background: true });
+				return;
+			}
+
+			onOpenItem(item);
+		},
+		[item, onOpenItem],
+	);
 	const handleRenameClick = useCallback(
 		(event: MouseEvent<HTMLButtonElement>) => {
 			event.stopPropagation();

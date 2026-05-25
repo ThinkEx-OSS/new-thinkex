@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 import {
 	createRootWorkspaceTab,
+	createWorkspaceItemTab,
 	normalizeWorkspaceTabSession,
 } from "#/features/workspaces/model/tab-state";
 
@@ -34,6 +35,14 @@ type WorkspaceTabsState = {
 	createRootTab: (input: {
 		workspaceId: string;
 		workspaceName: string;
+	}) => WorkspaceTab;
+	createItemTab: (input: {
+		workspaceId: string;
+		workspaceName: string;
+		itemId: string;
+		title: string;
+		insertIndex: number;
+		activate?: boolean;
 	}) => WorkspaceTab;
 	replaceTabView: (input: {
 		workspaceId: string;
@@ -113,6 +122,42 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 				});
 
 				return rootTab;
+			},
+			createItemTab: ({
+				workspaceId,
+				workspaceName,
+				itemId,
+				title,
+				insertIndex,
+				activate = true,
+			}) => {
+				const itemTab = createWorkspaceItemTab({ itemId, title });
+
+				set((state) => {
+					const session = normalizeWorkspaceTabSession(
+						state.sessionsByWorkspaceId[workspaceId],
+						workspaceName,
+					);
+					const boundedInsertIndex = Math.max(
+						0,
+						Math.min(insertIndex, session.tabs.length),
+					);
+					const nextTabs = session.tabs.slice();
+
+					nextTabs.splice(boundedInsertIndex, 0, itemTab);
+
+					return {
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: {
+								activeTabId: activate ? itemTab.id : session.activeTabId,
+								tabs: nextTabs,
+							},
+						},
+					};
+				});
+
+				return itemTab;
 			},
 			replaceTabView: ({ workspaceId, tabId, title, viewItemId }) => {
 				const now = Date.now();
