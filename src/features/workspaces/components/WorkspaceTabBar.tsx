@@ -84,7 +84,7 @@ export default function WorkspaceTabBar({
 		tabs,
 		projection: tabProjection,
 	});
-	const closeResizeLock = useWorkspaceTabCloseResizeLock();
+	const closeResizeLock = useWorkspaceTabCloseResizeLock(renderItems.length);
 	const renderItemKeys = renderItems.map(getWorkspaceTabRenderItemKey);
 	const setLayoutElement = useWorkspaceTabLayoutAnimation({
 		itemKeys: renderItemKeys,
@@ -158,7 +158,7 @@ export default function WorkspaceTabBar({
 							showDivider={showDivider}
 							showDividerLine={showDividerLine}
 							showClose={tabs.length > 1}
-							onClosePointerDown={closeResizeLock.lockFromElement}
+							onBeforeClose={closeResizeLock.lockFromElement}
 							onActivate={() => onActivateTab(tab)}
 							onClose={() => onCloseTab(tab)}
 						/>
@@ -280,7 +280,7 @@ interface WorkspaceTabItemProps {
 	showDivider: boolean;
 	showDividerLine: boolean;
 	showClose: boolean;
-	onClosePointerDown: (element: HTMLElement | null) => void;
+	onBeforeClose: (element: HTMLElement | null) => void;
 	onActivate: () => void;
 	onClose: () => void;
 }
@@ -297,7 +297,7 @@ function WorkspaceTabItem({
 	showDivider,
 	showDividerLine,
 	showClose,
-	onClosePointerDown,
+	onBeforeClose,
 	onActivate,
 	onClose,
 }: WorkspaceTabItemProps) {
@@ -312,9 +312,10 @@ function WorkspaceTabItem({
 		},
 		[layoutKey, setLayoutElement],
 	);
-	const handleClosePointerDown = useCallback(() => {
-		onClosePointerDown(elementRef.current);
-	}, [onClosePointerDown]);
+	const handleClose = useCallback(() => {
+		onBeforeClose(elementRef.current);
+		onClose();
+	}, [onBeforeClose, onClose]);
 	const { isDragSource, isDropTarget } = useSortable({
 		id: tab.id,
 		index,
@@ -355,9 +356,8 @@ function WorkspaceTabItem({
 				isDragSource={isDragSource}
 				showClose={showClose}
 				closeLabel={`Close ${title}`}
-				onClosePointerDown={handleClosePointerDown}
 				onActivate={onActivate}
-				onClose={onClose}
+				onClose={handleClose}
 			/>
 		</div>
 	);
@@ -420,7 +420,6 @@ function WorkspaceTabShell({
 	isDragSource = false,
 	showClose = false,
 	closeLabel,
-	onClosePointerDown,
 	onActivate,
 	onClose,
 }: {
@@ -432,7 +431,6 @@ function WorkspaceTabShell({
 	isDragSource?: boolean;
 	showClose?: boolean;
 	closeLabel?: string;
-	onClosePointerDown?: () => void;
 	onActivate?: () => void;
 	onClose?: () => void;
 }) {
@@ -483,7 +481,6 @@ function WorkspaceTabShell({
 						isActive && "opacity-100",
 					)}
 					aria-label={closeLabel}
-					onPointerDown={onClosePointerDown}
 					onClick={onClose}
 				>
 					<X className="size-3" aria-hidden="true" />

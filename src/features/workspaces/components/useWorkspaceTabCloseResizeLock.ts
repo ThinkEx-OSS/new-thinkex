@@ -1,12 +1,24 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
+import {
+	createWorkspaceTabCloseResizeLock,
+	getWorkspaceTabCloseResizeLockView,
+	IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK,
+	reconcileWorkspaceTabCloseResizeLock,
+	releaseWorkspaceTabCloseResizeLock,
+	type WorkspaceTabCloseResizeLockState,
+} from "#/features/workspaces/components/workspace-tab-close-resize-lock";
+
 const WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS = 1200;
 const WORKSPACE_TAB_CLOSE_RESIZE_RECLAIM_CLEANUP_MS = 200;
 
-export function useWorkspaceTabCloseResizeLock() {
-	const [lockedTabWidth, setLockedTabWidth] = useState<number | null>(null);
-	const [isReclaimingWidth, setIsReclaimingWidth] = useState(false);
-	const lockedTabWidthRef = useRef<number | null>(null);
+export function useWorkspaceTabCloseResizeLock(tabCount: number) {
+	const [lockState, setLockState] = useState<WorkspaceTabCloseResizeLockState>(
+		IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK,
+	);
+	const lockStateRef = useRef<WorkspaceTabCloseResizeLockState>(
+		IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK,
+	);
 	const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const reclaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -26,21 +38,32 @@ export function useWorkspaceTabCloseResizeLock() {
 		clearTimeout(reclaimTimerRef.current);
 		reclaimTimerRef.current = null;
 	}, []);
+	const setLock = useCallback((nextState: WorkspaceTabCloseResizeLockState) => {
+		lockStateRef.current = nextState;
+		setLockState(nextState);
+	}, []);
 	const release = useCallback(() => {
 		clearReleaseTimer();
 		clearReclaimTimer();
 
-		if (lockedTabWidthRef.current) {
-			setIsReclaimingWidth(true);
-			reclaimTimerRef.current = setTimeout(() => {
-				reclaimTimerRef.current = null;
-				setIsReclaimingWidth(false);
-			}, WORKSPACE_TAB_CLOSE_RESIZE_RECLAIM_CLEANUP_MS);
+		const currentLock = lockStateRef.current;
+
+		const reclaimingLock = releaseWorkspaceTabCloseResizeLock(currentLock);
+
+		setLock(reclaimingLock);
+
+		if (reclaimingLock.phase !== "reclaiming") {
+			return;
 		}
 
-		lockedTabWidthRef.current = null;
-		setLockedTabWidth(null);
-	}, [clearReclaimTimer, clearReleaseTimer]);
+		reclaimTimerRef.current = setTimeout(() => {
+			reclaimTimerRef.current = null;
+
+			if (lockStateRef.current === reclaimingLock) {
+				setLock(IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK);
+			}
+		}, WORKSPACE_TAB_CLOSE_RESIZE_RECLAIM_CLEANUP_MS);
+	}, [clearReclaimTimer, clearReleaseTimer, setLock]);
 	const lockFromElement = useCallback(
 		(element: HTMLElement | null) => {
 			const width = element?.getBoundingClientRect().width;
@@ -51,15 +74,18 @@ export function useWorkspaceTabCloseResizeLock() {
 
 			clearReleaseTimer();
 			clearReclaimTimer();
-			setIsReclaimingWidth(false);
-			lockedTabWidthRef.current = width;
-			setLockedTabWidth(width);
+			setLock(
+				createWorkspaceTabCloseResizeLock({
+					tabCount,
+					tabWidth: width,
+				}),
+			);
 			releaseTimerRef.current = setTimeout(
 				release,
 				WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS,
 			);
 		},
-		[clearReclaimTimer, clearReleaseTimer, release],
+		[clearReclaimTimer, clearReleaseTimer, release, setLock, tabCount],
 	);
 
 	useLayoutEffect(
@@ -70,9 +96,26 @@ export function useWorkspaceTabCloseResizeLock() {
 		[clearReclaimTimer, clearReleaseTimer],
 	);
 
+	useLayoutEffect(() => {
+		const nextLock = reconcileWorkspaceTabCloseResizeLock(
+			lockStateRef.current,
+			tabCount,
+		);
+
+		if (nextLock === lockStateRef.current) {
+			return;
+		}
+
+		if (nextLock.phase === "idle") {
+			clearReleaseTimer();
+			clearReclaimTimer();
+		}
+
+		setLock(nextLock);
+	}, [clearReclaimTimer, clearReleaseTimer, setLock, tabCount]);
+
 	return {
-		lockedTabWidth,
-		shouldAnimateResize: lockedTabWidth !== null || isReclaimingWidth,
+		...getWorkspaceTabCloseResizeLockView(lockState, tabCount),
 		lockFromElement,
 		release,
 	};
