@@ -9,7 +9,7 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { type MouseEvent, useCallback, useMemo, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -282,6 +282,16 @@ function WorkspaceItemCard({
 		iconClassName,
 		surfaceClassName,
 	} = getWorkspaceItemDisplay(item);
+	const handleOpen = useCallback(() => {
+		onOpenItem(item);
+	}, [item, onOpenItem]);
+	const handleRenameClick = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			event.stopPropagation();
+			onRenameItem(item);
+		},
+		[item, onRenameItem],
+	);
 
 	return (
 		<Card
@@ -305,7 +315,7 @@ function WorkspaceItemCard({
 					"focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 					surfaceClassName,
 				)}
-				onClick={() => onOpenItem(item)}
+				onClick={handleOpen}
 			>
 				<ItemIcon
 					className={cn("size-10", iconClassName)}
@@ -324,13 +334,16 @@ function WorkspaceItemCard({
 					</div>
 				</div>
 			) : null}
-			<CardHeader className="shrink-0 gap-2 px-4 py-3">
+			<CardHeader
+				className="shrink-0 gap-2 px-4 py-3"
+				onClick={handleOpen}
+			>
 				<CardTitle className="min-w-0">
 					<button
 						type="button"
 						className="block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 						aria-label={`Rename ${item.name}`}
-						onClick={() => onRenameItem(item)}
+						onClick={handleRenameClick}
 					>
 						{item.name}
 					</button>
