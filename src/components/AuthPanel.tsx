@@ -59,7 +59,9 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 						.
 					</p>
 					<div className="flex flex-wrap justify-center gap-3">
-						<Button render={<Link to={callbackURL} />}>Continue</Button>
+						<Button nativeButton={false} render={<Link to={callbackURL} />}>
+							Continue
+						</Button>
 						<Button
 							type="button"
 							variant="outline"
@@ -125,6 +127,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 					<p className="text-center text-xs text-destructive">{errorMessage}</p>
 				) : null}
 				<Button
+					nativeButton={false}
 					render={
 						<Link
 							to={alternateHref}

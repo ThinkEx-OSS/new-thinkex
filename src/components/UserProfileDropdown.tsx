@@ -139,7 +139,11 @@ export default function UserProfileDropdown() {
 	}
 
 	return (
-		<Button render={<Link to="/login" />} variant="outline">
+		<Button
+			nativeButton={false}
+			render={<Link to="/login" />}
+			variant="outline"
+		>
 			Sign in
 		</Button>
 	);

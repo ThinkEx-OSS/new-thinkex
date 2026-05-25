@@ -168,13 +168,18 @@ export default function LandingPage() {
 						<div aria-hidden="true" className="h-6 w-px shrink-0 bg-border" />
 						<div className="flex items-center gap-2">
 							<Button
+								nativeButton={false}
 								render={<Link to="/login" />}
 								variant="outline"
 								size="default"
 							>
 								Sign in
 							</Button>
-							<Button render={<Link to="/signup" />} size="default">
+							<Button
+								nativeButton={false}
+								render={<Link to="/signup" />}
+								size="default"
+							>
 								Get started
 							</Button>
 						</div>
