@@ -9,6 +9,7 @@ import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuRadioGroup,
@@ -89,43 +90,49 @@ export default function UserProfileDropdown() {
 					</Avatar>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-64">
-					<DropdownMenuLabel>
-						<div className="space-y-1">
-							<p className="text-sm font-medium text-foreground">
-								{displayName}
-							</p>
-							<p className="text-xs font-normal text-muted-foreground">
-								{session.user.email}
-							</p>
-						</div>
-					</DropdownMenuLabel>
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>
+							<div className="space-y-1">
+								<p className="text-sm font-medium text-foreground">
+									{displayName}
+								</p>
+								<p className="text-xs font-normal text-muted-foreground">
+									{session.user.email}
+								</p>
+							</div>
+						</DropdownMenuLabel>
+					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuLabel>Theme</DropdownMenuLabel>
-					<DropdownMenuRadioGroup
-						value={theme}
-						onValueChange={(value) => setTheme(value as Theme)}
-					>
-						{themeOptions.map(({ value, label, icon: Icon }) => (
-							<DropdownMenuRadioItem key={value} value={value}>
-								<Icon className="size-4" />
-								{label}
-							</DropdownMenuRadioItem>
-						))}
-					</DropdownMenuRadioGroup>
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>Theme</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							value={theme}
+							onValueChange={(value) => setTheme(value as Theme)}
+						>
+							{themeOptions.map(({ value, label, icon: Icon }) => (
+								<DropdownMenuRadioItem key={value} value={value}>
+									<Icon className="size-4" />
+									{label}
+								</DropdownMenuRadioItem>
+							))}
+						</DropdownMenuRadioGroup>
+					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem>
-						<Settings className="size-4" />
-						Settings
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						variant="destructive"
-						onClick={() => {
-							void handleSignOut();
-						}}
-					>
-						<LogOut className="size-4" />
-						Sign out
-					</DropdownMenuItem>
+					<DropdownMenuGroup>
+						<DropdownMenuItem>
+							<Settings className="size-4" />
+							Settings
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							variant="destructive"
+							onClick={() => {
+								void handleSignOut();
+							}}
+						>
+							<LogOut className="size-4" />
+							Sign out
+						</DropdownMenuItem>
+					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		);

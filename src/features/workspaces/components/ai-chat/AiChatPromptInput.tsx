@@ -12,6 +12,7 @@ import {
 	type PromptInputMessage,
 	PromptInputSelect,
 	PromptInputSelectContent,
+	PromptInputSelectGroup,
 	PromptInputSelectItem,
 	PromptInputSelectTrigger,
 	PromptInputSelectValue,
@@ -103,11 +104,13 @@ export default function AiChatPromptInput({
 							<PromptInputSelectValue />
 						</PromptInputSelectTrigger>
 						<PromptInputSelectContent side="top" align="end">
-							{AI_CHAT_MODELS.map((item) => (
-								<PromptInputSelectItem key={item.id} value={item.id}>
-									{item.name}
-								</PromptInputSelectItem>
-							))}
+							<PromptInputSelectGroup>
+								{AI_CHAT_MODELS.map((item) => (
+									<PromptInputSelectItem key={item.id} value={item.id}>
+										{item.name}
+									</PromptInputSelectItem>
+								))}
+							</PromptInputSelectGroup>
 						</PromptInputSelectContent>
 					</PromptInputSelect>
 

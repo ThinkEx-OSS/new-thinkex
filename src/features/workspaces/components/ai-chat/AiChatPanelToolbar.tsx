@@ -5,6 +5,7 @@ import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -44,15 +45,19 @@ export default function AiChatPanelToolbar({
 					<RiChatHistoryLine className="size-4" aria-hidden="true" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-64">
-					<DropdownMenuItem>
-						<Plus className="size-4" aria-hidden="true" />
-						New chat
-					</DropdownMenuItem>
+					<DropdownMenuGroup>
+						<DropdownMenuItem>
+							<Plus className="size-4" aria-hidden="true" />
+							New chat
+						</DropdownMenuItem>
+					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuLabel>Recent chats</DropdownMenuLabel>
-					{PLACEHOLDER_CHAT_HISTORY.map((chat) => (
-						<DropdownMenuItem key={chat}>{chat}</DropdownMenuItem>
-					))}
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>Recent chats</DropdownMenuLabel>
+						{PLACEHOLDER_CHAT_HISTORY.map((chat) => (
+							<DropdownMenuItem key={chat}>{chat}</DropdownMenuItem>
+						))}
+					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
 

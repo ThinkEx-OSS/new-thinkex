@@ -60,6 +60,7 @@ import {
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -1310,6 +1311,15 @@ export const PromptInputSelectContent = ({
 	...props
 }: PromptInputSelectContentProps) => (
 	<SelectContent className={cn(className)} {...props} />
+);
+
+export type PromptInputSelectGroupProps = ComponentProps<typeof SelectGroup>;
+
+export const PromptInputSelectGroup = ({
+	className,
+	...props
+}: PromptInputSelectGroupProps) => (
+	<SelectGroup className={cn(className)} {...props} />
 );
 
 export type PromptInputSelectItemProps = ComponentProps<typeof SelectItem>;
