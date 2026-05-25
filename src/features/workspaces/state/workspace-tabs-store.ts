@@ -35,7 +35,6 @@ type WorkspaceTabsState = {
 	createRootTab: (input: {
 		workspaceId: string;
 		workspaceName: string;
-		insertIndex?: number;
 	}) => WorkspaceTab;
 	createItemTab: (input: {
 		workspaceId: string;
@@ -101,7 +100,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 
 				return nextSession;
 			},
-			createRootTab: ({ workspaceId, workspaceName, insertIndex }) => {
+			createRootTab: ({ workspaceId, workspaceName }) => {
 				const rootTab = createRootWorkspaceTab(workspaceName);
 
 				set((state) => {
@@ -114,7 +113,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 						tabs: insertWorkspaceTabByIndex({
 							tabs: session.tabs,
 							tab: rootTab,
-							insertIndex: insertIndex ?? Number.MAX_SAFE_INTEGER,
+							insertIndex: Number.MAX_SAFE_INTEGER,
 						}),
 					};
 

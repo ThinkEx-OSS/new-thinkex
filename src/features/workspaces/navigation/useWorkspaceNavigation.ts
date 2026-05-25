@@ -147,7 +147,6 @@ export function useWorkspaceNavigation({
 		const tab = createRootTab({
 			workspaceId: workspace.id,
 			workspaceName: workspace.name,
-			insertIndex: getInsertIndexAfterActiveTab(),
 		});
 
 		navigateToTab(tab);
