@@ -129,7 +129,7 @@ export default function UserProfileDropdown() {
 									aria-label="Theme"
 								>
 									<SelectValue>
-										<ActiveThemeIcon className="size-4 text-muted-foreground" />
+										<ActiveThemeIcon className="size-4" />
 										{activeThemeOption.label}
 									</SelectValue>
 								</SelectTrigger>
