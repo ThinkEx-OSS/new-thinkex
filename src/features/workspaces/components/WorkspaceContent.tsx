@@ -2,7 +2,7 @@ import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { FolderInput, FolderOpen } from "lucide-react";
-import { type MouseEvent, useCallback, useMemo, useState } from "react";
+import { type MouseEvent, type PointerEvent, useCallback, useMemo, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -47,6 +47,15 @@ const WORKSPACE_COLLISION_PRIORITY_HIGH = 3;
 const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
 
+function focusWorkspaceSurface(event: PointerEvent<HTMLDivElement>) {
+	if (event.target instanceof Element && event.target.closest("button")) {
+		return;
+	}
+
+	// TODO: Revisit this when the workspace canvas supports drag marquee selection.
+	event.currentTarget.focus({ preventScroll: true });
+}
+
 export default function WorkspaceContent({
 	items,
 	activeItem,
@@ -71,7 +80,12 @@ export default function WorkspaceContent({
 	return (
 		<>
 			<ScrollArea className="h-[calc(100vh-5.75rem)]">
-				<div className="space-y-5 px-4 py-3">
+				<div
+					className="space-y-5 px-4 py-3 outline-none"
+					data-prompt-type-to-focus-surface
+					onPointerDown={focusWorkspaceSurface}
+					tabIndex={-1}
+				>
 					{folders.length > 0 ? (
 						<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
 							{folders.map((item, index) => (
