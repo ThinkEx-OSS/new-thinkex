@@ -50,10 +50,9 @@ export const workspaceDetailSchema = workspaceSummarySchema;
 export const workspaceItemTypeSchema = z.enum([
 	"folder",
 	"document",
-	"audio",
+	"file",
 	"flashcard",
 	"quiz",
-	"pdf",
 ]);
 
 export const workspaceItemSummarySchema = z.object({

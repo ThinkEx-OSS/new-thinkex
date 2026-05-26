@@ -101,10 +101,9 @@ export const workspaceRole = pgEnum("workspace_role", [
 export const workspaceItemType = pgEnum("workspace_item_type", [
 	"folder",
 	"document",
-	"audio",
+	"file",
 	"flashcard",
 	"quiz",
-	"pdf",
 ]);
 
 export const workspaceIndexingPolicy = pgEnum("workspace_indexing_policy", [
@@ -121,6 +120,7 @@ export const contentSnapshotKind = pgEnum("content_snapshot_kind", [
 export const contentSnapshotFormat = pgEnum("content_snapshot_format", [
 	"markdown",
 	"plain_text",
+	"document_json",
 	"transcript_json",
 	"flashcard_json",
 	"quiz_json",
@@ -408,6 +408,46 @@ export const workspaceEvents = pgTable(
 	],
 );
 
+export const workspaceItemUserState = pgTable(
+	"workspace_item_user_state",
+	{
+		id: text("id").primaryKey(),
+		workspaceId: text("workspace_id")
+			.notNull()
+			.references(() => workspaces.id, { onDelete: "cascade" }),
+		itemId: text("item_id")
+			.notNull()
+			.references(() => workspaceItems.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		stateJson: jsonb("state_json")
+			.$type<Record<string, unknown>>()
+			.default(sql`'{}'::jsonb`)
+			.notNull(),
+		lastOpenedAt: timestamp("last_opened_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("workspace_item_user_state_item_user_unique").on(
+			table.itemId,
+			table.userId,
+		),
+		index("workspace_item_user_state_workspace_user_idx").on(
+			table.workspaceId,
+			table.userId,
+		),
+		index("workspace_item_user_state_user_last_opened_at_idx").on(
+			table.userId,
+			table.lastOpenedAt,
+		),
+	],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
@@ -422,6 +462,7 @@ export const userRelations = relations(user, ({ many }) => ({
 	contentSnapshots: many(contentSnapshots),
 	itemAssets: many(itemAssets),
 	workspaceEvents: many(workspaceEvents),
+	workspaceItemUserStates: many(workspaceItemUserState),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -448,6 +489,7 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
 	contentSnapshots: many(contentSnapshots),
 	assets: many(itemAssets),
 	events: many(workspaceEvents),
+	itemUserStates: many(workspaceItemUserState),
 }));
 
 export const workspaceMemberRelations = relations(
@@ -503,6 +545,7 @@ export const workspaceItemRelations = relations(
 		assets: many(itemAssets),
 		search: one(workspaceItemSearch),
 		events: many(workspaceEvents),
+		userStates: many(workspaceItemUserState),
 	}),
 );
 
@@ -576,6 +619,24 @@ export const workspaceEventRelations = relations(
 		}),
 		actorUser: one(user, {
 			fields: [workspaceEvents.actorUserId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const workspaceItemUserStateRelations = relations(
+	workspaceItemUserState,
+	({ one }) => ({
+		workspace: one(workspaces, {
+			fields: [workspaceItemUserState.workspaceId],
+			references: [workspaces.id],
+		}),
+		item: one(workspaceItems, {
+			fields: [workspaceItemUserState.itemId],
+			references: [workspaceItems.id],
+		}),
+		user: one(user, {
+			fields: [workspaceItemUserState.userId],
 			references: [user.id],
 		}),
 	}),

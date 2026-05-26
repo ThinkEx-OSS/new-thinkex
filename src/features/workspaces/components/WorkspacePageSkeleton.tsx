@@ -4,15 +4,14 @@ import ThinkExLogo from "#/components/ThinkExLogo";
 import { Skeleton } from "#/components/ui/skeleton";
 import { WorkspaceFrame } from "#/features/workspaces/components/WorkspaceLayout";
 
-const workspaceSkeletonCardIds = [
-	"folder",
-	"document",
-	"pdf",
-	"audio",
-	"notes",
-	"quiz",
-	"flashcards",
-	"source",
+const workspaceSkeletonCardKeys = [
+	"card-1",
+	"card-2",
+	"card-3",
+	"card-4",
+	"card-5",
+	"card-6",
+	"card-7",
 ] as const;
 
 export default function WorkspacePageSkeleton() {
@@ -76,9 +75,9 @@ export function WorkspaceSkeletonContent() {
 		<div className="h-[calc(100vh-5.75rem)] overflow-hidden">
 			<div className="space-y-5 px-4 py-3">
 				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
-					{workspaceSkeletonCardIds.map((id) => (
+					{workspaceSkeletonCardKeys.map((key) => (
 						<div
-							key={id}
+							key={key}
 							className="relative overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10"
 						>
 							<Skeleton className="aspect-[5/2] rounded-none bg-muted/45" />

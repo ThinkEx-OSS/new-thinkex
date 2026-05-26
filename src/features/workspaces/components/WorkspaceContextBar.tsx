@@ -1,11 +1,4 @@
-import {
-	BookOpen,
-	ChevronDown,
-	Download,
-	FilePlus2,
-	Search,
-	X,
-} from "lucide-react";
+import { ChevronDown, Download, FilePlus2, Search, X } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
 
 import {
@@ -36,9 +29,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Kbd } from "#/components/ui/kbd";
@@ -57,6 +48,7 @@ import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
 	getWorkspaceItemDisplay,
+	workspaceItemAcquisitionActions,
 	workspaceItemLearnCreateActions,
 	workspaceItemPrimaryCreateActions,
 } from "#/features/workspaces/model/item-display";
@@ -232,27 +224,38 @@ export default function WorkspaceContextBar({
 											</DropdownMenuItem>
 										),
 									)}
-									<DropdownMenuSub>
-										<DropdownMenuSubTrigger>
-											<BookOpen className="size-4 text-indigo-600 dark:text-indigo-400" />
-											<span>Learn</span>
-										</DropdownMenuSubTrigger>
-										<DropdownMenuSubContent className="w-48">
-											{workspaceItemLearnCreateActions.map(
-												({ type, label, Icon, iconClassName }) => (
-													<DropdownMenuItem
-														key={type}
-														onClick={() =>
-															onCreateItem({ type, parentId: createParentId })
-														}
-													>
-														<Icon className={`size-4 ${iconClassName}`} />
-														<span>{label}</span>
-													</DropdownMenuItem>
-												),
-											)}
-										</DropdownMenuSubContent>
-									</DropdownMenuSub>
+									{workspaceItemAcquisitionActions.map(
+										({
+											id,
+											label,
+											description,
+											Icon,
+											iconClassName,
+											disabled,
+										}) => (
+											<DropdownMenuItem key={id} disabled={disabled}>
+												<Icon className={`size-4 ${iconClassName}`} />
+												<span>{label}</span>
+												<span className="ml-auto text-xs text-muted-foreground">
+													{description}
+												</span>
+											</DropdownMenuItem>
+										),
+									)}
+									<DropdownMenuSeparator />
+									{workspaceItemLearnCreateActions.map(
+										({ type, label, Icon, iconClassName }) => (
+											<DropdownMenuItem
+												key={type}
+												onClick={() =>
+													onCreateItem({ type, parentId: createParentId })
+												}
+											>
+												<Icon className={`size-4 ${iconClassName}`} />
+												<span>{label}</span>
+											</DropdownMenuItem>
+										),
+									)}
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</>

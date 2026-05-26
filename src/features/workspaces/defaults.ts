@@ -15,14 +15,12 @@ export function getDefaultWorkspaceItemName(type: WorkspaceItemType) {
 			return "Untitled Folder";
 		case "document":
 			return "Untitled Document";
-		case "audio":
-			return "Untitled Audio";
+		case "file":
+			return "Untitled File";
 		case "flashcard":
 			return "Untitled Flashcards";
 		case "quiz":
 			return "Untitled Quiz";
-		case "pdf":
-			return "Untitled PDF";
 	}
 }
 
