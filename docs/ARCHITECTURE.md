@@ -81,7 +81,6 @@ Durable Objects / PartyServer
 Local development:
 
 - `pnpm dev` is the default app workflow and uses direct `DATABASE_URL`.
-- `pnpm dev:cloudflare` is for local Worker/Durable Object behavior and still uses direct database access.
 - `pnpm dev:hyperdrive` is a rare production-like Hyperdrive check and can touch remote resources.
 
 ## Cloudflare Product Strategy
