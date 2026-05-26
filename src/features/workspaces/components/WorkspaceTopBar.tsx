@@ -30,7 +30,7 @@ import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
-import { formatAppHotkey, getAppHotkey } from "#/lib/hotkeys";
+import { formatAppHotkey, getAppHotkey } from "#/lib/hotkeys-core";
 
 type PresenceStatus = "connecting" | "connected" | "disconnected";
 

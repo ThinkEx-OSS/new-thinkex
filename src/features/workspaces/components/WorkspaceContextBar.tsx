@@ -57,7 +57,11 @@ import type {
 	WorkspaceItem,
 	WorkspaceItemType,
 } from "#/features/workspaces/model/types";
-import { formatAppHotkey, getAppHotkey, useAppHotkey } from "#/lib/hotkeys";
+import {
+	formatAppHotkey,
+	getAppHotkey,
+	useAppHotkey,
+} from "#/lib/hotkeys-core";
 
 const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
 const breadcrumbCurrentClassName = `${breadcrumbContentClassName} font-medium text-foreground`;

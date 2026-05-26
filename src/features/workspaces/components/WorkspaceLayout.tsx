@@ -67,7 +67,7 @@ import {
 	mergeWorkspaceItemOrder,
 	WORKSPACE_ITEM_SORT_ORDER_STEP,
 } from "#/features/workspaces/workspace-item-ordering";
-import { useAppHotkey } from "#/lib/hotkeys";
+import { useAppHotkey } from "#/lib/hotkeys-core";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
