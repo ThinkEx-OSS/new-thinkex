@@ -1,4 +1,4 @@
-import { ChevronDown, Download, FilePlus2, Search, X } from "lucide-react";
+import { ChevronDown, FilePlus2, Search, X } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
 
 import {
@@ -44,7 +44,10 @@ import {
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
-import type { WorkspaceSummary } from "#/features/workspaces/contracts";
+import type {
+	WorkspaceItemType,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import {
 	getWorkspaceItemDisplay,
@@ -53,10 +56,7 @@ import {
 	workspaceItemPrimaryCreateActions,
 } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
-import type {
-	WorkspaceItem,
-	WorkspaceItemType,
-} from "#/features/workspaces/model/types";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	formatAppHotkey,
 	getAppHotkey,
@@ -71,30 +71,29 @@ interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
 	activeItem?: WorkspaceItem;
 	itemsById: Map<string, WorkspaceItem>;
+	isCreatingItem?: boolean;
 	onCloseCurrentView: () => void;
-	onNavigateToRoot: () => void;
-	onNavigateToItem: (item: WorkspaceItem) => void;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => void;
+	onNavigateToRoot: () => void;
+	onNavigateToItem: (item: WorkspaceItem) => void;
 }
 
 export default function WorkspaceContextBar({
 	workspace,
 	activeItem,
 	itemsById,
+	isCreatingItem = false,
 	onCloseCurrentView,
+	onCreateItem,
 	onNavigateToRoot,
 	onNavigateToItem,
-	onCreateItem,
 }: WorkspaceContextBarProps) {
-	const isDocumentLikeView = Boolean(
-		activeItem && activeItem.type !== "folder",
-	);
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
-	const createParentId = activeItem?.type === "folder" ? activeItem.id : null;
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
+	const createParentId = activeItem?.type === "folder" ? activeItem.id : null;
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
@@ -118,6 +117,7 @@ export default function WorkspaceContextBar({
 		setDeletingItem(item);
 		setDeleteAlertOpen(true);
 	};
+
 	useAppHotkey("workspace.search.open", () => {
 		setSearchOpen(true);
 	});
@@ -151,107 +151,87 @@ export default function WorkspaceContextBar({
 				</Breadcrumb>
 
 				<div className="flex shrink-0 items-center gap-1">
-					{isDocumentLikeView ? (
-						<Button
-							variant="ghost"
-							size="sm"
-							type="button"
-							className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-						>
-							<Download className="size-3.5" />
-							<span className="hidden sm:inline">Export</span>
-						</Button>
-					) : (
-						<>
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											variant="ghost"
-											size="sm"
-											type="button"
-											className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-											onClick={() => setSearchOpen(true)}
-										>
-											<Search className="size-3.5" />
-											<span className="hidden sm:inline">Search</span>
-										</Button>
-									}
-								/>
-								<TooltipContent>
-									<span>Search</span>
-									<Kbd>{searchHotkey}</Kbd>
-								</TooltipContent>
-							</Tooltip>
-							<DropdownMenu>
-								<DropdownMenuTrigger
-									render={
-										<Button
-											variant="ghost"
-											size="sm"
-											type="button"
-											className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-										/>
-									}
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
+									onClick={() => setSearchOpen(true)}
 								>
-									<FilePlus2 className="size-3.5" />
-									<span className="hidden sm:inline">New</span>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="w-56">
-									{workspaceItemPrimaryCreateActions.map(
-										({ type, label, description, Icon, iconClassName }) => (
-											<DropdownMenuItem
-												key={type}
-												onClick={() =>
-													onCreateItem({ type, parentId: createParentId })
-												}
-											>
-												<Icon className={`size-4 ${iconClassName}`} />
-												<span>{label}</span>
-												{description ? (
-													<span className="ml-auto text-xs text-muted-foreground">
-														{description}
-													</span>
-												) : null}
-											</DropdownMenuItem>
-										),
-									)}
-									{workspaceItemAcquisitionActions.map(
-										({
-											id,
-											label,
-											description,
-											Icon,
-											iconClassName,
-											disabled,
-										}) => (
-											<DropdownMenuItem key={id} disabled={disabled}>
-												<Icon className={`size-4 ${iconClassName}`} />
-												<span>{label}</span>
-												<span className="ml-auto text-xs text-muted-foreground">
-													{description}
-												</span>
-											</DropdownMenuItem>
-										),
-									)}
-									<DropdownMenuSeparator />
-									{workspaceItemLearnCreateActions.map(
-										({ type, label, Icon, iconClassName }) => (
-											<DropdownMenuItem
-												key={type}
-												onClick={() =>
-													onCreateItem({ type, parentId: createParentId })
-												}
-											>
-												<Icon className={`size-4 ${iconClassName}`} />
-												<span>{label}</span>
-											</DropdownMenuItem>
-										),
-									)}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</>
-					)}
+									<Search className="size-3.5" />
+									<span className="hidden sm:inline">Search</span>
+								</Button>
+							}
+						/>
+						<TooltipContent>
+							<span>Search</span>
+							<Kbd>{searchHotkey}</Kbd>
+						</TooltipContent>
+					</Tooltip>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
+									disabled={isCreatingItem}
+								/>
+							}
+						>
+							<FilePlus2 className="size-3.5" />
+							<span className="hidden sm:inline">New</span>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-56">
+							{workspaceItemPrimaryCreateActions.map(
+								({ type, label, description, Icon, iconClassName }) => (
+									<DropdownMenuItem
+										key={type}
+										onClick={() =>
+											onCreateItem({ type, parentId: createParentId })
+										}
+									>
+										<Icon className={`size-4 ${iconClassName}`} />
+										<span>{label}</span>
+										{description ? (
+											<span className="ml-auto text-xs text-muted-foreground">
+												{description}
+											</span>
+										) : null}
+									</DropdownMenuItem>
+								),
+							)}
+							{workspaceItemAcquisitionActions.map(
+								({ id, label, description, Icon, iconClassName, disabled }) => (
+									<DropdownMenuItem key={id} disabled={disabled}>
+										<Icon className={`size-4 ${iconClassName}`} />
+										<span>{label}</span>
+										<span className="ml-auto text-xs text-muted-foreground">
+											{description}
+										</span>
+									</DropdownMenuItem>
+								),
+							)}
+							<DropdownMenuSeparator />
+							{workspaceItemLearnCreateActions.map(
+								({ type, label, Icon, iconClassName }) => (
+									<DropdownMenuItem
+										key={type}
+										onClick={() =>
+											onCreateItem({ type, parentId: createParentId })
+										}
+									>
+										<Icon className={`size-4 ${iconClassName}`} />
+										<span>{label}</span>
+									</DropdownMenuItem>
+								),
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
 					{activeItem ? (
 						<Button
 							variant="ghost"

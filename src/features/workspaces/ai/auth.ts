@@ -2,14 +2,14 @@ import { getAgentByName } from "agents";
 
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
-const workspaceChatPath = "/workspace-chat";
+const userAIPath = "/user-ai";
 
-export async function routeWorkspaceChatRequest(request: Request, env: Env) {
+export async function routeUserAIRequest(request: Request, env: Env) {
 	const url = new URL(request.url);
 
 	if (
-		url.pathname !== workspaceChatPath &&
-		!url.pathname.startsWith(`${workspaceChatPath}/`)
+		url.pathname !== userAIPath &&
+		!url.pathname.startsWith(`${userAIPath}/`)
 	) {
 		return null;
 	}
@@ -21,14 +21,11 @@ export async function routeWorkspaceChatRequest(request: Request, env: Env) {
 			return new Response("Unauthorized", { status: 401 });
 		}
 
-		const directory = await getAgentByName(
-			env.WorkspaceChatDirectory,
-			session.user.id,
-		);
+		const directory = await getAgentByName(env.UserAIStore, session.user.id);
 
 		return directory.fetch(request);
 	} catch (error) {
-		console.error("Workspace chat auth failed", error);
-		return new Response("Chat unavailable", { status: 503 });
+		console.error("User AI auth failed", error);
+		return new Response("User AI unavailable", { status: 503 });
 	}
 }

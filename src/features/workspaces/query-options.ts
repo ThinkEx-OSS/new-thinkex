@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import {
-	workspaceItemsQueryKey,
+	workspaceItemContentQueryKey,
 	workspacePageQueryKey,
 	workspaceQueryKey,
 	workspacesQueryKey,
@@ -9,12 +9,12 @@ import {
 import {
 	getWorkspaceFn,
 	getWorkspacePageFn,
-	listWorkspaceItemsFn,
 	listWorkspacesFn,
+	readWorkspaceItemFn,
 } from "#/features/workspaces/server/functions";
 
 export {
-	workspaceItemsQueryKey,
+	workspaceItemContentQueryKey,
 	workspacePageQueryKey,
 	workspaceQueryKey,
 	workspacesQueryKey,
@@ -43,10 +43,13 @@ export function workspacePageQueryOptions(workspaceId: string) {
 	});
 }
 
-export function workspaceItemsQueryOptions(workspaceId: string) {
+export function workspaceItemContentQueryOptions(input: {
+	workspaceId: string;
+	itemId: string;
+}) {
 	return queryOptions({
-		queryKey: workspaceItemsQueryKey(workspaceId),
-		queryFn: () => listWorkspaceItemsFn({ data: { workspaceId } }),
-		staleTime: 10_000,
+		queryKey: workspaceItemContentQueryKey(input.workspaceId, input.itemId),
+		queryFn: () => readWorkspaceItemFn({ data: input }),
+		staleTime: 5_000,
 	});
 }

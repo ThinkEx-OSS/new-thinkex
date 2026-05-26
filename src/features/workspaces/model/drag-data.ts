@@ -63,11 +63,11 @@ export function createWorkspaceSplitDropTargetData(input: {
 	};
 }
 
-export function createWorkspaceChatContextDropTargetData(input: {
+export function createWorkspaceAiContextDropTargetData(input: {
 	workspaceId: string;
 }): WorkspaceDropTargetData {
 	return {
-		kind: "workspace-chat-context-drop-target",
+		kind: "workspace-ai-context-drop-target",
 		workspaceId: input.workspaceId,
 	};
 }
@@ -152,12 +152,12 @@ export function getWorkspaceDropTargetData(
 	}
 
 	if (
-		data.kind === "workspace-chat-context-drop-target" &&
+		data.kind === "workspace-ai-context-drop-target" &&
 		typeof data.workspaceId === "string" &&
 		data.workspaceId
 	) {
 		return {
-			kind: "workspace-chat-context-drop-target",
+			kind: "workspace-ai-context-drop-target",
 			workspaceId: data.workspaceId,
 		};
 	}

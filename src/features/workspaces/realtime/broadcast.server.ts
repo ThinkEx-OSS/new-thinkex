@@ -1,6 +1,10 @@
-import { getServerByName } from "partyserver";
+import { getAgentByName } from "agents";
 
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
+
+interface WorkspaceKernelBroadcaster {
+	broadcastWorkspaceEvent(event: WorkspaceRealtimeEvent): Promise<void> | void;
+}
 
 async function getCloudflareWorkersModule() {
 	try {
@@ -20,20 +24,21 @@ export async function scheduleWorkspaceEventBroadcast(
 	}
 
 	workers.waitUntil(
-		broadcastWorkspaceEvent(workers.env.WorkspaceRoom, event).catch((error) => {
-			console.error("Unable to broadcast workspace event.", error);
-		}),
+		broadcastWorkspaceEvent(workers.env.WorkspaceKernel, event).catch(
+			(error) => {
+				console.error("Unable to broadcast workspace event.", error);
+			},
+		),
 	);
 }
 
 async function broadcastWorkspaceEvent(
-	namespace: Env["WorkspaceRoom"],
+	namespace: Env["WorkspaceKernel"],
 	event: WorkspaceRealtimeEvent,
 ) {
-	const room = await getServerByName(namespace, event.workspaceId);
-	await room.broadcastWorkspaceEvent({
-		type: "workspace.event",
-		workspaceId: event.workspaceId,
-		event,
-	});
+	const kernel = (await getAgentByName(
+		namespace,
+		event.workspaceId,
+	)) as unknown as WorkspaceKernelBroadcaster;
+	await kernel.broadcastWorkspaceEvent(event);
 }

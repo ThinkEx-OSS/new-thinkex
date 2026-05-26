@@ -71,6 +71,42 @@ export const workspaceItemSummarySchema = z.object({
 	deletedAt: z.string().nullable(),
 });
 
+export const createWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	parentId: z.string().min(1).nullable().optional(),
+	type: workspaceItemTypeSchema,
+	name: z.string().trim().min(1).max(160).optional(),
+});
+
+export const readWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+});
+
+export const writeWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+	content: z.string().max(2_000_000),
+});
+
+export const renameWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+	name: z.string().trim().min(1).max(160),
+});
+
+export const moveWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+	parentId: z.string().min(1).nullable().optional(),
+	sortOrder: z.number().int().optional(),
+});
+
+export const deleteWorkspaceItemInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	itemId: z.string().min(1),
+});
+
 export const createWorkspaceInputSchema = z.object({
 	id: z.string().uuid().optional(),
 	name: z.string().trim().min(1).max(120).optional(),
@@ -89,54 +125,6 @@ export const deleteWorkspaceInputSchema = z.object({
 	confirmationName: z.string().trim().min(1),
 });
 
-export const createWorkspaceItemInputSchema = z.object({
-	id: z.string().uuid().optional(),
-	workspaceId: z.string().min(1),
-	parentId: z.string().min(1).nullable().optional(),
-	type: workspaceItemTypeSchema,
-	name: z.string().trim().min(1).max(160).optional(),
-});
-
-export const updateWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
-	name: z.string().trim().min(1).max(160),
-});
-
-export const deleteWorkspaceItemModeSchema = z.enum([
-	"folder-only",
-	"folder-and-contents",
-]);
-
-export const deleteWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
-	mode: deleteWorkspaceItemModeSchema.optional(),
-});
-
-export const workspaceItemReorderRowSchema = z.enum(["folder", "item"]);
-export const workspaceMutationActorTypeSchema = z.enum([
-	"user",
-	"agent",
-	"system",
-]);
-
-export const reorderWorkspaceItemsInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	parentId: z.string().min(1).nullable(),
-	row: workspaceItemReorderRowSchema,
-	movedItemId: z.string().min(1),
-	orderedItemIds: z.array(z.string().min(1)).min(1),
-	clientMutationId: z.string().uuid().optional(),
-});
-
-export const moveWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
-	targetParentId: z.string().min(1).nullable(),
-	clientMutationId: z.string().uuid().optional(),
-});
-
 export const workspaceListResponseSchema = z.object({
 	workspaces: z.array(workspaceSummarySchema),
 });
@@ -152,67 +140,26 @@ export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
 export type WorkspaceDetail = z.infer<typeof workspaceDetailSchema>;
 export type WorkspaceItemType = z.infer<typeof workspaceItemTypeSchema>;
 export type WorkspaceItemSummary = z.infer<typeof workspaceItemSummarySchema>;
-export type CreateWorkspaceInput = z.infer<typeof createWorkspaceInputSchema>;
-export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;
-export type DeleteWorkspaceInput = z.infer<typeof deleteWorkspaceInputSchema>;
 export type CreateWorkspaceItemInput = z.infer<
 	typeof createWorkspaceItemInputSchema
 >;
-export type UpdateWorkspaceItemInput = z.infer<
-	typeof updateWorkspaceItemInputSchema
+export type ReadWorkspaceItemInput = z.infer<
+	typeof readWorkspaceItemInputSchema
 >;
-export type DeleteWorkspaceItemMode = z.infer<
-	typeof deleteWorkspaceItemModeSchema
+export type WriteWorkspaceItemInput = z.infer<
+	typeof writeWorkspaceItemInputSchema
 >;
-export type DeleteWorkspaceItemInput = z.infer<
-	typeof deleteWorkspaceItemInputSchema
->;
-export type WorkspaceItemReorderRow = z.infer<
-	typeof workspaceItemReorderRowSchema
->;
-export type WorkspaceMutationActorType = z.infer<
-	typeof workspaceMutationActorTypeSchema
->;
-export interface WorkspaceMutationOperation {
-	id: string;
-	metadata?: Record<string, JsonValue>;
-}
-export interface WorkspaceMutationActor {
-	type: WorkspaceMutationActorType;
-	userId: string;
-	agentSessionId?: string;
-	operation: WorkspaceMutationOperation;
-}
-export type ReorderWorkspaceItemsInput = z.infer<
-	typeof reorderWorkspaceItemsInputSchema
+export type RenameWorkspaceItemInput = z.infer<
+	typeof renameWorkspaceItemInputSchema
 >;
 export type MoveWorkspaceItemInput = z.infer<
 	typeof moveWorkspaceItemInputSchema
 >;
-export interface DeleteWorkspaceItemResult {
-	workspaceId: string;
-	itemId: string;
-	deletedItemIds: string[];
-	reparentedItems: WorkspaceItemSummary[];
-}
-export interface WorkspaceItemMoveRowSnapshot {
-	parentId: string | null;
-	row: WorkspaceItemReorderRow;
-	items: WorkspaceItemSummary[];
-}
-export interface ReorderWorkspaceItemsResult {
-	workspaceId: string;
-	parentId: string | null;
-	row: WorkspaceItemReorderRow;
-	items: WorkspaceItemSummary[];
-	clientMutationId?: string;
-}
-export interface MoveWorkspaceItemResult {
-	workspaceId: string;
-	item: WorkspaceItemSummary;
-	source: WorkspaceItemMoveRowSnapshot;
-	destination: WorkspaceItemMoveRowSnapshot;
-	clientMutationId?: string;
-}
+export type DeleteWorkspaceItemInput = z.infer<
+	typeof deleteWorkspaceItemInputSchema
+>;
+export type CreateWorkspaceInput = z.infer<typeof createWorkspaceInputSchema>;
+export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;
+export type DeleteWorkspaceInput = z.infer<typeof deleteWorkspaceInputSchema>;
 export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;

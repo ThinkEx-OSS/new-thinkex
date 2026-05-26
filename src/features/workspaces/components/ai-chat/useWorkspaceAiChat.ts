@@ -19,9 +19,9 @@ export function useWorkspaceAiChat({
 	threadId,
 }: UseWorkspaceAiChatOptions) {
 	const agent = useAgent({
-		agent: "WorkspaceChatDirectory",
-		basePath: "workspace-chat",
-		sub: [{ agent: "WorkspaceChatAgent", name: threadId }],
+		agent: "UserAIStore",
+		basePath: "user-ai",
+		sub: [{ agent: "AIThread", name: threadId }],
 	});
 	const chat = useAgentChat<unknown, AiChatMessage>({
 		agent,

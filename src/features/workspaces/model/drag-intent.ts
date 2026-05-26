@@ -1,25 +1,15 @@
 import { move } from "@dnd-kit/helpers";
 import type { DragDropEventHandlers } from "@dnd-kit/react";
 
-import type { ReorderWorkspaceItemsInput } from "#/features/workspaces/contracts";
+import type { MoveWorkspaceItemInput } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import {
-	arraysEqual,
-	getWorkspaceItemOrderScopeKey,
-	haveSameIds,
-} from "#/features/workspaces/workspace-item-ordering";
 
 import {
 	getWorkspaceDragSource,
 	getWorkspaceDropTarget,
 	getWorkspaceItemTabInsertMatch,
 } from "./drag-targets";
-import type {
-	WorkspaceDragCommand,
-	WorkspaceDragEndEvent,
-	WorkspaceDragIntent,
-	WorkspaceItemMoveResolution,
-} from "./drag-types";
+import type { WorkspaceDragCommand, WorkspaceDragEndEvent } from "./drag-types";
 
 export type DndDragEndEvent = Parameters<
 	NonNullable<DragDropEventHandlers["onDragEnd"]>
@@ -66,80 +56,6 @@ export function getWorkspaceDragCommand(
 	return undefined;
 }
 
-export function getWorkspaceDragIntent(input: {
-	event: DndDragEndEvent;
-	items: WorkspaceItem[];
-	orderRef: Map<string, string[]>;
-	workspaceId: string;
-}): WorkspaceDragIntent | undefined {
-	const { event, items, orderRef, workspaceId } = input;
-	const command = getWorkspaceDragCommand(event);
-
-	// Add pane/chat commit intents here as those surfaces move from projection stubs to real workspace behavior.
-	if (command?.type === "move-tab-in-strip") {
-		return {
-			kind: "move-tab-in-strip",
-			tabId: command.tabId,
-			toIndex: command.toIndex,
-		};
-	}
-
-	if (command?.type === "reorder-tabs-over-tab") {
-		return {
-			kind: "reorder-tabs-over-tab",
-			activeTabId: command.activeTabId,
-			overTabId: command.overTabId,
-		};
-	}
-
-	const tabInsertInput = getWorkspaceItemTabInsertInput({ event, items });
-
-	if (tabInsertInput) {
-		return {
-			kind: "open-item-tab",
-			item: tabInsertInput.item,
-			insertIndex: tabInsertInput.insertIndex,
-		};
-	}
-
-	const moveResolution = getWorkspaceItemMoveResolution({
-		event,
-		items,
-		workspaceId,
-	});
-
-	if (moveResolution?.kind === "blocked") {
-		return {
-			kind: "move-item-blocked",
-			resolution: moveResolution,
-		};
-	}
-
-	if (moveResolution?.kind === "move") {
-		return {
-			kind: "move-item",
-			resolution: moveResolution,
-		};
-	}
-
-	const reorderInput = getWorkspaceItemReorderInput({
-		event,
-		items,
-		orderRef,
-		workspaceId,
-	});
-
-	if (reorderInput) {
-		return {
-			kind: "reorder-item",
-			orderScopeKey: reorderInput.orderScopeKey,
-			mutationInput: reorderInput.mutationInput,
-		};
-	}
-
-	return undefined;
-}
-
 export function getWorkspaceItemTabInsertInput(input: {
 	event: DndDragEndEvent;
 	items: WorkspaceItem[];
@@ -170,21 +86,94 @@ export function getWorkspaceItemTabInsertInput(input: {
 	};
 }
 
-export function shouldPreventWorkspaceItemOptimisticSorting(
-	event: WorkspaceDragEndEvent,
-) {
+export function getWorkspaceItemMoveInput(input: {
+	event: DndDragEndEvent;
+	items: WorkspaceItem[];
+	workspaceId: string;
+}): MoveWorkspaceItemInput | undefined {
+	const { event, items, workspaceId } = input;
 	const { source, target } = event.operation;
+	const canceled = event.canceled ?? event.operation.canceled;
 	const dragSource = getWorkspaceDragSource(source);
 	const dropTarget = getWorkspaceDropTarget(target);
 
-	if (
-		dragSource?.kind !== "workspace-item" ||
-		dropTarget?.kind !== "workspace-item"
-	) {
-		return false;
+	if (canceled || dragSource?.kind !== "workspace-item") {
+		return undefined;
 	}
 
-	return dragSource.row !== dropTarget.row;
+	const movedItem = items.find((item) => item.id === dragSource.itemId);
+
+	if (!movedItem) {
+		return undefined;
+	}
+
+	if (dropTarget?.kind === "workspace-folder") {
+		if (
+			movedItem.id === dropTarget.folderId ||
+			movedItem.parentId === dropTarget.folderId ||
+			isWorkspaceItemDescendantOf(items, {
+				ancestorId: movedItem.id,
+				itemId: dropTarget.folderId,
+			})
+		) {
+			return undefined;
+		}
+
+		return {
+			workspaceId,
+			itemId: movedItem.id,
+			parentId: dropTarget.folderId,
+		};
+	}
+
+	if (
+		dropTarget?.kind !== "workspace-item" ||
+		dropTarget.row !== dragSource.row ||
+		dropTarget.itemId === movedItem.id
+	) {
+		return undefined;
+	}
+
+	const targetItem = items.find((item) => item.id === dropTarget.itemId);
+
+	if (!targetItem || targetItem.parentId !== movedItem.parentId) {
+		return undefined;
+	}
+
+	const siblings = items
+		.filter(
+			(item) =>
+				item.parentId === movedItem.parentId &&
+				(dragSource.row === "folder"
+					? item.type === "folder"
+					: item.type !== "folder"),
+		)
+		.sort(compareWorkspaceItems);
+	const currentIds = siblings.map((item) => item.id);
+	const currentIndex = currentIds.indexOf(movedItem.id);
+	const targetIndex = currentIds.indexOf(targetItem.id);
+
+	if (currentIndex < 0 || targetIndex < 0 || currentIndex === targetIndex) {
+		return undefined;
+	}
+
+	const orderedIds = move(currentIds, event);
+	const nextIndex = orderedIds.indexOf(movedItem.id);
+	const previousId = nextIndex > 0 ? orderedIds[nextIndex - 1] : undefined;
+	const nextId =
+		nextIndex < orderedIds.length - 1 ? orderedIds[nextIndex + 1] : undefined;
+	const siblingsById = new Map(siblings.map((item) => [item.id, item]));
+	const sortOrder = getSortOrderBetween({
+		previous: previousId ? siblingsById.get(previousId) : undefined,
+		next: nextId ? siblingsById.get(nextId) : undefined,
+	});
+
+	return {
+		workspaceId,
+		itemId: movedItem.id,
+		parentId: movedItem.parentId,
+		sortOrder,
+	};
 }
 
 export function shouldPreventWorkspacePointerActivation(
@@ -227,176 +216,33 @@ export function shouldPreventWorkspacePointerActivation(
 	return Boolean(interactiveElement);
 }
 
-export function getWorkspaceItemMoveResolution(input: {
-	event: DndDragEndEvent;
-	items: WorkspaceItem[];
-	workspaceId: string;
-}): WorkspaceItemMoveResolution | undefined {
-	const { event, items, workspaceId } = input;
-	const { source } = event.operation;
-	const canceled = event.canceled ?? event.operation.canceled;
-	const dragSource = getWorkspaceDragSource(source);
-	const dropTarget = getWorkspaceDropTarget(event.operation.target);
-	const targetFolderId =
-		dropTarget?.kind === "workspace-folder" ? dropTarget.folderId : undefined;
+function compareWorkspaceItems(left: WorkspaceItem, right: WorkspaceItem) {
+	const sortDelta = left.sortOrder - right.sortOrder;
 
-	if (!targetFolderId) {
-		return undefined;
+	if (sortDelta !== 0) {
+		return sortDelta;
 	}
 
-	if (canceled) {
-		return {
-			kind: "blocked",
-			reason: "canceled",
-			sourceId: source?.id,
-			targetFolderId,
-		};
-	}
-
-	if (!source) {
-		return {
-			kind: "blocked",
-			reason: "missing-source",
-			targetFolderId,
-		};
-	}
-
-	const sourceItem =
-		dragSource?.kind === "workspace-item"
-			? items.find((item) => item.id === dragSource.itemId)
-			: undefined;
-	const targetFolder = items.find((item) => item.id === targetFolderId);
-
-	if (dragSource?.kind !== "workspace-item" || !sourceItem) {
-		return {
-			kind: "blocked",
-			reason: "missing-source",
-			sourceId: source.id,
-			targetFolderId,
-		};
-	}
-
-	if (!targetFolder || targetFolder.type !== "folder") {
-		return {
-			kind: "blocked",
-			reason: "missing-target-folder",
-			sourceId: source.id,
-			targetFolderId,
-		};
-	}
-
-	if (sourceItem.id === targetFolderId) {
-		return {
-			kind: "blocked",
-			reason: "self",
-			sourceId: source.id,
-			targetFolderId,
-		};
-	}
-
-	if (sourceItem.parentId === targetFolderId) {
-		return {
-			kind: "blocked",
-			reason: "same-parent",
-			sourceId: source.id,
-			targetFolderId,
-		};
-	}
-
-	if (
-		sourceItem.type === "folder" &&
-		isWorkspaceItemDescendantOf(items, {
-			ancestorId: sourceItem.id,
-			itemId: targetFolderId,
-		})
-	) {
-		return {
-			kind: "blocked",
-			reason: "descendant",
-			sourceId: source.id,
-			targetFolderId,
-		};
-	}
-
-	return {
-		kind: "move",
-		sourceOrderScopeKey: getWorkspaceItemOrderScopeKey({
-			workspaceId,
-			parentId: sourceItem.parentId,
-			row: dragSource.row,
-		}),
-		mutationInput: {
-			workspaceId,
-			itemId: sourceItem.id,
-			targetParentId: targetFolderId,
-		},
-	};
+	return left.name.localeCompare(right.name);
 }
 
-export function getWorkspaceItemReorderInput(input: {
-	event: DndDragEndEvent;
-	items: WorkspaceItem[];
-	orderRef: Map<string, string[]>;
-	workspaceId: string;
-}):
-	| { orderScopeKey: string; mutationInput: ReorderWorkspaceItemsInput }
-	| undefined {
-	const { event, items, orderRef, workspaceId } = input;
-	const { source, target } = event.operation;
-	const canceled = event.canceled ?? event.operation.canceled;
-	const dragSource = getWorkspaceDragSource(source);
-	const dropTarget = getWorkspaceDropTarget(target);
-
-	if (
-		canceled ||
-		dragSource?.kind !== "workspace-item" ||
-		dropTarget?.kind !== "workspace-item" ||
-		dragSource.row !== dropTarget.row
-	) {
-		return undefined;
+function getSortOrderBetween(input: {
+	previous?: WorkspaceItem;
+	next?: WorkspaceItem;
+}) {
+	if (input.previous && input.next) {
+		return Math.floor((input.previous.sortOrder + input.next.sortOrder) / 2);
 	}
 
-	const movedItemId = dragSource.itemId;
-	const movedItem = items.find((item) => item.id === movedItemId);
-
-	if (!movedItem) {
-		return undefined;
+	if (input.previous) {
+		return input.previous.sortOrder + 1024;
 	}
 
-	const siblings = items.filter(
-		(item) =>
-			item.parentId === movedItem.parentId &&
-			(dragSource.row === "folder"
-				? item.type === "folder"
-				: item.type !== "folder"),
-	);
-	const siblingItemIds = siblings.map((item) => item.id);
-	const orderScopeKey = getWorkspaceItemOrderScopeKey({
-		workspaceId,
-		parentId: movedItem.parentId,
-		row: dragSource.row,
-	});
-	const refItemIds = orderRef.get(orderScopeKey);
-	const rowItemIds =
-		refItemIds && haveSameIds(refItemIds, siblingItemIds)
-			? refItemIds
-			: siblingItemIds;
-	const orderedItemIds = move(rowItemIds, event);
-
-	if (arraysEqual(rowItemIds, orderedItemIds)) {
-		return undefined;
+	if (input.next) {
+		return Math.max(0, input.next.sortOrder - 1024);
 	}
 
-	return {
-		orderScopeKey,
-		mutationInput: {
-			workspaceId,
-			parentId: movedItem.parentId,
-			row: dragSource.row,
-			movedItemId,
-			orderedItemIds,
-		},
-	};
+	return 1024;
 }
 
 function isWorkspaceItemDescendantOf(

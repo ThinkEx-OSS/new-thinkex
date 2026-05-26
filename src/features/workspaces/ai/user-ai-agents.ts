@@ -16,8 +16,8 @@ import {
 	getWorkspaceAiChatModel,
 	resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
+import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { canReadWorkspace } from "#/features/workspaces/server/permissions";
-import { listWorkspaceItemsForWorkspace } from "#/features/workspaces/server/queries";
 
 const workspaceItemListInputSchema = z.object({
 	limit: z
@@ -36,9 +36,9 @@ const workspaceItemListInputSchema = z.object({
 		),
 });
 
-type WorkspaceChatThreadRunState = "idle" | "running";
+type AIThreadRunState = "idle" | "running";
 
-export interface WorkspaceChatThreadSummary {
+export interface AIThreadSummary {
 	id: string;
 	workspaceId: string;
 	title: string;
@@ -52,21 +52,21 @@ export interface WorkspaceChatThreadSummary {
 	updatedAt: string;
 }
 
-export interface WorkspaceChatDirectoryState {
+export interface UserAIStoreState {
 	isLoaded: boolean;
-	threads: WorkspaceChatThreadSummary[];
+	threads: AIThreadSummary[];
 }
 
-interface WorkspaceChatThreadContext {
+interface AIThreadContext {
 	id: string;
 	workspaceId: string;
 }
 
-interface WorkspaceChatThreadMetaRow {
+interface AIThreadMetaRow {
 	id: string;
 	workspace_id: string;
 	title: string;
-	status: WorkspaceChatThreadRunState;
+	status: AIThreadRunState;
 	last_activity_at: number;
 	last_user_message_at: number | null;
 	last_assistant_message_at: number | null;
@@ -77,25 +77,22 @@ interface WorkspaceChatThreadMetaRow {
 	archived_at: number | null;
 }
 
-class WorkspaceChatThreadNotFoundError extends Error {
+class AIThreadNotFoundError extends Error {
 	constructor() {
 		super("Chat thread not found");
 	}
 }
 
-class WorkspaceChatThreadForbiddenError extends Error {
+class AIThreadForbiddenError extends Error {
 	constructor() {
 		super("Forbidden");
 	}
 }
 
-export class WorkspaceChatDirectory extends Agent<
-	Env,
-	WorkspaceChatDirectoryState
-> {
+export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	static options = { sendIdentityOnConnect: false };
 
-	initialState: WorkspaceChatDirectoryState = { isLoaded: false, threads: [] };
+	initialState: UserAIStoreState = { isLoaded: false, threads: [] };
 
 	onStart() {
 		this.sql`CREATE TABLE IF NOT EXISTS chat_meta (
@@ -122,14 +119,14 @@ export class WorkspaceChatDirectory extends Agent<
 		_request: Request,
 		{ className, name }: { className: string; name: string },
 	): Promise<Request | Response | undefined> {
-		if (className !== "WorkspaceChatAgent") {
+		if (className !== "AIThread") {
 			return new Response("Chat thread not found", { status: 404 });
 		}
 
 		try {
 			await this._requireThreadMeta(name);
 		} catch (error) {
-			if (error instanceof WorkspaceChatThreadForbiddenError) {
+			if (error instanceof AIThreadForbiddenError) {
 				return new Response("Forbidden", { status: 403 });
 			}
 
@@ -138,9 +135,7 @@ export class WorkspaceChatDirectory extends Agent<
 	}
 
 	@callable()
-	async createThread(input: {
-		workspaceId: string;
-	}): Promise<WorkspaceChatThreadSummary> {
+	async createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
 		const workspaceId = input.workspaceId.trim();
 
 		if (!workspaceId) {
@@ -159,7 +154,7 @@ export class WorkspaceChatDirectory extends Agent<
 		const now = Date.now();
 		const title = getThreadTitle(now);
 
-		await this.subAgent(WorkspaceChatAgent, id);
+		await this.subAgent(AIThread, id);
 
 		try {
 			this.sql`
@@ -193,7 +188,7 @@ export class WorkspaceChatDirectory extends Agent<
 				)
 			`;
 		} catch (error) {
-			await this.deleteSubAgent(WorkspaceChatAgent, id);
+			await this.deleteSubAgent(AIThread, id);
 			throw error;
 		}
 
@@ -224,14 +219,12 @@ export class WorkspaceChatDirectory extends Agent<
 	@callable()
 	async deleteThread(threadId: string): Promise<void> {
 		await this._requireThreadMeta(threadId);
-		await this.deleteSubAgent(WorkspaceChatAgent, threadId);
+		await this.deleteSubAgent(AIThread, threadId);
 		this.sql`DELETE FROM chat_meta WHERE id = ${threadId}`;
 		this._refreshState();
 	}
 
-	async getThreadContext(
-		threadId: string,
-	): Promise<WorkspaceChatThreadContext | null> {
+	async getThreadContext(threadId: string): Promise<AIThreadContext | null> {
 		try {
 			const thread = await this._requireThreadMeta(threadId);
 
@@ -323,9 +316,9 @@ export class WorkspaceChatDirectory extends Agent<
 	}
 
 	private _refreshState() {
-		const registry = this.listSubAgents(WorkspaceChatAgent);
+		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
-		const rows = this.sql<WorkspaceChatThreadMetaRow>`
+		const rows = this.sql<AIThreadMetaRow>`
 			SELECT
 				id,
 				workspace_id,
@@ -352,7 +345,7 @@ export class WorkspaceChatDirectory extends Agent<
 	}
 
 	private _getThreadMeta(threadId: string) {
-		const [thread] = this.sql<WorkspaceChatThreadMetaRow>`
+		const [thread] = this.sql<AIThreadMetaRow>`
 			SELECT
 				id,
 				workspace_id,
@@ -381,9 +374,9 @@ export class WorkspaceChatDirectory extends Agent<
 	}
 
 	private _getEmptyThreadSummary(workspaceId: string) {
-		const registry = this.listSubAgents(WorkspaceChatAgent);
+		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
-		const rows = this.sql<WorkspaceChatThreadMetaRow>`
+		const rows = this.sql<AIThreadMetaRow>`
 			SELECT
 				id,
 				workspace_id,
@@ -409,23 +402,21 @@ export class WorkspaceChatDirectory extends Agent<
 		return thread ? mapThreadMetaRow(thread) : null;
 	}
 
-	private async _requireThreadMeta(
-		threadId: string,
-	): Promise<WorkspaceChatThreadMetaRow> {
-		if (!this.hasSubAgent(WorkspaceChatAgent, threadId)) {
-			throw new WorkspaceChatThreadNotFoundError();
+	private async _requireThreadMeta(threadId: string): Promise<AIThreadMetaRow> {
+		if (!this.hasSubAgent(AIThread, threadId)) {
+			throw new AIThreadNotFoundError();
 		}
 
 		const thread = this._getThreadMeta(threadId);
 
 		if (!thread || thread.archived_at !== null) {
-			throw new WorkspaceChatThreadNotFoundError();
+			throw new AIThreadNotFoundError();
 		}
 
 		try {
 			await this._assertCanReadWorkspace(thread.workspace_id);
 		} catch {
-			throw new WorkspaceChatThreadForbiddenError();
+			throw new AIThreadForbiddenError();
 		}
 
 		return thread;
@@ -464,7 +455,7 @@ export class WorkspaceChatDirectory extends Agent<
 	}
 }
 
-export class WorkspaceChatAgent extends Think<Env> {
+export class AIThread extends Think<Env> {
 	override maxSteps = 5;
 	override messageConcurrency = "latest" as const;
 	override chatRecovery = true;
@@ -480,7 +471,7 @@ export class WorkspaceChatAgent extends Think<Env> {
 	}
 
 	getSystemPrompt(): string {
-		return getWorkspaceChatSystemPrompt();
+		return getAIThreadSystemPrompt();
 	}
 
 	getTools(): ToolSet {
@@ -496,45 +487,19 @@ export class WorkspaceChatAgent extends Think<Env> {
 						throw new Error("Chat thread not found");
 					}
 
-					const dbContext = await createDbContext();
-
-					try {
-						const items = await listWorkspaceItemsForWorkspace(
-							dbContext.db,
-							thread.workspaceId,
-						);
-						const scopedItems =
-							parentId === undefined
-								? items
-								: items.filter((item) => item.parentId === parentId);
-						const returnedItems = scopedItems.slice(0, limit).map((item) => ({
-							id: item.id,
-							parentId: item.parentId,
-							type: item.type,
-							name: item.name,
-							meta: item.meta,
-							color: item.color,
-							sortOrder: item.sortOrder,
-							updatedAt: item.updatedAt,
-						}));
-
-						return {
-							workspaceId: thread.workspaceId,
-							filter: { parentId: parentId ?? null },
-							totalItems: items.length,
-							matchingItems: scopedItems.length,
-							returnedItems,
-						};
-					} finally {
-						await dbContext.dispose();
-					}
+					return await listWorkspaceKernelItems({
+						workspaceId: thread.workspaceId,
+						userId: this.name,
+						parentId,
+						limit,
+					});
 				},
 			}),
 		};
 	}
 
 	async beforeTurn(ctx: TurnContext): Promise<TurnConfig | undefined> {
-		const directory = await this.parentAgent(WorkspaceChatDirectory);
+		const directory = await this.parentAgent(UserAIStore);
 		const thread = await directory.getThreadContext(this.name);
 
 		if (!thread) {
@@ -547,7 +512,7 @@ export class WorkspaceChatAgent extends Think<Env> {
 
 		return {
 			model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
-			system: getWorkspaceChatSystemPrompt(thread.workspaceId),
+			system: getAIThreadSystemPrompt(thread.workspaceId),
 		};
 	}
 
@@ -555,7 +520,7 @@ export class WorkspaceChatAgent extends Think<Env> {
 		const hasActiveConnections = Array.from(this.getConnections()).length > 0;
 
 		try {
-			const directory = await this.parentAgent(WorkspaceChatDirectory);
+			const directory = await this.parentAgent(UserAIStore);
 			await directory.recordThreadRunFinished(this.name, result, {
 				viewed: hasActiveConnections,
 			});
@@ -571,21 +536,21 @@ export class WorkspaceChatAgent extends Think<Env> {
 						await this._generateTitleFromFirstUserMessage(),
 					);
 				} catch (error) {
-					console.warn("[WorkspaceChatAgent] Failed to generate title", error);
+					console.warn("[AIThread] Failed to generate title", error);
 				}
 			}
 		} catch (error) {
-			console.warn("[WorkspaceChatAgent] Failed to update directory", error);
+			console.warn("[AIThread] Failed to update directory", error);
 		}
 	}
 
 	override async onChatError(error: unknown) {
 		try {
-			const directory = await this.parentAgent(WorkspaceChatDirectory);
+			const directory = await this.parentAgent(UserAIStore);
 			await directory.recordThreadRunFailed(this.name);
 		} catch (metadataError) {
 			console.warn(
-				"[WorkspaceChatAgent] Failed to clear directory run status",
+				"[AIThread] Failed to clear directory run status",
 				metadataError,
 			);
 		}
@@ -594,7 +559,7 @@ export class WorkspaceChatAgent extends Think<Env> {
 	}
 
 	private async _getThreadContext() {
-		const directory = await this.parentAgent(WorkspaceChatDirectory);
+		const directory = await this.parentAgent(UserAIStore);
 		return directory.getThreadContext(this.name);
 	}
 
@@ -671,7 +636,7 @@ function getFirstUserMessageText(messages: UIMessage[]) {
 		.slice(0, 1000);
 }
 
-function getWorkspaceChatSystemPrompt(workspaceId?: string) {
+function getAIThreadSystemPrompt(workspaceId?: string) {
 	return [
 		"You are Thinkex's workspace assistant.",
 		workspaceId ? `You are scoped to workspace ${workspaceId}.` : undefined,
@@ -683,9 +648,7 @@ function getWorkspaceChatSystemPrompt(workspaceId?: string) {
 		.join("\n");
 }
 
-function mapThreadMetaRow(
-	row: WorkspaceChatThreadMetaRow,
-): WorkspaceChatThreadSummary {
+function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
 	return {
 		id: row.id,
 		workspaceId: row.workspace_id,
@@ -705,8 +668,8 @@ function mapThreadMetaRow(
 }
 
 function compareThreadRecentFirst(
-	left: WorkspaceChatThreadSummary,
-	right: WorkspaceChatThreadSummary,
+	left: AIThreadSummary,
+	right: AIThreadSummary,
 ) {
 	return (
 		right.lastActivityAt.localeCompare(left.lastActivityAt) ||

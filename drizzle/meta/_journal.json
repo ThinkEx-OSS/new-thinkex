@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1778712555349,
-      "tag": "0000_chief_omega_sentinel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1779505095945,
-      "tag": "0001_confused_sumo",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1779514458500,
-      "tag": "0002_good_proteus",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1779758230159,
-      "tag": "0003_plain_blonde_phantom",
+      "when": 1779827956693,
+      "tag": "0000_nice_strong_guy",
       "breakpoints": true
     }
   ]

@@ -20,7 +20,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import type { WorkspaceChatThreadSummary } from "#/features/workspaces/ai/workspace-chat-agent";
+import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import { formatWorkspaceRecency } from "#/features/workspaces/model/display";
 import { cn } from "#/lib/utils";
 
@@ -32,12 +32,12 @@ interface AiChatPanelToolbarProps {
 	isMaximized: boolean;
 	isNewChatDisabled?: boolean;
 	onClose: () => void;
-	onDeleteThread: (thread: WorkspaceChatThreadSummary) => void;
+	onDeleteThread: (thread: AIThreadSummary) => void;
 	onMaximize: () => void;
 	onNewChat: () => void;
 	onRestore: () => void;
 	onSelectThread: (threadId: string) => void;
-	threads: WorkspaceChatThreadSummary[];
+	threads: AIThreadSummary[];
 }
 
 export default function AiChatPanelToolbar({
@@ -64,7 +64,7 @@ export default function AiChatPanelToolbar({
 		setIsHistoryOpen(false);
 	};
 
-	const handleDeleteThread = (thread: WorkspaceChatThreadSummary) => {
+	const handleDeleteThread = (thread: AIThreadSummary) => {
 		onDeleteThread(thread);
 		setIsHistoryOpen(false);
 	};
@@ -161,7 +161,7 @@ export default function AiChatPanelToolbar({
 	);
 }
 
-function ThreadStatusBadge({ thread }: { thread: WorkspaceChatThreadSummary }) {
+function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 	if (thread.isRunning) {
 		return (
 			<Badge

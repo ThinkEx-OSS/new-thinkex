@@ -26,23 +26,23 @@
 	"durable_objects": {
 		"bindings": [
 			{
-				"name": "WorkspaceRoom",
-				"class_name": "WorkspaceRoom"
+				"name": "UserAIStore",
+				"class_name": "UserAIStore"
 			},
 			{
-				"name": "WorkspaceChatDirectory",
-				"class_name": "WorkspaceChatDirectory"
+				"name": "WorkspaceKernel",
+				"class_name": "WorkspaceKernel"
 			}
 		]
 	},
 	"migrations": [
 		{
-			"tag": "v1_workspace_room",
-			"new_sqlite_classes": ["WorkspaceRoom"]
+			"tag": "v2_user_ai_store",
+			"new_sqlite_classes": ["UserAIStore"]
 		},
 		{
-			"tag": "v2_workspace_chat_directory",
-			"new_sqlite_classes": ["WorkspaceChatDirectory"]
+			"tag": "v3_workspace_kernel",
+			"new_sqlite_classes": ["WorkspaceKernel"]
 		}
 	],
 	"hyperdrive": [

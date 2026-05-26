@@ -16,8 +16,7 @@ const WORKSPACE_FOLDER_DROP_TARGET_ID_PREFIX = "workspace-folder-drop:";
 const WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX =
 	"workspace-tab-item-insert:";
 const WORKSPACE_SPLIT_DROP_TARGET_ID_PREFIX = "workspace-split-drop:";
-const WORKSPACE_CHAT_CONTEXT_DROP_TARGET_ID_PREFIX =
-	"workspace-chat-context-drop:";
+const WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX = "workspace-ai-context-drop:";
 
 export function getWorkspaceDragSource(
 	source: WorkspaceDragEntity | null | undefined,
@@ -114,9 +113,9 @@ export function getWorkspaceDropTarget(
 		};
 	}
 
-	if (dropTargetData?.kind === "workspace-chat-context-drop-target") {
+	if (dropTargetData?.kind === "workspace-ai-context-drop-target") {
 		return {
-			kind: "chat-context",
+			kind: "ai-context",
 			workspaceId: dropTargetData.workspaceId,
 		};
 	}
@@ -156,14 +155,14 @@ export function getWorkspaceDropTarget(
 		};
 	}
 
-	const chatContextWorkspaceId = getWorkspaceChatContextDropTargetWorkspaceId(
+	const aiContextWorkspaceId = getWorkspaceAiContextDropTargetWorkspaceId(
 		target.id,
 	);
 
-	if (chatContextWorkspaceId) {
+	if (aiContextWorkspaceId) {
 		return {
-			kind: "chat-context",
-			workspaceId: chatContextWorkspaceId,
+			kind: "ai-context",
+			workspaceId: aiContextWorkspaceId,
 		};
 	}
 
@@ -305,23 +304,23 @@ export function getWorkspaceSplitDropTargetInput(id: unknown):
 	};
 }
 
-export function getWorkspaceChatContextDropTargetId(workspaceId: string) {
-	return `${WORKSPACE_CHAT_CONTEXT_DROP_TARGET_ID_PREFIX}${encodeURIComponent(
+export function getWorkspaceAiContextDropTargetId(workspaceId: string) {
+	return `${WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX}${encodeURIComponent(
 		workspaceId,
 	)}`;
 }
 
-export function getWorkspaceChatContextDropTargetWorkspaceId(id: unknown) {
+export function getWorkspaceAiContextDropTargetWorkspaceId(id: unknown) {
 	if (typeof id !== "string") {
 		return undefined;
 	}
 
-	if (!id.startsWith(WORKSPACE_CHAT_CONTEXT_DROP_TARGET_ID_PREFIX)) {
+	if (!id.startsWith(WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX)) {
 		return undefined;
 	}
 
 	const workspaceId = decodeWorkspaceDropTargetSegment(
-		id.slice(WORKSPACE_CHAT_CONTEXT_DROP_TARGET_ID_PREFIX.length),
+		id.slice(WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX.length),
 	);
 
 	return workspaceId || undefined;

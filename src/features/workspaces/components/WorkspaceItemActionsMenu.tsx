@@ -59,13 +59,13 @@ export default function WorkspaceItemActionsMenu({
 					<span>Rename</span>
 				</DropdownMenuItem>
 				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
+					<DropdownMenuSubTrigger disabled>
 						<Palette className="size-4" />
 						<span>Change color</span>
 					</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent className="w-40">
 						{workspaceItemColorOptions.map((option) => (
-							<DropdownMenuItem key={option.label}>
+							<DropdownMenuItem key={option.label} disabled>
 								<span
 									className={`size-3 rounded-full ${option.className}`}
 									aria-hidden="true"
@@ -75,7 +75,7 @@ export default function WorkspaceItemActionsMenu({
 						))}
 					</DropdownMenuSubContent>
 				</DropdownMenuSub>
-				<DropdownMenuItem>
+				<DropdownMenuItem disabled>
 					<FolderInput className="size-4" />
 					<span>Move to folder</span>
 				</DropdownMenuItem>

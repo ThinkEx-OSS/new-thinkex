@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 
-import { workspaceEvents, workspaceMembers, workspaces } from "#/db/schema";
+import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import type {
 	CreateWorkspaceInput,
@@ -52,19 +52,6 @@ export async function createWorkspaceForCurrentUser(
 				userId,
 				role: "owner",
 				lastOpenedAt: openedAt,
-			});
-
-			await tx.insert(workspaceEvents).values({
-				id: crypto.randomUUID(),
-				workspaceId: workspace.id,
-				actorType: "user",
-				actorUserId: userId,
-				eventType: "workspace.created",
-				payloadJson: {
-					name: workspace.name,
-					icon: workspace.icon,
-					color: workspace.color,
-				},
 			});
 
 			return workspace;
@@ -151,19 +138,6 @@ export async function updateWorkspaceForCurrentUser(
 				throw new Error("Workspace was not updated.");
 			}
 
-			await tx.insert(workspaceEvents).values({
-				id: crypto.randomUUID(),
-				workspaceId: updatedWorkspace.id,
-				actorType: "user",
-				actorUserId: userId,
-				eventType: "workspace.updated",
-				payloadJson: {
-					name: updatedWorkspace.name,
-					icon: updatedWorkspace.icon,
-					color: updatedWorkspace.color,
-				},
-			});
-
 			const [membership] = await tx
 				.select({ lastOpenedAt: workspaceMembers.lastOpenedAt })
 				.from(workspaceMembers)
@@ -246,17 +220,6 @@ export async function archiveWorkspaceForCurrentUser(workspaceId: string) {
 			if (!archivedWorkspace) {
 				return null;
 			}
-
-			await tx.insert(workspaceEvents).values({
-				id: crypto.randomUUID(),
-				workspaceId: archivedWorkspace.id,
-				actorType: "user",
-				actorUserId: userId,
-				eventType: "workspace.archived",
-				payloadJson: {
-					name: archivedWorkspace.name,
-				},
-			});
 
 			return archivedWorkspace;
 		});

@@ -1,12 +1,4 @@
-import type {
-	WorkspaceItemMoveRowSnapshot,
-	WorkspaceItemSummary,
-	WorkspaceMutationActorType,
-	WorkspaceMutationOperation,
-} from "#/features/workspaces/contracts";
-
-export const workspaceRealtimePrefix = "api/realtime";
-export const workspaceRealtimeParty = "workspace-room";
+export const workspaceKernelRealtimePathPrefix = "/workspace-kernel";
 
 export interface WorkspacePresenceUser {
 	id: string;
@@ -18,43 +10,30 @@ export interface WorkspacePresenceUser {
 interface WorkspaceRealtimeEventBase {
 	id: string;
 	workspaceId: string;
-	itemId: string;
-	actorType: WorkspaceMutationActorType;
-	actorUserId: string | null;
-	actorAgentSessionId?: string | null;
 	createdAt: string;
-	operation: WorkspaceMutationOperation;
+	actorUserId: string | null;
 }
 
 export type WorkspaceRealtimeEvent =
 	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.created" | "workspace.item.renamed";
-			payload: { item: WorkspaceItemSummary };
-	  })
-	| (WorkspaceRealtimeEventBase & {
-			type: "workspace.items.reordered";
-			payload: {
-				parentId: string | null;
-				row: "folder" | "item";
-				items: WorkspaceItemSummary[];
-				clientMutationId?: string;
-			};
+			payload: { itemId: string };
 	  })
 	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.moved";
 			payload: {
-				item: WorkspaceItemSummary;
-				source: WorkspaceItemMoveRowSnapshot;
-				destination: WorkspaceItemMoveRowSnapshot;
-				clientMutationId?: string;
+				itemId: string;
+				parentId: string | null;
+				sortOrder?: number;
 			};
 	  })
 	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.deleted";
-			payload: {
-				deletedItemIds: string[];
-				reparentedItems: WorkspaceItemSummary[];
-			};
+			payload: { itemId: string };
+	  })
+	| (WorkspaceRealtimeEventBase & {
+			type: "workspace.item.content.updated";
+			payload: { itemId: string };
 	  });
 
 export type WorkspaceRealtimeServerMessage =

@@ -22,7 +22,7 @@ export type WorkspaceDragProjection =
 			side: WorkspaceSplitDropSide;
 	  }
 	| {
-			kind: "chat-context";
+			kind: "ai-context";
 			item: WorkspaceItem;
 			source: Extract<WorkspaceDragSource, { kind: "workspace-item" }>;
 			workspaceId: string;
@@ -57,7 +57,7 @@ export function getWorkspaceDragProjection(input: {
 		return undefined;
 	}
 
-	// Future pane/chat previews should stay declarative here; drag-end commit behavior belongs in drag-intent/navigation.
+	// Future pane/AI-context previews should stay declarative here; drag-end commit behavior belongs in drag-intent/navigation.
 	if (target.kind === "pane-split") {
 		return {
 			kind: "pane-split",
@@ -67,7 +67,7 @@ export function getWorkspaceDragProjection(input: {
 		};
 	}
 
-	if (source.kind === "workspace-item" && target.kind === "chat-context") {
+	if (source.kind === "workspace-item" && target.kind === "ai-context") {
 		const item = input.itemsById.get(source.itemId);
 
 		if (!item) {
@@ -75,7 +75,7 @@ export function getWorkspaceDragProjection(input: {
 		}
 
 		return {
-			kind: "chat-context",
+			kind: "ai-context",
 			item,
 			source,
 			workspaceId: target.workspaceId,

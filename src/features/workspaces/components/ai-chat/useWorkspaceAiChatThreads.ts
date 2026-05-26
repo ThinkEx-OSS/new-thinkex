@@ -2,9 +2,9 @@ import { useAgent } from "agents/react";
 import { useCallback, useMemo, useState } from "react";
 
 import type {
-	WorkspaceChatDirectoryState,
-	WorkspaceChatThreadSummary,
-} from "#/features/workspaces/ai/workspace-chat-agent";
+	AIThreadSummary,
+	UserAIStoreState,
+} from "#/features/workspaces/ai/user-ai-agents";
 
 interface UseWorkspaceAiChatThreadsOptions {
 	workspaceId: string;
@@ -14,9 +14,9 @@ export function useWorkspaceAiChatThreads({
 	workspaceId,
 }: UseWorkspaceAiChatThreadsOptions) {
 	const [isCreatingThread, setIsCreatingThread] = useState(false);
-	const directory = useAgent<WorkspaceChatDirectoryState>({
-		agent: "WorkspaceChatDirectory",
-		basePath: "workspace-chat",
+	const directory = useAgent<UserAIStoreState>({
+		agent: "UserAIStore",
+		basePath: "user-ai",
 	});
 
 	const threads = useMemo(
@@ -31,7 +31,7 @@ export function useWorkspaceAiChatThreads({
 		setIsCreatingThread(true);
 
 		try {
-			return await directory.call<WorkspaceChatThreadSummary>("createThread", [
+			return await directory.call<AIThreadSummary>("createThread", [
 				{ workspaceId },
 			]);
 		} finally {
@@ -65,7 +65,7 @@ export function useWorkspaceAiChatThreads({
 }
 
 export function findWorkspaceAiChatThread(
-	threads: WorkspaceChatThreadSummary[],
+	threads: AIThreadSummary[],
 	threadId: string | undefined,
 ) {
 	if (!threadId) {

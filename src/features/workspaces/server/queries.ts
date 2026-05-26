@@ -1,22 +1,18 @@
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 
-import { workspaceItems, workspaceMembers, workspaces } from "#/db/schema";
+import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import type {
 	WorkspaceDetail,
-	WorkspaceItemSummary,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import { getWorkspaceKernelPage } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	mapWorkspaceDetailRow,
-	mapWorkspaceItemRow,
 	mapWorkspaceRow,
 } from "#/features/workspaces/server/mappers";
-import {
-	assertCanReadWorkspace,
-	getCurrentUserId,
-} from "#/features/workspaces/server/permissions";
+import { getCurrentUserId } from "#/features/workspaces/server/permissions";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 
@@ -96,21 +92,6 @@ export async function getWorkspaceForCurrentUser(
 	}
 }
 
-export async function listWorkspaceItemsForCurrentUser(
-	workspaceId: string,
-): Promise<WorkspaceItemSummary[]> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
-
-	try {
-		await assertCanReadWorkspace(dbContext.db, { workspaceId, userId });
-
-		return await listWorkspaceItemsForWorkspace(dbContext.db, workspaceId);
-	} finally {
-		await dbContext.dispose();
-	}
-}
-
 export async function getWorkspacePageForCurrentUser(
 	workspaceId: string,
 ): Promise<WorkspacePage | null> {
@@ -138,42 +119,13 @@ export async function getWorkspacePageForCurrentUser(
 			return null;
 		}
 
-		const items = await listWorkspaceItemsForWorkspace(
-			dbContext.db,
-			workspaceId,
-		);
+		const workspace = mapWorkspaceDetailRow({
+			...workspaceRow.workspace,
+			lastOpenedAt: workspaceRow.lastOpenedAt,
+		});
 
-		return {
-			workspace: mapWorkspaceDetailRow({
-				...workspaceRow.workspace,
-				lastOpenedAt: workspaceRow.lastOpenedAt,
-			}),
-			items,
-		};
+		return await getWorkspaceKernelPage({ workspaceId, userId, workspace });
 	} finally {
 		await dbContext.dispose();
 	}
-}
-
-export async function listWorkspaceItemsForWorkspace(
-	db: Db,
-	workspaceId: string,
-): Promise<WorkspaceItemSummary[]> {
-	const rows = await listWorkspaceItemRows(db, workspaceId);
-
-	return rows.map(mapWorkspaceItemRow);
-}
-
-function listWorkspaceItemRows(db: Db, workspaceId: string) {
-	return db.query.workspaceItems.findMany({
-		where: and(
-			eq(workspaceItems.workspaceId, workspaceId),
-			isNull(workspaceItems.deletedAt),
-		),
-		orderBy: [
-			asc(workspaceItems.parentId),
-			asc(workspaceItems.sortOrder),
-			desc(workspaceItems.updatedAt),
-		],
-	});
 }

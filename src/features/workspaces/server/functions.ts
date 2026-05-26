@@ -7,27 +7,29 @@ import {
 	deleteWorkspaceInputSchema,
 	deleteWorkspaceItemInputSchema,
 	moveWorkspaceItemInputSchema,
-	reorderWorkspaceItemsInputSchema,
+	readWorkspaceItemInputSchema,
+	renameWorkspaceItemInputSchema,
 	updateWorkspaceInputSchema,
-	updateWorkspaceItemInputSchema,
+	writeWorkspaceItemInputSchema,
 } from "#/features/workspaces/contracts";
 import {
-	createWorkspaceItemForCurrentUser,
-	deleteWorkspaceItemForCurrentUser,
-	moveWorkspaceItemForCurrentUser,
-	reorderWorkspaceItemsForCurrentUser,
-	updateWorkspaceItemForCurrentUser,
-} from "#/features/workspaces/server/item-mutations";
+	createWorkspaceKernelItem,
+	deleteWorkspaceKernelItem,
+	moveWorkspaceKernelItem,
+	readWorkspaceKernelItem,
+	renameWorkspaceKernelItem,
+	writeWorkspaceKernelItem,
+} from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	createWorkspaceForCurrentUser,
 	deleteWorkspaceForCurrentUser,
 	recordWorkspaceOpenedForCurrentUser,
 	updateWorkspaceForCurrentUser,
 } from "#/features/workspaces/server/mutations";
+import { getCurrentUserId } from "#/features/workspaces/server/permissions";
 import {
 	getWorkspaceForCurrentUser,
 	getWorkspacePageForCurrentUser,
-	listWorkspaceItemsForCurrentUser,
 	listWorkspacesForCurrentUser,
 } from "#/features/workspaces/server/queries";
 
@@ -43,12 +45,6 @@ export const getWorkspaceFn = createServerFn({ method: "GET" })
 	.inputValidator(workspaceIdInputSchema)
 	.handler(async ({ data }) => getWorkspaceForCurrentUser(data.workspaceId));
 
-export const listWorkspaceItemsFn = createServerFn({ method: "GET" })
-	.inputValidator(workspaceIdInputSchema)
-	.handler(async ({ data }) =>
-		listWorkspaceItemsForCurrentUser(data.workspaceId),
-	);
-
 export const getWorkspacePageFn = createServerFn({ method: "GET" })
 	.inputValidator(workspaceIdInputSchema)
 	.handler(async ({ data }) =>
@@ -58,26 +54,6 @@ export const getWorkspacePageFn = createServerFn({ method: "GET" })
 export const createWorkspaceFn = createServerFn({ method: "POST" })
 	.inputValidator(createWorkspaceInputSchema)
 	.handler(async ({ data }) => createWorkspaceForCurrentUser(data));
-
-export const createWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(createWorkspaceItemInputSchema)
-	.handler(async ({ data }) => createWorkspaceItemForCurrentUser(data));
-
-export const updateWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(updateWorkspaceItemInputSchema)
-	.handler(async ({ data }) => updateWorkspaceItemForCurrentUser(data));
-
-export const deleteWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(deleteWorkspaceItemInputSchema)
-	.handler(async ({ data }) => deleteWorkspaceItemForCurrentUser(data));
-
-export const reorderWorkspaceItemsFn = createServerFn({ method: "POST" })
-	.inputValidator(reorderWorkspaceItemsInputSchema)
-	.handler(async ({ data }) => reorderWorkspaceItemsForCurrentUser(data));
-
-export const moveWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(moveWorkspaceItemInputSchema)
-	.handler(async ({ data }) => moveWorkspaceItemForCurrentUser(data));
 
 export const recordWorkspaceOpenedFn = createServerFn({ method: "POST" })
 	.inputValidator(workspaceIdInputSchema)
@@ -92,3 +68,57 @@ export const updateWorkspaceFn = createServerFn({ method: "POST" })
 export const deleteWorkspaceFn = createServerFn({ method: "POST" })
 	.inputValidator(deleteWorkspaceInputSchema)
 	.handler(async ({ data }) => deleteWorkspaceForCurrentUser(data));
+
+export const createWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(createWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		createWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const readWorkspaceItemFn = createServerFn({ method: "GET" })
+	.inputValidator(readWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		readWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const renameWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(renameWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		renameWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const moveWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(moveWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		moveWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const deleteWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(deleteWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		deleteWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const writeWorkspaceItemFn = createServerFn({ method: "POST" })
+	.inputValidator(writeWorkspaceItemInputSchema)
+	.handler(async ({ data }) =>
+		writeWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);

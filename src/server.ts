@@ -1,15 +1,13 @@
 import handler from "@tanstack/react-start/server-entry";
-import { routePartykitRequest } from "partyserver";
 
-import { routeWorkspaceChatRequest } from "#/features/workspaces/ai/auth";
-import { authenticateWorkspaceRealtimeRequest } from "#/features/workspaces/realtime/auth";
-import { workspaceRealtimePrefix } from "#/features/workspaces/realtime/messages";
+import { routeUserAIRequest } from "#/features/workspaces/ai/auth";
+import { routeWorkspaceKernelRequest } from "#/features/workspaces/kernel/workspace-kernel-auth";
 
 export {
-	WorkspaceChatAgent,
-	WorkspaceChatDirectory,
-} from "#/features/workspaces/ai/workspace-chat-agent";
-export { WorkspaceRoom } from "#/features/workspaces/realtime/workspace-room";
+	AIThread,
+	UserAIStore,
+} from "#/features/workspaces/ai/user-ai-agents";
+export { WorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel";
 
 const isProduction = import.meta.env.PROD;
 
@@ -82,20 +80,19 @@ function withSecurityHeaders(response: Response) {
 
 export default {
 	async fetch(request, env) {
-		const chatResponse = await routeWorkspaceChatRequest(request, env);
+		const chatResponse = await routeUserAIRequest(request, env);
 
 		if (chatResponse) {
 			return chatResponse;
 		}
 
-		const realtimeResponse = await routePartykitRequest(request, env, {
-			prefix: workspaceRealtimePrefix,
-			onBeforeConnect: authenticateWorkspaceRealtimeRequest,
-			onBeforeRequest: authenticateWorkspaceRealtimeRequest,
-		});
+		const workspaceKernelResponse = await routeWorkspaceKernelRequest(
+			request,
+			env,
+		);
 
 		return withSecurityHeaders(
-			realtimeResponse ?? (await handler.fetch(request)),
+			workspaceKernelResponse ?? (await handler.fetch(request)),
 		);
 	},
 } satisfies ExportedHandler<Env>;
