@@ -41,7 +41,10 @@ Relevant Cloudflare findings:
 - Cloudflare's Durable Object WebSocket docs recommend hibernation for cost-sensitive realtime rooms: one DO can coordinate a room, clients can remain connected while the object sleeps, and connection state should be restored through serialized attachments or persisted storage.
 - R2 is strongly consistent for object write/read/delete/list and metadata updates, making it suitable for large workspace assets and snapshot bodies.
 - Cloudflare Agents provide persisted state, SQL access, WebSocket state sync, callable RPC, broadcast helpers, and sub-agents on top of Durable Objects.
+- The Agents client SDK provides `useAgent`, `AgentClient`, and `agentFetch`. Use the WebSocket clients for realtime state/RPC/reconnect behavior, and `agentFetch` only for one-off request/response calls.
 - Agent state sync is useful for compact JSON state shared with connected clients, but it should not be treated as the full workspace filesystem or the high-frequency editor collaboration log.
+- Agent readonly connections can map naturally to viewer/spectator roles, but they only protect Agent state/RPC writes. Thinkex still needs server-side membership and command validation.
+- Agents queue, schedule, and durable fiber APIs are useful for local background work owned by a kernel or AI thread. Cloudflare Workflows are the better fit for longer multi-step jobs with retries, sleeps, and external approvals.
 - Agent sub-agents are co-located child Durable Objects with isolated SQLite storage and typed parent-child RPC. This is close to a workspace parent with item children.
 - Project Think introduces an execution ladder: durable workspace filesystem, sandboxed JavaScript in Dynamic Workers, npm-enabled Dynamic Workers, browser automation, and finally full Linux sandboxes.
 - `@cloudflare/shell` is the durable workspace filesystem layer in that ladder. It exposes a filesystem API backed by SQL with optional R2 spillover for large files. Thinkex should use its Durable Object SQLite path as the workspace storage base.
@@ -56,6 +59,8 @@ Relevant Cloudflare findings:
 - Durable Objects support jurisdiction restrictions and location hints, but currently do not dynamically move existing objects after creation.
 - The current Thinkex user-AI implementation uses the target parent/sub-agent shape: one `UserAIStore` Agent per user and one `AIThread` sub-agent per thread.
 - The tldraw Cloudflare sync reference uses the same storage split proposed here for live items: a Durable Object per collaborative room persists room state in SQLite, while static uploaded images/videos bypass the room DO and live in R2. The collaborative document stores URL/pointer records for those R2 assets.
+- Hocuspocus v4 now documents Cloudflare Workers support. It is a plausible later Tiptap/Yjs `DocumentSession` option, but it does not remove the need for the root workspace kernel, command log, or snapshot/checkpoint boundary.
+- Yjs remains the likely CRDT layer for rich text/code collaboration because it separates editor bindings from providers and supports awareness/offline patterns. It should live at item-session scope, not root-workspace scope.
 
 Primary references:
 
@@ -65,9 +70,16 @@ Primary references:
 - Durable Object WebSockets: https://developers.cloudflare.com/durable-objects/best-practices/websockets/
 - Durable Object data location: https://developers.cloudflare.com/durable-objects/reference/data-location/
 - Cloudflare Agents state: https://developers.cloudflare.com/agents/api-reference/store-and-sync-state/
+- Cloudflare Agents client SDK: https://developers.cloudflare.com/agents/api-reference/client-sdk/
+- Cloudflare Agents callable methods: https://developers.cloudflare.com/agents/api-reference/callable-methods/
+- Cloudflare Agents readonly connections: https://developers.cloudflare.com/agents/api-reference/readonly-connections/
+- Cloudflare Agents queue tasks: https://developers.cloudflare.com/agents/api-reference/queue-tasks/
+- Cloudflare Agents schedule tasks: https://developers.cloudflare.com/agents/api-reference/schedule-tasks/
+- Cloudflare Agents durable execution: https://developers.cloudflare.com/agents/api-reference/durable-execution/
 - Cloudflare Agents sub-agents: https://developers.cloudflare.com/agents/api-reference/sub-agents/
 - Cloudflare Agent tools: https://developers.cloudflare.com/agents/api-reference/agent-tools/
 - Cloudflare Think API: https://developers.cloudflare.com/agents/api-reference/think/
+- Cloudflare Workflows: https://developers.cloudflare.com/workflows/
 - Project Think announcement: https://blog.cloudflare.com/project-think/
 - Cloudflare Sandbox SDK: https://developers.cloudflare.com/sandbox/
 - Cloudflare Sandbox commands: https://developers.cloudflare.com/sandbox/api/commands/
@@ -76,6 +88,9 @@ Primary references:
 - AI Search metadata: https://developers.cloudflare.com/ai-search/configuration/metadata/
 - AI Search per-tenant search: https://developers.cloudflare.com/ai-search/how-to/per-tenant-search/
 - tldraw Cloudflare sync example: https://github.com/tldraw/tldraw-sync-cloudflare
+- tldraw sync docs: https://tldraw.dev/docs/sync
+- Hocuspocus docs: https://tiptap.dev/docs/hocuspocus
+- Yjs collaborative editor guide: https://docs.yjs.dev/getting-started/a-collaborative-editor
 - Local tldraw reference clone: `references/tldraw-sync-cloudflare`
 - Local package evidence:
   - `node_modules/@cloudflare/shell/dist/filesystem-BKxpZmkl.d.ts`
@@ -114,6 +129,7 @@ Important current implementation anchors:
 - The UI connects to `UserAIStore` and targets a thread with `sub: [{ agent: "AIThread", name: threadId }]`.
 - `UserAIStore` owns user AI UX state such as thread title, running status, unread state, last viewed time, and archived/deleted thread membership.
 - Postgres no longer owns the workspace item tree, snapshots, assets, search rows, item events, or per-item user state.
+- The current workspace realtime bridge broadcasts coarse events but does not yet persist kernel events, assign revisions, or patch TanStack Query caches from a shared event applier.
 
 This draft changes that center of gravity for the workspace body only. It does not imply removing relational storage for users, organizations, billing, workspace directory records, or global product metadata.
 
@@ -368,6 +384,95 @@ Rules:
 - Every command creates a durable event.
 - Every event can update local state, broadcast realtime messages, and enqueue derived work.
 - AI writes use the same command API as user writes. AI must not mutate SQLite tables directly.
+
+## Command, Event, And Cache Foundation
+
+The new research changes the next foundation step: Cloudflare gives Thinkex the durable actor, SQLite storage, websocket transport, Agent RPC, background primitives, and R2/Sandbox integrations. It does not give us an application-level workspace command log, revision protocol, or TanStack Query cache coherence layer.
+
+Thinkex should add that thin layer before building richer editors:
+
+```ts
+type WorkspaceCommandResult<T> = {
+  result: T;
+  event?: WorkspaceEvent;
+  revision: number;
+};
+```
+
+Initial kernel-local tables:
+
+- `kernel_items`: item registry and shell path mapping.
+- `kernel_events`: append-only committed workspace events.
+- `kernel_meta`: small key-value records such as the current workspace revision.
+
+Potential `kernel_events` shape:
+
+```txt
+id
+revision
+type
+actor_user_id
+client_mutation_id
+payload_json
+created_at
+```
+
+The kernel command path should own event creation:
+
+```txt
+Workspace UI / AI tool
+  calls server function or direct kernel tool
+
+Server function
+  validates central membership and user role
+  calls WorkspaceKernel command
+
+WorkspaceKernel command
+  validates local item capability
+  mutates kernel_items and/or @cloudflare/shell
+  increments revision
+  writes kernel_events row
+  broadcasts workspace.event
+  returns { result, event, revision }
+```
+
+This replaces the current temporary pattern where the server mutates the kernel and then separately schedules a broadcast. Separate scheduling is fine as a bridge, but it can drift from the committed write. The durable event should be created in the same kernel turn as the mutation so the websocket broadcast, cache update, and future replay all refer to the same committed fact.
+
+Event payload rules:
+
+- Tree events should contain enough data to patch the cached workspace page without a full refetch: created item summary, renamed item fields, move target/order, deleted item ids.
+- Content events should include item id and content revision/version, not full large content.
+- Asset events should include pointer metadata, not the bytes.
+- Events should include `clientMutationId` so the originating browser can ignore its own optimistic echo.
+- Events should be idempotent for cache application. Applying the same event twice should not duplicate items or corrupt ordering.
+
+Client cache rules:
+
+- A single cache adapter should apply workspace events to TanStack Query caches.
+- Mutation success and websocket events should call the same adapter.
+- Clients should track the last seen workspace revision.
+- If the next event revision is contiguous, apply it locally.
+- If a revision gap appears after reconnect/hibernation/missed messages, refetch `getPage` first.
+- Later, add `getEventsSince(revision)` so reconnects can replay a short event tail before falling back to full page refetch.
+
+Cloudflare primitive mapping:
+
+- Use Durable Object SQLite for the command log and revision counter.
+- Use `this.broadcast()` through `WorkspaceKernel` for compact realtime events.
+- Use the Agents client SDK for browser connections, reconnects, and optional callable browser RPC.
+- Use direct Durable Object RPC for same-Worker server functions and AI tools.
+- Use Agent readonly connections for view-only websocket clients when role data is available at connect time.
+- Use Agent `queue()` for short kernel-local derived work that can retry.
+- Use Agent schedules for workspace-local timers or cleanup.
+- Use Agent fibers for recoverable work that belongs inside a single kernel or AI thread.
+- Use Workflows for extraction, transcription, OCR, indexing, approvals, and other multi-step jobs that should survive independently of a single Agent turn.
+
+What not to use:
+
+- Do not use Agent `setState` as the full item tree or document body.
+- Do not use the AI thread's Think workspace as the shared user workspace.
+- Do not use R2 as a queryable workspace database. R2 stores bytes; kernel SQLite stores the manifest and pointers.
+- Do not put high-frequency Tiptap/Yjs updates through the root workspace event log. Checkpoint meaningful document/session state back to the kernel.
 
 ## AI Execution Ladder
 
@@ -674,10 +779,10 @@ Current implementation direction:
 - Server functions check Postgres workspace membership.
 - Server functions call `WorkspaceKernel` commands.
 - Kernel commands mutate DO SQLite and `@cloudflare/shell`.
-- The server schedules a compact `workspace.event` broadcast through `WorkspaceKernel`.
+- The current bridge still has the server schedule a compact `workspace.event` broadcast through `WorkspaceKernel`.
 - The UI connects to `WorkspaceKernel` through `useAgent`, receives custom workspace messages, and invalidates TanStack Query workspace caches.
 
-This is intentionally coarse for the first kernel phase. Later, events can include enough payload for optimistic multi-client cache updates without forcing every client to refetch the full workspace page.
+This bridge is intentionally coarse for the first kernel phase. The next foundation step is to move event creation, revision assignment, and broadcast into the kernel command itself, then have mutations and realtime messages apply the same cache event adapter. That makes reconnect, optimistic updates, AI writes, and future event replay one protocol instead of separate paths.
 
 The tldraw reference demonstrates this item-level model for whiteboards:
 
@@ -834,7 +939,7 @@ Migration posture:
 
 ### Phase 0: Stop Building On Postgres Workspace Body
 
-Stop treating the current Postgres workspace body tables as a product surface. Remove them from the schema and let item operations fail loudly until the kernel path is available.
+Stop treating the current Postgres workspace body tables as a product surface. Remove them from the schema and route item operations through the kernel path only.
 
 Central Postgres should remain responsible for:
 
@@ -873,7 +978,22 @@ For workspaces:
 
 Development workspace data can be reset instead of migrated.
 
-### Phase 3: AI Tools Over Shell-Backed Kernel
+### Phase 3: Command, Event, And Cache Protocol
+
+Before adding more item UIs, turn the current coarse realtime bridge into a durable protocol:
+
+- add `kernel_events` and `kernel_meta`
+- assign monotonic workspace revisions inside `WorkspaceKernel`
+- return `{ result, event, revision }` from mutating kernel commands
+- broadcast events from the kernel after the committed write
+- include `clientMutationId` on mutating commands and events
+- build one TanStack Query event applier used by mutation success and websocket messages
+- refetch the workspace page on reconnect or event revision gaps
+- keep current full-page invalidation as the fallback, not the default success path
+
+This is the foundation for manual changes, other users' changes, and AI writes to stay synchronized without duplicating cache behavior.
+
+### Phase 4: AI Tools Over Shell-Backed Kernel
 
 Expose the first safe AI tools over the kernel:
 
@@ -886,7 +1006,7 @@ Expose the first safe AI tools over the kernel:
 
 Then test `createExecuteTool` with a restricted Dynamic Worker loader for multi-file or multi-item automation. Keep network access blocked unless an explicit product workflow allows it.
 
-### Phase 4: Document Sessions For Live Collaboration
+### Phase 5: Document Sessions For Live Collaboration
 
 Introduce document sessions only for item types that need high-frequency collaboration.
 
@@ -897,7 +1017,7 @@ Initial candidates:
 
 Do not create document sessions for passive PDFs, images, or audio playback unless a workflow proves it needs one.
 
-### Phase 5: Real Sandbox Execution
+### Phase 6: Real Sandbox Execution
 
 Add Cloudflare Sandbox SDK only after the durable workspace and safe AI tools work.
 
@@ -910,7 +1030,7 @@ Initial sandbox tasks should be explicit, bounded, and user-visible:
 
 The sandbox should use per-task or per-session naming. Do not make one always-on sandbox per workspace unless a workflow proves it needs that cost and state model.
 
-### Phase 6: Deferred Cross-Workspace Memory
+### Phase 7: Deferred Cross-Workspace Memory
 
 After the workspace kernel exists and basic AI tools read through it, publish derived memory from workspace kernels to a central retrieval layer.
 
@@ -1004,6 +1124,8 @@ This is a real cost of the kernel-first model.
 - Large content must spill to R2 because of DO row limits.
 - `@cloudflare/shell` is experimental/new enough that package boundaries may shift.
 - Shell's filesystem abstraction may not perfectly match Thinkex item semantics, so a product registry layer is still required.
+- The event/revision/cache layer is app-owned. If it is underspecified, manual UI changes, AI writes, and remote collaborators will diverge.
+- Hocuspocus/Yjs/tldraw are useful item-session libraries, but each brings its own protocol and persistence model that must checkpoint through the kernel instead of becoming a second workspace truth.
 - Dynamic Worker `execute` is powerful but must be capability-scoped; otherwise it can become an unaudited write path.
 - Full Cloudflare Sandbox SDK introduces container cold starts, paid-plan requirements, lifecycle complexity, and a larger security review.
 - In-memory DO state is not durable across hibernation or restart.
@@ -1044,53 +1166,58 @@ This is a real cost of the kernel-first model.
 15. How should billing and quotas account for per-workspace DO storage, R2 bytes, sandbox runtime, indexing rows, and AI usage?
 16. How should tests create, reset, inspect, and seed kernel-backed workspaces?
 17. What user-facing workflows truly need Cloudflare Sandbox SDK versus Shell plus Dynamic Worker execute?
+18. Should the first Tiptap `DocumentSession` use Hocuspocus v4 on Workers, a custom Yjs Durable Object, or another provider once the kernel checkpoint contract exists?
 
 ## Near-Term Recommendation
 
-Build `WorkspaceKernel` now and make it the only workspace-body path.
+Keep `WorkspaceKernel` as the only workspace-body path and harden the protocol around it before adding richer editors.
 
 Do not spend more time expanding the Postgres workspace body as the canonical model. Keep central Postgres for account, organization, membership, and workspace directory data.
 
-The first implementation should be small. The first preparatory slice is already useful before `WorkspaceKernel` exists:
+Already completed in the current foundation branch:
 
-- use the settled `UserAIStore` / `AIThread` runtime names
-- route user AI through `/user-ai`
-- keep private AI thread state in `UserAIStore` / `AIThread`
-- move AI workspace reads behind `workspace-kernel-access`
-
-The next implementation step should add:
-
-- `WorkspaceKernel` binding and migration
-- SQLite schema setup in `onStart`
+- `WorkspaceKernel` binding and SQLite migration
 - `@cloudflare/shell` `Workspace` initialized against `this.ctx.storage.sql`
-- R2-backed Shell spillover wiring if the binding is ready
-- a minimal product registry that maps stable item ids to Shell paths
-- `getPage`, `listItems`, `createItem`, `renameItem`, `moveItem`, and `deleteItem`
+- minimal product registry that maps stable item ids to Shell paths
+- `getPage`, `listItems`, `createItem`, `renameItem`, `moveItem`, `deleteItem`, `readItem`, and `writeItem`
 - route loader support for kernel-mode workspaces
 - `workspace-kernel-access` backed by `WorkspaceKernel`
-- R2 asset pointer shape defined early, even if upload UX stays minimal
+- `UserAIStore` / `AIThread` runtime names and `/user-ai` routing
+- `AIThread` reads routed through `workspace-kernel-access`
+- browser workspace presence connected through the Agents client SDK
+
+The next implementation step should not be another item UI. It should be the command/event/cache foundation:
+
+- add `kernel_events` and `kernel_meta`
+- return command envelopes with `result`, `event`, and `revision`
+- move event creation and broadcasting into `WorkspaceKernel`
+- thread `clientMutationId` through user mutations
+- build `applyWorkspaceEventToCache(queryClient, event)`
+- use the same event applier from mutation success and websocket messages
+- refetch on reconnect or revision gaps
+- keep R2 asset pointer shape defined early, even if upload UX stays minimal
 
 ## Prototype Spikes
 
 Before broad feature work, run small implementation spikes:
 
-1. Minimal WorkspaceKernel
-   - Create a kernel-backed workspace using `@cloudflare/shell`.
-   - Create directories/files through Shell.
-   - Maintain a minimal registry row per product item.
-   - Load the workspace page from the kernel.
-   - Create, rename, move, and delete items through kernel commands.
-   - Verify whether Shell paths can support the UI tree without custom storage.
+1. Command/event/cache protocol
+   - Add durable kernel event rows and revision tracking.
+   - Return command envelopes from every mutating kernel method.
+   - Broadcast only committed kernel events.
+   - Patch TanStack Query caches from a shared event applier.
+   - Verify same-tab optimistic writes, second-browser writes, AI writes, reconnect refetch, and revision-gap fallback.
 
 2. Shell Tool Surface
    - Expose read/list/grep/edit through kernel-safe tools.
    - Confirm large files spill to R2 without changing the read API.
    - Confirm path traversal, MIME/type restrictions, and permission checks stay in the kernel.
 
-3. AIThread to WorkspaceKernel
-   - Change `AIThread` tools to call `WorkspaceKernel`.
+3. AIThread write tools
    - Keep chat transcript private in `UserAIStore` / `AIThread`.
-   - Make workspace mutations visible through kernel events.
+   - Add first write-capable tools through `workspace-kernel-access`.
+   - Make AI mutations produce the same kernel events as user mutations.
+   - Require approval for destructive or bulk operations.
 
 4. Dynamic Worker Execute
    - Add `createExecuteTool` only after basic kernel tools exist.
