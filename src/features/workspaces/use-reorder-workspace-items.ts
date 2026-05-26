@@ -12,7 +12,6 @@ import type {
 	ReorderWorkspaceItemsInput,
 	ReorderWorkspaceItemsResult,
 } from "#/features/workspaces/contracts";
-import { debugWorkspaceDnd } from "#/features/workspaces/model/drag";
 import { reorderWorkspaceItemsFn } from "#/features/workspaces/server/functions";
 import {
 	useWorkspaceClientMutationEcho,
@@ -48,17 +47,7 @@ export function useReorderWorkspaceItemsMutation() {
 		mutationKey: workspaceItemOrderingMutationKey,
 		scope: workspaceItemOrderingMutationScope,
 		mutationFn: (input: ReorderWorkspaceItemsInput) => {
-			const scopeKey = getWorkspaceItemOrderScopeKey(input);
 			const clientMutationId = clientMutationEcho.getClientMutationId(input);
-
-			debugWorkspaceDnd("reorder:request", {
-				scopeKey,
-				clientMutationId,
-				row: input.row,
-				parentId: input.parentId,
-				movedItemId: input.movedItemId,
-				orderedItemIds: input.orderedItemIds,
-			});
 
 			return reorderWorkspaceItems({
 				data: {
@@ -75,16 +64,6 @@ export function useReorderWorkspaceItemsMutation() {
 			clientMutationEcho.trackClientMutationId(input, clientMutationId);
 			reorderSequences.current.set(scopeKey, sequence);
 
-			debugWorkspaceDnd("reorder:onMutate:start", {
-				scopeKey,
-				sequence,
-				clientMutationId,
-				row: input.row,
-				parentId: input.parentId,
-				movedItemId: input.movedItemId,
-				orderedItemIds: input.orderedItemIds,
-			});
-
 			return {
 				scopeKey,
 				sequence,
@@ -93,42 +72,17 @@ export function useReorderWorkspaceItemsMutation() {
 		},
 		onSuccess: (result: ReorderWorkspaceItemsResult, _input, context) => {
 			if (!isLatestReorder(context)) {
-				debugWorkspaceDnd("reorder:onSuccess:stale", {
-					scopeKey: context?.scopeKey,
-					sequence: context?.sequence,
-					clientMutationId: context?.clientMutationId,
-					resultItemIds: result.items.map((item) => item.id),
-				});
 				return;
 			}
 
 			applyWorkspaceItemReorderInCaches(queryClient, result);
-			debugWorkspaceDnd("reorder:onSuccess:applied", {
-				scopeKey: context?.scopeKey,
-				sequence: context?.sequence,
-				clientMutationId: context?.clientMutationId,
-				resultItemIds: result.items.map((item) => item.id),
-			});
 		},
 		onError: (error, input, context) => {
 			if (!isLatestReorder(context)) {
-				debugWorkspaceDnd("reorder:onError:stale", {
-					scopeKey: context?.scopeKey,
-					sequence: context?.sequence,
-					clientMutationId: context?.clientMutationId,
-					error: getErrorMessage(error, "Unable to reorder items right now."),
-				});
 				return;
 			}
 
 			toast.error(getErrorMessage(error, "Unable to reorder items right now."));
-			debugWorkspaceDnd("reorder:onError", {
-				scopeKey: context?.scopeKey,
-				sequence: context?.sequence,
-				clientMutationId: context?.clientMutationId,
-				error: getErrorMessage(error, "Unable to reorder items right now."),
-				orderedItemIds: input.orderedItemIds,
-			});
 
 			if (
 				queryClient.isMutating({
@@ -149,13 +103,6 @@ export function useReorderWorkspaceItemsMutation() {
 			if (!context) {
 				return;
 			}
-
-			debugWorkspaceDnd("reorder:onSettled", {
-				scopeKey: context.scopeKey,
-				sequence: context.sequence,
-				clientMutationId: context.clientMutationId,
-				hasError: Boolean(_error),
-			});
 
 			setTimeout(() => {
 				clientMutationEcho.forgetClientMutationId(context.clientMutationId);

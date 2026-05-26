@@ -15,7 +15,6 @@ import type {
 	WorkspaceItemSummary,
 	WorkspacePage,
 } from "#/features/workspaces/contracts";
-import { debugWorkspaceDnd } from "#/features/workspaces/model/drag";
 import { moveWorkspaceItemFn } from "#/features/workspaces/server/functions";
 import {
 	useWorkspaceClientMutationEcho,
@@ -51,13 +50,6 @@ export function useMoveWorkspaceItemMutation() {
 		mutationFn: (input: MoveWorkspaceItemInput) => {
 			const clientMutationId = clientMutationEcho.getClientMutationId(input);
 
-			debugWorkspaceDnd("move:request", {
-				clientMutationId,
-				workspaceId: input.workspaceId,
-				itemId: input.itemId,
-				targetParentId: input.targetParentId,
-			});
-
 			return moveWorkspaceItem({
 				data: {
 					...input,
@@ -87,14 +79,6 @@ export function useMoveWorkspaceItemMutation() {
 			clientMutationEcho.trackClientMutationId(input, clientMutationId);
 			moveSequences.current.set(input.itemId, sequence);
 
-			debugWorkspaceDnd("move:onMutate:start", {
-				sequence,
-				clientMutationId,
-				workspaceId: input.workspaceId,
-				itemId: input.itemId,
-				targetParentId: input.targetParentId,
-			});
-
 			optimisticallyMoveWorkspaceItemInCaches(queryClient, input);
 
 			return {
@@ -107,33 +91,13 @@ export function useMoveWorkspaceItemMutation() {
 		},
 		onSuccess: (result: MoveWorkspaceItemResult, _input, context) => {
 			if (!isLatestMove(context)) {
-				debugWorkspaceDnd("move:onSuccess:stale", {
-					itemId: context?.itemId,
-					sequence: context?.sequence,
-					clientMutationId: context?.clientMutationId,
-					targetParentId: result.item.parentId,
-				});
 				return;
 			}
 
 			applyWorkspaceItemMoveInCaches(queryClient, result);
-			debugWorkspaceDnd("move:onSuccess:applied", {
-				itemId: context?.itemId,
-				sequence: context?.sequence,
-				clientMutationId: context?.clientMutationId,
-				targetParentId: result.item.parentId,
-				sourceItemIds: result.source.items.map((item) => item.id),
-				destinationItemIds: result.destination.items.map((item) => item.id),
-			});
 		},
 		onError: (error, input, context) => {
 			if (!isLatestMove(context)) {
-				debugWorkspaceDnd("move:onError:stale", {
-					itemId: context?.itemId,
-					sequence: context?.sequence,
-					clientMutationId: context?.clientMutationId,
-					error: getErrorMessage(error, "Unable to move item right now."),
-				});
 				return;
 			}
 
@@ -156,29 +120,11 @@ export function useMoveWorkspaceItemMutation() {
 				}
 			}
 			toast.error(getErrorMessage(error, "Unable to move item right now."));
-			debugWorkspaceDnd("move:onError", {
-				itemId: context?.itemId,
-				sequence: context?.sequence,
-				clientMutationId: context?.clientMutationId,
-				targetParentId: input.targetParentId,
-				error: getErrorMessage(error, "Unable to move item right now."),
-				restored:
-					queryClient.isMutating({
-						mutationKey: workspaceItemOrderingMutationKey,
-					}) === 1,
-			});
 		},
 		onSettled: (_result, _error, _input, context) => {
 			if (!context) {
 				return;
 			}
-
-			debugWorkspaceDnd("move:onSettled", {
-				itemId: context.itemId,
-				sequence: context.sequence,
-				clientMutationId: context.clientMutationId,
-				hasError: Boolean(_error),
-			});
 
 			setTimeout(() => {
 				clientMutationEcho.forgetClientMutationId(context.clientMutationId);

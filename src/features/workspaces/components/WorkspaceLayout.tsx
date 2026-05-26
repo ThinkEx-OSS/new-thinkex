@@ -41,8 +41,6 @@ import type {
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import {
-	debugWorkspaceDnd,
-	getSortableDebugFields,
 	getWorkspaceDragIntent,
 	shouldPreventWorkspaceItemOptimisticSorting,
 	shouldPreventWorkspacePointerActivation,
@@ -151,23 +149,8 @@ export function WorkspaceShell({
 
 			if (event.type === "workspace.items.reordered") {
 				if (shouldIgnoreWorkspaceItemReorderEvent(event.payload)) {
-					debugWorkspaceDnd("realtime:reorder:ignore-local-echo", {
-						eventId: event.id,
-						clientMutationId: event.payload.clientMutationId,
-						parentId: event.payload.parentId,
-						row: event.payload.row,
-						itemIds: event.payload.items.map((item) => item.id),
-					});
 					return;
 				}
-
-				debugWorkspaceDnd("realtime:reorder:apply", {
-					eventId: event.id,
-					clientMutationId: event.payload.clientMutationId,
-					parentId: event.payload.parentId,
-					row: event.payload.row,
-					itemIds: event.payload.items.map((item) => item.id),
-				});
 
 				applyWorkspaceItemReorderInCaches(queryClient, {
 					workspaceId: event.workspaceId,
@@ -180,23 +163,8 @@ export function WorkspaceShell({
 
 			if (event.type === "workspace.item.moved") {
 				if (shouldIgnoreWorkspaceItemMoveEvent(event.payload)) {
-					debugWorkspaceDnd("realtime:move:ignore-local-echo", {
-						eventId: event.id,
-						clientMutationId: event.payload.clientMutationId,
-						itemId: event.payload.item.id,
-						sourceParentId: event.payload.source.parentId,
-						destinationParentId: event.payload.destination.parentId,
-					});
 					return;
 				}
-
-				debugWorkspaceDnd("realtime:move:apply", {
-					eventId: event.id,
-					clientMutationId: event.payload.clientMutationId,
-					itemId: event.payload.item.id,
-					sourceParentId: event.payload.source.parentId,
-					destinationParentId: event.payload.destination.parentId,
-				});
 
 				applyWorkspaceItemMoveInCaches(queryClient, {
 					workspaceId: event.workspaceId,
@@ -345,9 +313,6 @@ export function WorkspaceShell({
 				next.delete(input.orderScopeKey);
 				return next;
 			});
-			debugWorkspaceDnd("reorder:save-canceled", {
-				orderScopeKey: input.orderScopeKey,
-			});
 		},
 		[],
 	);
@@ -368,13 +333,6 @@ export function WorkspaceShell({
 				input.mutationInput,
 			);
 
-			debugWorkspaceDnd("reorder:save-scheduled", {
-				orderScopeKey: input.orderScopeKey,
-				debounceMs: WORKSPACE_ITEM_REORDER_SAVE_DEBOUNCE_MS,
-				movedItemId: input.mutationInput.movedItemId,
-				orderedItemIds: input.mutationInput.orderedItemIds,
-			});
-
 			const timer = setTimeout(() => {
 				const latestInput = pendingReorderInputs.current.get(
 					input.orderScopeKey,
@@ -386,12 +344,6 @@ export function WorkspaceShell({
 				if (!latestInput) {
 					return;
 				}
-
-				debugWorkspaceDnd("reorder:save-fired", {
-					orderScopeKey: input.orderScopeKey,
-					movedItemId: latestInput.movedItemId,
-					orderedItemIds: latestInput.orderedItemIds,
-				});
 
 				reorderWorkspaceItemsMutation.mutate(latestInput, {
 					onError: () => {
@@ -443,12 +395,6 @@ export function WorkspaceShell({
 			sensors={workspaceDragSensors}
 			onDragOver={(event) => {
 				if (shouldPreventWorkspaceItemOptimisticSorting(event)) {
-					debugWorkspaceDnd("dragover:prevent-cross-row-sort", {
-						sourceId: event.operation.source?.id,
-						sourceType: event.operation.source?.type,
-						targetId: event.operation.target?.id,
-						targetType: event.operation.target?.type,
-					});
 					event.preventDefault();
 				}
 			}}
@@ -463,7 +409,6 @@ export function WorkspaceShell({
 				if (intent) {
 					switch (intent.kind) {
 						case "move-tab-in-strip":
-							debugWorkspaceDnd("dragend:tab-command", { intent });
 							dispatchWorkspaceDragCommand({
 								type: "move-tab-in-strip",
 								tabId: intent.tabId,
@@ -471,7 +416,6 @@ export function WorkspaceShell({
 							});
 							return;
 						case "reorder-tabs-over-tab":
-							debugWorkspaceDnd("dragend:tab-command", { intent });
 							dispatchWorkspaceDragCommand({
 								type: "reorder-tabs-over-tab",
 								activeTabId: intent.activeTabId,
@@ -479,30 +423,13 @@ export function WorkspaceShell({
 							});
 							return;
 						case "open-item-tab":
-							debugWorkspaceDnd("dragend:item-tab-insert", {
-								sourceId: event.operation.source?.id,
-								sourceType: event.operation.source?.type,
-								targetId: event.operation.target?.id,
-								targetType: event.operation.target?.type,
-								insertIndex: intent.insertIndex,
-							});
 							openItemInNewTab(intent);
 							return;
 						case "move-item-blocked":
-							debugWorkspaceDnd("dragend:item-move-blocked", intent.resolution);
 							return;
 						case "move-item":
 							cancelWorkspaceItemReorderSave({
 								orderScopeKey: intent.resolution.sourceOrderScopeKey,
-							});
-							debugWorkspaceDnd("dragend:item-move", {
-								sourceId: event.operation.source?.id,
-								sourceType: event.operation.source?.type,
-								targetId: event.operation.target?.id,
-								targetType: event.operation.target?.type,
-								...getSortableDebugFields(event.operation),
-								moveInput: intent.resolution.mutationInput,
-								sourceOrderScopeKey: intent.resolution.sourceOrderScopeKey,
 							});
 							moveWorkspaceItemMutation.mutate(intent.resolution.mutationInput);
 							return;
@@ -519,15 +446,6 @@ export function WorkspaceShell({
 								);
 								return next;
 							});
-							debugWorkspaceDnd("dragend:item-reorder", {
-								sourceId: event.operation.source?.id,
-								sourceType: event.operation.source?.type,
-								targetId: event.operation.target?.id,
-								targetType: event.operation.target?.type,
-								...getSortableDebugFields(event.operation),
-								reorderInput: intent.mutationInput,
-								orderScopeKey: intent.orderScopeKey,
-							});
 							scheduleWorkspaceItemReorderSave({
 								orderScopeKey: intent.orderScopeKey,
 								mutationInput: intent.mutationInput,
@@ -535,15 +453,6 @@ export function WorkspaceShell({
 							return;
 					}
 				}
-
-				debugWorkspaceDnd("dragend:no-op", {
-					canceled: event.canceled ?? event.operation.canceled,
-					sourceId: event.operation.source?.id,
-					sourceType: event.operation.source?.type,
-					targetId: event.operation.target?.id,
-					targetType: event.operation.target?.type,
-					...getSortableDebugFields(event.operation),
-				});
 			}}
 		>
 			<WorkspaceFrame

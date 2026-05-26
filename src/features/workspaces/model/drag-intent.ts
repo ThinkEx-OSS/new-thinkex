@@ -227,34 +227,6 @@ export function shouldPreventWorkspacePointerActivation(
 	return Boolean(interactiveElement);
 }
 
-export function getSortableDebugFields(
-	operation: DndDragEndEvent["operation"],
-) {
-	const source = operation.source as
-		| {
-				index?: unknown;
-				initialIndex?: unknown;
-				group?: unknown;
-				initialGroup?: unknown;
-		  }
-		| null
-		| undefined;
-	const target = operation.target as
-		| {
-				group?: unknown;
-		  }
-		| null
-		| undefined;
-
-	return {
-		sourceIndex: source?.index,
-		sourceInitialIndex: source?.initialIndex,
-		sourceGroup: source?.group,
-		sourceInitialGroup: source?.initialGroup,
-		targetGroup: target?.group,
-	};
-}
-
 export function getWorkspaceItemMoveResolution(input: {
 	event: DndDragEndEvent;
 	items: WorkspaceItem[];
@@ -449,54 +421,4 @@ function isWorkspaceItemDescendantOf(
 	}
 
 	return false;
-}
-
-export function debugWorkspaceDnd(
-	event: string,
-	payload?: Record<string, unknown>,
-) {
-	console.debug(
-		`[workspace-dnd] ${JSON.stringify({
-			event,
-			...normalizeDebugPayload(payload),
-		})}`,
-	);
-}
-
-function normalizeDebugPayload(payload: Record<string, unknown> | undefined) {
-	if (!payload) {
-		return {};
-	}
-
-	return Object.fromEntries(
-		Object.entries(payload).map(([key, value]) => [
-			key,
-			normalizeDebugValue(value),
-		]),
-	);
-}
-
-function normalizeDebugValue(value: unknown): unknown {
-	if (typeof value === "bigint") {
-		return value.toString();
-	}
-
-	if (value instanceof Error) {
-		return value.message;
-	}
-
-	if (Array.isArray(value)) {
-		return value.map(normalizeDebugValue);
-	}
-
-	if (value && typeof value === "object") {
-		return Object.fromEntries(
-			Object.entries(value).map(([key, nestedValue]) => [
-				key,
-				normalizeDebugValue(nestedValue),
-			]),
-		);
-	}
-
-	return value;
 }
