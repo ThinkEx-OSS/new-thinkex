@@ -12,7 +12,7 @@ import {
 	ResizablePanelGroup,
 } from "#/components/ui/resizable";
 import {
-	workspaceItemContentQueryKey,
+	applyWorkspaceEventToCache,
 	workspacePageQueryKey,
 } from "#/features/workspaces/cache";
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
@@ -43,6 +43,7 @@ import {
 	type WorkspacePane,
 	type WorkspacePresentation,
 } from "#/features/workspaces/state/workspace-ui-store";
+import { shouldIgnoreWorkspaceClientMutationEcho } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import {
 	useCreateWorkspaceItemMutation,
 	useMoveWorkspaceItemMutation,
@@ -75,6 +76,7 @@ const workspaceDragSensors = [
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;
 	items: WorkspaceItem[];
+	revision: number;
 	activeTabIdFromUrl?: string;
 	activeViewFromUrl?: string;
 }
@@ -88,6 +90,7 @@ interface WorkspaceFrameProps {
 export function WorkspaceShell({
 	workspace,
 	items,
+	revision,
 	activeTabIdFromUrl,
 	activeViewFromUrl,
 }: WorkspaceShellProps) {
@@ -103,20 +106,19 @@ export function WorkspaceShell({
 	);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
+		lastSeenRevision: revision,
 		onEvent: (event) => {
+			if (shouldIgnoreWorkspaceClientMutationEcho(event)) {
+				return;
+			}
+			applyWorkspaceEventToCache(queryClient, event);
+		},
+		onReconnect: () => {
 			queryClient.invalidateQueries({
 				queryKey: workspacePageQueryKey(workspace.id),
 			});
-			if (event.type === "workspace.item.content.updated") {
-				queryClient.invalidateQueries({
-					queryKey: workspaceItemContentQueryKey(
-						workspace.id,
-						event.payload.itemId,
-					),
-				});
-			}
 		},
-		onReconnect: () => {
+		onRevisionGap: () => {
 			queryClient.invalidateQueries({
 				queryKey: workspacePageQueryKey(workspace.id),
 			});
@@ -168,7 +170,7 @@ export function WorkspaceShell({
 				type: input.type,
 			},
 			{
-				onSuccess: (item) => openItem(item),
+				onSuccess: (command) => openItem(command.result),
 			},
 		);
 	};

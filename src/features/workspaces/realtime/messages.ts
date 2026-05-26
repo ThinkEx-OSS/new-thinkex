@@ -1,3 +1,5 @@
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
+
 export const workspaceKernelRealtimePathPrefix = "/workspace-kernel";
 
 export interface WorkspacePresenceUser {
@@ -9,32 +11,32 @@ export interface WorkspacePresenceUser {
 
 interface WorkspaceRealtimeEventBase {
 	id: string;
+	revision: number;
 	workspaceId: string;
 	createdAt: string;
 	actorUserId: string | null;
+	clientMutationId: string | null;
 }
 
 export type WorkspaceRealtimeEvent =
 	| (WorkspaceRealtimeEventBase & {
-			type: "workspace.item.created" | "workspace.item.renamed";
-			payload: { itemId: string };
-	  })
-	| (WorkspaceRealtimeEventBase & {
-			type: "workspace.item.moved";
-			payload: {
-				itemId: string;
-				parentId: string | null;
-				sortOrder?: number;
-			};
+			type:
+				| "workspace.item.created"
+				| "workspace.item.renamed"
+				| "workspace.item.moved"
+				| "workspace.item.content.updated";
+			payload: { item: WorkspaceItemSummary };
 	  })
 	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.deleted";
-			payload: { itemId: string };
-	  })
-	| (WorkspaceRealtimeEventBase & {
-			type: "workspace.item.content.updated";
-			payload: { itemId: string };
+			payload: { itemId: string; deletedItemIds: string[] };
 	  });
+
+export interface WorkspaceCommandResult<T> {
+	result: T;
+	event: WorkspaceRealtimeEvent;
+	revision: number;
+}
 
 export type WorkspaceRealtimeServerMessage =
 	| {

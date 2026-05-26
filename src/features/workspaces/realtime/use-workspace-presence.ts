@@ -12,8 +12,10 @@ type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
 interface UseWorkspaceRealtimeInput {
 	workspaceId: string;
+	lastSeenRevision?: number;
 	onEvent?: (event: WorkspaceRealtimeEvent) => void;
 	onReconnect?: () => void;
+	onRevisionGap?: (event: WorkspaceRealtimeEvent) => void;
 }
 
 function parseServerMessage(data: unknown) {
@@ -30,19 +32,25 @@ function parseServerMessage(data: unknown) {
 
 export function useWorkspaceRealtime({
 	workspaceId,
+	lastSeenRevision,
 	onEvent,
 	onReconnect,
+	onRevisionGap,
 }: UseWorkspaceRealtimeInput) {
 	const [users, setUsers] = useState<WorkspacePresenceUser[]>([]);
 	const [status, setStatus] = useState<ConnectionStatus>("connecting");
 	const hasConnectedRef = useRef(false);
+	const lastSeenRevisionRef = useRef(lastSeenRevision ?? 0);
+	const latestRevisionInputRef = useRef(lastSeenRevision ?? 0);
 	const onEventRef = useRef(onEvent);
 	const onReconnectRef = useRef(onReconnect);
+	const onRevisionGapRef = useRef(onRevisionGap);
 
 	useEffect(() => {
 		onEventRef.current = onEvent;
 		onReconnectRef.current = onReconnect;
-	}, [onEvent, onReconnect]);
+		onRevisionGapRef.current = onRevisionGap;
+	}, [onEvent, onReconnect, onRevisionGap]);
 
 	useEffect(() => {
 		if (!workspaceId) {
@@ -50,9 +58,22 @@ export function useWorkspaceRealtime({
 		}
 
 		hasConnectedRef.current = false;
+		lastSeenRevisionRef.current = latestRevisionInputRef.current;
 		setStatus("connecting");
 		setUsers([]);
 	}, [workspaceId]);
+
+	useEffect(() => {
+		if (lastSeenRevision === undefined) {
+			return;
+		}
+
+		latestRevisionInputRef.current = lastSeenRevision;
+		lastSeenRevisionRef.current = Math.max(
+			lastSeenRevisionRef.current,
+			lastSeenRevision,
+		);
+	}, [lastSeenRevision]);
 
 	const handleOpen = useCallback(() => {
 		setStatus("connected");
@@ -88,6 +109,21 @@ export function useWorkspaceRealtime({
 				message?.type === "workspace.event" &&
 				message.workspaceId === workspaceId
 			) {
+				const lastSeenRevision = lastSeenRevisionRef.current;
+
+				if (
+					lastSeenRevision > 0 &&
+					message.event.revision > lastSeenRevision + 1
+				) {
+					onRevisionGapRef.current?.(message.event);
+					lastSeenRevisionRef.current = message.event.revision;
+					return;
+				}
+
+				lastSeenRevisionRef.current = Math.max(
+					lastSeenRevisionRef.current,
+					message.event.revision,
+				);
 				onEventRef.current?.(message.event);
 			}
 		},

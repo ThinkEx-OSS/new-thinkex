@@ -1,10 +1,5 @@
 import { Workspace as ShellWorkspace } from "@cloudflare/shell";
-import {
-	Agent,
-	type Connection,
-	type ConnectionContext,
-	callable,
-} from "agents";
+import { Agent, type Connection, type ConnectionContext } from "agents";
 
 import type {
 	JsonValue,
@@ -14,6 +9,7 @@ import type {
 import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import { getDefaultWorkspaceItemName } from "#/features/workspaces/defaults";
 import type {
+	WorkspaceCommandResult,
 	WorkspaceConnectionState,
 	WorkspacePresenceUser,
 	WorkspaceRealtimeEvent,
@@ -21,6 +17,7 @@ import type {
 } from "#/features/workspaces/realtime/messages";
 
 const kernelItemsTable = "kernel_items";
+const workspaceRevisionKey = "workspace_revision";
 const itemSortStep = 1024;
 const USER_ID_HEADER = "x-thinkex-user-id";
 const USER_NAME_HEADER = "x-thinkex-user-name";
@@ -40,9 +37,20 @@ type KernelItemRow = {
 	deleted_at: number | null;
 };
 
+type KernelEventRow = {
+	id: string;
+	revision: number;
+	type: WorkspaceRealtimeEvent["type"];
+	actor_user_id: string | null;
+	client_mutation_id: string | null;
+	payload_json: string;
+	created_at: number;
+};
+
 export interface WorkspaceKernelPage {
 	workspaceId: string;
 	items: WorkspaceItemSummary[];
+	revision: number;
 }
 
 export interface ListWorkspaceKernelItemsArgs {
@@ -58,21 +66,29 @@ export interface CreateWorkspaceKernelItemArgs {
 	color?: string | null;
 	metadataJson?: Record<string, JsonValue>;
 	initialContent?: string;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
 }
 
 export interface RenameWorkspaceKernelItemArgs {
 	itemId: string;
 	name: string;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
 }
 
 export interface MoveWorkspaceKernelItemArgs {
 	itemId: string;
 	parentId?: string | null;
 	sortOrder?: number;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
 }
 
 export interface DeleteWorkspaceKernelItemArgs {
 	itemId: string;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
 }
 
 export interface ReadWorkspaceKernelItemArgs {
@@ -82,6 +98,18 @@ export interface ReadWorkspaceKernelItemArgs {
 export interface WriteWorkspaceKernelItemArgs {
 	itemId: string;
 	content: string;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
+}
+
+export interface DeleteWorkspaceKernelItemResult {
+	id: string;
+	deletedItemIds: string[];
+}
+
+export interface ListWorkspaceKernelEventsArgs {
+	afterRevision: number;
+	limit?: number;
 }
 
 export class WorkspaceKernel extends Agent<Env> {
@@ -111,6 +139,26 @@ export class WorkspaceKernel extends Agent<Env> {
 			ON kernel_items (parent_id, deleted_at, sort_order)`;
 		this.sql`CREATE INDEX IF NOT EXISTS kernel_items_type_idx
 			ON kernel_items (type, deleted_at)`;
+		this.sql`
+			CREATE TABLE IF NOT EXISTS kernel_meta (
+				key TEXT PRIMARY KEY,
+				value TEXT NOT NULL,
+				updated_at INTEGER NOT NULL
+			)
+		`;
+		this.sql`
+			CREATE TABLE IF NOT EXISTS kernel_events (
+				id TEXT PRIMARY KEY,
+				revision INTEGER NOT NULL UNIQUE,
+				type TEXT NOT NULL,
+				actor_user_id TEXT,
+				client_mutation_id TEXT,
+				payload_json TEXT NOT NULL,
+				created_at INTEGER NOT NULL
+			)
+		`;
+		this.sql`CREATE INDEX IF NOT EXISTS kernel_events_revision_idx
+			ON kernel_events (revision)`;
 	}
 
 	onConnect(
@@ -134,24 +182,14 @@ export class WorkspaceKernel extends Agent<Env> {
 		this.broadcastPresenceSnapshot();
 	}
 
-	@callable()
-	broadcastWorkspaceEvent(event: WorkspaceRealtimeEvent) {
-		this.broadcastRealtimeMessage({
-			type: "workspace.event",
-			workspaceId: this.name,
-			event,
-		});
-	}
-
-	@callable()
 	async getPage(): Promise<WorkspaceKernelPage> {
 		return {
 			workspaceId: this.name,
 			items: this.getActiveItems(),
+			revision: this.getCurrentRevision(),
 		};
 	}
 
-	@callable()
 	async listItems({
 		parentId = null,
 		limit = 80,
@@ -172,10 +210,9 @@ export class WorkspaceKernel extends Agent<Env> {
 		return rows.map((row) => this.mapItemRow(row));
 	}
 
-	@callable()
 	async createItem(
 		input: CreateWorkspaceKernelItemArgs,
-	): Promise<WorkspaceItemSummary> {
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const type = workspaceItemTypeSchema.parse(input.type);
 		const id = input.id ?? crypto.randomUUID();
 		const parentId = input.parentId ?? null;
@@ -227,13 +264,24 @@ export class WorkspaceKernel extends Agent<Env> {
 			)
 		`;
 
-		return this.requireItem(id);
+		const item = this.requireItem(id);
+		const event = this.commitWorkspaceEvent({
+			type: "workspace.item.created",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { item },
+		});
+
+		return {
+			result: item,
+			event,
+			revision: event.revision,
+		};
 	}
 
-	@callable()
 	async renameItem(
 		input: RenameWorkspaceKernelItemArgs,
-	): Promise<WorkspaceItemSummary> {
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const name = input.name.trim();
 
 		if (!name) {
@@ -247,13 +295,24 @@ export class WorkspaceKernel extends Agent<Env> {
 			WHERE id = ${input.itemId} AND deleted_at IS NULL
 		`;
 
-		return this.requireItem(input.itemId);
+		const item = this.requireItem(input.itemId);
+		const event = this.commitWorkspaceEvent({
+			type: "workspace.item.renamed",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { item },
+		});
+
+		return {
+			result: item,
+			event,
+			revision: event.revision,
+		};
 	}
 
-	@callable()
 	async moveItem(
 		input: MoveWorkspaceKernelItemArgs,
-	): Promise<WorkspaceItemSummary> {
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const parentId = input.parentId ?? null;
 
 		this.assertActiveItem(input.itemId);
@@ -269,13 +328,24 @@ export class WorkspaceKernel extends Agent<Env> {
 			WHERE id = ${input.itemId} AND deleted_at IS NULL
 		`;
 
-		return this.requireItem(input.itemId);
+		const item = this.requireItem(input.itemId);
+		const event = this.commitWorkspaceEvent({
+			type: "workspace.item.moved",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { item },
+		});
+
+		return {
+			result: item,
+			event,
+			revision: event.revision,
+		};
 	}
 
-	@callable()
 	async deleteItem(
 		input: DeleteWorkspaceKernelItemArgs,
-	): Promise<{ id: string }> {
+	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemResult>> {
 		const root = this.assertActiveItem(input.itemId);
 		const now = Date.now();
 		const deleteIds = [root.id, ...this.getDescendantIds(root.id)];
@@ -303,10 +373,21 @@ export class WorkspaceKernel extends Agent<Env> {
 			}),
 		);
 
-		return { id: root.id };
+		const result = { id: root.id, deletedItemIds: deleteIds };
+		const event = this.commitWorkspaceEvent({
+			type: "workspace.item.deleted",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { itemId: root.id, deletedItemIds: deleteIds },
+		});
+
+		return {
+			result,
+			event,
+			revision: event.revision,
+		};
 	}
 
-	@callable()
 	async readItem(input: ReadWorkspaceKernelItemArgs) {
 		const item = this.assertActiveItem(input.itemId);
 
@@ -323,10 +404,9 @@ export class WorkspaceKernel extends Agent<Env> {
 		};
 	}
 
-	@callable()
 	async writeItem(
 		input: WriteWorkspaceKernelItemArgs,
-	): Promise<WorkspaceItemSummary> {
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const item = this.assertActiveItem(input.itemId);
 
 		if (item.type === "folder") {
@@ -345,7 +425,34 @@ export class WorkspaceKernel extends Agent<Env> {
 			WHERE id = ${input.itemId} AND deleted_at IS NULL
 		`;
 
-		return this.requireItem(input.itemId);
+		const itemSummary = this.requireItem(input.itemId);
+		const event = this.commitWorkspaceEvent({
+			type: "workspace.item.content.updated",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { item: itemSummary },
+		});
+
+		return {
+			result: itemSummary,
+			event,
+			revision: event.revision,
+		};
+	}
+
+	async getEventsSince({
+		afterRevision,
+		limit = 100,
+	}: ListWorkspaceKernelEventsArgs): Promise<WorkspaceRealtimeEvent[]> {
+		const rows = this.sql<KernelEventRow>`
+			SELECT *
+			FROM kernel_events
+			WHERE revision > ${Math.max(0, afterRevision)}
+			ORDER BY revision ASC
+			LIMIT ${Math.max(1, Math.min(limit, 500))}
+		`;
+
+		return rows.map((row) => this.mapEventRow(row));
 	}
 
 	private getActiveItems() {
@@ -355,6 +462,78 @@ export class WorkspaceKernel extends Agent<Env> {
 			WHERE deleted_at IS NULL
 			ORDER BY parent_id ASC, sort_order ASC, name ASC
 		`.map((row) => this.mapItemRow(row));
+	}
+
+	private getCurrentRevision() {
+		const [row] = this.sql<{ value: string }>`
+			SELECT value
+			FROM kernel_meta
+			WHERE key = ${workspaceRevisionKey}
+			LIMIT 1
+		`;
+
+		return Number.parseInt(row?.value ?? "0", 10) || 0;
+	}
+
+	private getNextRevision() {
+		const nextRevision = this.getCurrentRevision() + 1;
+		this.sql`
+			INSERT INTO kernel_meta (key, value, updated_at)
+			VALUES (${workspaceRevisionKey}, ${String(nextRevision)}, ${Date.now()})
+			ON CONFLICT(key) DO UPDATE SET
+				value = excluded.value,
+				updated_at = excluded.updated_at
+		`;
+
+		return nextRevision;
+	}
+
+	private commitWorkspaceEvent(
+		input: Omit<
+			WorkspaceRealtimeEvent,
+			"id" | "revision" | "workspaceId" | "createdAt"
+		>,
+	) {
+		const createdAt = Date.now();
+		const event = {
+			id: crypto.randomUUID(),
+			revision: this.getNextRevision(),
+			workspaceId: this.name,
+			createdAt: new Date(createdAt).toISOString(),
+			...input,
+		} as WorkspaceRealtimeEvent;
+
+		this.sql`
+			INSERT INTO kernel_events (
+				id,
+				revision,
+				type,
+				actor_user_id,
+				client_mutation_id,
+				payload_json,
+				created_at
+			)
+			VALUES (
+				${event.id},
+				${event.revision},
+				${event.type},
+				${event.actorUserId},
+				${event.clientMutationId},
+				${JSON.stringify(event.payload)},
+				${createdAt}
+			)
+		`;
+		this.broadcastWorkspaceEvent(event);
+
+		return event;
+	}
+
+	private broadcastWorkspaceEvent(event: WorkspaceRealtimeEvent) {
+		this.broadcastRealtimeMessage({
+			type: "workspace.event",
+			workspaceId: this.name,
+			event,
+		});
 	}
 
 	private getNextSortOrder(parentId: string | null) {
@@ -479,6 +658,21 @@ export class WorkspaceKernel extends Agent<Env> {
 			updatedAt: new Date(row.updated_at).toISOString(),
 			deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
 		};
+	}
+
+	private mapEventRow(row: KernelEventRow): WorkspaceRealtimeEvent {
+		return {
+			id: row.id,
+			revision: row.revision,
+			workspaceId: this.name,
+			type: row.type,
+			actorUserId: row.actor_user_id,
+			clientMutationId: row.client_mutation_id,
+			createdAt: new Date(row.created_at).toISOString(),
+			payload: JSON.parse(
+				row.payload_json,
+			) as WorkspaceRealtimeEvent["payload"],
+		} as WorkspaceRealtimeEvent;
 	}
 
 	private broadcastPresenceSnapshot() {

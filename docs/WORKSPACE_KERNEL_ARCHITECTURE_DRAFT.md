@@ -779,10 +779,10 @@ Current implementation direction:
 - Server functions check Postgres workspace membership.
 - Server functions call `WorkspaceKernel` commands.
 - Kernel commands mutate DO SQLite and `@cloudflare/shell`.
-- The current bridge still has the server schedule a compact `workspace.event` broadcast through `WorkspaceKernel`.
-- The UI connects to `WorkspaceKernel` through `useAgent`, receives custom workspace messages, and invalidates TanStack Query workspace caches.
+- Kernel commands assign a workspace revision, persist a `kernel_events` row, and broadcast a compact `workspace.event`.
+- The UI connects to `WorkspaceKernel` through `useAgent`, receives custom workspace messages, and applies them through the shared TanStack Query event applier.
 
-This bridge is intentionally coarse for the first kernel phase. The next foundation step is to move event creation, revision assignment, and broadcast into the kernel command itself, then have mutations and realtime messages apply the same cache event adapter. That makes reconnect, optimistic updates, AI writes, and future event replay one protocol instead of separate paths.
+This gives reconnect, optimistic updates, AI writes, and future event replay one protocol instead of separate paths. The current fallback is still simple: on reconnect or revision gaps, refetch the workspace page before trying to replay event history.
 
 The tldraw reference demonstrates this item-level model for whiteboards:
 
@@ -980,7 +980,7 @@ Development workspace data can be reset instead of migrated.
 
 ### Phase 3: Command, Event, And Cache Protocol
 
-Before adding more item UIs, turn the current coarse realtime bridge into a durable protocol:
+Implemented in the current foundation branch:
 
 - add `kernel_events` and `kernel_meta`
 - assign monotonic workspace revisions inside `WorkspaceKernel`
@@ -989,7 +989,7 @@ Before adding more item UIs, turn the current coarse realtime bridge into a dura
 - include `clientMutationId` on mutating commands and events
 - build one TanStack Query event applier used by mutation success and websocket messages
 - refetch the workspace page on reconnect or event revision gaps
-- keep current full-page invalidation as the fallback, not the default success path
+- keep full-page refetch as the reconnect/revision-gap fallback, not the default success path
 
 This is the foundation for manual changes, other users' changes, and AI writes to stay synchronized without duplicating cache behavior.
 
@@ -1185,9 +1185,6 @@ Already completed in the current foundation branch:
 - `UserAIStore` / `AIThread` runtime names and `/user-ai` routing
 - `AIThread` reads routed through `workspace-kernel-access`
 - browser workspace presence connected through the Agents client SDK
-
-The next implementation step should not be another item UI. It should be the command/event/cache foundation:
-
 - add `kernel_events` and `kernel_meta`
 - return command envelopes with `result`, `event`, and `revision`
 - move event creation and broadcasting into `WorkspaceKernel`
@@ -1195,6 +1192,13 @@ The next implementation step should not be another item UI. It should be the com
 - build `applyWorkspaceEventToCache(queryClient, event)`
 - use the same event applier from mutation success and websocket messages
 - refetch on reconnect or revision gaps
+
+The next implementation step should not be another item UI. It should be the shell-backed AI tool surface:
+
+- expose read/list/grep/edit through kernel-safe tools
+- ensure AI write tools produce the same kernel command envelopes
+- start with create document and edit document tools
+- require approval for destructive or bulk operations
 - keep R2 asset pointer shape defined early, even if upload UX stays minimal
 
 ## Prototype Spikes

@@ -5,6 +5,7 @@ import type {
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
 export const workspacesQueryKey = ["workspaces"] as const;
 
@@ -23,6 +24,11 @@ export function workspaceItemContentQueryKey(
 	return ["workspaces", workspaceId, "items", itemId, "content"] as const;
 }
 
+interface WorkspaceItemContentResult {
+	item: WorkspaceItemSummary;
+	content: string | null;
+}
+
 type WorkspaceListCacheMode = "upsert" | "update-existing" | "skip";
 
 export function seedWorkspaceCaches(
@@ -30,6 +36,7 @@ export function seedWorkspaceCaches(
 	input: {
 		workspace: WorkspaceSummary;
 		items?: WorkspaceItemSummary[];
+		revision?: number;
 	},
 	options: {
 		listMode?: WorkspaceListCacheMode;
@@ -67,6 +74,7 @@ export function seedWorkspaceCaches(
 		queryClient.setQueryData(workspacePageQueryKey(workspace.id), {
 			workspace,
 			items,
+			revision: input.revision ?? 0,
 		});
 	}
 }
@@ -149,6 +157,120 @@ export function removeWorkspaceDetailCaches(
 ) {
 	queryClient.removeQueries({ queryKey: workspaceQueryKey(workspaceId) });
 	queryClient.removeQueries({ queryKey: workspacePageQueryKey(workspaceId) });
+}
+
+export function applyWorkspaceEventToCache(
+	queryClient: QueryClient,
+	event: WorkspaceRealtimeEvent,
+	options: {
+		content?: string | null;
+		invalidateRemoteContent?: boolean;
+	} = {},
+) {
+	switch (event.type) {
+		case "workspace.item.created":
+		case "workspace.item.renamed":
+		case "workspace.item.moved":
+			upsertWorkspaceItemInPageCache(queryClient, event.payload.item, event);
+			return;
+		case "workspace.item.deleted":
+			removeWorkspaceItemFromPageCache(queryClient, event);
+			return;
+		case "workspace.item.content.updated":
+			upsertWorkspaceItemInPageCache(queryClient, event.payload.item, event);
+			if (options.content !== undefined) {
+				queryClient.setQueryData<WorkspaceItemContentResult>(
+					workspaceItemContentQueryKey(
+						event.workspaceId,
+						event.payload.item.id,
+					),
+					{
+						item: event.payload.item,
+						content: options.content,
+					},
+				);
+				return;
+			}
+			if (options.invalidateRemoteContent ?? true) {
+				void queryClient.invalidateQueries({
+					queryKey: workspaceItemContentQueryKey(
+						event.workspaceId,
+						event.payload.item.id,
+					),
+				});
+			}
+			return;
+	}
+}
+
+function upsertWorkspaceItemInPageCache(
+	queryClient: QueryClient,
+	item: WorkspaceItemSummary,
+	event: WorkspaceRealtimeEvent,
+) {
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(event.workspaceId),
+		(current) => {
+			if (!current) {
+				return current;
+			}
+
+			const nextItems = current.items.some(
+				(candidate) => candidate.id === item.id,
+			)
+				? current.items.map((candidate) =>
+						candidate.id === item.id ? item : candidate,
+					)
+				: [...current.items, item];
+
+			return {
+				...current,
+				revision: Math.max(current.revision, event.revision),
+				items: nextItems.sort(compareWorkspaceItems),
+			};
+		},
+	);
+}
+
+function removeWorkspaceItemFromPageCache(
+	queryClient: QueryClient,
+	event: Extract<WorkspaceRealtimeEvent, { type: "workspace.item.deleted" }>,
+) {
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(event.workspaceId),
+		(current) => {
+			if (!current) {
+				return current;
+			}
+
+			const deletedIds = new Set(event.payload.deletedItemIds);
+
+			return {
+				...current,
+				revision: Math.max(current.revision, event.revision),
+				items: current.items.filter((item) => !deletedIds.has(item.id)),
+			};
+		},
+	);
+}
+
+function compareWorkspaceItems(
+	left: WorkspaceItemSummary,
+	right: WorkspaceItemSummary,
+) {
+	const parentDelta = (left.parentId ?? "").localeCompare(right.parentId ?? "");
+
+	if (parentDelta !== 0) {
+		return parentDelta;
+	}
+
+	const sortDelta = left.sortOrder - right.sortOrder;
+
+	if (sortDelta !== 0) {
+		return sortDelta;
+	}
+
+	return left.name.localeCompare(right.name);
 }
 
 function compareWorkspaceRecentFirst(

@@ -2,17 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
-import {
-	workspaceItemContentQueryKey,
-	workspacePageQueryKey,
-} from "#/features/workspaces/cache";
+import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemInput,
 	MoveWorkspaceItemInput,
 	RenameWorkspaceItemInput,
-	WorkspaceItemSummary,
-	WorkspacePage,
 	WriteWorkspaceItemInput,
 } from "#/features/workspaces/contracts";
 import {
@@ -22,25 +17,22 @@ import {
 	renameWorkspaceItemFn,
 	writeWorkspaceItemFn,
 } from "#/features/workspaces/server/functions";
+import { useWorkspaceClientMutationEcho } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import { getErrorMessage } from "#/lib/error-message";
-
-interface WorkspaceItemContentResult {
-	item: WorkspaceItemSummary;
-	content: string | null;
-}
 
 export function useCreateWorkspaceItemMutation() {
 	const createWorkspaceItem = useServerFn(createWorkspaceItemFn);
 	const queryClient = useQueryClient();
+	const mutationEcho =
+		useWorkspaceClientMutationEcho<CreateWorkspaceItemInput>();
 
 	return useMutation({
-		mutationFn: (input: CreateWorkspaceItemInput) =>
-			createWorkspaceItem({ data: input }),
-		onSuccess: (item) => {
-			upsertWorkspaceItemInPageCache(queryClient, item);
-			void queryClient.invalidateQueries({
-				queryKey: workspacePageQueryKey(item.workspaceId),
-			});
+		mutationFn: (input: CreateWorkspaceItemInput) => {
+			const inputWithClientMutation = withClientMutationId(input, mutationEcho);
+			return createWorkspaceItem({ data: inputWithClientMutation });
+		},
+		onSuccess: (command) => {
+			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 		onError: (error) => {
 			toast.error(
@@ -53,18 +45,17 @@ export function useCreateWorkspaceItemMutation() {
 export function useWriteWorkspaceItemContentMutation() {
 	const writeWorkspaceItem = useServerFn(writeWorkspaceItemFn);
 	const queryClient = useQueryClient();
+	const mutationEcho =
+		useWorkspaceClientMutationEcho<WriteWorkspaceItemInput>();
 
 	return useMutation({
-		mutationFn: (input: WriteWorkspaceItemInput) =>
-			writeWorkspaceItem({ data: input }),
-		onSuccess: (item, input) => {
-			upsertWorkspaceItemInPageCache(queryClient, item);
-			queryClient.setQueryData<WorkspaceItemContentResult>(
-				workspaceItemContentQueryKey(input.workspaceId, input.itemId),
-				{ item, content: input.content },
-			);
-			void queryClient.invalidateQueries({
-				queryKey: workspacePageQueryKey(item.workspaceId),
+		mutationFn: (input: WriteWorkspaceItemInput) => {
+			const inputWithClientMutation = withClientMutationId(input, mutationEcho);
+			return writeWorkspaceItem({ data: inputWithClientMutation });
+		},
+		onSuccess: (command, input) => {
+			applyWorkspaceEventToCache(queryClient, command.event, {
+				content: input.content,
 			});
 		},
 		onError: (error) => {
@@ -78,15 +69,16 @@ export function useWriteWorkspaceItemContentMutation() {
 export function useRenameWorkspaceItemMutation() {
 	const renameWorkspaceItem = useServerFn(renameWorkspaceItemFn);
 	const queryClient = useQueryClient();
+	const mutationEcho =
+		useWorkspaceClientMutationEcho<RenameWorkspaceItemInput>();
 
 	return useMutation({
-		mutationFn: (input: RenameWorkspaceItemInput) =>
-			renameWorkspaceItem({ data: input }),
-		onSuccess: (item) => {
-			upsertWorkspaceItemInPageCache(queryClient, item);
-			void queryClient.invalidateQueries({
-				queryKey: workspacePageQueryKey(item.workspaceId),
-			});
+		mutationFn: (input: RenameWorkspaceItemInput) => {
+			const inputWithClientMutation = withClientMutationId(input, mutationEcho);
+			return renameWorkspaceItem({ data: inputWithClientMutation });
+		},
+		onSuccess: (command) => {
+			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 		onError: (error) => {
 			toast.error(
@@ -99,15 +91,15 @@ export function useRenameWorkspaceItemMutation() {
 export function useMoveWorkspaceItemMutation() {
 	const moveWorkspaceItem = useServerFn(moveWorkspaceItemFn);
 	const queryClient = useQueryClient();
+	const mutationEcho = useWorkspaceClientMutationEcho<MoveWorkspaceItemInput>();
 
 	return useMutation({
-		mutationFn: (input: MoveWorkspaceItemInput) =>
-			moveWorkspaceItem({ data: input }),
-		onSuccess: (item) => {
-			upsertWorkspaceItemInPageCache(queryClient, item);
-			void queryClient.invalidateQueries({
-				queryKey: workspacePageQueryKey(item.workspaceId),
-			});
+		mutationFn: (input: MoveWorkspaceItemInput) => {
+			const inputWithClientMutation = withClientMutationId(input, mutationEcho);
+			return moveWorkspaceItem({ data: inputWithClientMutation });
+		},
+		onSuccess: (command) => {
+			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 		onError: (error) => {
 			toast.error(
@@ -120,15 +112,16 @@ export function useMoveWorkspaceItemMutation() {
 export function useDeleteWorkspaceItemMutation() {
 	const deleteWorkspaceItem = useServerFn(deleteWorkspaceItemFn);
 	const queryClient = useQueryClient();
+	const mutationEcho =
+		useWorkspaceClientMutationEcho<DeleteWorkspaceItemInput>();
 
 	return useMutation({
-		mutationFn: (input: DeleteWorkspaceItemInput) =>
-			deleteWorkspaceItem({ data: input }),
-		onSuccess: (result) => {
-			removeWorkspaceItemFromPageCache(queryClient, result);
-			void queryClient.invalidateQueries({
-				queryKey: workspacePageQueryKey(result.workspaceId),
-			});
+		mutationFn: (input: DeleteWorkspaceItemInput) => {
+			const inputWithClientMutation = withClientMutationId(input, mutationEcho);
+			return deleteWorkspaceItem({ data: inputWithClientMutation });
+		},
+		onSuccess: (command) => {
+			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 		onError: (error) => {
 			toast.error(
@@ -138,85 +131,15 @@ export function useDeleteWorkspaceItemMutation() {
 	});
 }
 
-function upsertWorkspaceItemInPageCache(
-	queryClient: ReturnType<typeof useQueryClient>,
-	item: WorkspaceItemSummary,
+function withClientMutationId<TInput extends { clientMutationId?: string }>(
+	input: TInput,
+	mutationEcho: ReturnType<typeof useWorkspaceClientMutationEcho<TInput>>,
 ) {
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(item.workspaceId),
-		(current) => {
-			if (!current) {
-				return current;
-			}
+	const clientMutationId = mutationEcho.getClientMutationId(input);
+	mutationEcho.trackClientMutationId(input, clientMutationId);
 
-			const nextItems = current.items.some(
-				(candidate) => candidate.id === item.id,
-			)
-				? current.items.map((candidate) =>
-						candidate.id === item.id ? item : candidate,
-					)
-				: [...current.items, item];
-
-			return {
-				...current,
-				items: nextItems.sort(compareWorkspaceItems),
-			};
-		},
-	);
-}
-
-function removeWorkspaceItemFromPageCache(
-	queryClient: ReturnType<typeof useQueryClient>,
-	input: { workspaceId: string; id: string },
-) {
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(input.workspaceId),
-		(current) => {
-			if (!current) {
-				return current;
-			}
-
-			const deletedIds = new Set<string>([input.id]);
-			let changed = true;
-
-			while (changed) {
-				changed = false;
-
-				for (const item of current.items) {
-					if (
-						item.parentId &&
-						deletedIds.has(item.parentId) &&
-						!deletedIds.has(item.id)
-					) {
-						deletedIds.add(item.id);
-						changed = true;
-					}
-				}
-			}
-
-			return {
-				...current,
-				items: current.items.filter((item) => !deletedIds.has(item.id)),
-			};
-		},
-	);
-}
-
-function compareWorkspaceItems(
-	left: WorkspaceItemSummary,
-	right: WorkspaceItemSummary,
-) {
-	const parentDelta = (left.parentId ?? "").localeCompare(right.parentId ?? "");
-
-	if (parentDelta !== 0) {
-		return parentDelta;
-	}
-
-	const sortDelta = left.sortOrder - right.sortOrder;
-
-	if (sortDelta !== 0) {
-		return sortDelta;
-	}
-
-	return left.name.localeCompare(right.name);
+	return {
+		...input,
+		clientMutationId,
+	};
 }

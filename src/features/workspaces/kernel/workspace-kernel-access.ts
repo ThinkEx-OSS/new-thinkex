@@ -11,7 +11,7 @@ import type {
 	WorkspacePage,
 	WriteWorkspaceItemInput,
 } from "#/features/workspaces/contracts";
-import { scheduleWorkspaceEventBroadcast } from "#/features/workspaces/realtime/broadcast.server";
+import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	assertCanMutateWorkspace,
 	assertCanReadWorkspace,
@@ -46,8 +46,23 @@ export type WorkspaceKernelItemSummary = Pick<
 	| "updatedAt"
 >;
 
+interface DeleteWorkspaceKernelItemResult {
+	id: string;
+	deletedItemIds: string[];
+}
+
+interface DeleteWorkspaceItemResult {
+	id: string;
+	workspaceId: string;
+	deletedItemIds: string[];
+}
+
 interface WorkspaceKernelClient {
-	getPage(): Promise<{ workspaceId: string; items: WorkspaceItemSummary[] }>;
+	getPage(): Promise<{
+		workspaceId: string;
+		items: WorkspaceItemSummary[];
+		revision: number;
+	}>;
 	listItems(input?: {
 		parentId?: string | null;
 		limit?: number;
@@ -56,24 +71,36 @@ interface WorkspaceKernelClient {
 		parentId?: string | null;
 		type: CreateWorkspaceItemInput["type"];
 		name?: string;
-	}): Promise<WorkspaceItemSummary>;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
 	renameItem(input: {
 		itemId: string;
 		name: string;
-	}): Promise<WorkspaceItemSummary>;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
 	moveItem(input: {
 		itemId: string;
 		parentId?: string | null;
 		sortOrder?: number;
-	}): Promise<WorkspaceItemSummary>;
-	deleteItem(input: { itemId: string }): Promise<{ id: string }>;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	deleteItem(input: {
+		itemId: string;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemResult>>;
 	readItem(input: {
 		itemId: string;
 	}): Promise<{ item: WorkspaceItemSummary; content: string | null }>;
 	writeItem(input: {
 		itemId: string;
 		content: string;
-	}): Promise<WorkspaceItemSummary>;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
 }
 
 export async function getWorkspaceKernelPage(input: {
@@ -91,6 +118,7 @@ export async function getWorkspaceKernelPage(input: {
 		return {
 			workspace: input.workspace,
 			items: page.items,
+			revision: page.revision,
 		};
 	} finally {
 		await dbContext.dispose();
@@ -139,29 +167,20 @@ export async function listWorkspaceKernelItems({
 
 export async function createWorkspaceKernelItem(
 	input: CreateWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceItemSummary> {
+): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
-		const item = await kernel.createItem({
+		return await kernel.createItem({
 			parentId: input.parentId ?? null,
 			type: input.type,
 			name: input.name,
-		});
-
-		void scheduleWorkspaceEventBroadcast({
-			id: crypto.randomUUID(),
-			type: "workspace.item.created",
-			workspaceId: input.workspaceId,
 			actorUserId: input.userId,
-			createdAt: new Date().toISOString(),
-			payload: { itemId: item.id },
+			clientMutationId: input.clientMutationId ?? null,
 		});
-
-		return item;
 	} finally {
 		await dbContext.dispose();
 	}
@@ -184,28 +203,19 @@ export async function readWorkspaceKernelItem(
 
 export async function renameWorkspaceKernelItem(
 	input: RenameWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceItemSummary> {
+): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
-		const item = await kernel.renameItem({
+		return await kernel.renameItem({
 			itemId: input.itemId,
 			name: input.name,
-		});
-
-		void scheduleWorkspaceEventBroadcast({
-			id: crypto.randomUUID(),
-			type: "workspace.item.renamed",
-			workspaceId: input.workspaceId,
 			actorUserId: input.userId,
-			createdAt: new Date().toISOString(),
-			payload: { itemId: item.id },
+			clientMutationId: input.clientMutationId ?? null,
 		});
-
-		return item;
 	} finally {
 		await dbContext.dispose();
 	}
@@ -213,33 +223,20 @@ export async function renameWorkspaceKernelItem(
 
 export async function moveWorkspaceKernelItem(
 	input: MoveWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceItemSummary> {
+): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
-		const item = await kernel.moveItem({
+		return await kernel.moveItem({
 			itemId: input.itemId,
 			parentId: input.parentId ?? null,
 			sortOrder: input.sortOrder,
-		});
-
-		void scheduleWorkspaceEventBroadcast({
-			id: crypto.randomUUID(),
-			type: "workspace.item.moved",
-			workspaceId: input.workspaceId,
 			actorUserId: input.userId,
-			createdAt: new Date().toISOString(),
-			payload: {
-				itemId: item.id,
-				parentId: item.parentId,
-				sortOrder: item.sortOrder,
-			},
+			clientMutationId: input.clientMutationId ?? null,
 		});
-
-		return item;
 	} finally {
 		await dbContext.dispose();
 	}
@@ -247,26 +244,24 @@ export async function moveWorkspaceKernelItem(
 
 export async function deleteWorkspaceKernelItem(
 	input: DeleteWorkspaceItemInput & { userId: string },
-): Promise<{ id: string; workspaceId: string }> {
+): Promise<WorkspaceCommandResult<DeleteWorkspaceItemResult>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
-		const result = await kernel.deleteItem({ itemId: input.itemId });
-
-		void scheduleWorkspaceEventBroadcast({
-			id: crypto.randomUUID(),
-			type: "workspace.item.deleted",
-			workspaceId: input.workspaceId,
+		const command = await kernel.deleteItem({
+			itemId: input.itemId,
 			actorUserId: input.userId,
-			createdAt: new Date().toISOString(),
-			payload: { itemId: result.id },
+			clientMutationId: input.clientMutationId ?? null,
 		});
 
 		return {
-			...result,
-			workspaceId: input.workspaceId,
+			...command,
+			result: {
+				...command.result,
+				workspaceId: input.workspaceId,
+			},
 		};
 	} finally {
 		await dbContext.dispose();
@@ -275,28 +270,19 @@ export async function deleteWorkspaceKernelItem(
 
 export async function writeWorkspaceKernelItem(
 	input: WriteWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceItemSummary> {
+): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
-		const item = await kernel.writeItem({
+		return await kernel.writeItem({
 			itemId: input.itemId,
 			content: input.content,
-		});
-
-		void scheduleWorkspaceEventBroadcast({
-			id: crypto.randomUUID(),
-			type: "workspace.item.content.updated",
-			workspaceId: input.workspaceId,
 			actorUserId: input.userId,
-			createdAt: new Date().toISOString(),
-			payload: { itemId: item.id },
+			clientMutationId: input.clientMutationId ?? null,
 		});
-
-		return item;
 	} finally {
 		await dbContext.dispose();
 	}

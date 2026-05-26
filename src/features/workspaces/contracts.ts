@@ -76,6 +76,7 @@ export const createWorkspaceItemInputSchema = z.object({
 	parentId: z.string().min(1).nullable().optional(),
 	type: workspaceItemTypeSchema,
 	name: z.string().trim().min(1).max(160).optional(),
+	clientMutationId: z.string().uuid().optional(),
 });
 
 export const readWorkspaceItemInputSchema = z.object({
@@ -87,12 +88,14 @@ export const writeWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
 	content: z.string().max(2_000_000),
+	clientMutationId: z.string().uuid().optional(),
 });
 
 export const renameWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
 	name: z.string().trim().min(1).max(160),
+	clientMutationId: z.string().uuid().optional(),
 });
 
 export const moveWorkspaceItemInputSchema = z.object({
@@ -100,11 +103,13 @@ export const moveWorkspaceItemInputSchema = z.object({
 	itemId: z.string().min(1),
 	parentId: z.string().min(1).nullable().optional(),
 	sortOrder: z.number().int().optional(),
+	clientMutationId: z.string().uuid().optional(),
 });
 
 export const deleteWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
+	clientMutationId: z.string().uuid().optional(),
 });
 
 export const createWorkspaceInputSchema = z.object({
@@ -132,6 +137,7 @@ export const workspaceListResponseSchema = z.object({
 export const workspacePageSchema = z.object({
 	workspace: workspaceDetailSchema,
 	items: z.array(workspaceItemSummarySchema),
+	revision: z.number().int().nonnegative(),
 });
 
 export type WorkspaceIcon = z.infer<typeof workspaceIconSchema>;
