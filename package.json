@@ -49,6 +49,7 @@
 		"@tanstack/ai-openai": "latest",
 		"@tanstack/ai-react": "latest",
 		"@tanstack/react-devtools": "latest",
+		"@tanstack/react-hotkeys": "^0.10.0",
 		"@tanstack/react-query": "latest",
 		"@tanstack/react-query-devtools": "latest",
 		"@tanstack/react-router": "latest",

@@ -16,7 +16,13 @@ import {
 } from "#/components/ui/dialog";
 import { Field, FieldGroup } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
+import { Kbd } from "#/components/ui/kbd";
 import { Label } from "#/components/ui/label";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "#/components/ui/tooltip";
 import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePresence";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
@@ -24,6 +30,7 @@ import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+import { formatAppHotkey, getAppHotkey } from "#/lib/hotkeys";
 
 type PresenceStatus = "connecting" | "connected" | "disconnected";
 
@@ -59,6 +66,9 @@ export default function WorkspaceTopBar({
 	);
 	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
 	const [shareOpen, setShareOpen] = useState(false);
+	const aiChatHotkey = formatAppHotkey(
+		getAppHotkey("workspace.aiChat.toggle").hotkey,
+	);
 
 	return (
 		<header className="sticky top-0 z-40 bg-background/95">
@@ -101,16 +111,26 @@ export default function WorkspaceTopBar({
 					<WorkspacePresence status={presence.status} users={presence.users} />
 					<UserProfileDropdown />
 					{isCollapsed ? (
-						<Button
-							variant="outline"
-							size="sm"
-							type="button"
-							className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-							onClick={() => openAiChat(workspace.id)}
-						>
-							<MessageCircle className="size-3.5" />
-							<span className="hidden lg:inline">AI Chat</span>
-						</Button>
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="outline"
+										size="sm"
+										type="button"
+										className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+										onClick={() => openAiChat(workspace.id)}
+									>
+										<MessageCircle className="size-3.5" />
+										<span className="hidden lg:inline">AI Chat</span>
+									</Button>
+								}
+							/>
+							<TooltipContent>
+								<span>AI Chat</span>
+								<Kbd>{aiChatHotkey}</Kbd>
+							</TooltipContent>
+						</Tooltip>
 					) : null}
 				</nav>
 			</div>

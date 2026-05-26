@@ -41,6 +41,12 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { Kbd } from "#/components/ui/kbd";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "#/components/ui/tooltip";
 import {
 	DeleteWorkspaceItemAlert,
 	RenameWorkspaceItemDialog,
@@ -59,6 +65,7 @@ import type {
 	WorkspaceItem,
 	WorkspaceItemType,
 } from "#/features/workspaces/model/types";
+import { formatAppHotkey, getAppHotkey, useAppHotkey } from "#/lib/hotkeys";
 
 const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
 const breadcrumbCurrentClassName = `${breadcrumbContentClassName} font-medium text-foreground`;
@@ -108,10 +115,16 @@ export default function WorkspaceContextBar({
 				.sort((first, second) => first.name.localeCompare(second.name)),
 		[workspaceItems],
 	);
+	const searchHotkey = formatAppHotkey(
+		getAppHotkey("workspace.search.open").hotkey,
+	);
 	const openDeleteAlert = (item: WorkspaceItem) => {
 		setDeletingItem(item);
 		setDeleteAlertOpen(true);
 	};
+	useAppHotkey("workspace.search.open", () => {
+		setSearchOpen(true);
+	});
 
 	return (
 		<>
@@ -166,16 +179,26 @@ export default function WorkspaceContextBar({
 						</>
 					) : (
 						<>
-							<Button
-								variant="ghost"
-								size="sm"
-								type="button"
-								className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-								onClick={() => setSearchOpen(true)}
-							>
-								<Search className="size-3.5" />
-								<span className="hidden sm:inline">Search</span>
-							</Button>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
+											onClick={() => setSearchOpen(true)}
+										>
+											<Search className="size-3.5" />
+											<span className="hidden sm:inline">Search</span>
+										</Button>
+									}
+								/>
+								<TooltipContent>
+									<span>Search</span>
+									<Kbd>{searchHotkey}</Kbd>
+								</TooltipContent>
+							</Tooltip>
 							<DropdownMenu>
 								<DropdownMenuTrigger
 									render={

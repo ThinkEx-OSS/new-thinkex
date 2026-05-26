@@ -67,6 +67,7 @@ import {
 	mergeWorkspaceItemOrder,
 	WORKSPACE_ITEM_SORT_ORDER_STEP,
 } from "#/features/workspaces/workspace-item-ordering";
+import { useAppHotkey } from "#/lib/hotkeys";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -131,6 +132,9 @@ export function WorkspaceShell({
 		useState(() => new Map<string, string[]>());
 	const ensureWorkspaceUiSession = useWorkspaceUiStore(
 		(state) => state.ensureWorkspaceSession,
+	);
+	const toggleChatPanelCollapsed = useWorkspaceUiStore(
+		(state) => state.toggleChatPanelCollapsed,
 	);
 	const handleWorkspaceRealtimeEvent = useCallback(
 		(event: WorkspaceRealtimeEvent) => {
@@ -247,6 +251,9 @@ export function WorkspaceShell({
 			validItemIds,
 		});
 	}, [ensureWorkspaceUiSession, validItemIds, workspace.id]);
+	useAppHotkey("workspace.aiChat.toggle", () => {
+		toggleChatPanelCollapsed(workspace.id);
+	});
 
 	useEffect(() => {
 		setWorkspaceItemOrderOverrides((current) =>
