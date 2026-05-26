@@ -2,6 +2,10 @@ import { Link } from "@tanstack/react-router";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Skeleton } from "#/components/ui/skeleton";
+import {
+	AiChatPanelLoadingContent,
+	AiChatPanelToolbarSkeleton,
+} from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import { WorkspaceFrame } from "#/features/workspaces/components/WorkspaceLayout";
 
 const workspaceSkeletonCardKeys = [
@@ -96,22 +100,9 @@ export function WorkspaceSkeletonContent() {
 
 export function WorkspaceSkeletonAiChatPanel() {
 	return (
-		<aside className="relative flex min-h-screen flex-col bg-background">
-			<div className="flex h-12 items-center justify-between border-b border-border/70 px-4">
-				<Skeleton className="h-5 w-28 rounded-sm" />
-				<div className="flex items-center gap-1">
-					<Skeleton className="size-8 rounded-md" />
-					<Skeleton className="size-8 rounded-md" />
-				</div>
-			</div>
-			<div className="min-h-0 flex-1" />
-			<div className="px-4 pb-4">
-				<div className="mx-auto w-full max-w-2xl">
-					<div className="rounded-md border border-border/70 bg-muted/30 p-3">
-						<Skeleton className="h-16 rounded-sm" />
-					</div>
-				</div>
-			</div>
+		<aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
+			<AiChatPanelToolbarSkeleton />
+			<AiChatPanelLoadingContent />
 		</aside>
 	);
 }

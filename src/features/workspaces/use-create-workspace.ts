@@ -48,7 +48,10 @@ export function useCreateWorkspaceMutation() {
 			void navigate({
 				to: "/workspaces/$workspaceId",
 				params: { workspaceId: id },
-				search: { tab: undefined, view: WORKSPACE_ROOT_VIEW },
+				search: {
+					tab: undefined,
+					view: WORKSPACE_ROOT_VIEW,
+				},
 			});
 
 			return {

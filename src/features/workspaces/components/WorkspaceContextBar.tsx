@@ -152,27 +152,15 @@ export default function WorkspaceContextBar({
 
 				<div className="flex shrink-0 items-center gap-1">
 					{isDocumentLikeView ? (
-						<>
-							<Button
-								variant="ghost"
-								size="sm"
-								type="button"
-								className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-							>
-								<Download className="size-3.5" />
-								<span className="hidden sm:inline">Export</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								type="button"
-								className="size-8.5 text-muted-foreground hover:text-foreground"
-								aria-label="Go up one level"
-								onClick={onCloseCurrentView}
-							>
-								<X className="size-4" />
-							</Button>
-						</>
+						<Button
+							variant="ghost"
+							size="sm"
+							type="button"
+							className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
+						>
+							<Download className="size-3.5" />
+							<span className="hidden sm:inline">Export</span>
+						</Button>
 					) : (
 						<>
 							<Tooltip>
@@ -264,6 +252,18 @@ export default function WorkspaceContextBar({
 							</DropdownMenu>
 						</>
 					)}
+					{activeItem ? (
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							type="button"
+							className="size-8.5 text-muted-foreground hover:text-foreground"
+							aria-label="Go up one level"
+							onClick={onCloseCurrentView}
+						>
+							<X className="size-4" />
+						</Button>
+					) : null}
 				</div>
 			</div>
 			<Dialog open={searchOpen} onOpenChange={setSearchOpen}>

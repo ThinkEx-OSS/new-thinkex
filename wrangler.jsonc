@@ -1,11 +1,15 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "new-thinkex",
-	"compatibility_date": "2025-09-02",
+	"compatibility_date": "2026-01-28",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "src/server.ts",
 	"observability": {
 		"enabled": true
+	},
+	"ai": {
+		"binding": "AI",
+		"remote": true
 	},
 	"vars": {
 		"THINKEX_DB_DRIVER": "hyperdrive"
@@ -24,6 +28,10 @@
 			{
 				"name": "WorkspaceRoom",
 				"class_name": "WorkspaceRoom"
+			},
+			{
+				"name": "WorkspaceChatDirectory",
+				"class_name": "WorkspaceChatDirectory"
 			}
 		]
 	},
@@ -31,6 +39,10 @@
 		{
 			"tag": "v1_workspace_room",
 			"new_sqlite_classes": ["WorkspaceRoom"]
+		},
+		{
+			"tag": "v2_workspace_chat_directory",
+			"new_sqlite_classes": ["WorkspaceChatDirectory"]
 		}
 	],
 	"hyperdrive": [

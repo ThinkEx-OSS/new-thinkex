@@ -1,9 +1,14 @@
 import handler from "@tanstack/react-start/server-entry";
 import { routePartykitRequest } from "partyserver";
 
+import { routeWorkspaceChatRequest } from "#/features/workspaces/ai/auth";
 import { authenticateWorkspaceRealtimeRequest } from "#/features/workspaces/realtime/auth";
 import { workspaceRealtimePrefix } from "#/features/workspaces/realtime/messages";
 
+export {
+	WorkspaceChatAgent,
+	WorkspaceChatDirectory,
+} from "#/features/workspaces/ai/workspace-chat-agent";
 export { WorkspaceRoom } from "#/features/workspaces/realtime/workspace-room";
 
 const isProduction = import.meta.env.PROD;
@@ -77,6 +82,12 @@ function withSecurityHeaders(response: Response) {
 
 export default {
 	async fetch(request, env) {
+		const chatResponse = await routeWorkspaceChatRequest(request, env);
+
+		if (chatResponse) {
+			return chatResponse;
+		}
+
 		const realtimeResponse = await routePartykitRequest(request, env, {
 			prefix: workspaceRealtimePrefix,
 			onBeforeConnect: authenticateWorkspaceRealtimeRequest,

@@ -643,17 +643,21 @@ export function WorkspaceFrame({
 	chatPanel,
 }: WorkspaceFrameProps) {
 	return (
-		<div className="min-h-screen bg-background text-foreground">
+		<div className="h-screen overflow-hidden bg-background text-foreground">
 			<ResizablePanelGroup
 				id="workspace-layout"
 				orientation="horizontal"
-				className="min-h-screen"
+				className="h-full min-h-0"
 				resizeTargetMinimumSize={{ coarse: 37, fine: 27 }}
 			>
-				<ResizablePanel id="workspace" minSize="45%">
-					<div className="min-h-screen min-w-0">
+				<ResizablePanel
+					id="workspace"
+					minSize="45%"
+					className="min-h-0 overflow-hidden"
+				>
+					<div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
 						{chrome}
-						<main className="bg-background">{content}</main>
+						<main className="min-h-0 flex-1 bg-background">{content}</main>
 					</div>
 				</ResizablePanel>
 
@@ -671,6 +675,7 @@ export function WorkspaceFrame({
 							defaultSize="30rem"
 							minSize="26rem"
 							maxSize="60%"
+							className="min-h-0 overflow-hidden"
 						>
 							{chatPanel}
 						</ResizablePanel>
@@ -683,7 +688,9 @@ export function WorkspaceFrame({
 
 function MaximizedWorkspaceSurface({ children }: { children: ReactNode }) {
 	return (
-		<div className="min-h-screen bg-background text-foreground">{children}</div>
+		<div className="h-screen overflow-hidden bg-background text-foreground">
+			{children}
+		</div>
 	);
 }
 

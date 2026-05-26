@@ -76,7 +76,7 @@ export function getWorkspaceRecencyLabel(workspace: WorkspaceSummary) {
 	return `Opened ${formatWorkspaceRecency(workspace.lastOpenedAt)}`;
 }
 
-function formatWorkspaceRecency(timestamp: string, now = new Date()) {
+export function formatWorkspaceRecency(timestamp: string, now = new Date()) {
 	const date = new Date(timestamp);
 
 	if (Number.isNaN(date.getTime())) {

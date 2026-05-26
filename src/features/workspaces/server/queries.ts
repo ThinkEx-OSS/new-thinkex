@@ -105,9 +105,7 @@ export async function listWorkspaceItemsForCurrentUser(
 	try {
 		await assertCanReadWorkspace(dbContext.db, { workspaceId, userId });
 
-		const rows = await listWorkspaceItemRows(dbContext.db, workspaceId);
-
-		return rows.map(mapWorkspaceItemRow);
+		return await listWorkspaceItemsForWorkspace(dbContext.db, workspaceId);
 	} finally {
 		await dbContext.dispose();
 	}
@@ -140,18 +138,30 @@ export async function getWorkspacePageForCurrentUser(
 			return null;
 		}
 
-		const items = await listWorkspaceItemRows(dbContext.db, workspaceId);
+		const items = await listWorkspaceItemsForWorkspace(
+			dbContext.db,
+			workspaceId,
+		);
 
 		return {
 			workspace: mapWorkspaceDetailRow({
 				...workspaceRow.workspace,
 				lastOpenedAt: workspaceRow.lastOpenedAt,
 			}),
-			items: items.map(mapWorkspaceItemRow),
+			items,
 		};
 	} finally {
 		await dbContext.dispose();
 	}
+}
+
+export async function listWorkspaceItemsForWorkspace(
+	db: Db,
+	workspaceId: string,
+): Promise<WorkspaceItemSummary[]> {
+	const rows = await listWorkspaceItemRows(db, workspaceId);
+
+	return rows.map(mapWorkspaceItemRow);
 }
 
 function listWorkspaceItemRows(db: Db, workspaceId: string) {

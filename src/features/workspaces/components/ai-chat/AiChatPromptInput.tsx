@@ -1,4 +1,4 @@
-import { ArrowUp, Plus } from "lucide-react";
+import { ArrowUp, FileText, Plus, Square, X } from "lucide-react";
 import {
 	type Dispatch,
 	type RefObject,
@@ -16,6 +16,7 @@ import {
 	PromptInputActionMenuTrigger,
 	PromptInputBody,
 	PromptInputFooter,
+	PromptInputHeader,
 	type PromptInputMessage,
 	PromptInputSelect,
 	PromptInputSelectContent,
@@ -26,9 +27,14 @@ import {
 	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputTools,
+	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
 import { buttonVariants } from "#/components/ui/button";
 import { AI_CHAT_MODELS } from "#/features/workspaces/components/ai-chat/constants";
+import type {
+	AiChatModelId,
+	AiChatStatus,
+} from "#/features/workspaces/components/ai-chat/types";
 import { cn } from "#/lib/utils";
 
 // InputGroup defaults to a single horizontal row. Stack vertically so the
@@ -45,7 +51,111 @@ const SEND_BUTTON_SIZE = "size-8";
 const SEND_ICON_SIZE = "size-4";
 
 interface AiChatPromptInputProps {
-	onSubmit?: (message: PromptInputMessage) => void;
+	modelId?: AiChatModelId;
+	onModelChange?: (modelId: AiChatModelId) => void;
+	onSubmit?: (message: PromptInputMessage) => Promise<void> | void;
+	onStop?: () => void;
+	status?: AiChatStatus;
+}
+
+export default function AiChatPromptInput({
+	modelId = AI_CHAT_MODELS[0].id,
+	onModelChange,
+	onSubmit,
+	onStop,
+	status = "ready",
+}: AiChatPromptInputProps) {
+	const [input, setInput] = useState("");
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+	useTypeToFocusPrompt({
+		enabled: status === "ready",
+		setInput,
+		textareaRef,
+	});
+
+	const handleSubmit = async (message: PromptInputMessage) => {
+		if (!message.text.trim() && message.files.length === 0) {
+			return;
+		}
+
+		await onSubmit?.(message);
+		setInput("");
+	};
+
+	const handleModelChange = (value: string) => {
+		onModelChange?.(value as AiChatModelId);
+	};
+
+	return (
+		<PromptInput
+			inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
+			onSubmit={handleSubmit}
+			multiple
+		>
+			<PromptInputHeader>
+				<AiChatPromptAttachments />
+			</PromptInputHeader>
+			<PromptInputBody>
+				<PromptInputTextarea
+					ref={textareaRef}
+					name="message"
+					value={input}
+					placeholder="Ask anything"
+					onChange={(event) => setInput(event.currentTarget.value)}
+					className={cn(
+						"min-h-12 text-base md:text-base",
+						PROMPT_INPUT_PADDING_X,
+					)}
+				/>
+			</PromptInputBody>
+
+			<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
+				<PromptInputTools>
+					<PromptInputActionMenu>
+						<PromptInputActionMenuTrigger
+							aria-label="Add attachments"
+							className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
+						>
+							<Plus className={TOOLBAR_ICON_SIZE} />
+						</PromptInputActionMenuTrigger>
+						<PromptInputActionMenuContent>
+							<PromptInputActionAddAttachments />
+						</PromptInputActionMenuContent>
+					</PromptInputActionMenu>
+				</PromptInputTools>
+
+				<div className="ml-auto flex items-center gap-1">
+					<PromptInputSelect
+						onValueChange={(value) => handleModelChange(String(value))}
+						value={modelId}
+					>
+						<PromptInputSelectTrigger
+							size="sm"
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "sm" }),
+								TOOLBAR_CONTROL_HEIGHT,
+								"w-auto px-2.5 border-none shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
+							)}
+						>
+							<PromptInputSelectValue />
+						</PromptInputSelectTrigger>
+						<PromptInputSelectContent side="top" align="end">
+							<PromptInputSelectGroup>
+								{AI_CHAT_MODELS.map((item) => (
+									<PromptInputSelectItem key={item.id} value={item.id}>
+										{item.name}
+									</PromptInputSelectItem>
+								))}
+							</PromptInputSelectGroup>
+						</PromptInputSelectContent>
+					</PromptInputSelect>
+
+					<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
+				</div>
+			</PromptInputFooter>
+		</PromptInput>
+	);
 }
 
 function useTypeToFocusPrompt({
@@ -138,96 +248,65 @@ const ACTIVE_LAYER_SELECTOR = [
 const PROMPT_TYPE_TO_FOCUS_SURFACE_SELECTOR =
 	"[data-prompt-type-to-focus-surface]";
 
-export default function AiChatPromptInput({
-	onSubmit,
-}: AiChatPromptInputProps) {
-	const [input, setInput] = useState("");
-	const [model, setModel] = useState<string>(AI_CHAT_MODELS[0].id);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+function AiChatPromptAttachments() {
+	const attachments = usePromptInputAttachments();
 
-	useTypeToFocusPrompt({
-		enabled: true,
-		setInput,
-		textareaRef,
-	});
-
-	const handleSubmit = (message: PromptInputMessage) => {
-		if (!message.text.trim()) {
-			return;
-		}
-
-		onSubmit?.(message);
-		setInput("");
-	};
+	if (attachments.files.length === 0) {
+		return null;
+	}
 
 	return (
-		<PromptInput
-			inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
-			onSubmit={handleSubmit}
-		>
-			<PromptInputBody>
-				<PromptInputTextarea
-					ref={textareaRef}
-					value={input}
-					placeholder="Ask anything"
-					onChange={(event) => setInput(event.currentTarget.value)}
-					className={cn(
-						"min-h-12 text-base md:text-base",
-						PROMPT_INPUT_PADDING_X,
-					)}
-				/>
-			</PromptInputBody>
-
-			<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
-				<PromptInputTools>
-					<PromptInputActionMenu>
-						<PromptInputActionMenuTrigger
-							aria-label="Add attachments"
-							className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
-						>
-							<Plus className={TOOLBAR_ICON_SIZE} />
-						</PromptInputActionMenuTrigger>
-						<PromptInputActionMenuContent>
-							<PromptInputActionAddAttachments />
-						</PromptInputActionMenuContent>
-					</PromptInputActionMenu>
-				</PromptInputTools>
-
-				<div className="ml-auto flex items-center gap-1">
-					<PromptInputSelect
-						onValueChange={(value) => setModel(String(value))}
-						value={model}
+		<div className="flex min-w-0 flex-wrap gap-1.5 px-2 pt-2">
+			{attachments.files.map((file) => (
+				<div
+					key={file.id}
+					className="flex h-8 min-w-0 max-w-44 items-center gap-1.5 rounded-md border bg-background/70 px-2 text-muted-foreground text-xs"
+				>
+					<FileText className="size-3.5 shrink-0" />
+					<span className="min-w-0 truncate">
+						{file.filename ?? file.mediaType}
+					</span>
+					<button
+						type="button"
+						className="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-sm hover:bg-muted hover:text-foreground"
+						aria-label="Remove attachment"
+						onClick={() => attachments.remove(file.id)}
 					>
-						<PromptInputSelectTrigger
-							size="sm"
-							className={cn(
-								buttonVariants({ variant: "ghost", size: "sm" }),
-								TOOLBAR_CONTROL_HEIGHT,
-								"w-auto px-2.5 border-none shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
-							)}
-						>
-							<PromptInputSelectValue />
-						</PromptInputSelectTrigger>
-						<PromptInputSelectContent side="top" align="end">
-							<PromptInputSelectGroup>
-								{AI_CHAT_MODELS.map((item) => (
-									<PromptInputSelectItem key={item.id} value={item.id}>
-										{item.name}
-									</PromptInputSelectItem>
-								))}
-							</PromptInputSelectGroup>
-						</PromptInputSelectContent>
-					</PromptInputSelect>
-
-					<PromptInputSubmit
-						className={cn(SEND_BUTTON_SIZE, "rounded-full")}
-						disabled={!input.trim()}
-						status="ready"
-					>
-						<ArrowUp className={SEND_ICON_SIZE} />
-					</PromptInputSubmit>
+						<X className="size-3" />
+					</button>
 				</div>
-			</PromptInputFooter>
-		</PromptInput>
+			))}
+		</div>
+	);
+}
+
+function AiChatPromptSubmit({
+	input,
+	onStop,
+	status,
+}: {
+	input: string;
+	onStop?: () => void;
+	status: AiChatStatus;
+}) {
+	const attachments = usePromptInputAttachments();
+	const isGenerating = status === "submitted" || status === "streaming";
+	const hasContent = Boolean(input.trim() || attachments.files.length > 0);
+	const canStop = isGenerating && Boolean(onStop);
+
+	return (
+		<PromptInputSubmit
+			className={cn(SEND_BUTTON_SIZE, "rounded-full")}
+			disabled={isGenerating ? !canStop : !hasContent}
+			status={status}
+			onStop={onStop}
+			type={isGenerating ? "button" : "submit"}
+		>
+			{isGenerating ? (
+				<Square className={SEND_ICON_SIZE} />
+			) : (
+				<ArrowUp className={SEND_ICON_SIZE} />
+			)}
+		</PromptInputSubmit>
 	);
 }

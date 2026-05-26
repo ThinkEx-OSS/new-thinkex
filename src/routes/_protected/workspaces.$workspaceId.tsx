@@ -1,11 +1,8 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
 
 import {
-	useRecordWorkspaceOpenedMutation,
+	WorkspacePageRoute,
 	WorkspacePageSkeleton,
-	WorkspaceShell,
 } from "#/features/workspaces";
 import { seedWorkspaceCaches } from "#/features/workspaces/cache";
 import { workspacePageQueryOptions } from "#/features/workspaces/query-options";
@@ -28,9 +25,10 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 			listMode: "update-existing",
 		});
 	},
+	staleTime: 10_000,
 	pendingComponent: WorkspacePageSkeleton,
-	pendingMs: 0,
-	pendingMinMs: 300,
+	pendingMs: 300,
+	pendingMinMs: 200,
 	head: () => ({
 		meta: [
 			{
@@ -38,37 +36,5 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 			},
 		],
 	}),
-	component: WorkspacePage,
+	component: WorkspacePageRoute,
 });
-
-function WorkspacePage() {
-	const { workspaceId } = Route.useParams();
-	const { tab, view } = Route.useSearch();
-	const recordedWorkspaceIds = useRef(new Set<string>());
-	const recordWorkspaceOpenedMutation = useRecordWorkspaceOpenedMutation();
-	const { data: page } = useSuspenseQuery(
-		workspacePageQueryOptions(workspaceId),
-	);
-
-	useEffect(() => {
-		if (recordedWorkspaceIds.current.has(workspaceId)) {
-			return;
-		}
-
-		recordedWorkspaceIds.current.add(workspaceId);
-		recordWorkspaceOpenedMutation.mutate({ workspaceId });
-	}, [recordWorkspaceOpenedMutation, workspaceId]);
-
-	if (!page) {
-		throw notFound();
-	}
-
-	return (
-		<WorkspaceShell
-			workspace={page.workspace}
-			items={page.items}
-			activeTabIdFromUrl={tab}
-			activeViewFromUrl={view}
-		/>
-	);
-}
