@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useAgent } from "agents/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
 	type WorkspacePresenceUser,
@@ -27,18 +28,6 @@ function parseServerMessage(data: unknown) {
 	}
 }
 
-function getWorkspaceKernelRealtimeUrl(workspaceId: string) {
-	const url = new URL(
-		`${workspaceKernelRealtimePathPrefix}/${encodeURIComponent(
-			workspaceId,
-		)}/realtime`,
-		window.location.href,
-	);
-	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-
-	return url;
-}
-
 export function useWorkspaceRealtime({
 	workspaceId,
 	onEvent,
@@ -56,76 +45,64 @@ export function useWorkspaceRealtime({
 	}, [onEvent, onReconnect]);
 
 	useEffect(() => {
-		let closedByHook = false;
-		let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-		let retryCount = 0;
-		let socket: WebSocket | null = null;
-
-		function connect() {
-			setStatus("connecting");
-			socket = new WebSocket(getWorkspaceKernelRealtimeUrl(workspaceId));
-
-			socket.addEventListener("open", () => {
-				retryCount = 0;
-				setStatus("connected");
-
-				if (hasConnectedRef.current) {
-					onReconnectRef.current?.();
-				}
-
-				hasConnectedRef.current = true;
-			});
-
-			socket.addEventListener("close", () => {
-				setStatus("disconnected");
-				setUsers([]);
-
-				if (closedByHook) {
-					return;
-				}
-
-				const delay = Math.min(1000 * 2 ** retryCount, 10_000);
-				retryCount += 1;
-				reconnectTimer = setTimeout(connect, delay);
-			});
-
-			socket.addEventListener("error", () => {
-				setStatus("disconnected");
-			});
-
-			socket.addEventListener("message", (event) => {
-				const message = parseServerMessage(event.data);
-
-				if (
-					message?.type === "presence.snapshot" &&
-					message.workspaceId === workspaceId
-				) {
-					setUsers(message.users);
-				}
-
-				if (
-					message?.type === "workspace.event" &&
-					message.workspaceId === workspaceId
-				) {
-					onEventRef.current?.(message.event);
-				}
-			});
+		if (!workspaceId) {
+			return;
 		}
 
-		connect();
+		hasConnectedRef.current = false;
+		setStatus("connecting");
+		setUsers([]);
+	}, [workspaceId]);
 
-		return () => {
-			closedByHook = true;
+	const handleOpen = useCallback(() => {
+		setStatus("connected");
 
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
+		if (hasConnectedRef.current) {
+			onReconnectRef.current?.();
+		}
+
+		hasConnectedRef.current = true;
+	}, []);
+
+	const handleClose = useCallback(() => {
+		setStatus("disconnected");
+		setUsers([]);
+	}, []);
+
+	const handleError = useCallback(() => {
+		setStatus("disconnected");
+	}, []);
+
+	const handleMessage = useCallback(
+		(event: MessageEvent) => {
+			const message = parseServerMessage(event.data);
+
+			if (
+				message?.type === "presence.snapshot" &&
+				message.workspaceId === workspaceId
+			) {
+				setUsers(message.users);
 			}
 
-			socket?.close();
-			setStatus("disconnected");
-			setUsers([]);
-		};
-	}, [workspaceId]);
+			if (
+				message?.type === "workspace.event" &&
+				message.workspaceId === workspaceId
+			) {
+				onEventRef.current?.(message.event);
+			}
+		},
+		[workspaceId],
+	);
+
+	useAgent({
+		agent: "WorkspaceKernel",
+		basePath: workspaceKernelRealtimePathPrefix.slice(1),
+		path: `${workspaceId}/realtime`,
+		onClose: handleClose,
+		onError: handleError,
+		onMessage: handleMessage,
+		onOpen: handleOpen,
+	});
 
 	return useMemo(
 		() => ({

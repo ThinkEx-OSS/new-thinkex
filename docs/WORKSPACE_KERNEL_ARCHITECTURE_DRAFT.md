@@ -615,14 +615,10 @@ This keeps ownership clean:
 - chat threads bridge to the workspace through typed tools
 - shared workspace chats can be added later if the product needs them
 
-The first migration step for AI tools is therefore not to move chat under `WorkspaceKernel`. It is to change the `AIThread` tools from direct Postgres reads to workspace command/API calls:
+The first migration step for AI tools is therefore not to move chat under `WorkspaceKernel`. It is to keep `AIThread` tools behind the workspace-kernel access boundary:
 
 ```txt
-today:
-  AIThread -> workspace-kernel-access -> Postgres workspace tables
-
-target:
-  AIThread -> WorkspaceKernel(workspaceId).listItems/readContent/search/writeSnapshot
+AIThread -> workspace-kernel-access -> WorkspaceKernel(workspaceId)
 ```
 
 ## Realtime Collaboration
@@ -648,6 +644,7 @@ This maps cleanly to Cloudflare's current docs:
 - Durable Objects are the low-level primitive for realtime rooms and websocket hibernation.
 - Agents add a higher-level state/RPC/client SDK layer on top of Durable Objects.
 - Agent `setState` sync is good for small serializable state, not for every document keystroke or large workspace body data.
+- Browser clients should use the Agents client SDK (`useAgent` or `AgentClient`) for Agent websocket connections instead of hand-rolled `WebSocket` or direct `partysocket` usage.
 - The Agents client SDK can call `@callable()` methods over websocket or HTTP, but same-Worker code can keep using direct Durable Object RPC.
 
 The root workspace kernel should own low-frequency committed collaboration and lightweight presence:
@@ -678,7 +675,7 @@ Current implementation direction:
 - Server functions call `WorkspaceKernel` commands.
 - Kernel commands mutate DO SQLite and `@cloudflare/shell`.
 - The server schedules a compact `workspace.event` broadcast through `WorkspaceKernel`.
-- The UI receives the event and invalidates TanStack Query workspace caches.
+- The UI connects to `WorkspaceKernel` through `useAgent`, receives custom workspace messages, and invalidates TanStack Query workspace caches.
 
 This is intentionally coarse for the first kernel phase. Later, events can include enough payload for optimistic multi-client cache updates without forcing every client to refetch the full workspace page.
 
@@ -703,7 +700,7 @@ Thinkex should adapt this as a `DocumentSession` pattern, not as the root worksp
 
 ## AI Integration
 
-The current `AIThread` reads workspace items through a small `workspace-kernel-access` boundary. In the target model, that boundary should call the workspace kernel instead of Postgres-backed workspace query helpers.
+The current `AIThread` reads workspace items through a small `workspace-kernel-access` boundary. That boundary should remain the only AI-facing workspace access layer and should call the workspace kernel, not Postgres-backed workspace body query helpers.
 
 Important distinction from the Think package:
 

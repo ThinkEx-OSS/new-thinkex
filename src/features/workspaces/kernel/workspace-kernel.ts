@@ -113,13 +113,6 @@ export class WorkspaceKernel extends Agent<Env> {
 			ON kernel_items (type, deleted_at)`;
 	}
 
-	shouldSendProtocolMessages(
-		_connection: Connection,
-		_context: ConnectionContext,
-	) {
-		return false;
-	}
-
 	onConnect(
 		connection: Connection<WorkspaceConnectionState>,
 		context: ConnectionContext,
