@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createDbContext } from "#/db/server";
 import { listWorkspacesForUser } from "#/features/workspaces/server/queries";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
-import { getSessionFromRequest } from "#/lib/auth.functions";
+import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 async function handleListWorkspaces(request: Request) {
 	const requestId = getRequestId(request);

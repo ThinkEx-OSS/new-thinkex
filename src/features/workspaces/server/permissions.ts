@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
-import { getSessionFromHeaders } from "#/lib/auth.functions";
+import { getSessionFromHeaders } from "#/lib/auth-queries.server";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 

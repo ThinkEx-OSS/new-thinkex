@@ -7,7 +7,7 @@ import {
 	canReadWorkspace,
 	WorkspaceAuthError,
 } from "#/features/workspaces/server/permissions";
-import { getSessionFromRequest } from "#/lib/auth.functions";
+import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 export async function authenticateWorkspaceRealtimeRequest(
 	request: Request,
