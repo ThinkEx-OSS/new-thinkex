@@ -33,7 +33,7 @@ export default function WorkspacePageRoute() {
 	}, [recordWorkspaceOpenedMutation, workspaceId]);
 
 	if (!page) {
-		throw notFound();
+		throw notFound({ data: { resource: "workspace" } });
 	}
 
 	return (

@@ -9,13 +9,17 @@ import {
 } from "#/components/ui/collapsible";
 
 interface ErrorFallbackScreenProps {
+	eyebrow?: string;
+	title?: string;
 	message: string;
-	onReset: () => void;
+	onReset?: () => void;
 	homeLink: ReactElement;
 	stack?: string;
 }
 
 export default function ErrorFallbackScreen({
+	eyebrow = "Unexpected error",
+	title = "This page couldn't load",
 	message,
 	onReset,
 	homeLink,
@@ -28,22 +32,26 @@ export default function ErrorFallbackScreen({
 					<ThinkExLogo size={36} />
 					<div className="space-y-3">
 						<p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-							Unexpected error
+							{eyebrow}
 						</p>
-						<h1 className="text-2xl font-medium tracking-tight">
-							This page couldn&apos;t load
-						</h1>
+						<h1 className="text-2xl font-medium tracking-tight">{title}</h1>
 						<p className="text-sm leading-6 text-muted-foreground">{message}</p>
 					</div>
 
 					<div className="flex w-full max-w-xs flex-col gap-3">
-						<Button type="button" onClick={onReset}>
-							Try again
-						</Button>
+						{onReset ? (
+							<Button type="button" onClick={onReset}>
+								Try again
+							</Button>
+						) : null}
 						<Button
 							render={homeLink}
-							variant="ghost"
-							className="text-muted-foreground hover:text-foreground"
+							variant={onReset ? "ghost" : "default"}
+							className={
+								onReset
+									? "text-muted-foreground hover:text-foreground"
+									: undefined
+							}
 						>
 							Go home
 						</Button>

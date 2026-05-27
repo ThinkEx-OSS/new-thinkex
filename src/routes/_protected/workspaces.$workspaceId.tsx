@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
+import AppNotFoundScreen from "#/components/AppNotFoundScreen";
 import {
 	WorkspacePageRoute,
 	WorkspacePageSkeleton,
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 		);
 
 		if (!page) {
-			throw notFound();
+			throw notFound({ data: { resource: "workspace" } });
 		}
 
 		seedWorkspaceCaches(context.queryClient, page, {
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 		});
 	},
 	staleTime: 10_000,
+	notFoundComponent: AppNotFoundScreen,
 	pendingComponent: WorkspacePageSkeleton,
 	pendingMs: 300,
 	pendingMinMs: 200,
