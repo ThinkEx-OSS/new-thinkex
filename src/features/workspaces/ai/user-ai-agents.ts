@@ -1,81 +1,25 @@
-import type {
-	ChatResponseResult,
-	TurnConfig,
-	TurnContext,
-} from "@cloudflare/think";
-import { Think } from "@cloudflare/think";
+import type { ChatResponseResult } from "@cloudflare/think";
 import { Agent, callable } from "agents";
-import type { LanguageModel, ToolSet, UIMessage } from "ai";
-import { generateText, tool } from "ai";
 import { nanoid } from "nanoid";
-import { createWorkersAI } from "workers-ai-provider";
-import { z } from "zod";
 
 import { createDbContext } from "#/db/server";
+import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
 import {
-	getWorkspaceAiChatModel,
-	resolveWorkspaceAiChatModelId,
-} from "#/features/workspaces/ai/models";
-import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
+	type AIThreadContext,
+	type AIThreadMetaRow,
+	type AIThreadSummary,
+	compareThreadRecentFirst,
+	getThreadTitle,
+	mapThreadMetaRow,
+	normalizeGeneratedThreadTitle,
+	type UserAIStoreState,
+} from "#/features/workspaces/ai/ai-thread-metadata";
 import { canReadWorkspace } from "#/features/workspaces/server/permissions";
 
-const workspaceItemListInputSchema = z.object({
-	limit: z
-		.number()
-		.int()
-		.min(1)
-		.max(100)
-		.optional()
-		.describe("Maximum number of items to return. Defaults to 80."),
-	parentId: z
-		.string()
-		.nullable()
-		.optional()
-		.describe(
-			"Optional parent folder item ID. Use null for root items. Omit to list all items.",
-		),
-});
-
-type AIThreadRunState = "idle" | "running";
-
-export interface AIThreadSummary {
-	id: string;
-	workspaceId: string;
-	title: string;
-	hasUnreadCompletion: boolean;
-	isRunning: boolean;
-	lastActivityAt: string;
-	lastUserMessageAt: string | null;
-	lastAssistantMessageAt: string | null;
-	lastViewedAt: string;
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface UserAIStoreState {
-	isLoaded: boolean;
-	threads: AIThreadSummary[];
-}
-
-interface AIThreadContext {
-	id: string;
-	workspaceId: string;
-}
-
-interface AIThreadMetaRow {
-	id: string;
-	workspace_id: string;
-	title: string;
-	status: AIThreadRunState;
-	last_activity_at: number;
-	last_user_message_at: number | null;
-	last_assistant_message_at: number | null;
-	last_viewed_at: number;
-	title_generated_at: number | null;
-	created_at: number;
-	updated_at: number;
-	archived_at: number | null;
-}
+export type {
+	AIThreadSummary,
+	UserAIStoreState,
+} from "#/features/workspaces/ai/ai-thread-metadata";
 
 class AIThreadNotFoundError extends Error {
 	constructor() {
@@ -88,6 +32,8 @@ class AIThreadForbiddenError extends Error {
 		super("Forbidden");
 	}
 }
+
+export const AIThread = createAIThreadClass(() => UserAIStore);
 
 export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	static options = { sendIdentityOnConnect: false };
@@ -318,7 +264,23 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	private _refreshState() {
 		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
-		const rows = this.sql<AIThreadMetaRow>`
+
+		const threads = this._getActiveThreadMetaRows()
+			.filter((row) => threadIds.has(row.id))
+			.map(mapThreadMetaRow)
+			.sort(compareThreadRecentFirst);
+
+		this.setState({ ...this.state, isLoaded: true, threads });
+	}
+
+	private _getThreadMeta(threadId: string) {
+		return (
+			this._getActiveThreadMetaRows().find((row) => row.id === threadId) ?? null
+		);
+	}
+
+	private _getActiveThreadMetaRows() {
+		return this.sql<AIThreadMetaRow>`
 			SELECT
 				id,
 				workspace_id,
@@ -335,36 +297,6 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			FROM chat_meta
 			WHERE archived_at IS NULL
 		`;
-
-		const threads = rows
-			.filter((row) => threadIds.has(row.id))
-			.map(mapThreadMetaRow)
-			.sort(compareThreadRecentFirst);
-
-		this.setState({ ...this.state, isLoaded: true, threads });
-	}
-
-	private _getThreadMeta(threadId: string) {
-		const [thread] = this.sql<AIThreadMetaRow>`
-			SELECT
-				id,
-				workspace_id,
-				title,
-				status,
-				last_activity_at,
-				last_user_message_at,
-				last_assistant_message_at,
-				last_viewed_at,
-				title_generated_at,
-				created_at,
-				updated_at,
-				archived_at
-			FROM chat_meta
-			WHERE id = ${threadId}
-			LIMIT 1
-		`;
-
-		return thread ?? null;
 	}
 
 	private _getThreadSummary(threadId: string) {
@@ -376,28 +308,13 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	private _getEmptyThreadSummary(workspaceId: string) {
 		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
-		const rows = this.sql<AIThreadMetaRow>`
-			SELECT
-				id,
-				workspace_id,
-				title,
-				status,
-				last_activity_at,
-				last_user_message_at,
-				last_assistant_message_at,
-				last_viewed_at,
-				title_generated_at,
-				created_at,
-				updated_at,
-				archived_at
-			FROM chat_meta
-			WHERE workspace_id = ${workspaceId}
-				AND archived_at IS NULL
-				AND last_user_message_at IS NULL
-			ORDER BY created_at DESC
-			LIMIT 1
-		`;
-		const thread = rows.find((row) => threadIds.has(row.id));
+		const thread = this._getActiveThreadMetaRows()
+			.filter(
+				(row) =>
+					row.workspace_id === workspaceId && row.last_user_message_at === null,
+			)
+			.sort((left, right) => right.created_at - left.created_at)
+			.find((row) => threadIds.has(row.id));
 
 		return thread ? mapThreadMetaRow(thread) : null;
 	}
@@ -453,234 +370,4 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			await dbContext.dispose();
 		}
 	}
-}
-
-export class AIThread extends Think<Env> {
-	override maxSteps = 5;
-	override messageConcurrency = "latest" as const;
-	override chatRecovery = true;
-
-	getModel(): LanguageModel {
-		// Think requires a base model before `beforeTurn` runs. Normal UI sends
-		// override this per request with the selected model from `ctx.body.modelId`.
-		return getWorkersAiModel(
-			resolveWorkspaceAiChatModelId(undefined),
-			this.env,
-			this.sessionAffinity,
-		);
-	}
-
-	getSystemPrompt(): string {
-		return getAIThreadSystemPrompt();
-	}
-
-	getTools(): ToolSet {
-		return {
-			listWorkspaceItems: tool({
-				description:
-					"List visible items in the current workspace, including folder hierarchy IDs, item type, name, summary metadata, and timestamps.",
-				inputSchema: workspaceItemListInputSchema,
-				execute: async ({ limit = 80, parentId }) => {
-					const thread = await this._getThreadContext();
-
-					if (!thread) {
-						throw new Error("Chat thread not found");
-					}
-
-					return await listWorkspaceKernelItems({
-						workspaceId: thread.workspaceId,
-						userId: this.name,
-						parentId,
-						limit,
-					});
-				},
-			}),
-		};
-	}
-
-	async beforeTurn(ctx: TurnContext): Promise<TurnConfig | undefined> {
-		const directory = await this.parentAgent(UserAIStore);
-		const thread = await directory.getThreadContext(this.name);
-
-		if (!thread) {
-			throw new Error("Chat thread not found");
-		}
-
-		await directory.recordThreadRunStarted(this.name);
-
-		const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
-
-		return {
-			model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
-			system: getAIThreadSystemPrompt(thread.workspaceId),
-		};
-	}
-
-	override async onChatResponse(result: ChatResponseResult) {
-		const hasActiveConnections = Array.from(this.getConnections()).length > 0;
-
-		try {
-			const directory = await this.parentAgent(UserAIStore);
-			await directory.recordThreadRunFinished(this.name, result, {
-				viewed: hasActiveConnections,
-			});
-
-			const shouldGenerateTitle =
-				result.status === "completed" &&
-				(await directory.shouldGenerateThreadTitle(this.name));
-
-			if (shouldGenerateTitle) {
-				try {
-					await directory.recordGeneratedThreadTitle(
-						this.name,
-						await this._generateTitleFromFirstUserMessage(),
-					);
-				} catch (error) {
-					console.warn("[AIThread] Failed to generate title", error);
-				}
-			}
-		} catch (error) {
-			console.warn("[AIThread] Failed to update directory", error);
-		}
-	}
-
-	override async onChatError(error: unknown) {
-		try {
-			const directory = await this.parentAgent(UserAIStore);
-			await directory.recordThreadRunFailed(this.name);
-		} catch (metadataError) {
-			console.warn(
-				"[AIThread] Failed to clear directory run status",
-				metadataError,
-			);
-		}
-
-		return super.onChatError(error);
-	}
-
-	private async _getThreadContext() {
-		const directory = await this.parentAgent(UserAIStore);
-		return directory.getThreadContext(this.name);
-	}
-
-	private async _generateTitleFromFirstUserMessage() {
-		const messages = await this.getMessages();
-		const firstUserMessage = getFirstUserMessageText(messages);
-		const titleModelId = resolveWorkspaceAiChatModelId(undefined);
-
-		if (!firstUserMessage) {
-			return undefined;
-		}
-
-		const result = await generateText({
-			model: getWorkersAiModel(titleModelId, this.env, this.sessionAffinity),
-			prompt: [
-				"Write a concise chat title for this first user message.",
-				"Return only the title. No quotes. No punctuation at the end.",
-				"Use 2 to 6 words.",
-				"",
-				firstUserMessage,
-			].join("\n"),
-			temperature: 0.2,
-		});
-		return result.text;
-	}
-}
-
-function getWorkersAiModel(
-	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
-	env: Env,
-	sessionAffinity: string,
-) {
-	const workersAi = createWorkersAI({ binding: env.AI });
-
-	return workersAi(getWorkspaceAiChatModel(modelId), {
-		sessionAffinity,
-	});
-}
-
-function getThreadTitle(now: number) {
-	return `Chat ${new Date(now).toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-	})}`;
-}
-
-function normalizeGeneratedThreadTitle(value: string | undefined) {
-	const title = value
-		?.replace(/^["'`]+|["'`.]+$/g, "")
-		.replace(/\s+/g, " ")
-		.trim();
-
-	if (!title) {
-		return null;
-	}
-
-	return title.length > 64 ? `${title.slice(0, 61).trimEnd()}...` : title;
-}
-
-function getFirstUserMessageText(messages: UIMessage[]) {
-	const firstUserMessage = messages.find((message) => message.role === "user");
-
-	if (!firstUserMessage) {
-		return "";
-	}
-
-	return firstUserMessage.parts
-		.filter((part): part is { type: "text"; text: string } => {
-			return part.type === "text";
-		})
-		.map((part) => part.text)
-		.join("\n")
-		.trim()
-		.slice(0, 1000);
-}
-
-function getAIThreadSystemPrompt(workspaceId?: string) {
-	return [
-		"You are Thinkex's workspace assistant.",
-		workspaceId ? `You are scoped to workspace ${workspaceId}.` : undefined,
-		"Use workspace tools when the user asks about workspace contents or structure.",
-		"Do not claim to have read workspace content unless a tool result provides it.",
-		"Keep answers concise, concrete, and action-oriented.",
-	]
-		.filter(Boolean)
-		.join("\n");
-}
-
-function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
-	return {
-		id: row.id,
-		workspaceId: row.workspace_id,
-		title: row.title,
-		hasUnreadCompletion: Boolean(
-			row.last_assistant_message_at &&
-				row.last_assistant_message_at > row.last_viewed_at,
-		),
-		isRunning: row.status === "running",
-		lastActivityAt: toIsoString(row.last_activity_at),
-		lastUserMessageAt: toNullableIsoString(row.last_user_message_at),
-		lastAssistantMessageAt: toNullableIsoString(row.last_assistant_message_at),
-		lastViewedAt: toIsoString(row.last_viewed_at),
-		createdAt: toIsoString(row.created_at),
-		updatedAt: toIsoString(row.updated_at),
-	};
-}
-
-function compareThreadRecentFirst(
-	left: AIThreadSummary,
-	right: AIThreadSummary,
-) {
-	return (
-		right.lastActivityAt.localeCompare(left.lastActivityAt) ||
-		right.createdAt.localeCompare(left.createdAt)
-	);
-}
-
-function toNullableIsoString(value: number | null) {
-	return value === null ? null : toIsoString(value);
-}
-
-function toIsoString(value: number) {
-	return new Date(value).toISOString();
 }
