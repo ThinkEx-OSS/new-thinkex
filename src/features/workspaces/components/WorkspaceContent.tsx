@@ -29,10 +29,9 @@ import WorkspaceItemActionsMenu from "#/features/workspaces/components/Workspace
 import {
 	createWorkspaceItemDragData,
 	getWorkspaceDragSource,
+	getWorkspaceItemDragTypeForRow,
+	getWorkspaceItemSortableAccept,
 	getWorkspaceItemSortableGroup,
-	WORKSPACE_FOLDER_DRAG_TYPE,
-	WORKSPACE_ITEM_DRAG_TYPE,
-	WORKSPACE_ITEM_DRAG_TYPES,
 } from "#/features/workspaces/model/drag";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import {
@@ -177,6 +176,7 @@ function WorkspaceItemCard({
 }) {
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
+	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
 	const dragOperation = useDragOperation();
 	const dragSource = getWorkspaceDragSource(dragOperation.source);
 	const folderDropCollisionDetector = useMemo(
@@ -230,8 +230,8 @@ function WorkspaceItemCard({
 	} = useSortable({
 		id: item.id,
 		index,
-		type: isFolder ? WORKSPACE_FOLDER_DRAG_TYPE : WORKSPACE_ITEM_DRAG_TYPE,
-		accept: isFolder ? WORKSPACE_ITEM_DRAG_TYPES : WORKSPACE_ITEM_DRAG_TYPE,
+		type: sortableDragType,
+		accept: getWorkspaceItemSortableAccept(row),
 		group: getWorkspaceItemSortableGroup({
 			workspaceId: item.workspaceId,
 			parentId: item.parentId,

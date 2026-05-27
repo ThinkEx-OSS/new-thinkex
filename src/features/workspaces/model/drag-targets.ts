@@ -5,8 +5,11 @@ import {
 } from "./drag-data";
 import { isWorkspaceSplitDropSide } from "./drag-guards";
 import {
+	WORKSPACE_FOLDER_DRAG_TYPE,
+	WORKSPACE_ITEM_DRAG_TYPE,
 	WORKSPACE_TAB_DRAG_TYPE,
 	type WorkspaceDragEntity,
+	type WorkspaceDragRow,
 	type WorkspaceDragSource,
 	type WorkspaceDropTarget,
 	type WorkspaceSplitDropSide,
@@ -215,6 +218,16 @@ export function getWorkspaceItemSortableGroup(input: {
 		input.parentId ?? "root",
 		input.row,
 	].join(":");
+}
+
+export function getWorkspaceItemDragTypeForRow(row: WorkspaceDragRow) {
+	return row === "folder"
+		? WORKSPACE_FOLDER_DRAG_TYPE
+		: WORKSPACE_ITEM_DRAG_TYPE;
+}
+
+export function getWorkspaceItemSortableAccept(row: WorkspaceDragRow) {
+	return getWorkspaceItemDragTypeForRow(row);
 }
 
 export function getWorkspaceFolderDropTargetId(folderId: string) {
