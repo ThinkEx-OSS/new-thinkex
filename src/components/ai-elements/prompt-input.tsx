@@ -515,7 +515,7 @@ export type PromptInputProps = Omit<
 	onSubmit: (
 		message: PromptInputMessage,
 		event: FormEvent<HTMLFormElement>,
-	) => void | Promise<void>;
+	) => boolean | undefined | Promise<boolean | undefined>;
 	inputGroupClassName?: string;
 };
 
@@ -889,15 +889,17 @@ export const PromptInput = ({
 				// Handle both sync and async onSubmit
 				if (result instanceof Promise) {
 					try {
-						await result;
-						clear();
-						if (usingProvider) {
-							controller.textInput.clear();
+						const accepted = await result;
+						if (accepted !== false) {
+							clear();
+							if (usingProvider) {
+								controller.textInput.clear();
+							}
 						}
 					} catch {
 						// Don't clear on error - user may want to retry
 					}
-				} else {
+				} else if (result !== false) {
 					// Sync function completed without throwing, clear inputs
 					clear();
 					if (usingProvider) {
@@ -1004,7 +1006,7 @@ export const PromptInputTextarea = ({
 				const submitButton = form?.querySelector(
 					'button[type="submit"]',
 				) as HTMLButtonElement | null;
-				if (submitButton?.disabled) {
+				if (!submitButton || submitButton.disabled) {
 					return;
 				}
 

@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, RotateCcw } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -299,10 +299,10 @@ function AiChatThreadView({
 			const chatMessage = getChatMessageFromPrompt(message);
 
 			if (!chatMessage) {
-				return;
+				return false;
 			}
 
-			sendChatMessage(chatMessage);
+			return sendChatMessage(chatMessage);
 		},
 		[sendChatMessage],
 	);
@@ -314,6 +314,7 @@ function AiChatThreadView({
 			messages={messages}
 			onModelChange={onModelChange}
 			onRegenerateLastResponse={regenerate}
+			onRetryLastResponse={regenerate}
 			onStop={stop}
 			onSubmit={sendMessage}
 			onToolApprovalResponse={addToolApprovalResponse}
@@ -367,6 +368,7 @@ function AiChatPanelBody({
 	modelId,
 	onModelChange,
 	onRegenerateLastResponse,
+	onRetryLastResponse,
 	onStop,
 	onSubmit,
 	onToolApprovalResponse,
@@ -378,6 +380,7 @@ function AiChatPanelBody({
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
 	onRegenerateLastResponse?: () => void;
+	onRetryLastResponse?: () => void;
 	onStop?: () => void;
 	onSubmit: ComponentProps<typeof AiChatPromptInput>["onSubmit"];
 	onToolApprovalResponse?: ComponentProps<
@@ -406,7 +409,23 @@ function AiChatPanelBody({
 				<div className="mx-auto w-full max-w-2xl">
 					{error ? (
 						<Alert variant="destructive" className="mb-3 py-2">
-							<AlertDescription>{error.message}</AlertDescription>
+							<div className="flex flex-col gap-2">
+								<AlertDescription className="min-w-0 text-destructive/90">
+									{error.message}
+								</AlertDescription>
+								{onRetryLastResponse ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="xs"
+										className="self-end gap-1.5 border-border bg-background text-foreground hover:bg-muted hover:text-foreground"
+										onClick={onRetryLastResponse}
+									>
+										<RotateCcw className="size-3" />
+										Try again
+									</Button>
+								) : null}
+							</div>
 						</Alert>
 					) : null}
 					<AiChatPromptInput

@@ -75,6 +75,10 @@ export default function AiChatMessageList({
 		status === "streaming" && lastMessage?.role === "assistant"
 			? lastMessage.id
 			: undefined;
+	const requestErrorAssistantMessageId =
+		status === "error" && lastMessage?.role === "assistant"
+			? lastMessage.id
+			: undefined;
 
 	return (
 		<>
@@ -82,6 +86,7 @@ export default function AiChatMessageList({
 				<AiChatMessageRow
 					key={message.id}
 					isRegenerable={message.id === regenerableAssistantMessageId}
+					isRequestError={message.id === requestErrorAssistantMessageId}
 					isStreaming={message.id === streamingAssistantMessageId}
 					message={message}
 					onRegenerate={onRegenerateLastResponse}
@@ -101,12 +106,14 @@ export default function AiChatMessageList({
 
 function AiChatMessageRow({
 	isRegenerable,
+	isRequestError,
 	isStreaming,
 	message,
 	onRegenerate,
 	onToolApprovalResponse,
 }: {
 	isRegenerable: boolean;
+	isRequestError: boolean;
 	isStreaming: boolean;
 	message: AiChatMessage;
 	onRegenerate?: () => void;
@@ -115,6 +122,10 @@ function AiChatMessageRow({
 	const isAssistant = message.role === "assistant";
 	const visibleParts = message.parts.filter(shouldShowMessagePart);
 	const copyableText = getCopyableMessageText(message);
+
+	if (isAssistant && visibleParts.length === 0 && isRequestError) {
+		return null;
+	}
 
 	return (
 		<Message

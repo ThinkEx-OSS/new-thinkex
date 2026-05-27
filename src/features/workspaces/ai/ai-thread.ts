@@ -130,16 +130,18 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 		}
 
-		override async onChatError(error: unknown) {
-			try {
-				const directory = await this.parentAgent(getUserAIStore());
-				await directory.recordThreadRunFailed(this.name);
-			} catch (metadataError) {
-				console.warn(
-					"[AIThread] Failed to clear directory run status",
-					metadataError,
-				);
-			}
+		override onChatError(error: unknown) {
+			void this.keepAliveWhile(async () => {
+				try {
+					const directory = await this.parentAgent(getUserAIStore());
+					await directory.recordThreadRunFailed(this.name);
+				} catch (metadataError) {
+					console.warn(
+						"[AIThread] Failed to clear directory run status",
+						metadataError,
+					);
+				}
+			});
 
 			return super.onChatError(error);
 		}

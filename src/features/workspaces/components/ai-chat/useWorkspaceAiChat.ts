@@ -44,14 +44,19 @@ export function useWorkspaceAiChat({
 
 	const sendMessage = useCallback(
 		(message: AiChatSendMessage) => {
-			if (message.parts.length === 0 || isStreaming) {
-				return;
+			if (
+				message.parts.length === 0 ||
+				status === "submitted" ||
+				status === "streaming"
+			) {
+				return false;
 			}
 
 			clearError();
 			void sendAgentMessage(message);
+			return true;
 		},
-		[clearError, isStreaming, sendAgentMessage],
+		[clearError, sendAgentMessage, status],
 	);
 
 	const addToolApprovalResponse = useCallback(

@@ -53,7 +53,7 @@ const SEND_ICON_SIZE = "size-4";
 interface AiChatPromptInputProps {
 	modelId?: AiChatModelId;
 	onModelChange?: (modelId: AiChatModelId) => void;
-	onSubmit?: (message: PromptInputMessage) => Promise<void> | void;
+	onSubmit?: (message: PromptInputMessage) => boolean | Promise<boolean>;
 	onStop?: () => void;
 	status?: AiChatStatus;
 }
@@ -75,12 +75,20 @@ export default function AiChatPromptInput({
 	});
 
 	const handleSubmit = async (message: PromptInputMessage) => {
-		if (!message.text.trim() && message.files.length === 0) {
-			return;
+		if (
+			status !== "ready" ||
+			(!message.text.trim() && message.files.length === 0)
+		) {
+			return false;
 		}
 
-		await onSubmit?.(message);
+		const accepted = onSubmit ? await onSubmit(message) : false;
+		if (!accepted) {
+			return false;
+		}
+
 		setInput("");
+		return true;
 	};
 
 	const handleModelChange = (value: string) => {
