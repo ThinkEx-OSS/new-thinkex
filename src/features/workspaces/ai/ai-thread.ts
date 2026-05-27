@@ -1,5 +1,7 @@
 import type {
 	ChatResponseResult,
+	Session,
+	ToolCallResultContext,
 	TurnConfig,
 	TurnContext,
 } from "@cloudflare/think";
@@ -45,6 +47,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		override maxSteps = 5;
 		override messageConcurrency = "latest" as const;
 		override chatRecovery = true;
+		private shouldRefreshSessionPrompt = false;
 
 		getModel(): LanguageModel {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
@@ -57,7 +60,22 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		}
 
 		getSystemPrompt(): string {
-			return getAIThreadSystemPrompt();
+			return getAIThreadSoulPrompt();
+		}
+
+		configureSession(session: Session) {
+			return session
+				.withContext("soul", {
+					provider: {
+						get: async () => getAIThreadSoulPrompt(),
+					},
+				})
+				.withContext("memory", {
+					description:
+						"Short durable facts about this user, workspace, thread goals, preferences, and decisions that should help future turns. Keep this concise. Do not store source-of-truth workspace content here.",
+					maxTokens: 1500,
+				})
+				.withCachedPrompt();
 		}
 
 		getTools(): ToolSet {
@@ -99,7 +117,10 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 			return {
 				model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
-				system: getAIThreadSystemPrompt(thread.workspaceId),
+				system: getAIThreadSystemPromptForWorkspace(
+					ctx.system,
+					thread.workspaceId,
+				),
 			};
 		}
 
@@ -128,6 +149,8 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				}
 			} catch (error) {
 				console.warn("[AIThread] Failed to update directory", error);
+			} finally {
+				await this._refreshSessionPromptIfNeeded();
 			}
 		}
 
@@ -142,14 +165,36 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 						metadataError,
 					);
 				}
+
+				await this._refreshSessionPromptIfNeeded();
 			});
 
 			return super.onChatError(error);
 		}
 
+		afterToolCall(ctx: ToolCallResultContext): void {
+			if (ctx.success && ctx.toolName === "set_context") {
+				this.shouldRefreshSessionPrompt = true;
+			}
+		}
+
 		private async _getThreadContext() {
 			const directory = await this.parentAgent(getUserAIStore());
 			return directory.getThreadContext(this.name);
+		}
+
+		private async _refreshSessionPromptIfNeeded() {
+			if (!this.shouldRefreshSessionPrompt) {
+				return;
+			}
+
+			this.shouldRefreshSessionPrompt = false;
+
+			try {
+				await this.session.refreshSystemPrompt();
+			} catch (error) {
+				console.warn("[AIThread] Failed to refresh session prompt", error);
+			}
 		}
 
 		private async _generateTitleFromFirstUserMessage() {
@@ -206,14 +251,33 @@ function getFirstUserMessageText(messages: UIMessage[]) {
 		.slice(0, 1000);
 }
 
-function getAIThreadSystemPrompt(workspaceId?: string) {
+function getAIThreadSoulPrompt() {
 	return [
 		"You are Thinkex's workspace assistant.",
-		workspaceId ? `You are scoped to workspace ${workspaceId}.` : undefined,
+		"WorkspaceKernel is the source of truth for user-visible workspace items, files, revisions, events, and permissions.",
+		"Your private Think workspace is scratch space only. Do not treat private scratch files as user-visible workspace state.",
 		"Use workspace tools when the user asks about workspace contents or structure.",
 		"Do not claim to have read workspace content unless a tool result provides it.",
+		"Use memory only for durable, concise user preferences, workspace goals, thread goals, and decisions that should help future turns in this thread.",
+		"Do not update memory for transient requests or information already stored in WorkspaceKernel.",
+		"Do not store full documents, item bodies, large file text, secrets, or source-of-truth workspace state in memory.",
+		"User-visible workspace output must be created or changed through product workspace tools.",
 		"Keep answers concise, concrete, and action-oriented.",
 	]
 		.filter(Boolean)
 		.join("\n");
+}
+
+function getAIThreadSystemPromptForWorkspace(
+	system: string,
+	workspaceId: string,
+) {
+	return [
+		system,
+		[
+			"Current ThinkEx runtime scope:",
+			`- Workspace id: ${workspaceId}`,
+			"- Use absolute workspace paths such as / when calling workspace tools.",
+		].join("\n"),
+	].join("\n\n");
 }
