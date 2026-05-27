@@ -1,13 +1,15 @@
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "glm-4.7-flash";
+
 export const WORKSPACE_AI_CHAT_MODELS = [
-	{
-		id: "kimi-k2.6",
-		name: "Kimi K2.6",
-		workersAiModel: "@cf/moonshotai/kimi-k2.6",
-	},
 	{
 		id: "glm-4.7-flash",
 		name: "GLM 4.7 Flash",
 		workersAiModel: "@cf/zai-org/glm-4.7-flash",
+	},
+	{
+		id: "kimi-k2.6",
+		name: "Kimi K2.6",
+		workersAiModel: "@cf/moonshotai/kimi-k2.6",
 	},
 	{
 		id: "gemma-4-26b",
@@ -44,12 +46,15 @@ export function resolveWorkspaceAiChatModelId(
 		return value as WorkspaceAiChatModelId;
 	}
 
-	return WORKSPACE_AI_CHAT_MODELS[0].id;
+	return DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
 }
 
 export function getWorkspaceAiChatModel(modelId: WorkspaceAiChatModelId) {
 	return (
 		WORKSPACE_AI_CHAT_MODELS.find((model) => model.id === modelId) ??
+		WORKSPACE_AI_CHAT_MODELS.find(
+			(model) => model.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+		) ??
 		WORKSPACE_AI_CHAT_MODELS[0]
 	).workersAiModel;
 }

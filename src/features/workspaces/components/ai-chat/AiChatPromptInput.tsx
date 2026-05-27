@@ -30,7 +30,10 @@ import {
 	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
 import { buttonVariants } from "#/components/ui/button";
-import { AI_CHAT_MODELS } from "#/features/workspaces/components/ai-chat/constants";
+import {
+	AI_CHAT_MODELS,
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+} from "#/features/workspaces/components/ai-chat/constants";
 import type {
 	AiChatModelId,
 	AiChatStatus,
@@ -59,7 +62,7 @@ interface AiChatPromptInputProps {
 }
 
 export default function AiChatPromptInput({
-	modelId = AI_CHAT_MODELS[0].id,
+	modelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	onModelChange,
 	onSubmit,
 	onStop,

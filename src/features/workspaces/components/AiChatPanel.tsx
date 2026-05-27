@@ -22,7 +22,7 @@ import AiChatMessageList from "#/features/workspaces/components/ai-chat/AiChatMe
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
 import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
 import { AiChatPanelLoadingContent } from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
-import { AI_CHAT_MODELS } from "#/features/workspaces/components/ai-chat/constants";
+import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type {
 	AiChatMessage,
 	AiChatModelId,
@@ -61,7 +61,9 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 	);
 	const isMaximized =
 		presentation?.mode === "maximized" && presentation.pane.kind === "chat";
-	const [modelId, setModelId] = useState<AiChatModelId>(AI_CHAT_MODELS[0].id);
+	const [modelId, setModelId] = useState<AiChatModelId>(
+		DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	);
 	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] =
 		useState(false);
 	const [isSelectingNewThread, setIsSelectingNewThread] = useState(false);

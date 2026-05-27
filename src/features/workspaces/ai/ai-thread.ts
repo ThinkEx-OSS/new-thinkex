@@ -10,6 +10,7 @@ import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 
 import {
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	getWorkspaceAiChatModel,
 	resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
@@ -49,7 +50,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
 			// override this per request with the selected model from `ctx.body.modelId`.
 			return getWorkersAiModel(
-				resolveWorkspaceAiChatModelId(undefined),
+				DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 				this.env,
 				this.sessionAffinity,
 			);
@@ -154,7 +155,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		private async _generateTitleFromFirstUserMessage() {
 			const messages = await this.getMessages();
 			const firstUserMessage = getFirstUserMessageText(messages);
-			const titleModelId = resolveWorkspaceAiChatModelId(undefined);
+			const titleModelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
 
 			if (!firstUserMessage) {
 				return undefined;
