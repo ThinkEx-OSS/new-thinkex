@@ -164,17 +164,12 @@ export function WorkspaceShell({
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => {
-		createWorkspaceItemMutation.mutate(
-			{
-				id: crypto.randomUUID(),
-				workspaceId: workspace.id,
-				parentId: input.parentId,
-				type: input.type,
-			},
-			{
-				onSuccess: (command) => openItem(command.result),
-			},
-		);
+		createWorkspaceItemMutation.mutate({
+			id: crypto.randomUUID(),
+			workspaceId: workspace.id,
+			parentId: input.parentId,
+			type: input.type,
+		});
 	};
 
 	useEffect(() => {

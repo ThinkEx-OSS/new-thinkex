@@ -42,12 +42,15 @@ import type {
 const USER_ID_HEADER = "x-thinkex-user-id";
 const USER_NAME_HEADER = "x-thinkex-user-name";
 const USER_IMAGE_HEADER = "x-thinkex-user-image";
+const workspaceKernelInlineThresholdBytes = 1_500_000;
 
 export class WorkspaceKernel extends Agent<Env> {
 	private readonly kernelSql: WorkspaceKernelSql = (strings, ...values) =>
 		this.sql(strings, ...values);
 	private readonly workspace = new ShellWorkspace({
 		sql: this.ctx.storage.sql,
+		r2: this.env.WORKSPACE_KERNEL_FILES,
+		inlineThreshold: workspaceKernelInlineThresholdBytes,
 		namespace: "workspace_kernel_files",
 		name: () => this.name,
 	});
@@ -100,6 +103,10 @@ export class WorkspaceKernel extends Agent<Env> {
 		const id = input.id ?? crypto.randomUUID();
 		const parentId = input.parentId ?? null;
 		const now = Date.now();
+
+		if (this.store.getItemRowIncludingDeleted(id)) {
+			throw new Error("Workspace item id already exists.");
+		}
 
 		this.store.assertParentIsValid(parentId);
 		const name = this.store.getAvailableItemName({

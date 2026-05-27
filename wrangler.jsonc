@@ -11,6 +11,12 @@
 		"binding": "AI",
 		"remote": true
 	},
+	"r2_buckets": [
+		{
+			"binding": "WORKSPACE_KERNEL_FILES",
+			"bucket_name": "thinkex-workspace-kernel-files"
+		}
+	],
 	"vars": {
 		"THINKEX_DB_DRIVER": "hyperdrive"
 	},

@@ -1,5 +1,3 @@
-import { type Agent, getAgentByName } from "agents";
-
 import { createDbContext } from "#/db/server";
 import type {
 	CreateWorkspaceItemInput,
@@ -255,9 +253,9 @@ export async function deleteWorkspaceKernelItem(
 
 async function getWorkspaceKernel(workspaceId: string) {
 	const { env } = await import("cloudflare:workers");
+	const workspaceKernelNamespace = env.WorkspaceKernel as unknown as {
+		getByName(name: string): WorkspaceKernelClient;
+	};
 
-	return (await getAgentByName(
-		env.WorkspaceKernel as unknown as DurableObjectNamespace<Agent<Env>>,
-		workspaceId,
-	)) as unknown as WorkspaceKernelClient;
+	return workspaceKernelNamespace.getByName(workspaceId);
 }

@@ -5,6 +5,6 @@ pre-commit:
       run: pnpm biome check --write --staged --no-errors-on-unmatched
     compiler:
       glob: "*.{ts,tsx}"
-      run: pnpm eslint --max-warnings 0 {staged_files}
+      run: pnpm eslint --max-warnings 0 --no-warn-ignored {staged_files}
     typecheck:
       run: pnpm typecheck

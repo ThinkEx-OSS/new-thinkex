@@ -8,8 +8,8 @@
 	"scripts": {
 		"dev": "infisical run --env=dev --path=/app -- pnpm dev:local",
 		"dev:local": "vite dev --port 3000",
-		"dev:hyperdrive": "infisical run --env=dev --path=/app -- pnpm dev:hyperdrive:local",
-		"dev:hyperdrive:local": "THINKEX_DB_DRIVER=hyperdrive wrangler dev --remote",
+		"dev:hyperdrive": "infisical run --env=dev --path=/app -- pnpm dev:hyperdrive:remote",
+		"dev:hyperdrive:remote": "THINKEX_DB_DRIVER=hyperdrive wrangler dev --remote",
 		"build": "CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vite build",
 		"preview": "pnpm run build && vite preview",
 		"format": "biome format",
