@@ -6,11 +6,22 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
 import agents from "agents/vite";
 import { defineConfig } from "vite";
+import { analyzer } from "vite-bundle-analyzer";
 
-const config = defineConfig({
+export default defineConfig(({ command }) => ({
 	resolve: { tsconfigPaths: true },
 	plugins: [
-		devtools(),
+		...(command === "serve" ? [devtools()] : []),
+		...(process.env.ANALYZE === "true"
+			? [
+					analyzer({
+						analyzerMode: "static",
+						fileName: ".analyze/stats",
+						openAnalyzer: true,
+						summary: true,
+					}),
+				]
+			: []),
 		agents(),
 		cloudflare({ viteEnvironment: { name: "ssr" } }),
 		tailwindcss(),
@@ -26,6 +37,4 @@ const config = defineConfig({
 		viteReact(),
 		babel({ presets: [reactCompilerPreset()] }),
 	],
-});
-
-export default config;
+}));

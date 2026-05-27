@@ -33,7 +33,7 @@ function shouldUseHyperdrive() {
 	);
 }
 
-export async function getRuntimeConnectionString() {
+async function getRuntimeConnectionString() {
 	const connectionString = shouldUseHyperdrive()
 		? await getBindingConnectionString()
 		: getDirectConnectionString();

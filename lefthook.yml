@@ -1,0 +1,10 @@
+pre-commit:
+  commands:
+    biome:
+      glob: "*.{js,jsx,ts,tsx,json,jsonc,css}"
+      run: pnpm biome check --write --staged --no-errors-on-unmatched
+    compiler:
+      glob: "*.{ts,tsx}"
+      run: pnpm eslint --max-warnings 0 {staged_files}
+    typecheck:
+      run: pnpm typecheck

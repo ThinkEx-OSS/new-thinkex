@@ -6,5 +6,3 @@ export const apiErrorSchema = z.object({
 	message: z.string(),
 	details: z.unknown().optional(),
 });
-
-export type ApiError = z.infer<typeof apiErrorSchema>;

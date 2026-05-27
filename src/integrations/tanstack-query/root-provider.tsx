@@ -10,4 +10,3 @@ export function getContext() {
 		session: null as AuthSession | null,
 	};
 }
-export default function TanstackQueryProvider() {}

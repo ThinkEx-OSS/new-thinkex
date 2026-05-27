@@ -2,12 +2,9 @@ import {
 	formatForDisplay,
 	type Hotkey,
 	type HotkeyCallback,
-	type HotkeySequence,
 	type HotkeysProviderOptions,
 	type UseHotkeyOptions,
-	type UseHotkeySequenceOptions,
 	useHotkey,
-	useHotkeySequence,
 } from "@tanstack/react-hotkeys";
 
 type AppHotkeyAction =
@@ -39,29 +36,6 @@ const APP_HOTKEYS = {
 	},
 } as const satisfies Record<AppHotkeyAction, AppHotkeyDefinition>;
 
-const RESERVED_BROWSER_HOTKEYS = [
-	"Mod+W",
-	"Mod+Shift+W",
-	"Mod+T",
-	"Mod+N",
-	"Mod+L",
-	"Mod+R",
-	"Mod+Q",
-	"Mod+F",
-	"Mod+P",
-	"Mod+1",
-	"Mod+2",
-	"Mod+3",
-	"Mod+4",
-	"Mod+5",
-	"Mod+6",
-	"Mod+7",
-	"Mod+8",
-	"Mod+9",
-] as const satisfies readonly Hotkey[];
-
-const RESERVED_BROWSER_HOTKEY_SET = new Set<Hotkey>(RESERVED_BROWSER_HOTKEYS);
-
 const APP_HOTKEY_DEFAULT_OPTIONS = {
 	hotkey: {
 		conflictBehavior: "warn",
@@ -82,14 +56,6 @@ function useAppHotkey(
 	useHotkey(APP_HOTKEYS[action].hotkey, callback, options);
 }
 
-function useAppHotkeySequence(
-	sequence: HotkeySequence,
-	callback: HotkeyCallback,
-	options?: UseHotkeySequenceOptions,
-) {
-	useHotkeySequence(sequence, callback, options);
-}
-
 function getAppHotkey(action: AppHotkeyAction) {
 	return APP_HOTKEYS[action];
 }
@@ -98,18 +64,10 @@ function formatAppHotkey(hotkey: Hotkey) {
 	return formatForDisplay(hotkey);
 }
 
-function isReservedBrowserHotkey(hotkey: Hotkey) {
-	return RESERVED_BROWSER_HOTKEY_SET.has(hotkey);
-}
-
 export type { AppHotkeyAction, AppHotkeyDefinition };
 export {
 	APP_HOTKEY_DEFAULT_OPTIONS,
-	APP_HOTKEYS,
 	formatAppHotkey,
 	getAppHotkey,
-	isReservedBrowserHotkey,
-	RESERVED_BROWSER_HOTKEYS,
 	useAppHotkey,
-	useAppHotkeySequence,
 };

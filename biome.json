@@ -20,8 +20,12 @@
 			"**/wrangler.jsonc",
 			"!references/**/*",
 			"!**/references/**/*",
-			"!**/src/routeTree.gen.ts",
-			"!**/src/styles.css"
+			"!**/src/styles.css",
+			"!!**/dist",
+			"!!**/.vite",
+			"!!**/*.gen.*",
+			"!!**/worker-configuration.d.ts",
+			"!!**/pnpm-lock.yaml"
 		]
 	},
 	"formatter": {
@@ -36,12 +40,34 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"correctness": {
+				"noNestedComponentDefinitions": "error",
+				"useExhaustiveDependencies": "error",
+				"useHookAtTopLevel": "error",
+				"useJsxKeyInIterable": "error"
+			},
 			"nursery": {
 				"noFloatingPromises": "error",
 				"noMisusedPromises": "error"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "error",
+				"noDuplicateDependencies": "error"
 			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["**/routes/**/*.{tsx,ts}"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useFilenamingConvention": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"
