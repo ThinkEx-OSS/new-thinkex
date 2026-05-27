@@ -7,18 +7,14 @@ import {
 	deleteWorkspaceInputSchema,
 	deleteWorkspaceItemInputSchema,
 	moveWorkspaceItemInputSchema,
-	readWorkspaceItemInputSchema,
 	renameWorkspaceItemInputSchema,
 	updateWorkspaceInputSchema,
-	writeWorkspaceItemInputSchema,
 } from "#/features/workspaces/contracts";
 import {
 	createWorkspaceKernelItem,
 	deleteWorkspaceKernelItem,
 	moveWorkspaceKernelItem,
-	readWorkspaceKernelItem,
 	renameWorkspaceKernelItem,
-	writeWorkspaceKernelItem,
 } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	createWorkspaceForCurrentUser,
@@ -28,7 +24,6 @@ import {
 } from "#/features/workspaces/server/mutations";
 import { getCurrentUserId } from "#/features/workspaces/server/permissions";
 import {
-	getWorkspaceForCurrentUser,
 	getWorkspacePageForCurrentUser,
 	listWorkspacesForCurrentUser,
 } from "#/features/workspaces/server/queries";
@@ -40,10 +35,6 @@ const workspaceIdInputSchema = z.object({
 export const listWorkspacesFn = createServerFn({ method: "GET" }).handler(
 	async () => listWorkspacesForCurrentUser(),
 );
-
-export const getWorkspaceFn = createServerFn({ method: "GET" })
-	.inputValidator(workspaceIdInputSchema)
-	.handler(async ({ data }) => getWorkspaceForCurrentUser(data.workspaceId));
 
 export const getWorkspacePageFn = createServerFn({ method: "GET" })
 	.inputValidator(workspaceIdInputSchema)
@@ -78,15 +69,6 @@ export const createWorkspaceItemFn = createServerFn({ method: "POST" })
 		}),
 	);
 
-export const readWorkspaceItemFn = createServerFn({ method: "GET" })
-	.inputValidator(readWorkspaceItemInputSchema)
-	.handler(async ({ data }) =>
-		readWorkspaceKernelItem({
-			...data,
-			userId: await getCurrentUserId(),
-		}),
-	);
-
 export const renameWorkspaceItemFn = createServerFn({ method: "POST" })
 	.inputValidator(renameWorkspaceItemInputSchema)
 	.handler(async ({ data }) =>
@@ -109,15 +91,6 @@ export const deleteWorkspaceItemFn = createServerFn({ method: "POST" })
 	.inputValidator(deleteWorkspaceItemInputSchema)
 	.handler(async ({ data }) =>
 		deleteWorkspaceKernelItem({
-			...data,
-			userId: await getCurrentUserId(),
-		}),
-	);
-
-export const writeWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(writeWorkspaceItemInputSchema)
-	.handler(async ({ data }) =>
-		writeWorkspaceKernelItem({
 			...data,
 			userId: await getCurrentUserId(),
 		}),

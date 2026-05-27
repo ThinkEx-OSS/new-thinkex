@@ -3,7 +3,6 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import type {
-	WorkspaceDetail,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
@@ -56,40 +55,6 @@ export async function listWorkspacesForUser(
 			lastOpenedAt: row.lastOpenedAt,
 		}),
 	);
-}
-
-export async function getWorkspaceForCurrentUser(
-	workspaceId: string,
-): Promise<WorkspaceDetail | null> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
-
-	try {
-		const [row] = await dbContext.db
-			.select({
-				workspace: workspaces,
-				lastOpenedAt: workspaceMembers.lastOpenedAt,
-			})
-			.from(workspaceMembers)
-			.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
-			.where(
-				and(
-					eq(workspaceMembers.workspaceId, workspaceId),
-					eq(workspaceMembers.userId, userId),
-					isNull(workspaces.archivedAt),
-				),
-			)
-			.limit(1);
-
-		return row
-			? mapWorkspaceDetailRow({
-					...row.workspace,
-					lastOpenedAt: row.lastOpenedAt,
-				})
-			: null;
-	} finally {
-		await dbContext.dispose();
-	}
 }
 
 export async function getWorkspacePageForCurrentUser(

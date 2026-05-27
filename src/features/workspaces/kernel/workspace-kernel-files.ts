@@ -1,0 +1,57 @@
+import type { WorkspaceItemType } from "#/features/workspaces/contracts";
+
+export function getWorkspaceKernelShellPath(input: {
+	id: string;
+	type: WorkspaceItemType;
+}) {
+	if (input.type === "folder") {
+		return `/items/${input.id}`;
+	}
+
+	return `/items/${input.id}/content.${getContentExtension(input.type)}`;
+}
+
+export function getWorkspaceKernelContentMimeType(type: WorkspaceItemType) {
+	switch (type) {
+		case "document":
+			return "text/markdown";
+		case "flashcard":
+		case "quiz":
+			return "application/json";
+		case "file":
+			return "text/plain";
+		case "folder":
+			return "inode/directory";
+	}
+}
+
+export function getInitialWorkspaceKernelContent(
+	type: WorkspaceItemType,
+	name: string,
+) {
+	switch (type) {
+		case "document":
+			return `# ${name}\n`;
+		case "flashcard":
+			return JSON.stringify({ version: 1, cards: [] }, null, 2);
+		case "quiz":
+			return JSON.stringify({ version: 1, questions: [] }, null, 2);
+		case "file":
+		case "folder":
+			return "";
+	}
+}
+
+function getContentExtension(type: WorkspaceItemType) {
+	switch (type) {
+		case "document":
+			return "md";
+		case "flashcard":
+		case "quiz":
+			return "json";
+		case "file":
+			return "txt";
+		case "folder":
+			return "";
+	}
+}

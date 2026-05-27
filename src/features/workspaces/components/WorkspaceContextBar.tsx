@@ -57,6 +57,7 @@ import {
 } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { getWorkspaceBrowseParentId } from "#/features/workspaces/model/view";
 import {
 	formatAppHotkey,
 	getAppHotkey,
@@ -71,12 +72,11 @@ interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
 	activeItem?: WorkspaceItem;
 	itemsById: Map<string, WorkspaceItem>;
-	isCreatingItem?: boolean;
-	onCloseCurrentView: () => void;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => void;
+	onCloseItemView?: () => void;
 	onNavigateToRoot: () => void;
 	onNavigateToItem: (item: WorkspaceItem) => void;
 }
@@ -85,15 +85,14 @@ export default function WorkspaceContextBar({
 	workspace,
 	activeItem,
 	itemsById,
-	isCreatingItem = false,
-	onCloseCurrentView,
 	onCreateItem,
+	onCloseItemView,
 	onNavigateToRoot,
 	onNavigateToItem,
 }: WorkspaceContextBarProps) {
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
-	const createParentId = activeItem?.type === "folder" ? activeItem.id : null;
+	const createParentId = getWorkspaceBrowseParentId(activeItem);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
@@ -179,7 +178,6 @@ export default function WorkspaceContextBar({
 									size="sm"
 									type="button"
 									className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-									disabled={isCreatingItem}
 								/>
 							}
 						>
@@ -232,14 +230,14 @@ export default function WorkspaceContextBar({
 							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
-					{activeItem ? (
+					{onCloseItemView ? (
 						<Button
 							variant="ghost"
 							size="icon-sm"
 							type="button"
 							className="size-8.5 text-muted-foreground hover:text-foreground"
-							aria-label="Go up one level"
-							onClick={onCloseCurrentView}
+							aria-label="Close item"
+							onClick={onCloseItemView}
 						>
 							<X className="size-4" />
 						</Button>

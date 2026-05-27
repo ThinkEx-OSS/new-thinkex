@@ -5,11 +5,9 @@ import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemInput,
 	MoveWorkspaceItemInput,
-	ReadWorkspaceItemInput,
 	RenameWorkspaceItemInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
-	WriteWorkspaceItemInput,
 } from "#/features/workspaces/contracts";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
@@ -68,6 +66,7 @@ interface WorkspaceKernelClient {
 		limit?: number;
 	}): Promise<WorkspaceItemSummary[]>;
 	createItem(input: {
+		id?: string;
 		parentId?: string | null;
 		type: CreateWorkspaceItemInput["type"];
 		name?: string;
@@ -175,27 +174,13 @@ export async function createWorkspaceKernelItem(
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
 		return await kernel.createItem({
+			id: input.id,
 			parentId: input.parentId ?? null,
 			type: input.type,
 			name: input.name,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});
-	} finally {
-		await dbContext.dispose();
-	}
-}
-
-export async function readWorkspaceKernelItem(
-	input: ReadWorkspaceItemInput & { userId: string },
-) {
-	const dbContext = await createDbContext();
-
-	try {
-		await assertCanReadWorkspace(dbContext.db, input);
-		const kernel = await getWorkspaceKernel(input.workspaceId);
-
-		return await kernel.readItem({ itemId: input.itemId });
 	} finally {
 		await dbContext.dispose();
 	}
@@ -263,26 +248,6 @@ export async function deleteWorkspaceKernelItem(
 				workspaceId: input.workspaceId,
 			},
 		};
-	} finally {
-		await dbContext.dispose();
-	}
-}
-
-export async function writeWorkspaceKernelItem(
-	input: WriteWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
-	const dbContext = await createDbContext();
-
-	try {
-		await assertCanMutateWorkspace(dbContext.db, input);
-		const kernel = await getWorkspaceKernel(input.workspaceId);
-
-		return await kernel.writeItem({
-			itemId: input.itemId,
-			content: input.content,
-			actorUserId: input.userId,
-			clientMutationId: input.clientMutationId ?? null,
-		});
 	} finally {
 		await dbContext.dispose();
 	}

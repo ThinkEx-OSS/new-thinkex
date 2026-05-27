@@ -202,30 +202,3 @@ export async function deleteWorkspaceForCurrentUser(
 		await dbContext.dispose();
 	}
 }
-
-export async function archiveWorkspaceForCurrentUser(workspaceId: string) {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
-
-	try {
-		await assertCanMutateWorkspace(dbContext.db, { workspaceId, userId });
-
-		const workspace = await dbContext.db.transaction(async (tx) => {
-			const [archivedWorkspace] = await tx
-				.update(workspaces)
-				.set({ archivedAt: new Date() })
-				.where(eq(workspaces.id, workspaceId))
-				.returning();
-
-			if (!archivedWorkspace) {
-				return null;
-			}
-
-			return archivedWorkspace;
-		});
-
-		return workspace ? mapWorkspaceRow(workspace) : null;
-	} finally {
-		await dbContext.dispose();
-	}
-}

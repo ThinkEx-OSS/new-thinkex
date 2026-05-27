@@ -1,10 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
+	CreateWorkspaceItemInput,
+	MoveWorkspaceItemInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import {
+	getAvailableWorkspaceItemName,
+	getWorkspaceItemTypeMeta,
+} from "#/features/workspaces/defaults";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
 export const workspacesQueryKey = ["workspaces"] as const;
@@ -15,18 +21,6 @@ export function workspaceQueryKey(workspaceId: string) {
 
 export function workspacePageQueryKey(workspaceId: string) {
 	return ["workspaces", workspaceId, "page"] as const;
-}
-
-export function workspaceItemContentQueryKey(
-	workspaceId: string,
-	itemId: string,
-) {
-	return ["workspaces", workspaceId, "items", itemId, "content"] as const;
-}
-
-interface WorkspaceItemContentResult {
-	item: WorkspaceItemSummary;
-	content: string | null;
 }
 
 type WorkspaceListCacheMode = "upsert" | "update-existing" | "skip";
@@ -159,46 +153,163 @@ export function removeWorkspaceDetailCaches(
 	queryClient.removeQueries({ queryKey: workspacePageQueryKey(workspaceId) });
 }
 
+export function createWorkspaceItemInPageCache(
+	queryClient: QueryClient,
+	input: CreateWorkspaceItemInput & { id: string },
+) {
+	const parentId = input.parentId ?? null;
+	const now = new Date().toISOString();
+	const previousPage = queryClient.getQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+	);
+
+	if (!previousPage) {
+		return undefined;
+	}
+
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: previousPage.items,
+		type: input.type,
+		parentId,
+		requestedName: input.name,
+	});
+	const item: WorkspaceItemSummary = {
+		id: input.id,
+		workspaceId: input.workspaceId,
+		parentId,
+		type: input.type,
+		title: name,
+		name,
+		meta: getWorkspaceItemTypeMeta(input.type),
+		color: null,
+		metadataJson: {},
+		sortOrder: getNextWorkspaceItemSortOrder(previousPage.items, parentId),
+		createdAt: now,
+		updatedAt: now,
+		deletedAt: null,
+	};
+
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		{
+			...previousPage,
+			items: [...previousPage.items, item].sort(compareWorkspaceItems),
+		},
+	);
+}
+
+export function moveWorkspaceItemInPageCache(
+	queryClient: QueryClient,
+	input: MoveWorkspaceItemInput,
+) {
+	const nextParentId = input.parentId ?? null;
+	const previousPage = queryClient.getQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+	);
+
+	if (!previousPage) {
+		return undefined;
+	}
+
+	const previousItem = previousPage.items.find(
+		(item) => item.id === input.itemId,
+	);
+
+	if (!previousItem) {
+		return undefined;
+	}
+
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: previousPage.items,
+		type: previousItem.type,
+		parentId: nextParentId,
+		requestedName: previousItem.name,
+		excludeItemId: previousItem.id,
+	});
+
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		{
+			...previousPage,
+			items: previousPage.items
+				.map((item) =>
+					item.id === input.itemId
+						? {
+								...item,
+								parentId: nextParentId,
+								name,
+								title: name,
+								sortOrder:
+									input.sortOrder ??
+									getNextWorkspaceItemSortOrder(
+										previousPage.items.filter(
+											(candidate) => candidate.id !== input.itemId,
+										),
+										nextParentId,
+									),
+								updatedAt: new Date().toISOString(),
+							}
+						: item,
+				)
+				.sort(compareWorkspaceItems),
+		},
+	);
+
+	return previousItem;
+}
+
+export function removeWorkspaceItemsFromPageCache(
+	queryClient: QueryClient,
+	workspaceId: string,
+	itemIds: string[],
+) {
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: current.items.filter((item) => !itemIds.includes(item.id)),
+					}
+				: current,
+	);
+}
+
+export function restoreWorkspaceItemInPageCache(
+	queryClient: QueryClient,
+	item: WorkspaceItemSummary | undefined,
+) {
+	if (!item) {
+		return;
+	}
+
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(item.workspaceId),
+		(current) =>
+			current
+				? {
+						...current,
+						items: current.items
+							.map((candidate) => (candidate.id === item.id ? item : candidate))
+							.sort(compareWorkspaceItems),
+					}
+				: current,
+	);
+}
+
 export function applyWorkspaceEventToCache(
 	queryClient: QueryClient,
 	event: WorkspaceRealtimeEvent,
-	options: {
-		content?: string | null;
-		invalidateRemoteContent?: boolean;
-	} = {},
 ) {
 	switch (event.type) {
 		case "workspace.item.created":
 		case "workspace.item.renamed":
 		case "workspace.item.moved":
+		case "workspace.item.content.updated":
 			upsertWorkspaceItemInPageCache(queryClient, event.payload.item, event);
 			return;
 		case "workspace.item.deleted":
 			removeWorkspaceItemFromPageCache(queryClient, event);
-			return;
-		case "workspace.item.content.updated":
-			upsertWorkspaceItemInPageCache(queryClient, event.payload.item, event);
-			if (options.content !== undefined) {
-				queryClient.setQueryData<WorkspaceItemContentResult>(
-					workspaceItemContentQueryKey(
-						event.workspaceId,
-						event.payload.item.id,
-					),
-					{
-						item: event.payload.item,
-						content: options.content,
-					},
-				);
-				return;
-			}
-			if (options.invalidateRemoteContent ?? true) {
-				void queryClient.invalidateQueries({
-					queryKey: workspaceItemContentQueryKey(
-						event.workspaceId,
-						event.payload.item.id,
-					),
-				});
-			}
 			return;
 	}
 }
@@ -271,6 +382,38 @@ function compareWorkspaceItems(
 	}
 
 	return left.name.localeCompare(right.name);
+}
+
+function getNextWorkspaceItemSortOrder(
+	items: WorkspaceItemSummary[],
+	parentId: string | null,
+) {
+	const siblingSortOrders = items
+		.filter((item) => item.parentId === parentId)
+		.map((item) => item.sortOrder);
+
+	return siblingSortOrders.length > 0
+		? Math.max(...siblingSortOrders) + 1024
+		: 1024;
+}
+
+function getAvailableWorkspaceItemNameInPage(input: {
+	items: WorkspaceItemSummary[];
+	type: WorkspaceItemSummary["type"];
+	parentId: string | null;
+	requestedName?: string;
+	excludeItemId?: string;
+}) {
+	return getAvailableWorkspaceItemName({
+		type: input.type,
+		requestedName: input.requestedName,
+		existingNames: input.items
+			.filter(
+				(item) =>
+					item.parentId === input.parentId && item.id !== input.excludeItemId,
+			)
+			.map((item) => item.name),
+	});
 }
 
 function compareWorkspaceRecentFirst(

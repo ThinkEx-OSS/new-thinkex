@@ -1,5 +1,3 @@
-import { useCallback, useRef } from "react";
-
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
 export const WORKSPACE_LOCAL_MUTATION_ECHO_TTL_MS = 30_000;
@@ -43,44 +41,26 @@ export function forgetWorkspaceClientMutationId(clientMutationId: string) {
 export function shouldIgnoreWorkspaceClientMutationEcho(
 	event: WorkspaceRealtimeEvent,
 ) {
-	return Boolean(
-		event.clientMutationId &&
-			localClientMutationIds.has(event.clientMutationId),
-	);
+	if (!event.clientMutationId) {
+		return false;
+	}
+
+	if (!localClientMutationIds.has(event.clientMutationId)) {
+		return false;
+	}
+
+	forgetWorkspaceClientMutationId(event.clientMutationId);
+	return true;
 }
 
-export function useWorkspaceClientMutationEcho<
-	TInput extends object & WorkspaceClientMutationInput,
->() {
-	const clientMutationIds = useRef(new WeakMap<TInput, string>());
-
-	const getClientMutationId = useCallback(
-		(input: TInput) =>
-			clientMutationIds.current.get(input) ??
-			input.clientMutationId ??
-			crypto.randomUUID(),
-		[],
-	);
-	const trackClientMutationId = useCallback(
-		(input: TInput, clientMutationId: string) => {
-			clientMutationIds.current.set(input, clientMutationId);
-			trackWorkspaceClientMutationId(clientMutationId);
-		},
-		[],
-	);
-	const forgetClientMutationId = useCallback((clientMutationId: string) => {
-		forgetWorkspaceClientMutationId(clientMutationId);
-	}, []);
-	const shouldIgnoreLocalEcho = useCallback(
-		(event: WorkspaceRealtimeEvent) =>
-			shouldIgnoreWorkspaceClientMutationEcho(event),
-		[],
-	);
+export function prepareWorkspaceClientMutationInput<
+	TInput extends WorkspaceClientMutationInput,
+>(input: TInput) {
+	const clientMutationId = input.clientMutationId ?? crypto.randomUUID();
+	trackWorkspaceClientMutationId(clientMutationId);
 
 	return {
-		forgetClientMutationId,
-		getClientMutationId,
-		shouldIgnoreLocalEcho,
-		trackClientMutationId,
+		...input,
+		clientMutationId,
 	};
 }

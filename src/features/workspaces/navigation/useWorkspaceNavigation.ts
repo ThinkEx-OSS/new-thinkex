@@ -8,6 +8,7 @@ import {
 	WORKSPACE_ROOT_VIEW,
 } from "#/features/workspaces/model/tabs";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import {
 	useWorkspaceTabsStore,
 	type WorkspaceTab,
@@ -235,8 +236,8 @@ export function useWorkspaceNavigation({
 
 		navigateToTab(tab);
 	};
-	const closeCurrentView = () => {
-		if (!activeItem) {
+	const closeItemView = () => {
+		if (!isWorkspaceItemView(activeItem)) {
 			return;
 		}
 
@@ -251,7 +252,7 @@ export function useWorkspaceNavigation({
 	return {
 		activeItem,
 		activeTab,
-		closeCurrentView,
+		closeItemView,
 		closeWorkspaceTab,
 		createWorkspaceTab,
 		itemsById,

@@ -35,7 +35,6 @@ export type WorkspaceRealtimeEvent =
 export interface WorkspaceCommandResult<T> {
 	result: T;
 	event: WorkspaceRealtimeEvent;
-	revision: number;
 }
 
 export type WorkspaceRealtimeServerMessage =

@@ -1,15 +1,10 @@
-import {
-	isRecord,
-	isWorkspaceDragRow,
-	isWorkspaceSplitDropSide,
-} from "./drag-guards";
+import { isRecord, isWorkspaceDragRow } from "./drag-guards";
 import {
 	WORKSPACE_FOLDER_DRAG_TYPE,
 	WORKSPACE_ITEM_DRAG_TYPE,
 	type WorkspaceDragData,
 	type WorkspaceDragRow,
 	type WorkspaceDropTargetData,
-	type WorkspaceSplitDropSide,
 } from "./drag-types";
 
 export function createWorkspaceTabDragData(tabId: string): WorkspaceDragData {
@@ -49,26 +44,6 @@ export function createWorkspaceTabItemInsertDropTargetData(
 	return {
 		kind: "workspace-tab-item-insert-drop-target",
 		index,
-	};
-}
-
-export function createWorkspaceSplitDropTargetData(input: {
-	paneId: string;
-	side: WorkspaceSplitDropSide;
-}): WorkspaceDropTargetData {
-	return {
-		kind: "workspace-pane-split-drop-target",
-		paneId: input.paneId,
-		side: input.side,
-	};
-}
-
-export function createWorkspaceAiContextDropTargetData(input: {
-	workspaceId: string;
-}): WorkspaceDropTargetData {
-	return {
-		kind: "workspace-ai-context-drop-target",
-		workspaceId: input.workspaceId,
 	};
 }
 
@@ -135,30 +110,6 @@ export function getWorkspaceDropTargetData(
 		return {
 			kind: "workspace-tab-item-insert-drop-target",
 			index: data.index,
-		};
-	}
-
-	if (
-		data.kind === "workspace-pane-split-drop-target" &&
-		typeof data.paneId === "string" &&
-		data.paneId &&
-		isWorkspaceSplitDropSide(data.side)
-	) {
-		return {
-			kind: "workspace-pane-split-drop-target",
-			paneId: data.paneId,
-			side: data.side,
-		};
-	}
-
-	if (
-		data.kind === "workspace-ai-context-drop-target" &&
-		typeof data.workspaceId === "string" &&
-		data.workspaceId
-	) {
-		return {
-			kind: "workspace-ai-context-drop-target",
-			workspaceId: data.workspaceId,
 		};
 	}
 

@@ -35,6 +35,7 @@ import {
 	shouldPreventWorkspacePointerActivation,
 } from "#/features/workspaces/model/drag";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
@@ -128,7 +129,7 @@ export function WorkspaceShell({
 		activeItem,
 		activeTab,
 		activateWorkspaceTab,
-		closeCurrentView,
+		closeItemView,
 		closeWorkspaceTab,
 		createWorkspaceTab,
 		dispatchWorkspaceDragCommand,
@@ -165,6 +166,7 @@ export function WorkspaceShell({
 	}) => {
 		createWorkspaceItemMutation.mutate(
 			{
+				id: crypto.randomUUID(),
 				workspaceId: workspace.id,
 				parentId: input.parentId,
 				type: input.type,
@@ -266,9 +268,10 @@ export function WorkspaceShell({
 								workspace={workspace}
 								activeItem={activeItem}
 								itemsById={itemsById}
-								isCreatingItem={createWorkspaceItemMutation.isPending}
-								onCloseCurrentView={closeCurrentView}
 								onCreateItem={createWorkspaceItem}
+								onCloseItemView={
+									isWorkspaceItemView(activeItem) ? closeItemView : undefined
+								}
 								onNavigateToRoot={openWorkspaceRoot}
 								onNavigateToItem={openItem}
 							/>
@@ -291,7 +294,6 @@ export function WorkspaceShell({
 						/>
 					) : (
 						<WorkspaceContent
-							workspaceId={workspace.id}
 							items={orderedScopedItems}
 							activeItem={activeItem}
 							onOpenItem={openItem}
@@ -386,7 +388,6 @@ function WorkspacePaneRenderer({
 
 			return (
 				<WorkspaceContent
-					workspaceId={workspaceId}
 					items={scopedItems}
 					activeItem={item}
 					onOpenItem={onOpenItem}
@@ -396,7 +397,6 @@ function WorkspacePaneRenderer({
 		case "root":
 			return (
 				<WorkspaceContent
-					workspaceId={workspaceId}
 					items={scopedItems}
 					activeItem={undefined}
 					onOpenItem={onOpenItem}

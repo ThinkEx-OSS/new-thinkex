@@ -1,12 +1,10 @@
 import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { useQuery } from "@tanstack/react-query";
-import { FolderInput, FolderOpen, Save } from "lucide-react";
+import { FolderInput, FolderOpen } from "lucide-react";
 import {
 	type MouseEvent,
 	type PointerEvent,
-	type ReactNode,
 	useCallback,
 	useMemo,
 	useState,
@@ -22,7 +20,6 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { ScrollArea } from "#/components/ui/scroll-area";
-import { Textarea } from "#/components/ui/textarea";
 import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import {
 	DeleteWorkspaceItemAlert,
@@ -44,12 +41,13 @@ import {
 	splitWorkspaceChildren,
 } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { workspaceItemContentQueryOptions } from "#/features/workspaces/query-options";
-import { useWriteWorkspaceItemContentMutation } from "#/features/workspaces/use-workspace-kernel-items";
+import {
+	getWorkspaceBrowseParentId,
+	isWorkspaceItemView,
+} from "#/features/workspaces/model/view";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
-	workspaceId: string;
 	items: WorkspaceItem[];
 	activeItem?: WorkspaceItem;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
@@ -69,7 +67,6 @@ function focusWorkspaceSurface(event: PointerEvent<HTMLDivElement>) {
 }
 
 export default function WorkspaceContent({
-	workspaceId,
 	items,
 	activeItem,
 	onOpenItem,
@@ -78,11 +75,11 @@ export default function WorkspaceContent({
 	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
 	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
-	if (activeItem && activeItem.type !== "folder") {
-		return <WorkspaceItemView workspaceId={workspaceId} item={activeItem} />;
+	if (isWorkspaceItemView(activeItem)) {
+		return <WorkspaceItemView item={activeItem} />;
 	}
 
-	const parentId = activeItem?.type === "folder" ? activeItem.id : null;
+	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
 	const openDeleteAlert = (item: WorkspaceItem) => {
@@ -361,144 +358,55 @@ function WorkspaceItemCard({
 				</CardTitle>
 				{meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
 			</CardHeader>
-			<div
-				className={cn(
-					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
-					"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
-					"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
-				)}
-			>
-				<WorkspaceItemActionsMenu
-					item={item}
-					trigger={
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="text-muted-foreground hover:text-foreground"
-							aria-label={`Open actions for ${item.name}`}
-							onClick={(event) => event.stopPropagation()}
-						/>
-					}
-					onRenameItem={onRenameItem}
-					onDeleteItem={onDeleteItem}
-				/>
-			</div>
+			{isFolder ? null : (
+				<div
+					className={cn(
+						"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
+						"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
+						"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
+					)}
+				>
+					<WorkspaceItemActionsMenu
+						item={item}
+						trigger={
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="text-muted-foreground hover:text-foreground"
+								aria-label={`Open actions for ${item.name}`}
+								onClick={(event) => event.stopPropagation()}
+							/>
+						}
+						onRenameItem={onRenameItem}
+						onDeleteItem={onDeleteItem}
+					/>
+				</div>
+			)}
 		</Card>
 	);
 }
 
-function WorkspaceItemView({
-	workspaceId,
-	item,
-}: {
-	workspaceId: string;
-	item: WorkspaceItem;
-}) {
-	const contentQuery = useQuery(
-		workspaceItemContentQueryOptions({
-			workspaceId,
-			itemId: item.id,
-		}),
-	);
-	const writeContentMutation = useWriteWorkspaceItemContentMutation();
-
-	async function saveContent(content: string) {
-		await writeContentMutation.mutateAsync({
-			workspaceId,
-			itemId: item.id,
-			content,
-		});
-	}
-
-	if (contentQuery.isLoading) {
-		return (
-			<WorkspaceItemFrame item={item}>
-				<section className="flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20 text-sm text-muted-foreground">
-					Loading content
-				</section>
-			</WorkspaceItemFrame>
-		);
-	}
-
-	if (contentQuery.isError) {
-		return (
-			<WorkspaceItemFrame item={item}>
-				<section className="flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20 text-sm text-muted-foreground">
-					Unable to load content
-				</section>
-			</WorkspaceItemFrame>
-		);
-	}
+function WorkspaceItemView({ item }: { item: WorkspaceItem }) {
+	const {
+		Icon: ItemIcon,
+		iconClassName,
+		surfaceClassName,
+	} = getWorkspaceItemDisplay(item);
 
 	return (
-		<WorkspaceItemEditor
-			key={`${item.id}:${contentQuery.data?.item.updatedAt ?? ""}`}
-			item={item}
-			initialContent={contentQuery.data?.content ?? ""}
-			isSaving={writeContentMutation.isPending}
-			onSave={saveContent}
-		/>
-	);
-}
-
-function WorkspaceItemFrame({
-	item,
-	action,
-	children,
-}: {
-	item: WorkspaceItem;
-	action?: ReactNode;
-	children: ReactNode;
-}) {
-	return (
-		<div className="flex h-[calc(100vh-5.75rem)] min-h-0 flex-col">
-			<header className="flex min-h-14 items-center justify-between gap-3 border-b px-4 py-2">
-				<div className="min-w-0">
-					<p className="text-muted-foreground text-xs">{item.meta}</p>
-					<h2 className="truncate font-medium text-sm">{item.name}</h2>
-				</div>
-				{action}
-			</header>
-			<div className="min-h-0 flex-1 p-4">{children}</div>
+		<div className="h-[calc(100vh-5.75rem)] p-4">
+			<section
+				className={cn(
+					"flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20",
+					surfaceClassName,
+				)}
+			>
+				<ItemIcon
+					className={cn("size-12", iconClassName)}
+					strokeWidth={1.75}
+					aria-hidden="true"
+				/>
+			</section>
 		</div>
-	);
-}
-
-function WorkspaceItemEditor({
-	item,
-	initialContent,
-	isSaving,
-	onSave,
-}: {
-	item: WorkspaceItem;
-	initialContent: string;
-	isSaving: boolean;
-	onSave: (content: string) => Promise<void>;
-}) {
-	const [draft, setDraft] = useState(initialContent);
-	const isDirty = draft !== initialContent;
-
-	return (
-		<WorkspaceItemFrame
-			item={item}
-			action={
-				<Button
-					type="button"
-					size="sm"
-					onClick={() => void onSave(draft)}
-					disabled={!isDirty || isSaving}
-				>
-					<Save />
-					Save
-				</Button>
-			}
-		>
-			<Textarea
-				value={draft}
-				onChange={(event) => setDraft(event.target.value)}
-				className="h-full min-h-[24rem] resize-none font-mono text-sm leading-6"
-				spellCheck={false}
-			/>
-		</WorkspaceItemFrame>
 	);
 }

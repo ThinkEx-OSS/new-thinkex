@@ -5,16 +5,8 @@ export const WORKSPACE_ITEM_DRAG_TYPES = [
 	WORKSPACE_FOLDER_DRAG_TYPE,
 	WORKSPACE_ITEM_DRAG_TYPE,
 ];
-export const WORKSPACE_OPENABLE_DRAG_TYPES = [
-	WORKSPACE_TAB_DRAG_TYPE,
-	WORKSPACE_FOLDER_DRAG_TYPE,
-	WORKSPACE_ITEM_DRAG_TYPE,
-];
 export const WORKSPACE_TAB_ITEM_INSERT_DROP_TYPE =
 	"workspace-tab-item-insert-drop-target";
-export const WORKSPACE_SPLIT_DROP_TYPE = "workspace-split-drop-target";
-export const WORKSPACE_AI_CONTEXT_DROP_TYPE =
-	"workspace-ai-context-drop-target";
 
 export type WorkspaceDragRow = "folder" | "item";
 export type WorkspaceSplitDropSide = "left" | "right" | "top" | "bottom";

@@ -45,8 +45,6 @@ export const workspaceSummarySchema = z.object({
 	archivedAt: z.string().nullable(),
 });
 
-export const workspaceDetailSchema = workspaceSummarySchema;
-
 export const workspaceItemTypeSchema = z.enum([
 	"folder",
 	"document",
@@ -72,22 +70,11 @@ export const workspaceItemSummarySchema = z.object({
 });
 
 export const createWorkspaceItemInputSchema = z.object({
+	id: z.string().uuid().optional(),
 	workspaceId: z.string().min(1),
 	parentId: z.string().min(1).nullable().optional(),
 	type: workspaceItemTypeSchema,
 	name: z.string().trim().min(1).max(160).optional(),
-	clientMutationId: z.string().uuid().optional(),
-});
-
-export const readWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
-});
-
-export const writeWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
-	content: z.string().max(2_000_000),
 	clientMutationId: z.string().uuid().optional(),
 });
 
@@ -130,12 +117,8 @@ export const deleteWorkspaceInputSchema = z.object({
 	confirmationName: z.string().trim().min(1),
 });
 
-export const workspaceListResponseSchema = z.object({
-	workspaces: z.array(workspaceSummarySchema),
-});
-
 export const workspacePageSchema = z.object({
-	workspace: workspaceDetailSchema,
+	workspace: workspaceSummarySchema,
 	items: z.array(workspaceItemSummarySchema),
 	revision: z.number().int().nonnegative(),
 });
@@ -143,17 +126,11 @@ export const workspacePageSchema = z.object({
 export type WorkspaceIcon = z.infer<typeof workspaceIconSchema>;
 export type WorkspaceColor = z.infer<typeof workspaceColorSchema>;
 export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
-export type WorkspaceDetail = z.infer<typeof workspaceDetailSchema>;
+export type WorkspaceDetail = WorkspaceSummary;
 export type WorkspaceItemType = z.infer<typeof workspaceItemTypeSchema>;
 export type WorkspaceItemSummary = z.infer<typeof workspaceItemSummarySchema>;
 export type CreateWorkspaceItemInput = z.infer<
 	typeof createWorkspaceItemInputSchema
->;
-export type ReadWorkspaceItemInput = z.infer<
-	typeof readWorkspaceItemInputSchema
->;
-export type WriteWorkspaceItemInput = z.infer<
-	typeof writeWorkspaceItemInputSchema
 >;
 export type RenameWorkspaceItemInput = z.infer<
 	typeof renameWorkspaceItemInputSchema
@@ -167,5 +144,4 @@ export type DeleteWorkspaceItemInput = z.infer<
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceInputSchema>;
 export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;
 export type DeleteWorkspaceInput = z.infer<typeof deleteWorkspaceInputSchema>;
-export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;

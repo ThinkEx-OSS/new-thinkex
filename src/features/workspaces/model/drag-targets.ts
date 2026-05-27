@@ -221,7 +221,7 @@ export function getWorkspaceFolderDropTargetId(folderId: string) {
 	return `${WORKSPACE_FOLDER_DROP_TARGET_ID_PREFIX}${folderId}`;
 }
 
-export function getWorkspaceFolderDropTargetFolderId(id: unknown) {
+function getWorkspaceFolderDropTargetFolderId(id: unknown) {
 	if (typeof id !== "string") {
 		return undefined;
 	}
@@ -242,7 +242,7 @@ export function getWorkspaceTabItemInsertDropTargetId(
 	return `${WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX}${index}:${placement}`;
 }
 
-export function getWorkspaceTabItemInsertDropTargetIndex(id: unknown) {
+function getWorkspaceTabItemInsertDropTargetIndex(id: unknown) {
 	if (typeof id !== "string") {
 		return undefined;
 	}
@@ -259,16 +259,7 @@ export function getWorkspaceTabItemInsertDropTargetIndex(id: unknown) {
 	return Number.isInteger(index) && index >= 0 ? index : undefined;
 }
 
-export function getWorkspaceSplitDropTargetId(input: {
-	paneId: string;
-	side: WorkspaceSplitDropSide;
-}) {
-	return `${WORKSPACE_SPLIT_DROP_TARGET_ID_PREFIX}${encodeURIComponent(
-		input.paneId,
-	)}:${input.side}`;
-}
-
-export function getWorkspaceSplitDropTargetInput(id: unknown):
+function getWorkspaceSplitDropTargetInput(id: unknown):
 	| {
 			paneId: string;
 			side: WorkspaceSplitDropSide;
@@ -304,13 +295,7 @@ export function getWorkspaceSplitDropTargetInput(id: unknown):
 	};
 }
 
-export function getWorkspaceAiContextDropTargetId(workspaceId: string) {
-	return `${WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX}${encodeURIComponent(
-		workspaceId,
-	)}`;
-}
-
-export function getWorkspaceAiContextDropTargetWorkspaceId(id: unknown) {
+function getWorkspaceAiContextDropTargetWorkspaceId(id: unknown) {
 	if (typeof id !== "string") {
 		return undefined;
 	}

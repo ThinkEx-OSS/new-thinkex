@@ -124,12 +124,13 @@ Important current implementation anchors:
 - `WorkspaceKernel` now exists as an Agent-backed Durable Object with a shell-backed item registry and first create/read/write/rename/move/delete commands.
 - `WorkspaceKernel` also owns lightweight workspace presence and coarse workspace event fanout over WebSockets.
 - `UserAIStore` is an Agent with SQLite state for private user AI thread metadata.
-- `AIThread` is a Think-based chat agent. It reads workspace facts through `workspace-kernel-access`.
+- `AIThread` is a Think-based chat agent. Its current workspace tool lists kernel-backed workspace items through `workspace-kernel-access`.
 - User AI routing is user-scoped: `/user-ai` authenticates the Better Auth session, then routes to `UserAIStore` named by `session.user.id`.
 - The UI connects to `UserAIStore` and targets a thread with `sub: [{ agent: "AIThread", name: threadId }]`.
 - `UserAIStore` owns user AI UX state such as thread title, running status, unread state, last viewed time, and archived/deleted thread membership.
 - Postgres no longer owns the workspace item tree, snapshots, assets, search rows, item events, or per-item user state.
-- The current workspace realtime bridge broadcasts coarse events but does not yet persist kernel events, assign revisions, or patch TanStack Query caches from a shared event applier.
+- `WorkspaceKernel` now persists compact kernel events, assigns workspace revisions, broadcasts committed events, and feeds a shared TanStack Query event applier.
+- The user-facing document editor is currently deferred; documents open to a lightweight item surface while kernel read/write methods and broader AI write tools remain behind the next tool-surface step.
 
 This draft changes that center of gravity for the workspace body only. It does not imply removing relational storage for users, organizations, billing, workspace directory records, or global product metadata.
 
@@ -394,8 +395,7 @@ Thinkex should add that thin layer before building richer editors:
 ```ts
 type WorkspaceCommandResult<T> = {
   result: T;
-  event?: WorkspaceEvent;
-  revision: number;
+  event: WorkspaceEvent;
 };
 ```
 
@@ -433,7 +433,7 @@ WorkspaceKernel command
   increments revision
   writes kernel_events row
   broadcasts workspace.event
-  returns { result, event, revision }
+  returns { result, event }
 ```
 
 This replaces the current temporary pattern where the server mutates the kernel and then separately schedules a broadcast. Separate scheduling is fine as a bridge, but it can drift from the committed write. The durable event should be created in the same kernel turn as the mutation so the websocket broadcast, cache update, and future replay all refer to the same committed fact.
@@ -974,7 +974,7 @@ For workspaces:
 - route loaders read workspace directory and membership from central Postgres
 - route loaders read workspace body from `WorkspaceKernel.getPage`
 - workspace UI commands call `WorkspaceKernel`
-- current AI tools call `WorkspaceKernel` instead of Postgres query helpers
+- the current AI list tool calls `WorkspaceKernel` instead of Postgres query helpers
 
 Development workspace data can be reset instead of migrated.
 
@@ -984,10 +984,11 @@ Implemented in the current foundation branch:
 
 - add `kernel_events` and `kernel_meta`
 - assign monotonic workspace revisions inside `WorkspaceKernel`
-- return `{ result, event, revision }` from mutating kernel commands
+- return `{ result, event }` from mutating kernel commands; the event carries the committed revision
 - broadcast events from the kernel after the committed write
 - include `clientMutationId` on mutating commands and events
 - build one TanStack Query event applier used by mutation success and websocket messages
+- optimistically patch item create and move in the workspace page cache, then replace with the committed kernel event
 - refetch the workspace page on reconnect or event revision gaps
 - keep full-page refetch as the reconnect/revision-gap fallback, not the default success path
 
@@ -1183,15 +1184,16 @@ Already completed in the current foundation branch:
 - route loader support for kernel-mode workspaces
 - `workspace-kernel-access` backed by `WorkspaceKernel`
 - `UserAIStore` / `AIThread` runtime names and `/user-ai` routing
-- `AIThread` reads routed through `workspace-kernel-access`
+- `AIThread` list-workspace-items tool routed through `workspace-kernel-access`
 - browser workspace presence connected through the Agents client SDK
 - add `kernel_events` and `kernel_meta`
-- return command envelopes with `result`, `event`, and `revision`
+- return command envelopes with `result` and `event`
 - move event creation and broadcasting into `WorkspaceKernel`
 - thread `clientMutationId` through user mutations
 - build `applyWorkspaceEventToCache(queryClient, event)`
 - use the same event applier from mutation success and websocket messages
 - refetch on reconnect or revision gaps
+- optimistically patch item create and move in the workspace page cache
 
 The next implementation step should not be another item UI. It should be the shell-backed AI tool surface:
 
@@ -1206,11 +1208,8 @@ The next implementation step should not be another item UI. It should be the she
 Before broad feature work, run small implementation spikes:
 
 1. Command/event/cache protocol
-   - Add durable kernel event rows and revision tracking.
-   - Return command envelopes from every mutating kernel method.
-   - Broadcast only committed kernel events.
-   - Patch TanStack Query caches from a shared event applier.
-   - Verify same-tab optimistic writes, second-browser writes, AI writes, reconnect refetch, and revision-gap fallback.
+   - Completed foundation: durable kernel event rows, revision tracking, command envelopes, committed-event broadcasts, shared TanStack Query event application, and reconnect/revision-gap refetch.
+   - Remaining verification: second-browser writes, AI writes once write tools exist, and revision-gap fallback under missed-message conditions.
 
 2. Shell Tool Surface
    - Expose read/list/grep/edit through kernel-safe tools.

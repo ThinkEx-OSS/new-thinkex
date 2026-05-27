@@ -12,15 +12,30 @@ export const DEFAULT_WORKSPACE_ICON = "compass" satisfies WorkspaceIcon;
 export function getDefaultWorkspaceItemName(type: WorkspaceItemType) {
 	switch (type) {
 		case "folder":
-			return "Untitled Folder";
+			return "New folder";
 		case "document":
-			return "Untitled Document";
+			return "New document";
 		case "file":
-			return "Untitled File";
+			return "New file";
 		case "flashcard":
-			return "Untitled Flashcards";
+			return "New flashcards";
 		case "quiz":
-			return "Untitled Quiz";
+			return "New quiz";
+	}
+}
+
+export function getWorkspaceItemTypeMeta(type: WorkspaceItemType) {
+	switch (type) {
+		case "folder":
+			return "Folder";
+		case "document":
+			return "Document";
+		case "file":
+			return "File";
+		case "flashcard":
+			return "Flashcards";
+		case "quiz":
+			return "Quiz";
 	}
 }
 
@@ -29,12 +44,24 @@ export function getAvailableWorkspaceItemName(input: {
 	existingNames: Iterable<string>;
 	requestedName?: string;
 }) {
-	const baseName =
-		input.requestedName?.trim() || getDefaultWorkspaceItemName(input.type);
+	const requestedName = input.requestedName?.trim();
+	const baseName = requestedName || getDefaultWorkspaceItemName(input.type);
 	const existingNames = new Set(input.existingNames);
 
-	if (!existingNames.has(baseName)) {
+	if (requestedName && !existingNames.has(baseName)) {
 		return baseName;
+	}
+
+	if (!requestedName) {
+		for (let suffix = 1; suffix < 1000; suffix += 1) {
+			const candidate = `${baseName} ${suffix}`;
+
+			if (!existingNames.has(candidate)) {
+				return candidate;
+			}
+		}
+
+		return `${baseName} ${crypto.randomUUID().slice(0, 8)}`;
 	}
 
 	for (let suffix = 2; suffix < 1000; suffix += 1) {
