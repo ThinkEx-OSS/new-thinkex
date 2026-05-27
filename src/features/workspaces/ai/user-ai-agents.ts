@@ -177,6 +177,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			return {
 				id: thread.id,
 				workspaceId: thread.workspace_id,
+				userId: this.name,
 			};
 		} catch {
 			return null;

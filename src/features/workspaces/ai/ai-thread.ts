@@ -68,7 +68,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 						return await listWorkspaceKernelItems({
 							workspaceId: thread.workspaceId,
-							userId: this.name,
+							userId: thread.userId,
 							parentId,
 							limit,
 						});

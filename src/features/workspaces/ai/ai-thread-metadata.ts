@@ -22,6 +22,7 @@ export interface UserAIStoreState {
 export interface AIThreadContext {
 	id: string;
 	workspaceId: string;
+	userId: string;
 }
 
 export interface AIThreadMetaRow {
