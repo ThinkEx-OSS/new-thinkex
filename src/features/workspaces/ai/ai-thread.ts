@@ -21,15 +21,21 @@ const workspaceItemListInputSchema = z.object({
 		.number()
 		.int()
 		.min(1)
-		.max(100)
+		.max(200)
 		.optional()
-		.describe("Maximum number of items to return. Defaults to 80."),
-	parentId: z
+		.describe("Maximum number of entries to return. Defaults to 100."),
+	path: z
 		.string()
-		.nullable()
+		.min(1)
 		.optional()
 		.describe(
-			"Optional parent folder item ID. Use null for root items. Omit to list all items.",
+			"Absolute workspace path to list. Defaults to the workspace root (/).",
+		),
+	recursive: z
+		.boolean()
+		.optional()
+		.describe(
+			"List nested descendants, like ls -R. Defaults to false for immediate children only.",
 		),
 });
 
@@ -57,9 +63,9 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			return {
 				listWorkspaceItems: tool({
 					description:
-						"List visible items in the current workspace, including folder hierarchy IDs, item type, name, summary metadata, and timestamps.",
+						"List the real ThinkEx workspace like ls. Use absolute paths such as /. By default this returns immediate children; set recursive to true for a tree-style listing.",
 					inputSchema: workspaceItemListInputSchema,
-					execute: async ({ limit = 80, parentId }) => {
+					execute: async ({ limit, path, recursive }) => {
 						const thread = await this._getThreadContext();
 
 						if (!thread) {
@@ -69,7 +75,8 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 						return await listWorkspaceKernelItems({
 							workspaceId: thread.workspaceId,
 							userId: thread.userId,
-							parentId,
+							path,
+							recursive,
 							limit,
 						});
 					},

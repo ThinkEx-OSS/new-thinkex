@@ -64,6 +64,7 @@ UserAIStore(userId)
 
 AIThread(threadId)
   chat runtime and tool execution
+  private Think workspace for thread-local scratch files
   calls WorkspaceKernel for shared workspace reads/writes
 
 R2
@@ -234,39 +235,63 @@ UserAIStore(userId)
 
 AIThread(threadId)
   conversation runtime
+  private Think workspace
+  scratch files, notes, intermediate plans, temporary generated data
   calls kernel-backed tools
 
 WorkspaceKernel(workspaceId)
   shared workspace source of truth
+  user-visible items, files, revisions, events, permissions
 ```
 
 This keeps ownership clear:
 
 - user chat directory state remains private/user-scoped
 - workspace filesystem state remains shared/workspace-scoped
+- `AIThread`'s built-in Think workspace is thread-local scratch space, not the product workspace
+- private Think workspace files stay invisible to users unless the model explicitly commits an output through a product tool
 - chat threads bridge to the workspace through typed tools
 - shared workspace chats can be added later if the product needs them
 
 Important rule: the shared user-visible workspace lives in `WorkspaceKernel`, not in `AIThread`'s private Think workspace. Treat thread-local AI storage as scratchpad state unless a tool explicitly commits output through `WorkspaceKernel`.
 
-Initial AI tools should go through `workspace-kernel-access` and then `WorkspaceKernel`:
+AI tools should make the boundary explicit:
 
-- list items
-- read item/file content
-- search or grep workspace text
-- create a document
-- edit a document with exact replacement or Shell edit plan
-- create flashcards or quiz derivatives
-- request extraction/transcription/indexing
+- Think workspace tools are for private scratchpad work and temporary files.
+- Product workspace tools go through `workspace-kernel-access` and then `WorkspaceKernel`.
+- Product tools should use shell-like user-visible paths, item types, names, and capabilities.
+- Raw database ids and Durable Object ids should stay internal unless a diagnostic or repair tool specifically needs them.
+- Shell-like paths are the AI-facing workspace address format; the kernel maps those paths to stable item ids internally.
+- Current product tools should start absolute-path-first. If ThinkEx adds `cd`/`pwd`, the current working directory belongs in `AIThread` thread state and `WorkspaceKernel` should still receive normalized absolute paths.
+- A model may draft in the private Think workspace, but user-visible output is created or updated only by a kernel command.
+
+Initial product workspace tools:
+
+- `listWorkspaceItems`: list user-visible items like `ls`, rooted at the workspace or a folder item.
+- `readWorkspaceItem`: read item metadata and supported text/projection content.
+- `searchWorkspaceItems`: search names, extracted text, and workspace-local projections.
+- `createWorkspaceDocument`: create a user-visible document item.
+- `writeWorkspaceDocument`: create a new snapshot or apply a constrained edit to a document.
+- `createWorkspaceFile`: commit generated or uploaded bytes as a file item.
+- `createWorkspaceDerivative`: create flashcards, quizzes, summaries, exports, or other derived items from sources.
+- `requestWorkspaceJob`: start extraction, transcription, conversion, indexing, or long-running generation.
+
+Avoid exposing broad product tools too early:
+
+- no direct delete or bulk overwrite until the product has a deliberate undo/recovery story
+- no raw `rm`, `mv`, or arbitrary Shell writes against the product workspace
+- no unbounded grep/read over every large file without limits and progress reporting
+- no hidden mutation from private Think workspace into product workspace
 
 AI write policy:
 
 - safe reads can execute directly after authorization
 - low-risk creations may execute directly if the user requested them
-- destructive edits, overwrites, deletes, and bulk operations should require approval
+- there is no dedicated approval flow for now
+- destructive edits, overwrites, deletes, and bulk operations should stay unavailable or be routed through normal product undo/recovery
 - generated outputs should usually be new items, derivatives, or new snapshots rather than silent source rewrites
 
-The kernel remains the final authority. SDK approval is interaction plumbing; kernel permission and capability checks are mandatory even after user approval.
+The kernel remains the final authority. Tool schemas reduce model mistakes, but kernel permission and capability checks remain mandatory.
 
 ## Execution Ladder
 
@@ -421,14 +446,16 @@ Needed before production migration:
 2. Should `DocumentSession` be an Agent sub-agent or a normal named Durable Object after testing the editor collaboration library?
 3. Should private AI threads remain under `UserAIStore` permanently, or should ThinkEx later add a shared workspace AI thread type?
 4. Should workspace membership stay only in central Postgres, or should the kernel cache membership for low-latency checks?
-5. What is the exact approval policy for AI writes?
+5. What undo or recovery path is required before enabling destructive AI writes?
 6. What is the minimum export format for a self-contained workspace bundle?
 7. What should be inline in Durable Object SQLite versus stored as R2-backed snapshot body?
-8. Which Shell operations should be exposed directly to AI, and which must be wrapped in product commands?
-9. How should kernel schema migrations run across many workspaces?
-10. How much local search should live inside `WorkspaceKernel`/Shell before using AI Search, Vectorize, or another central retrieval index?
-11. What data location and jurisdiction choices should be exposed to users or org admins?
-12. How should billing and quotas account for per-workspace Durable Object storage, R2 bytes, sandbox runtime, indexing rows, and AI usage?
-13. How should tests create, reset, inspect, and seed kernel-backed workspaces?
-14. What user-facing workflows truly need Cloudflare Sandbox SDK versus Shell plus Dynamic Worker execute?
-15. Which editor collaboration runtime should back the first `DocumentSession`?
+8. What path rules should the product workspace expose to AI, including escaping slashes in item names and handling duplicate names?
+9. When should product AI tools add `cd`/`pwd` convenience on top of absolute paths?
+10. Which Shell operations should be exposed directly to AI inside the private Think workspace, and which product operations must be wrapped in kernel commands?
+11. How should kernel schema migrations run across many workspaces?
+12. How much local search should live inside `WorkspaceKernel`/Shell before using AI Search, Vectorize, or another central retrieval index?
+13. What data location and jurisdiction choices should be exposed to users or org admins?
+14. How should billing and quotas account for per-workspace Durable Object storage, R2 bytes, sandbox runtime, indexing rows, and AI usage?
+15. How should tests create, reset, inspect, and seed kernel-backed workspaces?
+16. What user-facing workflows truly need Cloudflare Sandbox SDK versus Shell plus Dynamic Worker execute?
+17. Which editor collaboration runtime should back the first `DocumentSession`?
