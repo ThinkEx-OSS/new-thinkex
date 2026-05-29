@@ -1,12 +1,11 @@
 import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { FolderInput } from "lucide-react";
-import { type MouseEvent, useState } from "react";
+import { CheckIcon, FolderInput } from "lucide-react";
+import { type ComponentProps, type MouseEvent, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
-import { Checkbox } from "#/components/ui/checkbox";
 import { ContextMenu, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import WorkspaceItemActionsMenu, {
@@ -29,6 +28,8 @@ const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
 const WORKSPACE_ITEM_PREVIEW_CONTROL_ROW = "2.5rem";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_INSET = "px-2";
+const WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL =
+	"relative z-20 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY =
 	"pointer-events-none opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100";
 
@@ -208,16 +209,25 @@ export default function WorkspaceItemCard({
 						WORKSPACE_ITEM_PREVIEW_CONTROL_INSET,
 					)}
 				>
-					<Checkbox
+					<WorkspaceItemPreviewControl
 						aria-label={`Select ${item.name}`}
-						checked={isSelectionPreviewed}
+						aria-pressed={isSelectionPreviewed}
 						className={cn(
-							"relative z-20",
-							WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
 							isSelectionPreviewed && "pointer-events-auto opacity-100",
 						)}
 						onClick={handleSelectionPreviewClick}
-					/>
+					>
+						<span
+							className={cn(
+								"flex size-4 items-center justify-center rounded-[4px] border border-input bg-background shadow-xs transition-colors dark:bg-input/30",
+								isSelectionPreviewed &&
+									"border-primary bg-primary text-primary-foreground dark:bg-primary",
+							)}
+							aria-hidden="true"
+						>
+							{isSelectionPreviewed ? <CheckIcon className="size-3.5" /> : null}
+						</span>
+					</WorkspaceItemPreviewControl>
 					<div aria-hidden="true" className="h-full flex-1" />
 					{isFolder ? (
 						<div className="size-8" aria-hidden="true" />
@@ -225,13 +235,7 @@ export default function WorkspaceItemCard({
 						<WorkspaceItemActionsMenu
 							item={item}
 							trigger={
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									className={cn(
-										"relative z-20 shrink-0 text-muted-foreground hover:text-foreground",
-										WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
-									)}
+								<WorkspaceItemPreviewControl
 									aria-label={`Open actions for ${item.name}`}
 									onClick={(event) => event.stopPropagation()}
 								/>
@@ -289,5 +293,23 @@ export default function WorkspaceItemCard({
 				onDeleteItem={onDeleteItem}
 			/>
 		</ContextMenu>
+	);
+}
+
+function WorkspaceItemPreviewControl({
+	className,
+	...props
+}: ComponentProps<typeof Button>) {
+	return (
+		<Button
+			variant="ghost"
+			size="icon-sm"
+			className={cn(
+				WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL,
+				WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
+				className,
+			)}
+			{...props}
+		/>
 	);
 }
