@@ -29,8 +29,8 @@ const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
 const WORKSPACE_ITEM_PREVIEW_CONTROL_ROW = "2.5rem";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_INSET = "px-2";
-const WORKSPACE_ITEM_PREVIEW_CONTROL_TARGET =
-	"flex size-8 items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
+const WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY =
+	"pointer-events-none opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100";
 
 interface WorkspaceItemCardProps {
 	item: WorkspaceItem;
@@ -166,9 +166,7 @@ export default function WorkspaceItemCard({
 		event.stopPropagation();
 		onRenameItem(item);
 	};
-	const handleSelectionPreviewClick = (
-		event: MouseEvent<HTMLButtonElement>,
-	) => {
+	const handleSelectionPreviewClick = (event: MouseEvent<HTMLElement>) => {
 		event.stopPropagation();
 		setIsSelectionPreviewed((current) => !current);
 	};
@@ -188,35 +186,39 @@ export default function WorkspaceItemCard({
 			)}
 			onContextMenu={(event) => event.stopPropagation()}
 		>
+			<button
+				type="button"
+				data-workspace-drag-open
+				className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+				aria-label={`Open ${item.name}`}
+				onClick={handleOpen}
+			/>
 			<div
-				className={cn("grid min-h-20 flex-1 bg-muted", surfaceClassName)}
+				className={cn(
+					"pointer-events-none relative z-10 grid min-h-20 flex-1 bg-muted",
+					surfaceClassName,
+				)}
 				style={{
 					gridTemplateRows: `${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW} 1fr ${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW}`,
 				}}
 			>
 				<div
 					className={cn(
-						"pointer-events-none flex items-center justify-between gap-2 opacity-0 transition-opacity",
+						"flex items-center justify-between",
 						WORKSPACE_ITEM_PREVIEW_CONTROL_INSET,
-						"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
-						"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
-						isSelectionPreviewed && "pointer-events-auto opacity-100",
 					)}
 				>
-					<button
-						type="button"
-						className={WORKSPACE_ITEM_PREVIEW_CONTROL_TARGET}
+					<Checkbox
 						aria-label={`Select ${item.name}`}
-						aria-pressed={isSelectionPreviewed}
+						checked={isSelectionPreviewed}
+						className={cn(
+							"relative z-20",
+							WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
+							isSelectionPreviewed && "pointer-events-auto opacity-100",
+						)}
 						onClick={handleSelectionPreviewClick}
-					>
-						<Checkbox
-							aria-hidden="true"
-							checked={isSelectionPreviewed}
-							className="pointer-events-none"
-							tabIndex={-1}
-						/>
-					</button>
+					/>
+					<div aria-hidden="true" className="h-full flex-1" />
 					{isFolder ? (
 						<div className="size-8" aria-hidden="true" />
 					) : (
@@ -226,7 +228,10 @@ export default function WorkspaceItemCard({
 								<Button
 									variant="ghost"
 									size="icon-sm"
-									className="shrink-0 text-muted-foreground hover:text-foreground"
+									className={cn(
+										"relative z-20 shrink-0 text-muted-foreground hover:text-foreground",
+										WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
+									)}
 									aria-label={`Open actions for ${item.name}`}
 									onClick={(event) => event.stopPropagation()}
 								/>
@@ -236,18 +241,16 @@ export default function WorkspaceItemCard({
 						/>
 					)}
 				</div>
-				<button
-					type="button"
-					data-workspace-drag-open
-					className="flex cursor-pointer items-center justify-center bg-transparent outline-none active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-					onClick={handleOpen}
+				<div
+					className="flex items-center justify-center bg-transparent"
+					aria-hidden="true"
 				>
 					<ItemIcon
 						className={cn("size-10", iconClassName)}
 						strokeWidth={1.75}
 						aria-hidden="true"
 					/>
-				</button>
+				</div>
 				<div aria-hidden="true" />
 			</div>
 			{showFolderDropAffordance ? (
@@ -261,11 +264,11 @@ export default function WorkspaceItemCard({
 					</div>
 				</div>
 			) : null}
-			<CardHeader className="shrink-0 gap-2 px-4 py-3" onClick={handleOpen}>
+			<CardHeader className="pointer-events-none relative z-10 shrink-0 gap-2 px-4 py-3">
 				<CardTitle className="min-w-0">
 					<button
 						type="button"
-						className="block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+						className="pointer-events-auto relative z-20 block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 						aria-label={`Rename ${item.name}`}
 						onClick={handleRenameClick}
 					>
