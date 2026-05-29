@@ -1,12 +1,5 @@
-import { ArrowUp, FileText, Plus, Square, X } from "lucide-react";
-import {
-	type Dispatch,
-	type RefObject,
-	type SetStateAction,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { Plus } from "lucide-react";
+import { useRef, useState } from "react";
 
 import {
 	PromptInput,
@@ -24,12 +17,12 @@ import {
 	PromptInputSelectItem,
 	PromptInputSelectTrigger,
 	PromptInputSelectValue,
-	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputTools,
-	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
 import { buttonVariants } from "#/components/ui/button";
+import AiChatPromptAttachments from "#/features/workspaces/components/ai-chat/AiChatPromptAttachments";
+import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
 import {
 	AI_CHAT_MODELS,
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
@@ -38,6 +31,7 @@ import type {
 	AiChatModelId,
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
+import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
 import { cn } from "#/lib/utils";
 
 // InputGroup defaults to a single horizontal row. Stack vertically so the
@@ -50,8 +44,6 @@ const TOOLBAR_CONTROL_SIZE = "size-9";
 const TOOLBAR_CONTROL_HEIGHT = "h-9";
 const TOOLBAR_ICON_SIZE = "size-5";
 const TOOLBAR_MUTED_TEXT = "text-muted-foreground";
-const SEND_BUTTON_SIZE = "size-8";
-const SEND_ICON_SIZE = "size-4";
 
 interface AiChatPromptInputProps {
 	modelId?: AiChatModelId;
@@ -166,158 +158,5 @@ export default function AiChatPromptInput({
 				</div>
 			</PromptInputFooter>
 		</PromptInput>
-	);
-}
-
-function useTypeToFocusPrompt({
-	enabled,
-	setInput,
-	textareaRef,
-}: {
-	enabled: boolean;
-	setInput: Dispatch<SetStateAction<string>>;
-	textareaRef: RefObject<HTMLTextAreaElement | null>;
-}) {
-	const pendingCaretPositionRef = useRef<number | null>(null);
-
-	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
-
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (!shouldRouteTypingToPrompt(event)) {
-				return;
-			}
-
-			const textarea = textareaRef.current;
-			if (!textarea || textarea.disabled || textarea.readOnly) {
-				return;
-			}
-
-			event.preventDefault();
-			setInput((currentInput) => {
-				const nextInput = `${currentInput}${event.key}`;
-				pendingCaretPositionRef.current = nextInput.length;
-				return nextInput;
-			});
-
-			requestAnimationFrame(() => {
-				const promptTextarea = textareaRef.current;
-				if (!promptTextarea) {
-					return;
-				}
-
-				const caretPosition =
-					pendingCaretPositionRef.current ?? promptTextarea.value.length;
-				pendingCaretPositionRef.current = null;
-				promptTextarea.focus({ preventScroll: true });
-				promptTextarea.setSelectionRange(caretPosition, caretPosition);
-			});
-		};
-
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [enabled, setInput, textareaRef]);
-}
-
-function shouldRouteTypingToPrompt(event: KeyboardEvent) {
-	if (
-		event.defaultPrevented ||
-		event.metaKey ||
-		event.ctrlKey ||
-		event.altKey ||
-		event.isComposing
-	) {
-		return false;
-	}
-
-	if (event.key.length !== 1 || event.key === " ") {
-		return false;
-	}
-
-	if (document.querySelector(ACTIVE_LAYER_SELECTOR)) {
-		return false;
-	}
-
-	const activeElement = document.activeElement;
-	return (
-		!activeElement ||
-		activeElement === document.body ||
-		activeElement === document.documentElement ||
-		activeElement.matches(PROMPT_TYPE_TO_FOCUS_SURFACE_SELECTOR)
-	);
-}
-
-const ACTIVE_LAYER_SELECTOR = [
-	'[data-slot="alert-dialog-content"][data-open]',
-	'[data-slot="context-menu-content"][data-open]',
-	'[data-slot="dialog-content"][data-open]',
-	'[data-slot="dropdown-menu-content"][data-open]',
-	'[data-slot="select-content"][data-open]',
-].join(",");
-const PROMPT_TYPE_TO_FOCUS_SURFACE_SELECTOR =
-	"[data-prompt-type-to-focus-surface]";
-
-function AiChatPromptAttachments() {
-	const attachments = usePromptInputAttachments();
-
-	if (attachments.files.length === 0) {
-		return null;
-	}
-
-	return (
-		<div className="flex min-w-0 flex-wrap gap-1.5 px-2 pt-2">
-			{attachments.files.map((file) => (
-				<div
-					key={file.id}
-					className="flex h-8 min-w-0 max-w-44 items-center gap-1.5 rounded-md border bg-background/70 px-2 text-muted-foreground text-xs"
-				>
-					<FileText className="size-3.5 shrink-0" />
-					<span className="min-w-0 truncate">
-						{file.filename ?? file.mediaType}
-					</span>
-					<button
-						type="button"
-						className="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-sm hover:bg-muted hover:text-foreground"
-						aria-label="Remove attachment"
-						onClick={() => attachments.remove(file.id)}
-					>
-						<X className="size-3" />
-					</button>
-				</div>
-			))}
-		</div>
-	);
-}
-
-function AiChatPromptSubmit({
-	input,
-	onStop,
-	status,
-}: {
-	input: string;
-	onStop?: () => void;
-	status: AiChatStatus;
-}) {
-	const attachments = usePromptInputAttachments();
-	const isGenerating = status === "submitted" || status === "streaming";
-	const hasContent = Boolean(input.trim() || attachments.files.length > 0);
-	const canStop = isGenerating && Boolean(onStop);
-
-	return (
-		<PromptInputSubmit
-			className={cn(SEND_BUTTON_SIZE, "rounded-full")}
-			disabled={isGenerating ? !canStop : !hasContent}
-			status={status}
-			onStop={onStop}
-			type={isGenerating ? "button" : "submit"}
-		>
-			{isGenerating ? (
-				<Square className={SEND_ICON_SIZE} />
-			) : (
-				<ArrowUp className={SEND_ICON_SIZE} />
-			)}
-		</PromptInputSubmit>
 	);
 }
