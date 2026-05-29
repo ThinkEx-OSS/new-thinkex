@@ -1,12 +1,4 @@
-import { Plus, RotateCcw } from "lucide-react";
-import type { ComponentProps } from "react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import {
-	Conversation,
-	ConversationContent,
-	ConversationEmptyState,
-} from "#/components/ai-elements/conversation";
-import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,19 +9,12 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
-import { Button } from "#/components/ui/button";
-import AiChatMessageList from "#/features/workspaces/components/ai-chat/AiChatMessageList";
+import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
-import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
 import { AiChatPanelLoadingContent } from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
+import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
-import type {
-	AiChatMessage,
-	AiChatModelId,
-	AiChatSendMessage,
-	AiChatStatus,
-} from "#/features/workspaces/components/ai-chat/types";
-import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
+import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
 import {
 	findWorkspaceAiChatThread,
 	useWorkspaceAiChatThreads,
@@ -39,10 +24,6 @@ import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-st
 interface AiChatPanelProps {
 	workspaceId: string;
 }
-
-type AiChatPromptMessage = Parameters<
-	NonNullable<ComponentProps<typeof AiChatPromptInput>["onSubmit"]>
->[0];
 
 export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 	const presentation = useWorkspaceUiStore(
@@ -66,14 +47,14 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 	);
 	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] =
 		useState(false);
-	const [isSelectingNewThread, setIsSelectingNewThread] = useState(false);
+	const [selectedDraftThreadId, setSelectedDraftThreadId] = useState<string>();
 	const [threadPendingDeletion, setThreadPendingDeletion] =
 		useState<AiChatThreadForDialog>();
 	const markingViewedThreadIdsRef = useRef<Set<string>>(new Set());
 	const {
-		createThread,
 		deleteThread,
-		isCreatingThread,
+		ensureDraftThread,
+		isEnsuringDraftThread,
 		isReady: areThreadsReady,
 		markThreadViewed,
 		threads,
@@ -82,48 +63,45 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 		threads,
 		activeThreadIdFromStore,
 	);
-	const selectedThread =
-		isSelectingNewThread || isCreatingThread
-			? undefined
-			: (activeThread ?? (areThreadsReady ? threads[0] : undefined));
+	const draftThread = getDraftThread(threads);
+	const selectedDraftThread = findWorkspaceAiChatThread(
+		threads,
+		selectedDraftThreadId,
+	);
+	const realThreads = getRealThreads(threads);
+	const activeRealThread =
+		activeThread && !isDraftThread(activeThread) ? activeThread : undefined;
+	const selectedThread = areThreadsReady
+		? (selectedDraftThread ?? activeRealThread ?? realThreads[0] ?? draftThread)
+		: undefined;
 	const activeThreadId = selectedThread?.id;
 
-	const selectThread = useCallback(
-		(threadId: string | undefined) => {
-			setActiveAiChatThread(workspaceId, threadId);
-		},
-		[setActiveAiChatThread, workspaceId],
-	);
+	const selectThread = (threadId: string | undefined) => {
+		setActiveAiChatThread(workspaceId, threadId);
+	};
 
-	const selectOrCreateNewChat = async (
-		candidateThreads: typeof threads = threads,
+	const selectDraftThread = async (
+		candidateThread: AIThreadSummary | undefined,
 	) => {
-		if (isCreatingThread || isSelectingNewThread) {
+		if (candidateThread) {
+			setSelectedDraftThreadId(candidateThread.id);
 			return;
 		}
 
-		const existingEmptyThread = candidateThreads.find(
-			(thread) => !thread.lastUserMessageAt,
-		);
-
-		if (existingEmptyThread) {
-			selectThread(existingEmptyThread.id);
+		if (isEnsuringDraftThread) {
 			return;
 		}
 
-		setIsSelectingNewThread(true);
-
-		const thread = await createThread().finally(() => {
-			setIsSelectingNewThread(false);
-		});
-		selectThread(thread.id);
+		const thread = await ensureDraftThread();
+		setSelectedDraftThreadId(thread.id);
 	};
 
 	const handleNewChat = async () => {
-		await selectOrCreateNewChat();
+		await selectDraftThread(draftThread);
 	};
 
 	const handleSelectThread = (threadId: string) => {
+		setSelectedDraftThreadId(undefined);
 		selectThread(threadId);
 	};
 
@@ -133,9 +111,27 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 		await deleteThread(threadId);
 
 		if (activeThreadId === threadId) {
-			await selectOrCreateNewChat(remainingThreads);
+			const remainingRealThread = getRealThreads(remainingThreads)[0];
+
+			if (remainingRealThread) {
+				setSelectedDraftThreadId(undefined);
+				selectThread(remainingRealThread.id);
+				return;
+			}
+
+			await selectDraftThread(getDraftThread(remainingThreads));
 		}
 	};
+
+	useEffect(() => {
+		if (!areThreadsReady || draftThread || isEnsuringDraftThread) {
+			return;
+		}
+
+		void ensureDraftThread().catch((error) => {
+			console.warn("[AiChatPanel] Failed to ensure draft chat thread", error);
+		});
+	}, [areThreadsReady, draftThread, ensureDraftThread, isEnsuringDraftThread]);
 
 	useEffect(() => {
 		if (!selectedThread?.hasUnreadCompletion) {
@@ -156,15 +152,10 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 		selectedThread?.id,
 	]);
 
-	const threadList = threads.map((thread) =>
-		thread.lastUserMessageAt === null
-			? thread
-			: thread.id === activeThreadId
-				? { ...thread, hasUnreadCompletion: false }
-				: thread,
-	);
-	const visibleThreadList = threadList.filter(
-		(thread) => thread.lastUserMessageAt !== null,
+	const visibleThreadList = realThreads.map((thread) =>
+		thread.id === activeThreadId
+			? { ...thread, hasUnreadCompletion: false }
+			: thread,
 	);
 
 	const isThreadDirectoryLoading = !areThreadsReady;
@@ -176,16 +167,16 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 				hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
 				modelId={modelId}
 				onModelChange={setModelId}
+				onThreadActivated={
+					selectedThread && isDraftThread(selectedThread)
+						? () => selectThread(selectedThread.id)
+						: undefined
+				}
 				threadId={activeThreadId}
 			/>
 		</Suspense>
-	) : isCreatingThread || isSelectingNewThread ? (
-		<AiChatPanelLoadingContent />
 	) : (
-		<AiChatEmptyThreadView
-			isSubmitting={isCreatingThread}
-			onNewChat={handleNewChat}
-		/>
+		<AiChatPanelLoadingContent />
 	);
 
 	return (
@@ -198,7 +189,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 					setThreadPendingDeletion(thread);
 					setIsDeleteThreadDialogOpen(true);
 				}}
-				isNewChatDisabled={isCreatingThread || isSelectingNewThread}
+				isNewChatDisabled={isEnsuringDraftThread}
 				onNewChat={handleNewChat}
 				onMaximize={() => maximizeChat(workspaceId)}
 				onRestore={() => restorePresentation(workspaceId)}
@@ -217,6 +208,18 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 			/>
 		</aside>
 	);
+}
+
+function isDraftThread(thread: AIThreadSummary) {
+	return thread.lastUserMessageAt === null;
+}
+
+function getDraftThread(threads: AIThreadSummary[]) {
+	return threads.find(isDraftThread);
+}
+
+function getRealThreads(threads: AIThreadSummary[]) {
+	return threads.filter((thread) => !isDraftThread(thread));
 }
 
 type AiChatThreadForDialog = {
@@ -273,188 +276,4 @@ function DeleteAiChatThreadDialog({
 			</AlertDialogContent>
 		</AlertDialog>
 	);
-}
-
-function AiChatThreadView({
-	hasPersistedMessages,
-	modelId,
-	onModelChange,
-	threadId,
-}: {
-	hasPersistedMessages: boolean;
-	modelId: AiChatModelId;
-	onModelChange: (modelId: AiChatModelId) => void;
-	threadId: string;
-}) {
-	const chat = useWorkspaceAiChat({ modelId, threadId });
-	const {
-		addToolApprovalResponse,
-		error,
-		messages,
-		regenerate,
-		sendMessage: sendChatMessage,
-		status,
-		stop,
-	} = chat;
-	const sendMessage = useCallback(
-		(message: AiChatPromptMessage) => {
-			const chatMessage = getChatMessageFromPrompt(message);
-
-			if (!chatMessage) {
-				return false;
-			}
-
-			return sendChatMessage(chatMessage);
-		},
-		[sendChatMessage],
-	);
-
-	return (
-		<AiChatPanelBody
-			isLoadingHistory={hasPersistedMessages && messages.length === 0}
-			error={error}
-			messages={messages}
-			onModelChange={onModelChange}
-			onRegenerateLastResponse={regenerate}
-			onRetryLastResponse={regenerate}
-			onStop={stop}
-			onSubmit={sendMessage}
-			onToolApprovalResponse={addToolApprovalResponse}
-			modelId={modelId}
-			status={status}
-		/>
-	);
-}
-
-function AiChatEmptyThreadView({
-	isSubmitting,
-	onNewChat,
-}: {
-	isSubmitting: boolean;
-	onNewChat: () => Promise<void>;
-}) {
-	return (
-		<Conversation className="min-h-0">
-			<ConversationContent
-				scrollClassName="min-h-0 overscroll-contain"
-				className="px-4 pt-14 pb-5"
-			>
-				<ConversationEmptyState className="min-h-[min(32rem,calc(100vh-12rem))] border-0 p-6">
-					<div className="flex flex-col items-center gap-3 text-center">
-						<div className="space-y-1">
-							<div className="font-medium text-sm">No chat selected</div>
-							<div className="text-muted-foreground text-sm">
-								Create a chat to start.
-							</div>
-						</div>
-						<Button
-							disabled={isSubmitting}
-							onClick={() => void onNewChat()}
-							size="sm"
-							type="button"
-						>
-							<Plus className="size-4" aria-hidden="true" />
-							New chat
-						</Button>
-					</div>
-				</ConversationEmptyState>
-			</ConversationContent>
-		</Conversation>
-	);
-}
-
-function AiChatPanelBody({
-	error,
-	isLoadingHistory,
-	messages,
-	modelId,
-	onModelChange,
-	onRegenerateLastResponse,
-	onRetryLastResponse,
-	onStop,
-	onSubmit,
-	onToolApprovalResponse,
-	status,
-}: {
-	error?: Error;
-	isLoadingHistory?: boolean;
-	messages: AiChatMessage[];
-	modelId: AiChatModelId;
-	onModelChange: (modelId: AiChatModelId) => void;
-	onRegenerateLastResponse?: () => void;
-	onRetryLastResponse?: () => void;
-	onStop?: () => void;
-	onSubmit: ComponentProps<typeof AiChatPromptInput>["onSubmit"];
-	onToolApprovalResponse?: ComponentProps<
-		typeof AiChatMessageList
-	>["onToolApprovalResponse"];
-	status: AiChatStatus;
-}) {
-	return (
-		<>
-			<Conversation className="min-h-0">
-				<ConversationContent
-					scrollClassName="min-h-0 overscroll-contain"
-					className="gap-5 px-4 pt-14 pb-5"
-				>
-					<AiChatMessageList
-						isLoadingHistory={isLoadingHistory}
-						messages={messages}
-						status={status}
-						onRegenerateLastResponse={onRegenerateLastResponse}
-						onToolApprovalResponse={onToolApprovalResponse}
-					/>
-				</ConversationContent>
-			</Conversation>
-
-			<div className="px-4 pb-4">
-				<div className="mx-auto w-full max-w-2xl">
-					{error ? (
-						<Alert variant="destructive" className="mb-3 py-2">
-							<div className="flex flex-col gap-2">
-								<AlertDescription className="min-w-0 text-destructive/90">
-									{error.message}
-								</AlertDescription>
-								{onRetryLastResponse ? (
-									<Button
-										type="button"
-										variant="outline"
-										size="xs"
-										className="self-end gap-1.5 border-border bg-background text-foreground hover:bg-muted hover:text-foreground"
-										onClick={onRetryLastResponse}
-									>
-										<RotateCcw className="size-3" />
-										Try again
-									</Button>
-								) : null}
-							</div>
-						</Alert>
-					) : null}
-					<AiChatPromptInput
-						modelId={modelId}
-						status={status}
-						onModelChange={onModelChange}
-						onSubmit={onSubmit}
-						onStop={onStop}
-					/>
-				</div>
-			</div>
-		</>
-	);
-}
-
-function getChatMessageFromPrompt(
-	message: AiChatPromptMessage,
-): AiChatSendMessage | null {
-	const trimmedText = message.text.trim();
-	const parts = [
-		...(trimmedText ? [{ type: "text" as const, text: trimmedText }] : []),
-		...message.files,
-	];
-
-	if (parts.length === 0) {
-		return null;
-	}
-
-	return { role: "user", parts };
 }

@@ -2,8 +2,9 @@ import type { ChatResponseResult } from "@cloudflare/think";
 import { Agent, callable } from "agents";
 import { nanoid } from "nanoid";
 
-import { createDbContext } from "#/db/server";
 import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
+import { assertCanReadWorkspace } from "#/features/workspaces/ai/ai-thread-directory-permissions";
+import { ensureChatMetaColumns } from "#/features/workspaces/ai/ai-thread-directory-schema";
 import {
 	type AIThreadContext,
 	type AIThreadMetaRow,
@@ -12,9 +13,9 @@ import {
 	getThreadTitle,
 	mapThreadMetaRow,
 	normalizeGeneratedThreadTitle,
+	normalizeThreadErrorMessage,
 	type UserAIStoreState,
 } from "#/features/workspaces/ai/ai-thread-metadata";
-import { canReadWorkspace } from "#/features/workspaces/server/permissions";
 
 export type {
 	AIThreadSummary,
@@ -46,16 +47,20 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			workspace_id TEXT NOT NULL,
 			title TEXT NOT NULL,
 			status TEXT NOT NULL DEFAULT 'idle',
+			last_run_result TEXT,
 			last_activity_at INTEGER NOT NULL,
 			last_user_message_at INTEGER,
 			last_assistant_message_at INTEGER,
 			last_viewed_at INTEGER NOT NULL,
+			last_run_started_at INTEGER,
+			last_run_finished_at INTEGER,
+			last_error_message TEXT,
 			title_generated_at INTEGER,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL,
 			archived_at INTEGER
 		)`;
-		this._addTitleGeneratedAtColumnIfMissing();
+		ensureChatMetaColumns(this);
 		this.sql`CREATE INDEX IF NOT EXISTS chat_meta_workspace_activity_idx
 			ON chat_meta (workspace_id, archived_at, last_activity_at)`;
 		this._refreshState();
@@ -81,14 +86,22 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	@callable()
-	async createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
+	async ensureDraftThread(input: {
+		workspaceId: string;
+	}): Promise<AIThreadSummary> {
+		return this._ensureDraftThread(input);
+	}
+
+	private async _ensureDraftThread(input: {
+		workspaceId: string;
+	}): Promise<AIThreadSummary> {
 		const workspaceId = input.workspaceId.trim();
 
 		if (!workspaceId) {
 			throw new Error("workspaceId is required");
 		}
 
-		await this._assertCanReadWorkspace(workspaceId);
+		await assertCanReadWorkspace({ userId: this.name, workspaceId });
 
 		const existingEmptyThread = this._getEmptyThreadSummary(workspaceId);
 
@@ -109,10 +122,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 					workspace_id,
 					title,
 					status,
+					last_run_result,
 					last_activity_at,
 					last_user_message_at,
 					last_assistant_message_at,
 					last_viewed_at,
+					last_run_started_at,
+					last_run_finished_at,
+					last_error_message,
 					title_generated_at,
 					created_at,
 					updated_at,
@@ -123,10 +140,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 					${workspaceId},
 					${title},
 					'idle',
+					NULL,
 					${now},
 					NULL,
 					NULL,
 					${now},
+					NULL,
+					NULL,
+					NULL,
 					NULL,
 					${now},
 					${now},
@@ -196,8 +217,12 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			UPDATE chat_meta
 			SET
 				status = 'running',
+				last_run_result = NULL,
 				last_activity_at = ${now},
 				last_user_message_at = ${now},
+				last_run_started_at = ${now},
+				last_run_finished_at = NULL,
+				last_error_message = NULL,
 				updated_at = ${now}
 			WHERE id = ${threadId} AND archived_at IS NULL
 		`;
@@ -216,11 +241,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			UPDATE chat_meta
 			SET
 				status = 'idle',
+				last_run_result = ${result.status},
 				last_activity_at = ${now},
 				last_assistant_message_at = ${
 					result.status === "completed" ? now : thread.last_assistant_message_at
 				},
 				last_viewed_at = ${options.viewed ? now : thread.last_viewed_at},
+				last_run_finished_at = ${now},
+				last_error_message = NULL,
 				updated_at = ${now}
 			WHERE id = ${threadId} AND archived_at IS NULL
 		`;
@@ -251,12 +279,22 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		this._refreshState();
 	}
 
-	async recordThreadRunFailed(threadId: string): Promise<void> {
+	async recordThreadRunFailed(
+		threadId: string,
+		error: unknown = undefined,
+	): Promise<void> {
 		const now = Date.now();
+		const errorMessage = normalizeThreadErrorMessage(error);
 
 		this.sql`
 			UPDATE chat_meta
-			SET status = 'idle', last_activity_at = ${now}, updated_at = ${now}
+			SET
+				status = 'idle',
+				last_run_result = 'error',
+				last_activity_at = ${now},
+				last_run_finished_at = ${now},
+				last_error_message = ${errorMessage},
+				updated_at = ${now}
 			WHERE id = ${threadId} AND archived_at IS NULL
 		`;
 		this._refreshState();
@@ -287,10 +325,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 				workspace_id,
 				title,
 				status,
+				last_run_result,
 				last_activity_at,
 				last_user_message_at,
 				last_assistant_message_at,
 				last_viewed_at,
+				last_run_started_at,
+				last_run_finished_at,
+				last_error_message,
 				title_generated_at,
 				created_at,
 				updated_at,
@@ -332,43 +374,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		}
 
 		try {
-			await this._assertCanReadWorkspace(thread.workspace_id);
+			await assertCanReadWorkspace({
+				userId: this.name,
+				workspaceId: thread.workspace_id,
+			});
 		} catch {
 			throw new AIThreadForbiddenError();
 		}
 
 		return thread;
-	}
-
-	private _addTitleGeneratedAtColumnIfMissing() {
-		try {
-			this.sql`ALTER TABLE chat_meta ADD COLUMN title_generated_at INTEGER`;
-		} catch (error) {
-			if (
-				error instanceof Error &&
-				error.message.toLowerCase().includes("duplicate column")
-			) {
-				return;
-			}
-
-			throw error;
-		}
-	}
-
-	private async _assertCanReadWorkspace(workspaceId: string) {
-		const dbContext = await createDbContext();
-
-		try {
-			const allowed = await canReadWorkspace(dbContext.db, {
-				workspaceId,
-				userId: this.name,
-			});
-
-			if (!allowed) {
-				throw new Error("Forbidden");
-			}
-		} finally {
-			await dbContext.dispose();
-		}
 	}
 }

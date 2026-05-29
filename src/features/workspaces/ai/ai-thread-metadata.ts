@@ -1,4 +1,5 @@
 export type AIThreadRunState = "idle" | "running";
+export type AIThreadRunResult = "completed" | "skipped" | "aborted" | "error";
 
 export interface AIThreadSummary {
 	id: string;
@@ -6,10 +7,14 @@ export interface AIThreadSummary {
 	title: string;
 	hasUnreadCompletion: boolean;
 	isRunning: boolean;
+	lastRunResult: AIThreadRunResult | null;
+	lastErrorMessage: string | null;
 	lastActivityAt: string;
 	lastUserMessageAt: string | null;
 	lastAssistantMessageAt: string | null;
 	lastViewedAt: string;
+	lastRunStartedAt: string | null;
+	lastRunFinishedAt: string | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -30,10 +35,14 @@ export interface AIThreadMetaRow {
 	workspace_id: string;
 	title: string;
 	status: AIThreadRunState;
+	last_run_result: AIThreadRunResult | null;
 	last_activity_at: number;
 	last_user_message_at: number | null;
 	last_assistant_message_at: number | null;
 	last_viewed_at: number;
+	last_run_started_at: number | null;
+	last_run_finished_at: number | null;
+	last_error_message: string | null;
 	title_generated_at: number | null;
 	created_at: number;
 	updated_at: number;
@@ -60,6 +69,24 @@ export function normalizeGeneratedThreadTitle(value: string | undefined) {
 	return title.length > 64 ? `${title.slice(0, 61).trimEnd()}...` : title;
 }
 
+export function normalizeThreadErrorMessage(error: unknown) {
+	const message =
+		error instanceof Error
+			? error.message
+			: typeof error === "string"
+				? error
+				: "Chat response failed";
+	const normalized = message.replace(/\s+/g, " ").trim();
+
+	if (!normalized) {
+		return "Chat response failed";
+	}
+
+	return normalized.length > 240
+		? `${normalized.slice(0, 237).trimEnd()}...`
+		: normalized;
+}
+
 export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
 	return {
 		id: row.id,
@@ -70,10 +97,14 @@ export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
 				row.last_assistant_message_at > row.last_viewed_at,
 		),
 		isRunning: row.status === "running",
+		lastRunResult: row.last_run_result,
+		lastErrorMessage: row.last_error_message,
 		lastActivityAt: toIsoString(row.last_activity_at),
 		lastUserMessageAt: toNullableIsoString(row.last_user_message_at),
 		lastAssistantMessageAt: toNullableIsoString(row.last_assistant_message_at),
 		lastViewedAt: toIsoString(row.last_viewed_at),
+		lastRunStartedAt: toNullableIsoString(row.last_run_started_at),
+		lastRunFinishedAt: toNullableIsoString(row.last_run_finished_at),
 		createdAt: toIsoString(row.created_at),
 		updatedAt: toIsoString(row.updated_at),
 	};

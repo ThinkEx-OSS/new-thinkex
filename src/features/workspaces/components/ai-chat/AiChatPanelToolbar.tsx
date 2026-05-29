@@ -1,4 +1,5 @@
 import {
+	AlertCircle,
 	Check,
 	History,
 	LoaderCircle,
@@ -174,6 +175,19 @@ function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 		);
 	}
 
+	if (thread.lastRunResult === "error") {
+		return (
+			<Badge
+				variant="outline"
+				className="h-4 shrink-0 gap-1 rounded-full border-destructive/25 bg-destructive/10 px-1.5 font-normal text-[10px] text-destructive leading-none"
+				title={thread.lastErrorMessage ?? undefined}
+			>
+				<AlertCircle className="size-2.5" aria-hidden="true" />
+				Error
+			</Badge>
+		);
+	}
+
 	if (thread.hasUnreadCompletion) {
 		return (
 			<Badge
@@ -181,7 +195,7 @@ function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 				className="h-4 shrink-0 gap-1 rounded-full border-emerald-500/25 bg-emerald-500/10 px-1.5 font-normal text-[10px] text-emerald-700 leading-none dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300"
 			>
 				<Check className="size-2.5" aria-hidden="true" />
-				Complete
+				Unread
 			</Badge>
 		);
 	}

@@ -13,7 +13,7 @@ interface UseWorkspaceAiChatThreadsOptions {
 export function useWorkspaceAiChatThreads({
 	workspaceId,
 }: UseWorkspaceAiChatThreadsOptions) {
-	const [isCreatingThread, setIsCreatingThread] = useState(false);
+	const [isEnsuringDraftThread, setIsEnsuringDraftThread] = useState(false);
 	const directory = useAgent<UserAIStoreState>({
 		agent: "UserAIStore",
 		basePath: "user-ai",
@@ -27,15 +27,15 @@ export function useWorkspaceAiChatThreads({
 		[directory.state?.threads, workspaceId],
 	);
 
-	const createThread = useCallback(async () => {
-		setIsCreatingThread(true);
+	const ensureDraftThread = useCallback(async () => {
+		setIsEnsuringDraftThread(true);
 
 		try {
-			return await directory.call<AIThreadSummary>("createThread", [
+			return await directory.call<AIThreadSummary>("ensureDraftThread", [
 				{ workspaceId },
 			]);
 		} finally {
-			setIsCreatingThread(false);
+			setIsEnsuringDraftThread(false);
 		}
 	}, [directory, workspaceId]);
 
@@ -54,11 +54,11 @@ export function useWorkspaceAiChatThreads({
 	);
 
 	return {
-		createThread,
 		deleteThread,
 		directory,
-		isCreatingThread,
+		isEnsuringDraftThread,
 		isReady: directory.state?.isLoaded === true,
+		ensureDraftThread,
 		markThreadViewed,
 		threads,
 	};

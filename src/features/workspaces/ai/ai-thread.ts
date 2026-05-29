@@ -158,7 +158,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			void this.keepAliveWhile(async () => {
 				try {
 					const directory = await this.parentAgent(getUserAIStore());
-					await directory.recordThreadRunFailed(this.name);
+					await directory.recordThreadRunFailed(this.name, error);
 				} catch (metadataError) {
 					console.warn(
 						"[AIThread] Failed to clear directory run status",
