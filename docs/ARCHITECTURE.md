@@ -18,7 +18,7 @@ Current responsibilities:
 - `WorkspaceKernel` owns item metadata, shell path mapping, compact workspace events, revision assignment, lightweight presence, and coarse realtime event fanout.
 - `UserAIStore` owns user-scoped AI thread metadata.
 - `AIThread` owns an individual AI conversation and currently reads workspace facts through `workspace-kernel-access`.
-- The document editor is deferred; documents currently open to a lightweight item surface while the kernel, events, and AI tool boundary settle.
+- The document editor is deferred; Tiptap/Yjs is the selected editor/collaboration stack, but documents currently open to a lightweight item surface while the kernel, events, and AI tool boundary settle.
 
 ## Target Shape
 
@@ -54,7 +54,7 @@ WorkspaceKernel(workspaceId)
 
 DocumentSession(workspaceId:itemId)
   optional high-frequency collaboration room
-  Tiptap/Yjs, code/text, or whiteboard session state
+  Tiptap/Yjs document session state
   checkpoints meaningful snapshots back to WorkspaceKernel
 
 UserAIStore(userId)
@@ -205,8 +205,6 @@ The root workspace kernel owns low-frequency committed collaboration:
 High-frequency collaboration belongs in item/session runtimes:
 
 - Tiptap/Yjs document editing
-- whiteboard strokes and shape updates
-- code/text collaborative editing
 - cursor and selection state
 
 The intended split is:
@@ -223,7 +221,11 @@ DocumentSession(workspaceId:itemId)
   periodic checkpoints to WorkspaceKernel
 ```
 
-`DocumentSession` should likely start as a `WorkspaceKernel` sub-agent, but this remains an implementation choice until the editor collaboration library is tested.
+ThinkEx documents use Tiptap/Yjs for WYSIWYG editing and live collaboration. The durable product record should be a kernel-owned `document_json` snapshot. Markdown is a derived projection for import/export, AI context, and search/indexing, not the live collaboration source of truth.
+
+Do not store Markdown as equal document truth. If Markdown becomes expensive enough to compute on demand, cache it as a derived artifact keyed by source snapshot id/revision and converter version so stale projections can be ignored or regenerated.
+
+`DocumentSession` should likely start as a `WorkspaceKernel` sub-agent, but this remains an implementation choice while the Tiptap/Yjs runtime is wired and tested.
 
 ## AI Integration
 
@@ -403,10 +405,11 @@ Next implementation focus:
 
 - expose safe AI read/list/search tools over the kernel
 - add controlled create/edit document tools
+- move documents from the current markdown-backed `writeItem` path to canonical `document_json` snapshots
 - require approval for destructive or bulk AI actions
 - define upload/import pipeline around Shell/R2 bytes and item registry records
 - add extraction/transcription/conversion jobs as durable workflows
-- decide the first document editor/session contract
+- define the Tiptap/Yjs document editor/session contract
 
 ## Operations And Repair
 
@@ -443,7 +446,7 @@ Needed before production migration:
 ## Open Questions
 
 1. Should `WorkspaceKernel` continue extending Cloudflare `Agent`, or should it fall back to a plain Durable Object if SDK type/runtime constraints get in the way?
-2. Should `DocumentSession` be an Agent sub-agent or a normal named Durable Object after testing the editor collaboration library?
+2. Should `DocumentSession` be an Agent sub-agent or a normal named Durable Object after wiring the Tiptap/Yjs collaboration runtime?
 3. Should private AI threads remain under `UserAIStore` permanently, or should ThinkEx later add a shared workspace AI thread type?
 4. Should workspace membership stay only in central Postgres, or should the kernel cache membership for low-latency checks?
 5. What undo or recovery path is required before enabling destructive AI writes?
@@ -458,4 +461,3 @@ Needed before production migration:
 14. How should billing and quotas account for per-workspace Durable Object storage, R2 bytes, sandbox runtime, indexing rows, and AI usage?
 15. How should tests create, reset, inspect, and seed kernel-backed workspaces?
 16. What user-facing workflows truly need Cloudflare Sandbox SDK versus Shell plus Dynamic Worker execute?
-17. Which editor collaboration runtime should back the first `DocumentSession`?
