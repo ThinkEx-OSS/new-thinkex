@@ -50,12 +50,6 @@ export default function WorkspaceContextActions({
 						parentId={createParentId}
 						onCreateItem={onCreateItem}
 					/>
-					{activeItem ? (
-						<WorkspaceItemOverflowActions
-							actions={getWorkspaceItemDisplay(activeItem).contextActions}
-							item={activeItem}
-						/>
-					) : null}
 				</>
 			)}
 			{onCloseItemView ? (
