@@ -2,10 +2,11 @@ import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { FolderInput } from "lucide-react";
-import type { MouseEvent } from "react";
+import { type MouseEvent, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
+import { Checkbox } from "#/components/ui/checkbox";
 import { ContextMenu, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import WorkspaceItemActionsMenu, {
@@ -26,6 +27,10 @@ import { cn } from "#/lib/utils";
 const WORKSPACE_COLLISION_PRIORITY_HIGH = 3;
 const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
+const WORKSPACE_ITEM_PREVIEW_CONTROL_ROW = "2.5rem";
+const WORKSPACE_ITEM_PREVIEW_CONTROL_INSET = "px-2";
+const WORKSPACE_ITEM_PREVIEW_CONTROL_TARGET =
+	"flex size-8 items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 interface WorkspaceItemCardProps {
 	item: WorkspaceItem;
@@ -44,6 +49,7 @@ export default function WorkspaceItemCard({
 	onRenameItem,
 	onDeleteItem,
 }: WorkspaceItemCardProps) {
+	const [isSelectionPreviewed, setIsSelectionPreviewed] = useState(false);
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
 	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
@@ -160,6 +166,12 @@ export default function WorkspaceItemCard({
 		event.stopPropagation();
 		onRenameItem(item);
 	};
+	const handleSelectionPreviewClick = (
+		event: MouseEvent<HTMLButtonElement>,
+	) => {
+		event.stopPropagation();
+		setIsSelectionPreviewed((current) => !current);
+	};
 
 	const card = (
 		<Card
@@ -176,22 +188,68 @@ export default function WorkspaceItemCard({
 			)}
 			onContextMenu={(event) => event.stopPropagation()}
 		>
-			<button
-				type="button"
-				data-workspace-drag-open
-				className={cn(
-					"flex min-h-20 flex-1 cursor-pointer items-center justify-center bg-muted outline-none active:cursor-grabbing",
-					"focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-					surfaceClassName,
-				)}
-				onClick={handleOpen}
+			<div
+				className={cn("grid min-h-20 flex-1 bg-muted", surfaceClassName)}
+				style={{
+					gridTemplateRows: `${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW} 1fr ${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW}`,
+				}}
 			>
-				<ItemIcon
-					className={cn("size-10", iconClassName)}
-					strokeWidth={1.75}
-					aria-hidden="true"
-				/>
-			</button>
+				<div
+					className={cn(
+						"pointer-events-none flex items-center justify-between gap-2 opacity-0 transition-opacity",
+						WORKSPACE_ITEM_PREVIEW_CONTROL_INSET,
+						"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
+						"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
+						isSelectionPreviewed && "pointer-events-auto opacity-100",
+					)}
+				>
+					<button
+						type="button"
+						className={WORKSPACE_ITEM_PREVIEW_CONTROL_TARGET}
+						aria-label={`Select ${item.name}`}
+						aria-pressed={isSelectionPreviewed}
+						onClick={handleSelectionPreviewClick}
+					>
+						<Checkbox
+							aria-hidden="true"
+							checked={isSelectionPreviewed}
+							className="pointer-events-none"
+							tabIndex={-1}
+						/>
+					</button>
+					{isFolder ? (
+						<div className="size-8" aria-hidden="true" />
+					) : (
+						<WorkspaceItemActionsMenu
+							item={item}
+							trigger={
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									className="shrink-0 text-muted-foreground hover:text-foreground"
+									aria-label={`Open actions for ${item.name}`}
+									onClick={(event) => event.stopPropagation()}
+								/>
+							}
+							onRenameItem={onRenameItem}
+							onDeleteItem={onDeleteItem}
+						/>
+					)}
+				</div>
+				<button
+					type="button"
+					data-workspace-drag-open
+					className="flex cursor-pointer items-center justify-center bg-transparent outline-none active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+					onClick={handleOpen}
+				>
+					<ItemIcon
+						className={cn("size-10", iconClassName)}
+						strokeWidth={1.75}
+						aria-hidden="true"
+					/>
+				</button>
+				<div aria-hidden="true" />
+			</div>
 			{showFolderDropAffordance ? (
 				<div
 					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/35 backdrop-blur-[1px]"
@@ -216,30 +274,6 @@ export default function WorkspaceItemCard({
 				</CardTitle>
 				{meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
 			</CardHeader>
-			{isFolder ? null : (
-				<div
-					className={cn(
-						"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
-						"group-hover/item:pointer-events-auto group-hover/item:opacity-100",
-						"has-[button[data-popup-open]]:pointer-events-auto has-[button[data-popup-open]]:opacity-100",
-					)}
-				>
-					<WorkspaceItemActionsMenu
-						item={item}
-						trigger={
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								className="text-muted-foreground hover:text-foreground"
-								aria-label={`Open actions for ${item.name}`}
-								onClick={(event) => event.stopPropagation()}
-							/>
-						}
-						onRenameItem={onRenameItem}
-						onDeleteItem={onDeleteItem}
-					/>
-				</div>
-			)}
 		</Card>
 	);
 
