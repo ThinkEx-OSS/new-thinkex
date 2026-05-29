@@ -2,13 +2,7 @@ import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { FolderInput, FolderOpen } from "lucide-react";
-import {
-	type MouseEvent,
-	type PointerEvent,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
+import { type MouseEvent, type PointerEvent, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -159,6 +153,31 @@ export default function WorkspaceContent({
 	);
 }
 
+function WorkspaceItemView({ item }: { item: WorkspaceItem }) {
+	const {
+		Icon: ItemIcon,
+		iconClassName,
+		surfaceClassName,
+	} = getWorkspaceItemDisplay(item);
+
+	return (
+		<div className="h-[calc(100vh-5.75rem)] p-4">
+			<section
+				className={cn(
+					"flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20",
+					surfaceClassName,
+				)}
+			>
+				<ItemIcon
+					className={cn("size-12", iconClassName)}
+					strokeWidth={1.75}
+					aria-hidden="true"
+				/>
+			</section>
+		</div>
+	);
+}
+
 function WorkspaceItemCard({
 	item,
 	index,
@@ -179,50 +198,46 @@ function WorkspaceItemCard({
 	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
 	const dragOperation = useDragOperation();
 	const dragSource = getWorkspaceDragSource(dragOperation.source);
-	const folderDropCollisionDetector = useMemo(
-		() =>
-			({
-				dragOperation,
-				droppable,
-			}: {
-				dragOperation: {
-					source?: { id?: unknown } | null;
-					position: { current: { x: number; y: number } | null };
-				};
-				droppable: {
-					id: string | number;
-					shape?: {
-						containsPoint: (point: { x: number; y: number }) => boolean;
-						center: { x: number; y: number };
-					} | null;
-				};
-			}) => {
-				if (dragOperation.source?.id === item.id) {
-					return null;
-				}
+	const folderDropCollisionDetector = ({
+		dragOperation,
+		droppable,
+	}: {
+		dragOperation: {
+			source?: { id?: unknown } | null;
+			position: { current: { x: number; y: number } | null };
+		};
+		droppable: {
+			id: string | number;
+			shape?: {
+				containsPoint: (point: { x: number; y: number }) => boolean;
+				center: { x: number; y: number };
+			} | null;
+		};
+	}) => {
+		if (dragOperation.source?.id === item.id) {
+			return null;
+		}
 
-				const pointer = dragOperation.position.current;
+		const pointer = dragOperation.position.current;
 
-				if (!pointer || !droppable.shape) {
-					return null;
-				}
+		if (!pointer || !droppable.shape) {
+			return null;
+		}
 
-				if (!droppable.shape.containsPoint(pointer)) {
-					return null;
-				}
+		if (!droppable.shape.containsPoint(pointer)) {
+			return null;
+		}
 
-				const cx = droppable.shape.center.x - pointer.x;
-				const cy = droppable.shape.center.y - pointer.y;
+		const cx = droppable.shape.center.x - pointer.x;
+		const cy = droppable.shape.center.y - pointer.y;
 
-				return {
-					id: droppable.id,
-					value: 1 / Math.sqrt(cx * cx + cy * cy),
-					type: WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION,
-					priority: WORKSPACE_COLLISION_PRIORITY_HIGH,
-				};
-			},
-		[item.id],
-	);
+		return {
+			id: droppable.id,
+			value: 1 / Math.sqrt(cx * cx + cy * cy),
+			type: WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION,
+			priority: WORKSPACE_COLLISION_PRIORITY_HIGH,
+		};
+	};
 	const {
 		isDragging,
 		isDropTarget,
@@ -260,13 +275,10 @@ function WorkspaceItemCard({
 			collisionPriority: WORKSPACE_COLLISION_PRIORITY_HIGHEST,
 			collisionDetector: folderDropCollisionDetector,
 		});
-	const setCardRef = useCallback(
-		(element: HTMLDivElement | null) => {
-			sortableRef(element);
-			folderDropTargetRef(isFolder ? element : null);
-		},
-		[folderDropTargetRef, isFolder, sortableRef],
-	);
+	const setCardRef = (element: HTMLDivElement | null) => {
+		sortableRef(element);
+		folderDropTargetRef(isFolder ? element : null);
+	};
 	const showFolderDropAffordance =
 		isFolder &&
 		isFolderDropTarget &&
@@ -285,24 +297,18 @@ function WorkspaceItemCard({
 		surfaceClassName,
 	} = getWorkspaceItemDisplay(item);
 
-	const handleOpen = useCallback(
-		(event: MouseEvent<HTMLElement>) => {
-			if (event.metaKey || event.ctrlKey) {
-				onOpenItem(item, { background: true });
-				return;
-			}
+	const handleOpen = (event: MouseEvent<HTMLElement>) => {
+		if (event.metaKey || event.ctrlKey) {
+			onOpenItem(item, { background: true });
+			return;
+		}
 
-			onOpenItem(item);
-		},
-		[item, onOpenItem],
-	);
-	const handleRenameClick = useCallback(
-		(event: MouseEvent<HTMLButtonElement>) => {
-			event.stopPropagation();
-			onRenameItem(item);
-		},
-		[item, onRenameItem],
-	);
+		onOpenItem(item);
+	};
+	const handleRenameClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		onRenameItem(item);
+	};
 
 	return (
 		<Card
@@ -383,30 +389,5 @@ function WorkspaceItemCard({
 				</div>
 			)}
 		</Card>
-	);
-}
-
-function WorkspaceItemView({ item }: { item: WorkspaceItem }) {
-	const {
-		Icon: ItemIcon,
-		iconClassName,
-		surfaceClassName,
-	} = getWorkspaceItemDisplay(item);
-
-	return (
-		<div className="h-[calc(100vh-5.75rem)] p-4">
-			<section
-				className={cn(
-					"flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20",
-					surfaceClassName,
-				)}
-			>
-				<ItemIcon
-					className={cn("size-12", iconClassName)}
-					strokeWidth={1.75}
-					aria-hidden="true"
-				/>
-			</section>
-		</div>
 	);
 }

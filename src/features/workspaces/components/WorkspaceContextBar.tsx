@@ -1,5 +1,5 @@
-import { ChevronDown, FilePlus2, Search, X } from "lucide-react";
-import { type ComponentType, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { type ComponentType, useState } from "react";
 
 import {
 	Breadcrumb,
@@ -9,7 +9,6 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "#/components/ui/breadcrumb";
-import { Button } from "#/components/ui/button";
 import {
 	Combobox,
 	ComboboxEmpty,
@@ -25,19 +24,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
-import { Kbd } from "#/components/ui/kbd";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip";
+import WorkspaceContextActions from "#/features/workspaces/components/WorkspaceContextActions";
 import {
 	DeleteWorkspaceItemAlert,
 	RenameWorkspaceItemDialog,
@@ -49,12 +36,7 @@ import type {
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
-import {
-	getWorkspaceItemDisplay,
-	workspaceItemAcquisitionActions,
-	workspaceItemLearnCreateActions,
-	workspaceItemPrimaryCreateActions,
-} from "#/features/workspaces/model/item-display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceBrowseParentId } from "#/features/workspaces/model/view";
@@ -67,6 +49,22 @@ import {
 const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
 const breadcrumbCurrentClassName = `${breadcrumbContentClassName} font-medium text-foreground`;
 const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`;
+
+interface WorkspaceContextDialogState {
+	searchOpen: boolean;
+	settingsOpen: boolean;
+	renamingItem: WorkspaceItem | null;
+	deletingItem: WorkspaceItem | null;
+	deleteAlertOpen: boolean;
+}
+
+const initialDialogState: WorkspaceContextDialogState = {
+	searchOpen: false,
+	settingsOpen: false,
+	renamingItem: null,
+	deletingItem: null,
+	deleteAlertOpen: false,
+};
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
@@ -93,29 +91,36 @@ export default function WorkspaceContextBar({
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const createParentId = getWorkspaceBrowseParentId(activeItem);
-	const [searchOpen, setSearchOpen] = useState(false);
-	const [settingsOpen, setSettingsOpen] = useState(false);
-	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
-	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
-	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-	const workspaceItems = useMemo(
-		() => Array.from(itemsById.values()),
-		[itemsById],
-	);
-	const searchableItems = useMemo(
-		() =>
-			workspaceItems
-				.slice()
-				.sort((first, second) => first.name.localeCompare(second.name)),
-		[workspaceItems],
-	);
+	const [dialogState, setDialogState] =
+		useState<WorkspaceContextDialogState>(initialDialogState);
+	const workspaceItems = Array.from(itemsById.values());
+	const searchableItems = workspaceItems
+		.slice()
+		.sort((first, second) => first.name.localeCompare(second.name));
+	const updateDialogState = (patch: Partial<WorkspaceContextDialogState>) =>
+		setDialogState((current) => ({ ...current, ...patch }));
+	const setSearchOpen = (searchOpen: boolean) =>
+		updateDialogState({ searchOpen });
+	const setSettingsOpen = (settingsOpen: boolean) =>
+		updateDialogState({ settingsOpen });
+	const setRenamingItem = (renamingItem: WorkspaceItem | null) =>
+		updateDialogState({ renamingItem });
+	const setDeleteAlertOpen = (deleteAlertOpen: boolean) =>
+		updateDialogState({ deleteAlertOpen });
+	const clearDeletingItem = () =>
+		updateDialogState({ deletingItem: null, deleteAlertOpen: false });
+	const openDeleteAlert = (deletingItem: WorkspaceItem) =>
+		updateDialogState({ deletingItem, deleteAlertOpen: true });
+	const {
+		deleteAlertOpen,
+		deletingItem,
+		renamingItem,
+		searchOpen,
+		settingsOpen,
+	} = dialogState;
 	const searchHotkey = formatAppHotkey(
 		getAppHotkey("workspace.search.open").hotkey,
 	);
-	const openDeleteAlert = (item: WorkspaceItem) => {
-		setDeletingItem(item);
-		setDeleteAlertOpen(true);
-	};
 
 	useAppHotkey("workspace.search.open", () => {
 		setSearchOpen(true);
@@ -149,100 +154,14 @@ export default function WorkspaceContextBar({
 					</BreadcrumbList>
 				</Breadcrumb>
 
-				<div className="flex shrink-0 items-center gap-1">
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									variant="ghost"
-									size="sm"
-									type="button"
-									className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-									onClick={() => setSearchOpen(true)}
-								>
-									<Search className="size-3.5" />
-									<span className="hidden sm:inline">Search</span>
-								</Button>
-							}
-						/>
-						<TooltipContent>
-							<span>Search</span>
-							<Kbd>{searchHotkey}</Kbd>
-						</TooltipContent>
-					</Tooltip>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="ghost"
-									size="sm"
-									type="button"
-									className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-								/>
-							}
-						>
-							<FilePlus2 className="size-3.5" />
-							<span className="hidden sm:inline">New</span>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-56">
-							{workspaceItemPrimaryCreateActions.map(
-								({ type, label, description, Icon, iconClassName }) => (
-									<DropdownMenuItem
-										key={type}
-										onClick={() =>
-											onCreateItem({ type, parentId: createParentId })
-										}
-									>
-										<Icon className={`size-4 ${iconClassName}`} />
-										<span>{label}</span>
-										{description ? (
-											<span className="ml-auto text-xs text-muted-foreground">
-												{description}
-											</span>
-										) : null}
-									</DropdownMenuItem>
-								),
-							)}
-							{workspaceItemAcquisitionActions.map(
-								({ id, label, description, Icon, iconClassName, disabled }) => (
-									<DropdownMenuItem key={id} disabled={disabled}>
-										<Icon className={`size-4 ${iconClassName}`} />
-										<span>{label}</span>
-										<span className="ml-auto text-xs text-muted-foreground">
-											{description}
-										</span>
-									</DropdownMenuItem>
-								),
-							)}
-							<DropdownMenuSeparator />
-							{workspaceItemLearnCreateActions.map(
-								({ type, label, Icon, iconClassName }) => (
-									<DropdownMenuItem
-										key={type}
-										onClick={() =>
-											onCreateItem({ type, parentId: createParentId })
-										}
-									>
-										<Icon className={`size-4 ${iconClassName}`} />
-										<span>{label}</span>
-									</DropdownMenuItem>
-								),
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-					{onCloseItemView ? (
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							type="button"
-							className="size-8.5 text-muted-foreground hover:text-foreground"
-							aria-label="Close item"
-							onClick={onCloseItemView}
-						>
-							<X className="size-4" />
-						</Button>
-					) : null}
-				</div>
+				<WorkspaceContextActions
+					activeItem={activeItem}
+					createParentId={createParentId}
+					searchHotkey={searchHotkey}
+					onCreateItem={onCreateItem}
+					onSearch={() => setSearchOpen(true)}
+					onCloseItemView={onCloseItemView}
+				/>
 			</div>
 			<Dialog open={searchOpen} onOpenChange={setSearchOpen}>
 				<DialogContent
@@ -317,7 +236,7 @@ export default function WorkspaceContextBar({
 				item={deletingItem}
 				items={workspaceItems}
 				onOpenChange={setDeleteAlertOpen}
-				onClosed={() => setDeletingItem(null)}
+				onClosed={clearDeletingItem}
 			/>
 		</>
 	);
