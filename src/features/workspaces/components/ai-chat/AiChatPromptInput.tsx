@@ -1,5 +1,5 @@
-import { Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { Bug, Plus } from "lucide-react";
+import { lazy, Suspense, useRef, useState } from "react";
 
 import {
 	PromptInput,
@@ -20,7 +20,8 @@ import {
 	PromptInputTextarea,
 	PromptInputTools,
 } from "#/components/ai-elements/prompt-input";
-import { buttonVariants } from "#/components/ui/button";
+import { Button, buttonVariants } from "#/components/ui/button";
+import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import AiChatPromptAttachments from "#/features/workspaces/components/ai-chat/AiChatPromptAttachments";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
 import {
@@ -41,11 +42,21 @@ const PROMPT_INPUT_GROUP_CLASSNAME =
 const PROMPT_INPUT_PADDING_X = "px-3.5";
 const PROMPT_INPUT_FOOTER_PADDING_X = "pl-2 pr-3.5";
 const TOOLBAR_CONTROL_SIZE = "size-9";
-const TOOLBAR_CONTROL_HEIGHT = "h-9";
 const TOOLBAR_ICON_SIZE = "size-5";
 const TOOLBAR_MUTED_TEXT = "text-muted-foreground";
+const AiChatInspectorDialog = import.meta.env.DEV
+	? lazy(async () => {
+			const module = await import(
+				"#/features/workspaces/components/ai-chat/AiChatInspectorDialog"
+			);
+
+			return { default: module.AiChatInspectorDialog };
+		})
+	: null;
 
 interface AiChatPromptInputProps {
+	activeThreadId?: string;
+	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	modelId?: AiChatModelId;
 	onModelChange?: (modelId: AiChatModelId) => void;
 	onSubmit?: (message: PromptInputMessage) => boolean | Promise<boolean>;
@@ -54,6 +65,8 @@ interface AiChatPromptInputProps {
 }
 
 export default function AiChatPromptInput({
+	activeThreadId,
+	getInspectorSnapshot,
 	modelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	onModelChange,
 	onSubmit,
@@ -61,6 +74,7 @@ export default function AiChatPromptInput({
 	status = "ready",
 }: AiChatPromptInputProps) {
 	const [input, setInput] = useState("");
+	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	useTypeToFocusPrompt({
@@ -91,72 +105,98 @@ export default function AiChatPromptInput({
 	};
 
 	return (
-		<PromptInput
-			inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
-			onSubmit={handleSubmit}
-			multiple
-		>
-			<PromptInputHeader>
-				<AiChatPromptAttachments />
-			</PromptInputHeader>
-			<PromptInputBody>
-				<PromptInputTextarea
-					ref={textareaRef}
-					name="message"
-					value={input}
-					placeholder="Ask anything"
-					onChange={(event) => setInput(event.currentTarget.value)}
-					className={cn(
-						"min-h-12 text-base md:text-base",
-						PROMPT_INPUT_PADDING_X,
-					)}
-				/>
-			</PromptInputBody>
+		<>
+			<PromptInput
+				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
+				onSubmit={handleSubmit}
+				multiple
+			>
+				<PromptInputHeader>
+					<AiChatPromptAttachments />
+				</PromptInputHeader>
+				<PromptInputBody>
+					<PromptInputTextarea
+						ref={textareaRef}
+						name="message"
+						value={input}
+						placeholder="Ask anything"
+						onChange={(event) => setInput(event.currentTarget.value)}
+						className={cn(
+							"min-h-12 text-base md:text-base",
+							PROMPT_INPUT_PADDING_X,
+						)}
+					/>
+				</PromptInputBody>
 
-			<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
-				<PromptInputTools>
-					<PromptInputActionMenu>
-						<PromptInputActionMenuTrigger
-							aria-label="Add attachments"
-							className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
+				<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
+					<PromptInputTools>
+						<PromptInputActionMenu>
+							<PromptInputActionMenuTrigger
+								aria-label="Add attachments"
+								className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
+							>
+								<Plus className={TOOLBAR_ICON_SIZE} />
+							</PromptInputActionMenuTrigger>
+							<PromptInputActionMenuContent>
+								<PromptInputActionAddAttachments />
+							</PromptInputActionMenuContent>
+						</PromptInputActionMenu>
+					</PromptInputTools>
+
+					<div className="ml-auto flex items-center gap-1">
+						<PromptInputSelect
+							onValueChange={(value) => handleModelChange(String(value))}
+							value={modelId}
 						>
-							<Plus className={TOOLBAR_ICON_SIZE} />
-						</PromptInputActionMenuTrigger>
-						<PromptInputActionMenuContent>
-							<PromptInputActionAddAttachments />
-						</PromptInputActionMenuContent>
-					</PromptInputActionMenu>
-				</PromptInputTools>
+							<PromptInputSelectTrigger
+								size="sm"
+								className={cn(
+									buttonVariants({ variant: "ghost", size: "sm" }),
+									"h-8 w-auto border-none px-2 shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
+								)}
+							>
+								<PromptInputSelectValue />
+							</PromptInputSelectTrigger>
+							<PromptInputSelectContent side="top" align="end">
+								<PromptInputSelectGroup>
+									{AI_CHAT_MODELS.map((item) => (
+										<PromptInputSelectItem key={item.id} value={item.id}>
+											{item.name}
+										</PromptInputSelectItem>
+									))}
+								</PromptInputSelectGroup>
+							</PromptInputSelectContent>
+						</PromptInputSelect>
 
-				<div className="ml-auto flex items-center gap-1">
-					<PromptInputSelect
-						onValueChange={(value) => handleModelChange(String(value))}
-						value={modelId}
-					>
-						<PromptInputSelectTrigger
-							size="sm"
-							className={cn(
-								buttonVariants({ variant: "ghost", size: "sm" }),
-								TOOLBAR_CONTROL_HEIGHT,
-								"w-auto px-2.5 border-none shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
-							)}
-						>
-							<PromptInputSelectValue />
-						</PromptInputSelectTrigger>
-						<PromptInputSelectContent side="top" align="end">
-							<PromptInputSelectGroup>
-								{AI_CHAT_MODELS.map((item) => (
-									<PromptInputSelectItem key={item.id} value={item.id}>
-										{item.name}
-									</PromptInputSelectItem>
-								))}
-							</PromptInputSelectGroup>
-						</PromptInputSelectContent>
-					</PromptInputSelect>
+						{import.meta.env.DEV && getInspectorSnapshot ? (
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className={cn("size-8", TOOLBAR_MUTED_TEXT)}
+								aria-label="Open AI inspector"
+								disabled={!activeThreadId}
+								onClick={() => setIsInspectorOpen(true)}
+								type="button"
+							>
+								<Bug className="size-4" />
+							</Button>
+						) : null}
 
-					<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
-				</div>
-			</PromptInputFooter>
-		</PromptInput>
+						<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
+					</div>
+				</PromptInputFooter>
+			</PromptInput>
+
+			{AiChatInspectorDialog && getInspectorSnapshot ? (
+				<Suspense fallback={null}>
+					<AiChatInspectorDialog
+						getSnapshot={getInspectorSnapshot}
+						open={isInspectorOpen}
+						onOpenChange={setIsInspectorOpen}
+						threadId={activeThreadId}
+					/>
+				</Suspense>
+			) : null}
+		</>
 	);
 }

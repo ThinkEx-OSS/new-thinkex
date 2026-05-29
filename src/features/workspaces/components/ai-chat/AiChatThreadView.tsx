@@ -7,6 +7,7 @@ import {
 } from "#/components/ai-elements/conversation";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
+import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import AiChatMessageList from "#/features/workspaces/components/ai-chat/AiChatMessageList";
 import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
 import type {
@@ -22,12 +23,14 @@ type AiChatPromptMessage = Parameters<
 >[0];
 
 export default function AiChatThreadView({
+	getInspectorSnapshot,
 	hasPersistedMessages,
 	modelId,
 	onModelChange,
 	onThreadActivated,
 	threadId,
 }: {
+	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	hasPersistedMessages: boolean;
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
@@ -64,6 +67,7 @@ export default function AiChatThreadView({
 		<AiChatPanelBody
 			isLoadingHistory={hasPersistedMessages && messages.length === 0}
 			error={error}
+			getInspectorSnapshot={getInspectorSnapshot}
 			messages={messages}
 			onModelChange={onModelChange}
 			onRegenerateLastResponse={regenerate}
@@ -73,12 +77,14 @@ export default function AiChatThreadView({
 			onToolApprovalResponse={addToolApprovalResponse}
 			modelId={modelId}
 			status={status}
+			threadId={threadId}
 		/>
 	);
 }
 
 function AiChatPanelBody({
 	error,
+	getInspectorSnapshot,
 	isLoadingHistory,
 	messages,
 	modelId,
@@ -89,8 +95,10 @@ function AiChatPanelBody({
 	onSubmit,
 	onToolApprovalResponse,
 	status,
+	threadId,
 }: {
 	error?: Error;
+	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	isLoadingHistory?: boolean;
 	messages: AiChatMessage[];
 	modelId: AiChatModelId;
@@ -103,6 +111,7 @@ function AiChatPanelBody({
 		typeof AiChatMessageList
 	>["onToolApprovalResponse"];
 	status: AiChatStatus;
+	threadId: string;
 }) {
 	return (
 		<>
@@ -145,6 +154,8 @@ function AiChatPanelBody({
 						</Alert>
 					) : null}
 					<AiChatPromptInput
+						activeThreadId={threadId}
+						getInspectorSnapshot={getInspectorSnapshot}
 						modelId={modelId}
 						status={status}
 						onModelChange={onModelChange}

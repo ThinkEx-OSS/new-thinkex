@@ -165,6 +165,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 	) : activeThreadId ? (
 		<Suspense key={activeThreadId} fallback={<AiChatPanelLoadingContent />}>
 			<AiChatThreadView
+				getInspectorSnapshot={getThreadInspectorSnapshot}
 				hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
 				modelId={modelId}
 				onModelChange={setModelId}
@@ -190,7 +191,6 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 					setThreadPendingDeletion(thread);
 					setIsDeleteThreadDialogOpen(true);
 				}}
-				getInspectorSnapshot={getThreadInspectorSnapshot}
 				isNewChatDisabled={isEnsuringDraftThread}
 				onNewChat={handleNewChat}
 				onMaximize={() => maximizeChat(workspaceId)}
