@@ -15,17 +15,19 @@ import {
 } from "#/components/ui/empty";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
+import CreateWorkspaceCard from "#/features/workspaces/components/CreateWorkspaceCard";
+import WorkspaceCard from "#/features/workspaces/components/WorkspaceCard";
 import {
-	CreateWorkspaceCard,
-	createWorkspaceMutationInput,
 	getWorkspaceTabSearch,
-	useCreateWorkspaceMutation,
-	useWorkspacePersistedStoresHydrated,
-	useWorkspaceTabsStore,
 	WORKSPACE_ROOT_VIEW,
-	WorkspaceCard,
-} from "#/features/workspaces";
+} from "#/features/workspaces/model/tabs";
 import { workspacesQueryOptions } from "#/features/workspaces/query-options";
+import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
+import { useWorkspaceTabsStore } from "#/features/workspaces/state/workspace-tabs-store";
+import {
+	createWorkspaceMutationInput,
+	useCreateWorkspaceMutation,
+} from "#/features/workspaces/use-create-workspace";
 
 export const Route = createFileRoute("/_protected/home")({
 	loader: async ({ context }) => {

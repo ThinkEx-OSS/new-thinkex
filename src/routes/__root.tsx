@@ -12,7 +12,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
 import { TooltipProvider } from "#/components/ui/tooltip";
-import { WorkspacePersistedStoresHydrator } from "#/features/workspaces";
+import { WorkspacePersistedStoresHydrator } from "#/features/workspaces/state/persisted-store-hydration";
 import type { AuthSession } from "#/lib/auth.functions";
 import { AppHotkeysProvider } from "#/lib/hotkeys";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";

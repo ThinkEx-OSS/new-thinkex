@@ -1,11 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import AppNotFoundScreen from "#/components/AppNotFoundScreen";
-import {
-	WorkspacePageRoute,
-	WorkspacePageSkeleton,
-} from "#/features/workspaces";
 import { seedWorkspaceCaches } from "#/features/workspaces/cache";
+import WorkspacePageRoute from "#/features/workspaces/components/WorkspacePageRoute";
+import WorkspacePageSkeleton from "#/features/workspaces/components/WorkspacePageSkeleton";
 import { workspacePageQueryOptions } from "#/features/workspaces/query-options";
 
 export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({

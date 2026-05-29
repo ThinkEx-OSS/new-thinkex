@@ -4,6 +4,8 @@
 	"compatibility_date": "2026-01-28",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "src/server.ts",
+	"workers_dev": true,
+	"preview_urls": true,
 	"observability": {
 		"enabled": true
 	},

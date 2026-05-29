@@ -6,7 +6,7 @@ import * as schema from "./schema";
 const HYPERDRIVE_BINDING_NAME = "HYPERDRIVE";
 const DATABASE_DRIVER_ENV_KEY = "THINKEX_DB_DRIVER";
 
-async function getBindingConnectionString() {
+async function getHyperdriveConnectionString() {
 	let workerEnv: unknown;
 
 	try {
@@ -23,27 +23,27 @@ async function getBindingConnectionString() {
 	return hyperdrive?.connectionString?.trim() || null;
 }
 
-function getDirectConnectionString() {
+function getDatabaseUrlConnectionString() {
 	return process.env.DATABASE_URL?.trim() || null;
 }
 
-function shouldUseHyperdrive() {
+function shouldUseHyperdriveBinding() {
 	return (
 		process.env[DATABASE_DRIVER_ENV_KEY]?.trim().toLowerCase() === "hyperdrive"
 	);
 }
 
 async function getRuntimeConnectionString() {
-	const connectionString = shouldUseHyperdrive()
-		? await getBindingConnectionString()
-		: getDirectConnectionString();
+	const connectionString = shouldUseHyperdriveBinding()
+		? await getHyperdriveConnectionString()
+		: getDatabaseUrlConnectionString();
 
 	if (!connectionString) {
 		throw new Error(
 			[
 				"No database connection string is configured.",
-				`Set DATABASE_URL for local development,`,
-				`or set ${DATABASE_DRIVER_ENV_KEY}=hyperdrive with the ${HYPERDRIVE_BINDING_NAME} binding.`,
+				"Normal local development uses DATABASE_URL.",
+				`Cloudflare Worker deployments use ${DATABASE_DRIVER_ENV_KEY}=hyperdrive with the ${HYPERDRIVE_BINDING_NAME} binding.`,
 			].join(" "),
 		);
 	}
