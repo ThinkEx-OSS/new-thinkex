@@ -1,6 +1,7 @@
 import { useAgent } from "agents/react";
 import { useCallback, useMemo, useState } from "react";
 
+import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import type {
 	AIThreadSummary,
 	UserAIStoreState,
@@ -53,9 +54,22 @@ export function useWorkspaceAiChatThreads({
 		[directory],
 	);
 
+	const getThreadInspectorSnapshot = useCallback(
+		async (threadId: string): Promise<AIInspectorSnapshot> => {
+			return await directory.call<AIInspectorSnapshot>(
+				"getThreadInspectorSnapshot",
+				[threadId],
+			);
+		},
+		[directory],
+	);
+
 	return {
 		deleteThread,
 		directory,
+		getThreadInspectorSnapshot: import.meta.env.DEV
+			? getThreadInspectorSnapshot
+			: undefined,
 		isEnsuringDraftThread,
 		isReady: directory.state?.isLoaded === true,
 		ensureDraftThread,

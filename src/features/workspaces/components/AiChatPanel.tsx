@@ -54,6 +54,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 	const {
 		deleteThread,
 		ensureDraftThread,
+		getThreadInspectorSnapshot,
 		isEnsuringDraftThread,
 		isReady: areThreadsReady,
 		markThreadViewed,
@@ -189,6 +190,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 					setThreadPendingDeletion(thread);
 					setIsDeleteThreadDialogOpen(true);
 				}}
+				getInspectorSnapshot={getThreadInspectorSnapshot}
 				isNewChatDisabled={isEnsuringDraftThread}
 				onNewChat={handleNewChat}
 				onMaximize={() => maximizeChat(workspaceId)}

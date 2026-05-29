@@ -2,6 +2,10 @@ import type { ChatResponseResult } from "@cloudflare/think";
 import { Agent, callable } from "agents";
 import { nanoid } from "nanoid";
 
+import {
+	type AIInspectorSnapshot,
+	isAIInspectorEnabled,
+} from "#/features/workspaces/ai/ai-inspector";
 import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
 import { assertCanReadWorkspace } from "#/features/workspaces/ai/ai-thread-directory-permissions";
 import { ensureChatMetaColumns } from "#/features/workspaces/ai/ai-thread-directory-schema";
@@ -189,6 +193,20 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		await this.deleteSubAgent(AIThread, threadId);
 		this.sql`DELETE FROM chat_meta WHERE id = ${threadId}`;
 		this._refreshState();
+	}
+
+	@callable()
+	async getThreadInspectorSnapshot(
+		threadId: string,
+	): Promise<AIInspectorSnapshot> {
+		await this._requireThreadMeta(threadId);
+
+		if (!isAIInspectorEnabled()) {
+			return { isEnabled: false, threadId, events: [] };
+		}
+
+		const thread = await this.subAgent(AIThread, threadId);
+		return thread.getInspectorSnapshot();
 	}
 
 	async getThreadContext(threadId: string): Promise<AIThreadContext | null> {

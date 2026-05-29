@@ -1,6 +1,12 @@
 import type {
 	ChatResponseResult,
+	ChunkContext,
+	PrepareStepContext,
 	Session,
+	StepConfig,
+	StepContext,
+	ToolCallContext,
+	ToolCallDecision,
 	ToolCallResultContext,
 	TurnConfig,
 	TurnContext,
@@ -11,6 +17,25 @@ import { generateText, tool } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 
+import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
+import {
+	createInspectorChunkAccumulator,
+	getInspectorErrorPayload,
+	recordInspectorChunk,
+	resetInspectorChunkAccumulator,
+	sanitizeInspectorValue,
+	summarizeInspectorChunks,
+	summarizeInspectorMessages,
+	summarizeInspectorToolList,
+	summarizeInspectorToolResultList,
+	summarizeInspectorTools,
+} from "#/features/workspaces/ai/ai-inspector-serialization";
+import {
+	beginAIInspectorRun,
+	createAIInspectorRecorderState,
+	getAIInspectorSnapshot,
+	recordAIInspectorEvent,
+} from "#/features/workspaces/ai/ai-inspector-store";
 import {
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	getWorkspaceAiChatModel,
@@ -48,6 +73,8 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		override messageConcurrency = "latest" as const;
 		override chatRecovery = true;
 		private shouldRefreshSessionPrompt = false;
+		private inspectorChunks = createInspectorChunkAccumulator();
+		private inspectorState = createAIInspectorRecorderState();
 
 		getModel(): LanguageModel {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
@@ -114,17 +141,56 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			await directory.recordThreadRunStarted(this.name);
 
 			const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
+			const system = getAIThreadSystemPromptForWorkspace(
+				ctx.system,
+				thread.workspaceId,
+			);
+
+			beginAIInspectorRun(this.inspectorState);
+			resetInspectorChunkAccumulator(this.inspectorChunks);
+			recordAIInspectorEvent(this, this.inspectorState, "turn.started", {
+				body: sanitizeInspectorValue(ctx.body),
+				continuation: ctx.continuation,
+				messages: summarizeInspectorMessages(ctx.messages),
+				modelId,
+				system,
+				thread,
+				tools: await summarizeInspectorTools(ctx.tools),
+			});
 
 			return {
 				model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
-				system: getAIThreadSystemPromptForWorkspace(
-					ctx.system,
-					thread.workspaceId,
-				),
+				system,
 			};
 		}
 
+		beforeStep(ctx: PrepareStepContext): StepConfig | undefined {
+			resetInspectorChunkAccumulator(this.inspectorChunks);
+			recordAIInspectorEvent(this, this.inspectorState, "step.started", {
+				messages: summarizeInspectorMessages(ctx.messages),
+				stepNumber: ctx.stepNumber,
+			});
+
+			return undefined;
+		}
+
+		beforeToolCall(ctx: ToolCallContext): ToolCallDecision | undefined {
+			recordAIInspectorEvent(this, this.inspectorState, "tool.started", {
+				input: sanitizeInspectorValue(ctx.input),
+				messages: summarizeInspectorMessages(ctx.messages),
+				providerMetadata: sanitizeInspectorValue(ctx.providerMetadata),
+				stepNumber: ctx.stepNumber,
+				toolCallId: ctx.toolCallId,
+				toolName: ctx.toolName,
+			});
+
+			return undefined;
+		}
+
 		override async onChatResponse(result: ChatResponseResult) {
+			recordAIInspectorEvent(this, this.inspectorState, "turn.finished", {
+				result: sanitizeInspectorValue(result),
+			});
 			const hasActiveConnections = Array.from(this.getConnections()).length > 0;
 
 			try {
@@ -155,6 +221,12 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		}
 
 		override onChatError(error: unknown) {
+			recordAIInspectorEvent(
+				this,
+				this.inspectorState,
+				"turn.error",
+				getInspectorErrorPayload(error),
+			);
 			void this.keepAliveWhile(async () => {
 				try {
 					const directory = await this.parentAgent(getUserAIStore());
@@ -173,9 +245,48 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		}
 
 		afterToolCall(ctx: ToolCallResultContext): void {
+			recordAIInspectorEvent(this, this.inspectorState, "tool.finished", {
+				durationMs: ctx.durationMs,
+				input: sanitizeInspectorValue(ctx.input),
+				messages: summarizeInspectorMessages(ctx.messages),
+				output: ctx.success ? sanitizeInspectorValue(ctx.output) : undefined,
+				error: ctx.success ? undefined : getInspectorErrorPayload(ctx.error),
+				providerMetadata: sanitizeInspectorValue(ctx.providerMetadata),
+				stepNumber: ctx.stepNumber,
+				success: ctx.success,
+				toolCallId: ctx.toolCallId,
+				toolName: ctx.toolName,
+			});
+
 			if (ctx.success && ctx.toolName === "set_context") {
 				this.shouldRefreshSessionPrompt = true;
 			}
+		}
+
+		onStepFinish(ctx: StepContext): void {
+			recordAIInspectorEvent(this, this.inspectorState, "step.finished", {
+				files: sanitizeInspectorValue(ctx.files),
+				finishReason: ctx.finishReason,
+				providerMetadata: sanitizeInspectorValue(ctx.providerMetadata),
+				chunkSummary: summarizeInspectorChunks(this.inspectorChunks),
+				reasoning: sanitizeInspectorValue(ctx.reasoning),
+				request: sanitizeInspectorValue(ctx.request),
+				response: sanitizeInspectorValue(ctx.response),
+				sources: sanitizeInspectorValue(ctx.sources),
+				text: ctx.text,
+				toolCalls: summarizeInspectorToolList(ctx.toolCalls),
+				toolResults: summarizeInspectorToolResultList(ctx.toolResults),
+				usage: sanitizeInspectorValue(ctx.usage),
+				warnings: sanitizeInspectorValue(ctx.warnings),
+			});
+		}
+
+		onChunk(ctx: ChunkContext): void {
+			recordInspectorChunk(this.inspectorChunks, ctx.chunk);
+		}
+
+		getInspectorSnapshot(): AIInspectorSnapshot {
+			return getAIInspectorSnapshot(this, this.inspectorState, this.name);
 		}
 
 		private async _getThreadContext() {
