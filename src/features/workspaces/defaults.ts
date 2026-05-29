@@ -8,6 +8,7 @@ import type {
 export const DEFAULT_WORKSPACE_NAME = "Untitled Workspace";
 export const DEFAULT_WORKSPACE_COLOR = "sky" satisfies WorkspaceColor;
 export const DEFAULT_WORKSPACE_ICON = "compass" satisfies WorkspaceIcon;
+export const WORKSPACE_ITEM_SORT_STEP = 1024;
 
 export function getDefaultWorkspaceItemName(type: WorkspaceItemType) {
 	switch (type) {

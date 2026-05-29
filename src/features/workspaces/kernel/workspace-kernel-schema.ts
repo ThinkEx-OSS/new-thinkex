@@ -1,6 +1,8 @@
+import { WORKSPACE_ITEM_SORT_STEP } from "#/features/workspaces/defaults";
+
 export const kernelItemsTable = "kernel_items";
 export const workspaceRevisionKey = "workspace_revision";
-export const workspaceItemSortStep = 1024;
+export const workspaceItemSortStep = WORKSPACE_ITEM_SORT_STEP;
 
 export type WorkspaceKernelSql = <T = Record<string, unknown>>(
 	strings: TemplateStringsArray,

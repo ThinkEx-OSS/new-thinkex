@@ -10,6 +10,7 @@ import type {
 import {
 	getAvailableWorkspaceItemName,
 	getWorkspaceItemTypeMeta,
+	WORKSPACE_ITEM_SORT_STEP,
 } from "#/features/workspaces/defaults";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
@@ -157,44 +158,10 @@ export function createWorkspaceItemInPageCache(
 	queryClient: QueryClient,
 	input: CreateWorkspaceItemInput & { id: string },
 ) {
-	const parentId = input.parentId ?? null;
-	const now = new Date().toISOString();
-	const previousPage = queryClient.getQueryData<WorkspacePage>(
-		workspacePageQueryKey(input.workspaceId),
-	);
-
-	if (!previousPage) {
-		return undefined;
-	}
-
-	const name = getAvailableWorkspaceItemNameInPage({
-		items: previousPage.items,
-		type: input.type,
-		parentId,
-		requestedName: input.name,
-	});
-	const item: WorkspaceItemSummary = {
-		id: input.id,
-		workspaceId: input.workspaceId,
-		parentId,
-		type: input.type,
-		title: name,
-		name,
-		meta: getWorkspaceItemTypeMeta(input.type),
-		color: null,
-		metadataJson: {},
-		sortOrder: getNextWorkspaceItemSortOrder(previousPage.items, parentId),
-		createdAt: now,
-		updatedAt: now,
-		deletedAt: null,
-	};
-
 	queryClient.setQueryData<WorkspacePage>(
 		workspacePageQueryKey(input.workspaceId),
-		{
-			...previousPage,
-			items: [...previousPage.items, item].sort(compareWorkspaceItems),
-		},
+		(current) =>
+			current ? createWorkspaceItemInPage(current, input) : current,
 	);
 }
 
@@ -202,56 +169,23 @@ export function moveWorkspaceItemInPageCache(
 	queryClient: QueryClient,
 	input: MoveWorkspaceItemInput,
 ) {
-	const nextParentId = input.parentId ?? null;
-	const previousPage = queryClient.getQueryData<WorkspacePage>(
-		workspacePageQueryKey(input.workspaceId),
-	);
-
-	if (!previousPage) {
-		return undefined;
-	}
-
-	const previousItem = previousPage.items.find(
-		(item) => item.id === input.itemId,
-	);
-
-	if (!previousItem) {
-		return undefined;
-	}
-
-	const name = getAvailableWorkspaceItemNameInPage({
-		items: previousPage.items,
-		type: previousItem.type,
-		parentId: nextParentId,
-		requestedName: previousItem.name,
-		excludeItemId: previousItem.id,
-	});
+	let previousItem: WorkspaceItemSummary | undefined;
 
 	queryClient.setQueryData<WorkspacePage>(
 		workspacePageQueryKey(input.workspaceId),
-		{
-			...previousPage,
-			items: previousPage.items
-				.map((item) =>
-					item.id === input.itemId
-						? {
-								...item,
-								parentId: nextParentId,
-								name,
-								title: name,
-								sortOrder:
-									input.sortOrder ??
-									getNextWorkspaceItemSortOrder(
-										previousPage.items.filter(
-											(candidate) => candidate.id !== input.itemId,
-										),
-										nextParentId,
-									),
-								updatedAt: new Date().toISOString(),
-							}
-						: item,
-				)
-				.sort(compareWorkspaceItems),
+		(current) => {
+			if (!current) {
+				return current;
+			}
+
+			const moveResult = moveWorkspaceItemInPage(current, input);
+
+			if (!moveResult) {
+				return current;
+			}
+
+			previousItem = moveResult.previousItem;
+			return moveResult.page;
 		},
 	);
 
@@ -266,12 +200,7 @@ export function removeWorkspaceItemsFromPageCache(
 	queryClient.setQueryData<WorkspacePage>(
 		workspacePageQueryKey(workspaceId),
 		(current) =>
-			current
-				? {
-						...current,
-						items: current.items.filter((item) => !itemIds.includes(item.id)),
-					}
-				: current,
+			current ? removeWorkspaceItemsFromPage(current, itemIds) : current,
 	);
 }
 
@@ -285,15 +214,7 @@ export function restoreWorkspaceItemInPageCache(
 
 	queryClient.setQueryData<WorkspacePage>(
 		workspacePageQueryKey(item.workspaceId),
-		(current) =>
-			current
-				? {
-						...current,
-						items: current.items
-							.map((candidate) => (candidate.id === item.id ? item : candidate))
-							.sort(compareWorkspaceItems),
-					}
-				: current,
+		(current) => (current ? upsertWorkspaceItemInPage(current, item) : current),
 	);
 }
 
@@ -301,87 +222,144 @@ export function applyWorkspaceEventToCache(
 	queryClient: QueryClient,
 	event: WorkspaceRealtimeEvent,
 ) {
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(event.workspaceId),
+		(current) =>
+			current ? applyWorkspaceEventToPage(current, event) : current,
+	);
+}
+
+function applyWorkspaceEventToPage(
+	page: WorkspacePage,
+	event: WorkspaceRealtimeEvent,
+): WorkspacePage {
 	switch (event.type) {
 		case "workspace.item.created":
 		case "workspace.item.renamed":
 		case "workspace.item.moved":
 		case "workspace.item.content.updated":
-			upsertWorkspaceItemInPageCache(queryClient, event.payload.item, event);
-			return;
+			return upsertWorkspaceItemInPage(
+				page,
+				event.payload.item,
+				event.revision,
+			);
 		case "workspace.item.deleted":
-			removeWorkspaceItemFromPageCache(queryClient, event);
-			return;
+			return removeWorkspaceItemsFromPage(
+				page,
+				event.payload.deletedItemIds,
+				event.revision,
+			);
 	}
 }
 
-function upsertWorkspaceItemInPageCache(
-	queryClient: QueryClient,
-	item: WorkspaceItemSummary,
-	event: WorkspaceRealtimeEvent,
-) {
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(event.workspaceId),
-		(current) => {
-			if (!current) {
-				return current;
-			}
+function createWorkspaceItemInPage(
+	page: WorkspacePage,
+	input: CreateWorkspaceItemInput & { id: string },
+): WorkspacePage {
+	const parentId = input.parentId ?? null;
+	const now = new Date().toISOString();
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: page.items,
+		type: input.type,
+		parentId,
+		requestedName: input.name,
+	});
 
-			const nextItems = current.items.some(
-				(candidate) => candidate.id === item.id,
-			)
-				? current.items.map((candidate) =>
-						candidate.id === item.id ? item : candidate,
-					)
-				: [...current.items, item];
-
-			return {
-				...current,
-				revision: Math.max(current.revision, event.revision),
-				items: nextItems.sort(compareWorkspaceItems),
-			};
-		},
-	);
+	return upsertWorkspaceItemInPage(page, {
+		id: input.id,
+		workspaceId: input.workspaceId,
+		parentId,
+		type: input.type,
+		title: name,
+		name,
+		meta: getWorkspaceItemTypeMeta(input.type),
+		color: null,
+		metadataJson: {},
+		sortOrder: getNextWorkspaceItemSortOrder(page.items, parentId),
+		createdAt: now,
+		updatedAt: now,
+		deletedAt: null,
+	});
 }
 
-function removeWorkspaceItemFromPageCache(
-	queryClient: QueryClient,
-	event: Extract<WorkspaceRealtimeEvent, { type: "workspace.item.deleted" }>,
-) {
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(event.workspaceId),
-		(current) => {
-			if (!current) {
-				return current;
-			}
+function moveWorkspaceItemInPage(
+	page: WorkspacePage,
+	input: MoveWorkspaceItemInput,
+): { page: WorkspacePage; previousItem: WorkspaceItemSummary } | null {
+	const previousItem = page.items.find((item) => item.id === input.itemId);
 
-			const deletedIds = new Set(event.payload.deletedItemIds);
+	if (!previousItem) {
+		return null;
+	}
 
-			return {
-				...current,
-				revision: Math.max(current.revision, event.revision),
-				items: current.items.filter((item) => !deletedIds.has(item.id)),
-			};
-		},
-	);
+	const nextParentId = input.parentId ?? null;
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: page.items,
+		type: previousItem.type,
+		parentId: nextParentId,
+		requestedName: previousItem.name,
+		excludeItemId: previousItem.id,
+	});
+
+	return {
+		previousItem,
+		page: upsertWorkspaceItemInPage(page, {
+			...previousItem,
+			parentId: nextParentId,
+			name,
+			title: name,
+			sortOrder:
+				input.sortOrder ??
+				getNextWorkspaceItemSortOrder(
+					page.items.filter((candidate) => candidate.id !== input.itemId),
+					nextParentId,
+				),
+			updatedAt: new Date().toISOString(),
+		}),
+	};
+}
+
+function upsertWorkspaceItemInPage(
+	page: WorkspacePage,
+	item: WorkspaceItemSummary,
+	revision = page.revision,
+): WorkspacePage {
+	const items = page.items.some((candidate) => candidate.id === item.id)
+		? page.items.map((candidate) =>
+				candidate.id === item.id ? item : candidate,
+			)
+		: [...page.items, item];
+
+	return {
+		...page,
+		revision: Math.max(page.revision, revision),
+		items: items.sort(compareWorkspaceItems),
+	};
+}
+
+function removeWorkspaceItemsFromPage(
+	page: WorkspacePage,
+	itemIds: string[],
+	revision = page.revision,
+): WorkspacePage {
+	const deletedIds = new Set(itemIds);
+
+	return {
+		...page,
+		revision: Math.max(page.revision, revision),
+		items: page.items.filter((item) => !deletedIds.has(item.id)),
+	};
 }
 
 function compareWorkspaceItems(
 	left: WorkspaceItemSummary,
 	right: WorkspaceItemSummary,
 ) {
-	const parentDelta = (left.parentId ?? "").localeCompare(right.parentId ?? "");
-
-	if (parentDelta !== 0) {
-		return parentDelta;
-	}
-
-	const sortDelta = left.sortOrder - right.sortOrder;
-
-	if (sortDelta !== 0) {
-		return sortDelta;
-	}
-
-	return left.name.localeCompare(right.name);
+	return (
+		(left.parentId ?? "").localeCompare(right.parentId ?? "") ||
+		left.sortOrder - right.sortOrder ||
+		left.name.localeCompare(right.name)
+	);
 }
 
 function getNextWorkspaceItemSortOrder(
@@ -392,9 +370,10 @@ function getNextWorkspaceItemSortOrder(
 		.filter((item) => item.parentId === parentId)
 		.map((item) => item.sortOrder);
 
-	return siblingSortOrders.length > 0
-		? Math.max(...siblingSortOrders) + 1024
-		: 1024;
+	return (
+		(siblingSortOrders.length > 0 ? Math.max(...siblingSortOrders) : 0) +
+		WORKSPACE_ITEM_SORT_STEP
+	);
 }
 
 function getAvailableWorkspaceItemNameInPage(input: {
