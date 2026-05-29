@@ -1,6 +1,11 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { LucideIcon } from "lucide-react";
 import { type ReactNode, useCallback, useRef, useState } from "react";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuTrigger,
+} from "#/components/ui/context-menu";
 import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import type { WorkspaceTabLayoutElementHandler } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
@@ -53,6 +58,7 @@ export function WorkspaceTabItem({
 	onBeforeClose,
 	onActivate,
 	onClose,
+	contextMenuContent,
 }: {
 	tab: WorkspaceTab;
 	index: number;
@@ -68,6 +74,7 @@ export function WorkspaceTabItem({
 	onBeforeClose: (element: HTMLElement | null) => void;
 	onActivate: () => void;
 	onClose: () => void;
+	contextMenuContent?: ReactNode;
 }) {
 	const [element, setElement] = useState<Element | null>(null);
 	const elementRef = useRef<HTMLDivElement | null>(null);
@@ -100,7 +107,7 @@ export function WorkspaceTabItem({
 	});
 	const showAttachedChrome = isActive && !isDragSource;
 
-	return (
+	const tabContent = (
 		<div
 			ref={setTabElement}
 			className={cn(
@@ -128,6 +135,19 @@ export function WorkspaceTabItem({
 				onClose={handleClose}
 			/>
 		</div>
+	);
+
+	if (!contextMenuContent) {
+		return tabContent;
+	}
+
+	return (
+		<ContextMenu>
+			<ContextMenuTrigger render={tabContent} />
+			<ContextMenuContent className="w-56">
+				{contextMenuContent}
+			</ContextMenuContent>
+		</ContextMenu>
 	);
 }
 

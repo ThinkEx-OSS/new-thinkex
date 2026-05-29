@@ -4,6 +4,7 @@ import { FileQuestion, Plus } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { useWorkspaceTabCloseResizeLock } from "#/features/workspaces/components/useWorkspaceTabCloseResizeLock";
 import { useWorkspaceTabLayoutAnimation } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
+import { WorkspaceTabContextMenuContent } from "#/features/workspaces/components/WorkspaceTabActionsMenu";
 import {
 	WorkspaceProjectedTabItem,
 	WorkspaceTabDivider,
@@ -32,7 +33,11 @@ interface WorkspaceTabBarProps {
 	activeTab: WorkspaceTab;
 	onActivateTab: (tab: WorkspaceTab) => void;
 	onCloseTab: (tab: WorkspaceTab) => void;
+	onCloseOtherTabs: (tab: WorkspaceTab) => void;
+	onCloseTabsToRight: (tab: WorkspaceTab) => void;
 	onCreateRootTab: () => void;
+	onCreateRootTabAfter: (tab: WorkspaceTab) => void;
+	onDuplicateTab: (tab: WorkspaceTab) => void;
 }
 
 export default function WorkspaceTabBar({
@@ -42,7 +47,11 @@ export default function WorkspaceTabBar({
 	activeTab,
 	onActivateTab,
 	onCloseTab,
+	onCloseOtherTabs,
+	onCloseTabsToRight,
 	onCreateRootTab,
+	onCreateRootTabAfter,
+	onDuplicateTab,
 }: WorkspaceTabBarProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
 	const dragOperation = useDragOperation();
@@ -134,6 +143,18 @@ export default function WorkspaceTabBar({
 							onBeforeClose={closeResizeLock.lockFromElement}
 							onActivate={() => onActivateTab(tab)}
 							onClose={() => onCloseTab(tab)}
+							contextMenuContent={
+								<WorkspaceTabContextMenuContent
+									tab={tab}
+									tabIndex={tabIndex}
+									tabCount={tabs.length}
+									onNewTabToRight={onCreateRootTabAfter}
+									onDuplicateTab={onDuplicateTab}
+									onCloseTab={onCloseTab}
+									onCloseOtherTabs={onCloseOtherTabs}
+									onCloseTabsToRight={onCloseTabsToRight}
+								/>
+							}
 						/>
 					);
 				})}

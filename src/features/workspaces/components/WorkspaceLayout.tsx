@@ -130,9 +130,13 @@ export function WorkspaceShell({
 		activeTab,
 		activateWorkspaceTab,
 		closeItemView,
+		closeOtherWorkspaceTabs,
 		closeWorkspaceTab,
+		closeWorkspaceTabsToRight,
 		createWorkspaceTab,
+		createWorkspaceTabAfter,
 		dispatchWorkspaceDragCommand,
+		duplicateWorkspaceTab,
 		itemsById,
 		openItem,
 		openItemInNewTab,
@@ -200,6 +204,7 @@ export function WorkspaceShell({
 					pane={presentation.pane}
 					itemsById={itemsById}
 					scopedItems={orderedScopedItems}
+					onCreateItem={createWorkspaceItem}
 					onOpenItem={openItem}
 				/>
 			</MaximizedWorkspaceSurface>
@@ -274,7 +279,11 @@ export function WorkspaceShell({
 						presence={realtime}
 						onActivateTab={activateWorkspaceTab}
 						onCloseTab={closeWorkspaceTab}
+						onCloseOtherTabs={closeOtherWorkspaceTabs}
+						onCloseTabsToRight={closeWorkspaceTabsToRight}
 						onCreateRootTab={createWorkspaceTab}
+						onCreateRootTabAfter={createWorkspaceTabAfter}
+						onDuplicateTab={duplicateWorkspaceTab}
 					/>
 				}
 				content={
@@ -285,12 +294,14 @@ export function WorkspaceShell({
 							direction={presentation.direction}
 							itemsById={itemsById}
 							scopedItems={orderedScopedItems}
+							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
 						/>
 					) : (
 						<WorkspaceContent
 							items={orderedScopedItems}
 							activeItem={activeItem}
+							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
 						/>
 					)
@@ -367,12 +378,17 @@ function WorkspacePaneRenderer({
 	pane,
 	itemsById,
 	scopedItems,
+	onCreateItem,
 	onOpenItem,
 }: {
 	workspaceId: string;
 	pane: WorkspacePane;
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
+	onCreateItem: (input: {
+		type: WorkspaceItemType;
+		parentId: string | null;
+	}) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
 	switch (pane.kind) {
@@ -385,6 +401,7 @@ function WorkspacePaneRenderer({
 				<WorkspaceContent
 					items={scopedItems}
 					activeItem={item}
+					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
 			);
@@ -394,6 +411,7 @@ function WorkspacePaneRenderer({
 				<WorkspaceContent
 					items={scopedItems}
 					activeItem={undefined}
+					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
 			);
@@ -406,6 +424,7 @@ function WorkspaceSplitPresentation({
 	direction,
 	itemsById,
 	scopedItems,
+	onCreateItem,
 	onOpenItem,
 }: {
 	workspaceId: string;
@@ -413,6 +432,10 @@ function WorkspaceSplitPresentation({
 	direction: "horizontal" | "vertical";
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
+	onCreateItem: (input: {
+		type: WorkspaceItemType;
+		parentId: string | null;
+	}) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
 	return (
@@ -427,6 +450,7 @@ function WorkspaceSplitPresentation({
 					pane={panes[0]}
 					itemsById={itemsById}
 					scopedItems={scopedItems}
+					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
 			</ResizablePanel>
@@ -437,6 +461,7 @@ function WorkspaceSplitPresentation({
 					pane={panes[1]}
 					itemsById={itemsById}
 					scopedItems={scopedItems}
+					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
 			</ResizablePanel>

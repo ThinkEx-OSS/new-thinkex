@@ -35,6 +35,7 @@ type WorkspaceTabsState = {
 	createRootTab: (input: {
 		workspaceId: string;
 		workspaceName: string;
+		insertIndex?: number;
 	}) => WorkspaceTab;
 	createItemTab: (input: {
 		workspaceId: string;
@@ -44,6 +45,12 @@ type WorkspaceTabsState = {
 		insertIndex: number;
 		activate?: boolean;
 	}) => WorkspaceTab;
+	duplicateTab: (input: {
+		workspaceId: string;
+		workspaceName: string;
+		tabId: string;
+		insertIndex: number;
+	}) => WorkspaceTab | undefined;
 	replaceTabView: (input: {
 		workspaceId: string;
 		tabId: string;
@@ -65,6 +72,14 @@ type WorkspaceTabsState = {
 		workspaceId: string;
 		tabId: string;
 	}) => WorkspaceTabSession;
+	closeOtherTabs: (input: {
+		workspaceId: string;
+		tabId: string;
+	}) => WorkspaceTabSession | undefined;
+	closeTabsToRight: (input: {
+		workspaceId: string;
+		tabId: string;
+	}) => WorkspaceTabSession | undefined;
 	getSession: (workspaceId: string) => WorkspaceTabSession | undefined;
 };
 
@@ -101,7 +116,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 
 					return nextSession;
 				},
-				createRootTab: ({ workspaceId, workspaceName }) => {
+				createRootTab: ({ workspaceId, workspaceName, insertIndex }) => {
 					const rootTab = createRootWorkspaceTab(workspaceName);
 
 					set((state) => {
@@ -114,7 +129,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 							tabs: insertWorkspaceTabByIndex({
 								tabs: session.tabs,
 								tab: rootTab,
-								insertIndex: Number.MAX_SAFE_INTEGER,
+								insertIndex: insertIndex ?? Number.MAX_SAFE_INTEGER,
 							}),
 						};
 
@@ -127,6 +142,37 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 					});
 
 					return rootTab;
+				},
+				duplicateTab: ({ workspaceId, workspaceName, tabId, insertIndex }) => {
+					const session = get().sessionsByWorkspaceId[workspaceId];
+					const tab = session?.tabs.find((item) => item.id === tabId);
+
+					if (!session || !tab) {
+						return undefined;
+					}
+
+					const duplicatedTab = tab.viewItemId
+						? createWorkspaceItemTab({
+								itemId: tab.viewItemId,
+								title: tab.title,
+							})
+						: createRootWorkspaceTab(workspaceName);
+
+					set((state) => ({
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: {
+								activeTabId: duplicatedTab.id,
+								tabs: insertWorkspaceTabByIndex({
+									tabs: session.tabs,
+									tab: duplicatedTab,
+									insertIndex,
+								}),
+							},
+						},
+					}));
+
+					return duplicatedTab;
 				},
 				createItemTab: ({
 					workspaceId,
@@ -322,6 +368,55 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 							: session.activeTabId;
 					const nextSession = {
 						activeTabId: nextActiveTabId,
+						tabs: nextTabs,
+					};
+
+					set((state) => ({
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: nextSession,
+						},
+					}));
+
+					return nextSession;
+				},
+				closeOtherTabs: ({ workspaceId, tabId }) => {
+					const session = get().sessionsByWorkspaceId[workspaceId];
+					const tab = session?.tabs.find((item) => item.id === tabId);
+
+					if (!session || !tab) {
+						return session;
+					}
+
+					const nextSession = {
+						activeTabId: tab.id,
+						tabs: [tab],
+					};
+
+					set((state) => ({
+						sessionsByWorkspaceId: {
+							...state.sessionsByWorkspaceId,
+							[workspaceId]: nextSession,
+						},
+					}));
+
+					return nextSession;
+				},
+				closeTabsToRight: ({ workspaceId, tabId }) => {
+					const session = get().sessionsByWorkspaceId[workspaceId];
+					const tabIndex =
+						session?.tabs.findIndex((item) => item.id === tabId) ?? -1;
+
+					if (!session || tabIndex === -1) {
+						return session;
+					}
+
+					const nextTabs = session.tabs.slice(0, tabIndex + 1);
+					const activeTabStillOpen = nextTabs.some(
+						(tab) => tab.id === session.activeTabId,
+					);
+					const nextSession = {
+						activeTabId: activeTabStillOpen ? session.activeTabId : tabId,
 						tabs: nextTabs,
 					};
 

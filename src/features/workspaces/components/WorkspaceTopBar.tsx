@@ -46,7 +46,11 @@ interface WorkspaceTopBarProps {
 	};
 	onActivateTab: (tab: WorkspaceTab) => void;
 	onCloseTab: (tab: WorkspaceTab) => void;
+	onCloseOtherTabs: (tab: WorkspaceTab) => void;
+	onCloseTabsToRight: (tab: WorkspaceTab) => void;
 	onCreateRootTab: () => void;
+	onCreateRootTabAfter: (tab: WorkspaceTab) => void;
+	onDuplicateTab: (tab: WorkspaceTab) => void;
 }
 
 export default function WorkspaceTopBar({
@@ -58,7 +62,11 @@ export default function WorkspaceTopBar({
 	presence,
 	onActivateTab,
 	onCloseTab,
+	onCloseOtherTabs,
+	onCloseTabsToRight,
 	onCreateRootTab,
+	onCreateRootTabAfter,
+	onDuplicateTab,
 }: WorkspaceTopBarProps) {
 	const isCollapsed = useWorkspaceUiStore(
 		(state) =>
@@ -90,7 +98,11 @@ export default function WorkspaceTopBar({
 						activeTab={activeTab}
 						onActivateTab={onActivateTab}
 						onCloseTab={onCloseTab}
+						onCloseOtherTabs={onCloseOtherTabs}
+						onCloseTabsToRight={onCloseTabsToRight}
 						onCreateRootTab={onCreateRootTab}
+						onCreateRootTabAfter={onCreateRootTabAfter}
+						onDuplicateTab={onDuplicateTab}
 					/>
 				</div>
 

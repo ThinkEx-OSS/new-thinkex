@@ -48,11 +48,16 @@ export function useWorkspaceNavigation({
 	);
 	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
 	const createItemTab = useWorkspaceTabsStore((state) => state.createItemTab);
+	const duplicateTab = useWorkspaceTabsStore((state) => state.duplicateTab);
 	const replaceTabView = useWorkspaceTabsStore((state) => state.replaceTabView);
 	const activateTab = useWorkspaceTabsStore((state) => state.activateTab);
 	const reorderTabs = useWorkspaceTabsStore((state) => state.reorderTabs);
 	const moveTab = useWorkspaceTabsStore((state) => state.moveTab);
 	const closeTab = useWorkspaceTabsStore((state) => state.closeTab);
+	const closeOtherTabs = useWorkspaceTabsStore((state) => state.closeOtherTabs);
+	const closeTabsToRight = useWorkspaceTabsStore(
+		(state) => state.closeTabsToRight,
+	);
 	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
 	const activeItem = activeTab?.viewItemId
 		? itemsById.get(activeTab.viewItemId)
@@ -144,13 +149,36 @@ export function useWorkspaceNavigation({
 
 		return activeTabIndex >= 0 ? activeTabIndex + 1 : Number.MAX_SAFE_INTEGER;
 	};
-	const createWorkspaceTab = () => {
+	const getTabIndex = (tab: WorkspaceTab) =>
+		session?.tabs.findIndex((item) => item.id === tab.id) ?? -1;
+	const createWorkspaceTab = (options?: { insertIndex?: number }) => {
 		const tab = createRootTab({
 			workspaceId: workspace.id,
 			workspaceName: workspace.name,
+			insertIndex: options?.insertIndex,
 		});
 
 		navigateToTab(tab);
+	};
+	const createWorkspaceTabAfter = (tab: WorkspaceTab) => {
+		const tabIndex = getTabIndex(tab);
+
+		createWorkspaceTab({
+			insertIndex: tabIndex >= 0 ? tabIndex + 1 : Number.MAX_SAFE_INTEGER,
+		});
+	};
+	const duplicateWorkspaceTab = (tab: WorkspaceTab) => {
+		const tabIndex = getTabIndex(tab);
+		const duplicatedTab = duplicateTab({
+			workspaceId: workspace.id,
+			workspaceName: workspace.name,
+			tabId: tab.id,
+			insertIndex: tabIndex >= 0 ? tabIndex + 1 : Number.MAX_SAFE_INTEGER,
+		});
+
+		if (duplicatedTab) {
+			navigateToTab(duplicatedTab);
+		}
 	};
 	const openItemInNewTab = (input: {
 		item: WorkspaceItem;
@@ -210,6 +238,32 @@ export function useWorkspaceNavigation({
 			navigateToTab(nextActiveTab);
 		}
 	};
+	const closeOtherWorkspaceTabs = (tab: WorkspaceTab) => {
+		const nextSession = closeOtherTabs({
+			workspaceId: workspace.id,
+			tabId: tab.id,
+		});
+		const nextActiveTab = nextSession?.tabs.find(
+			(item) => item.id === nextSession.activeTabId,
+		);
+
+		if (nextActiveTab) {
+			navigateToTab(nextActiveTab);
+		}
+	};
+	const closeWorkspaceTabsToRight = (tab: WorkspaceTab) => {
+		const nextSession = closeTabsToRight({
+			workspaceId: workspace.id,
+			tabId: tab.id,
+		});
+		const nextActiveTab = nextSession?.tabs.find(
+			(item) => item.id === nextSession.activeTabId,
+		);
+
+		if (nextActiveTab && nextActiveTab.id !== activeTab?.id) {
+			navigateToTab(nextActiveTab);
+		}
+	};
 	const openItem = (
 		item: WorkspaceItem,
 		options?: OpenWorkspaceItemOptions,
@@ -253,8 +307,12 @@ export function useWorkspaceNavigation({
 		activeItem,
 		activeTab,
 		closeItemView,
+		closeOtherWorkspaceTabs,
 		closeWorkspaceTab,
+		closeWorkspaceTabsToRight,
 		createWorkspaceTab,
+		createWorkspaceTabAfter,
+		duplicateWorkspaceTab,
 		itemsById,
 		openItem,
 		openItemInNewTab,

@@ -1,11 +1,10 @@
-import { EllipsisVertical, FilePlus2, Search, X } from "lucide-react";
+import { EllipsisVertical, Search, X } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Kbd } from "#/components/ui/kbd";
@@ -14,13 +13,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
+import WorkspaceCreateMenu from "#/features/workspaces/components/WorkspaceCreateMenu";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
-import {
-	getWorkspaceItemDisplay,
-	workspaceItemAcquisitionActions,
-	workspaceItemLearnCreateActions,
-	workspaceItemPrimaryCreateActions,
-} from "#/features/workspaces/model/item-display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItemContextAction } from "#/features/workspaces/model/object-registry";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -107,76 +102,6 @@ function WorkspaceSearchAction({
 				<Kbd>{hotkey}</Kbd>
 			</TooltipContent>
 		</Tooltip>
-	);
-}
-
-function WorkspaceCreateMenu({
-	parentId,
-	onCreateItem,
-}: {
-	parentId: string | null;
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
-}) {
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={
-					<Button
-						variant="ghost"
-						size="sm"
-						type="button"
-						className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-					/>
-				}
-			>
-				<FilePlus2 className="size-3.5" />
-				<span className="hidden sm:inline">New</span>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-56">
-				{workspaceItemPrimaryCreateActions.map(
-					({ type, label, description, Icon, iconClassName }) => (
-						<DropdownMenuItem
-							key={type}
-							onClick={() => onCreateItem({ type, parentId })}
-						>
-							<Icon className={`size-4 ${iconClassName}`} />
-							<span>{label}</span>
-							{description ? (
-								<span className="ml-auto text-xs text-muted-foreground">
-									{description}
-								</span>
-							) : null}
-						</DropdownMenuItem>
-					),
-				)}
-				{workspaceItemAcquisitionActions.map(
-					({ id, label, description, Icon, iconClassName, disabled }) => (
-						<DropdownMenuItem key={id} disabled={disabled}>
-							<Icon className={`size-4 ${iconClassName}`} />
-							<span>{label}</span>
-							<span className="ml-auto text-xs text-muted-foreground">
-								{description}
-							</span>
-						</DropdownMenuItem>
-					),
-				)}
-				<DropdownMenuSeparator />
-				{workspaceItemLearnCreateActions.map(
-					({ type, label, Icon, iconClassName }) => (
-						<DropdownMenuItem
-							key={type}
-							onClick={() => onCreateItem({ type, parentId })}
-						>
-							<Icon className={`size-4 ${iconClassName}`} />
-							<span>{label}</span>
-						</DropdownMenuItem>
-					),
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
 	);
 }
 

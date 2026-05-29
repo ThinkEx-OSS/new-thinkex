@@ -8,16 +8,18 @@ import {
 import type { ReactElement, ReactNode } from "react";
 
 import { Button } from "#/components/ui/button";
+import { ContextMenuContent } from "#/components/ui/context-menu";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import {
+	workspaceContextMenuRenderer,
+	workspaceDropdownMenuRenderer,
+} from "#/features/workspaces/components/WorkspaceMenuRenderers";
+import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
+import { renderWorkspaceMenuActions } from "#/features/workspaces/components/workspace-menu-actions";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 interface WorkspaceItemActionsMenuProps {
@@ -54,42 +56,107 @@ export default function WorkspaceItemActionsMenu({
 				{triggerChildren ?? <EllipsisVertical className="size-4" />}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align={align} className="w-52">
-				<DropdownMenuItem onClick={() => onRenameItem(item)}>
-					<Pencil className="size-4" />
-					<span>Rename</span>
-				</DropdownMenuItem>
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger disabled>
-						<Palette className="size-4" />
-						<span>Change color</span>
-					</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent className="w-40">
-						{workspaceItemColorOptions.map((option) => (
-							<DropdownMenuItem key={option.label} disabled>
-								<span
-									className={`size-3 rounded-full ${option.className}`}
-									aria-hidden="true"
-								/>
-								<span>{option.label}</span>
-							</DropdownMenuItem>
-						))}
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
-				<DropdownMenuItem disabled>
-					<FolderInput className="size-4" />
-					<span>Move to folder</span>
-				</DropdownMenuItem>
-				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					variant="destructive"
-					onClick={() => onDeleteItem(item)}
-				>
-					<Trash2 className="size-4" />
-					<span>Delete</span>
-				</DropdownMenuItem>
+				<WorkspaceItemActionsMenuContent
+					item={item}
+					onRenameItem={onRenameItem}
+					onDeleteItem={onDeleteItem}
+				/>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
+}
+
+export function WorkspaceItemActionsMenuContent({
+	item,
+	onRenameItem,
+	onDeleteItem,
+	renderer = workspaceDropdownMenuRenderer,
+}: {
+	item: WorkspaceItem;
+	onRenameItem: (item: WorkspaceItem) => void;
+	onDeleteItem: (item: WorkspaceItem) => void;
+	renderer?: WorkspaceMenuRenderer;
+}) {
+	return renderWorkspaceMenuActions(
+		getWorkspaceItemMenuActions({ item, onRenameItem, onDeleteItem }),
+		renderer,
+	);
+}
+
+export function WorkspaceItemActionsContextMenuContent({
+	item,
+	onRenameItem,
+	onDeleteItem,
+}: {
+	item: WorkspaceItem;
+	onRenameItem: (item: WorkspaceItem) => void;
+	onDeleteItem: (item: WorkspaceItem) => void;
+}) {
+	return (
+		<ContextMenuContent className="w-52">
+			<WorkspaceItemActionsMenuContent
+				item={item}
+				onRenameItem={onRenameItem}
+				onDeleteItem={onDeleteItem}
+				renderer={workspaceContextMenuRenderer}
+			/>
+		</ContextMenuContent>
+	);
+}
+
+function getWorkspaceItemMenuActions({
+	item,
+	onRenameItem,
+	onDeleteItem,
+}: {
+	item: WorkspaceItem;
+	onRenameItem: (item: WorkspaceItem) => void;
+	onDeleteItem: (item: WorkspaceItem) => void;
+}) {
+	return [
+		{
+			kind: "item" as const,
+			id: "rename",
+			label: "Rename",
+			leading: <Pencil className="size-4" />,
+			onSelect: () => onRenameItem(item),
+		},
+		{
+			kind: "submenu" as const,
+			id: "change-color",
+			label: "Change color",
+			leading: <Palette className="size-4" />,
+			disabled: true,
+			actions: workspaceItemColorOptions.map((option) => ({
+				kind: "item" as const,
+				id: option.label,
+				label: option.label,
+				disabled: true,
+				leading: (
+					<span
+						className={`size-3 rounded-full ${option.className}`}
+						aria-hidden="true"
+					/>
+				),
+			})),
+		},
+		{
+			kind: "item" as const,
+			id: "move-to-folder",
+			label: "Move to folder",
+			leading: <FolderInput className="size-4" />,
+			disabled: true,
+		},
+		{ kind: "separator" as const, id: "danger-separator" },
+		{
+			kind: "item" as const,
+			id: "delete",
+			label: "Delete",
+			leading: <Trash2 className="size-4" />,
+			variant: "destructive" as const,
+			onSelect: () => onDeleteItem(item),
+		},
+	];
 }
 
 const workspaceItemColorOptions = [
