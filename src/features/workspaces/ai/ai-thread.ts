@@ -42,6 +42,7 @@ import {
 	resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
 import type { UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
+import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
 
 const workspaceItemListInputSchema = z.object({
@@ -107,6 +108,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		getTools(): ToolSet {
 			return {
+				...createAIThreadWebTools(this.env),
 				listWorkspaceItems: tool({
 					description:
 						"List the real ThinkEx workspace like ls. Use absolute paths such as /. By default this returns immediate children; set recursive to true for a tree-style listing.",
