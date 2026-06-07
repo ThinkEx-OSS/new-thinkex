@@ -30,7 +30,7 @@ import { removeAuthSession } from "#/lib/session-query";
 
 const userMenuTriggerClassName =
 	"size-8 overflow-hidden rounded-full border-border bg-background p-0 shadow-xs hover:bg-muted focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0 dark:border-input dark:bg-input/30 dark:hover:bg-input/50";
-const userMenuAvatarClassName = "size-full";
+const userMenuAvatarClassName = "size-full after:border-0";
 
 const themeOptions = [
 	{
