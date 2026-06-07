@@ -39,10 +39,8 @@ GOOGLE_CLIENT_SECRET=...
 ```
 
 Sync those exact keys to the Cloudflare Worker `new-thinkex`. Keep local-only
-database secrets such as `DATABASE_URL` and
-`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` out of the Worker
-secret sync; production database access uses the configured `HYPERDRIVE`
-binding.
+database secrets such as `DATABASE_URL` out of the Worker secret sync;
+production database access uses the configured `HYPERDRIVE` binding.
 
 The shared Google OAuth client must allow this redirect URI:
 
@@ -54,7 +52,6 @@ https://new-thinkex.chakrabortyurjit.workers.dev/api/auth/callback/google
 
 ```bash
 pnpm dev
-pnpm dev:hyperdrive # optional remote Worker/Hyperdrive smoke test
 pnpm db:generate
 pnpm db:migrate
 pnpm check

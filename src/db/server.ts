@@ -4,7 +4,6 @@ import { Client } from "pg";
 import * as schema from "./schema";
 
 const HYPERDRIVE_BINDING_NAME = "HYPERDRIVE";
-const DATABASE_DRIVER_ENV_KEY = "THINKEX_DB_DRIVER";
 
 async function getHyperdriveConnectionString() {
 	let workerEnv: unknown;
@@ -27,23 +26,16 @@ function getDatabaseUrlConnectionString() {
 	return process.env.DATABASE_URL?.trim() || null;
 }
 
-function shouldUseHyperdriveBinding() {
-	return (
-		process.env[DATABASE_DRIVER_ENV_KEY]?.trim().toLowerCase() === "hyperdrive"
-	);
-}
-
 async function getRuntimeConnectionString() {
-	const connectionString = shouldUseHyperdriveBinding()
-		? await getHyperdriveConnectionString()
-		: getDatabaseUrlConnectionString();
+	const connectionString =
+		(await getHyperdriveConnectionString()) ?? getDatabaseUrlConnectionString();
 
 	if (!connectionString) {
 		throw new Error(
 			[
 				"No database connection string is configured.",
-				"Normal local development uses DATABASE_URL.",
-				`Cloudflare Worker deployments use ${DATABASE_DRIVER_ENV_KEY}=hyperdrive with the ${HYPERDRIVE_BINDING_NAME} binding.`,
+				`Cloudflare Worker deployments use the ${HYPERDRIVE_BINDING_NAME} binding.`,
+				"Local development uses DATABASE_URL.",
 			].join(" "),
 		);
 	}

@@ -6,7 +6,6 @@ interface __BaseEnv_Env {
 	HYPERDRIVE: Hyperdrive;
 	BROWSER: Fetcher;
 	AI: Ai;
-	THINKEX_DB_DRIVER: "hyperdrive";
 	BETTER_AUTH_URL: string;
 	BETTER_AUTH_SECRET: string;
 	GOOGLE_CLIENT_ID: string;
@@ -26,7 +25,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "THINKEX_DB_DRIVER" | "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">> {}
 }
 
 // Begin runtime types

@@ -8,8 +8,6 @@
 	"scripts": {
 		"dev": "infisical run --env=dev --path=/app -- pnpm dev:local",
 		"dev:local": "vite dev --port 3000",
-		"dev:hyperdrive": "infisical run --env=dev --path=/app -- pnpm dev:hyperdrive:remote",
-		"dev:hyperdrive:remote": "THINKEX_DB_DRIVER=hyperdrive wrangler dev --remote",
 		"build": "CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vite build",
 		"preview": "pnpm run build && vite preview",
 		"format": "biome format",
@@ -83,6 +81,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.4.15",
 		"@cloudflare/vitest-pool-workers": "^0.16.4",
+		"@cloudflare/workers-types": "^4.20260607.1",
 		"@rolldown/plugin-babel": "^0.2.3",
 		"@tailwindcss/typography": "^0.5.16",
 		"@tanstack/devtools-event-client": "latest",
@@ -107,7 +106,7 @@
 		"vite": "^8.0.0",
 		"vite-bundle-analyzer": "^1.3.8",
 		"vitest": "^4.1.5",
-		"wrangler": "^4.95.0"
+		"wrangler": "^4.98.0"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [

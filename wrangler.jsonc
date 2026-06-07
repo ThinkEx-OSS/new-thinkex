@@ -22,9 +22,6 @@
 			"bucket_name": "thinkex-workspace-kernel-files"
 		}
 	],
-	"vars": {
-		"THINKEX_DB_DRIVER": "hyperdrive"
-	},
 	"secrets": {
 		"required": [
 			"BETTER_AUTH_URL",
