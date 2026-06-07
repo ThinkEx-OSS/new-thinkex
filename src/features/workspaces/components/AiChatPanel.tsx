@@ -1,5 +1,9 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import {
+	Conversation,
+	ConversationContent,
+} from "#/components/ai-elements/conversation";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -11,7 +15,7 @@ import {
 } from "#/components/ui/alert-dialog";
 import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
-import { AiChatPanelLoadingContent } from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
+import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
@@ -161,9 +165,9 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 
 	const isThreadDirectoryLoading = !areThreadsReady;
 	const chatContent = isThreadDirectoryLoading ? (
-		<AiChatPanelLoadingContent />
+		<AiChatPanelLoading />
 	) : activeThreadId ? (
-		<Suspense key={activeThreadId} fallback={<AiChatPanelLoadingContent />}>
+		<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
 			<AiChatThreadView
 				getInspectorSnapshot={getThreadInspectorSnapshot}
 				hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
@@ -178,7 +182,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 			/>
 		</Suspense>
 	) : (
-		<AiChatPanelLoadingContent />
+		<AiChatPanelLoading />
 	);
 
 	return (
@@ -209,6 +213,19 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 				onOpenChange={setIsDeleteThreadDialogOpen}
 			/>
 		</aside>
+	);
+}
+
+function AiChatPanelLoading() {
+	return (
+		<Conversation className="min-h-0">
+			<ConversationContent
+				scrollClassName="min-h-0 overscroll-contain"
+				className="gap-5 px-4 pt-14 pb-5"
+			>
+				<AiChatThreadSkeleton />
+			</ConversationContent>
+		</Conversation>
 	);
 }
 

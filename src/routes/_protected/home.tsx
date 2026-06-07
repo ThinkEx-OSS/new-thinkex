@@ -14,9 +14,9 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { Input } from "#/components/ui/input";
-import { Skeleton } from "#/components/ui/skeleton";
 import CreateWorkspaceCard from "#/features/workspaces/components/CreateWorkspaceCard";
 import WorkspaceCard from "#/features/workspaces/components/WorkspaceCard";
+import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
 import {
 	getWorkspaceTabSearch,
 	WORKSPACE_ROOT_VIEW,
@@ -163,18 +163,6 @@ function HomeSearchControl({
 
 const homeWorkspaceSkeletonCardIds = ["recent", "research", "notes"] as const;
 
-function WorkspaceCardSkeleton() {
-	return (
-		<div className="relative overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-			<Skeleton className="aspect-[5/2] rounded-none bg-muted/45" />
-			<Skeleton className="absolute top-2 right-2 size-8 rounded-md bg-muted/55" />
-			<div className="space-y-2 px-4 py-3">
-				<Skeleton className="h-5 w-3/4 rounded-sm bg-muted/55" />
-				<Skeleton className="h-3 w-1/2 rounded-sm bg-muted/45" />
-			</div>
-		</div>
-	);
-}
 
 function getWorkspaceCardSearch(
 	workspaceId: string,

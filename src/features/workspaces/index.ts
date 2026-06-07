@@ -1,8 +1,8 @@
 export { default as CreateWorkspaceCard } from "./components/CreateWorkspaceCard";
 export { default as WorkspaceCard } from "./components/WorkspaceCard";
+export { default as WorkspaceCardSkeleton } from "./components/WorkspaceCardSkeleton";
 export { WorkspaceShell } from "./components/WorkspaceLayout";
 export { default as WorkspacePageRoute } from "./components/WorkspacePageRoute";
-export { default as WorkspacePageSkeleton } from "./components/WorkspacePageSkeleton";
 export { default as WorkspaceSettingsDialog } from "./components/WorkspaceSettingsDialog";
 export {
 	getWorkspaceTabSearch,

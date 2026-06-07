@@ -3,7 +3,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import AppNotFoundScreen from "#/components/AppNotFoundScreen";
 import { seedWorkspaceCaches } from "#/features/workspaces/cache";
 import WorkspacePageRoute from "#/features/workspaces/components/WorkspacePageRoute";
-import WorkspacePageSkeleton from "#/features/workspaces/components/WorkspacePageSkeleton";
+import WorkspaceShellSkeleton from "#/features/workspaces/components/WorkspaceShellSkeleton";
 import { workspacePageQueryOptions } from "#/features/workspaces/query-options";
 
 export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 	},
 	staleTime: 10_000,
 	notFoundComponent: AppNotFoundScreen,
-	pendingComponent: WorkspacePageSkeleton,
+	pendingComponent: WorkspaceShellSkeleton,
 	pendingMs: 300,
 	pendingMinMs: 200,
 	head: () => ({

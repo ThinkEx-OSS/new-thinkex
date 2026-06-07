@@ -2,11 +2,9 @@ import { Link } from "@tanstack/react-router";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Skeleton } from "#/components/ui/skeleton";
-import {
-	AiChatPanelLoadingContent,
-	AiChatPanelToolbarSkeleton,
-} from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
-import { WorkspaceFrame } from "#/features/workspaces/components/WorkspaceLayout";
+import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
+import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
+import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
 
 const workspaceSkeletonCardKeys = [
 	"card-1",
@@ -18,7 +16,7 @@ const workspaceSkeletonCardKeys = [
 	"card-7",
 ] as const;
 
-export default function WorkspacePageSkeleton() {
+export default function WorkspaceShellSkeleton() {
 	return (
 		<WorkspaceFrame
 			chrome={<WorkspaceSkeletonChrome />}
@@ -80,17 +78,7 @@ export function WorkspaceSkeletonContent() {
 			<div className="space-y-5 px-4 py-3">
 				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
 					{workspaceSkeletonCardKeys.map((key) => (
-						<div
-							key={key}
-							className="relative overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10"
-						>
-							<Skeleton className="aspect-[5/2] rounded-none bg-muted/45" />
-							<Skeleton className="absolute top-2 right-2 size-8 rounded-md bg-muted/55" />
-							<div className="space-y-2 px-4 py-3">
-								<Skeleton className="h-5 w-3/4 rounded-sm bg-muted/55" />
-								<Skeleton className="h-3 w-1/2 rounded-sm bg-muted/45" />
-							</div>
-						</div>
+						<WorkspaceCardSkeleton key={key} />
 					))}
 				</section>
 			</div>
@@ -101,8 +89,14 @@ export function WorkspaceSkeletonContent() {
 export function WorkspaceSkeletonAiChatPanel() {
 	return (
 		<aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
-			<AiChatPanelToolbarSkeleton />
-			<AiChatPanelLoadingContent />
+			<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
+				<Skeleton className="size-8.5 rounded-md" />
+				<Skeleton className="size-8.5 rounded-md" />
+				<Skeleton className="size-8.5 rounded-md" />
+			</div>
+			<div className="px-4 pt-14">
+				<AiChatThreadSkeleton />
+			</div>
 		</aside>
 	);
 }
