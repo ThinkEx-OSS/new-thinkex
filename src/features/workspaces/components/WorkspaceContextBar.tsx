@@ -45,10 +45,12 @@ import {
 	getAppHotkey,
 	useAppHotkey,
 } from "#/lib/hotkeys-core";
+import { cn } from "#/lib/utils";
 
 const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
-const breadcrumbCurrentClassName = `${breadcrumbContentClassName} font-medium text-foreground`;
+const breadcrumbCurrentClassName = `${breadcrumbContentClassName} text-foreground`;
 const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`;
+const currentCrumbLabelClassName = "[text-shadow:0.025em_0_0_currentColor]";
 
 interface WorkspaceContextDialogState {
 	searchOpen: boolean;
@@ -282,6 +284,7 @@ function WorkspaceBreadcrumbItem({
 								icon={Icon}
 								label={item.name}
 								iconClassName={iconClassName}
+								isCurrent={true}
 								showDisclosure={true}
 							/>
 						}
@@ -332,6 +335,7 @@ function CrumbButton({
 						icon={Icon}
 						label={label}
 						iconClassName={iconColor}
+						isCurrent={true}
 						showDisclosure={true}
 					/>
 				</button>
@@ -340,7 +344,12 @@ function CrumbButton({
 
 		return (
 			<BreadcrumbPage className={breadcrumbCurrentClassName}>
-				<CrumbContent icon={Icon} label={label} iconClassName={iconColor} />
+				<CrumbContent
+					icon={Icon}
+					label={label}
+					iconClassName={iconColor}
+					isCurrent={true}
+				/>
 			</BreadcrumbPage>
 		);
 	}
@@ -365,20 +374,22 @@ function CrumbContent({
 	icon: Icon,
 	label,
 	iconClassName,
+	isCurrent = false,
 	showDisclosure = false,
 }: {
 	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 	label: string;
 	iconClassName: string;
+	isCurrent?: boolean;
 	showDisclosure?: boolean;
 }) {
 	return (
 		<>
 			<Icon
-				className={`size-3.5 shrink-0 ${iconClassName}`}
+				className={cn("size-3.5 shrink-0", iconClassName)}
 				aria-hidden={true}
 			/>
-			<span className="min-w-0 truncate">{label}</span>
+			<CrumbLabel label={label} isCurrent={isCurrent} />
 			{showDisclosure ? (
 				<ChevronDown
 					className="size-3 shrink-0 text-muted-foreground"
@@ -386,5 +397,25 @@ function CrumbContent({
 				/>
 			) : null}
 		</>
+	);
+}
+
+function CrumbLabel({
+	label,
+	isCurrent,
+}: {
+	label: string;
+	isCurrent: boolean;
+}) {
+	return (
+		<span
+			className={cn(
+				"min-w-0 truncate",
+				// Keep the active emphasis visual only so breadcrumb spacing never reflows.
+				isCurrent && currentCrumbLabelClassName,
+			)}
+		>
+			{label}
+		</span>
 	);
 }
