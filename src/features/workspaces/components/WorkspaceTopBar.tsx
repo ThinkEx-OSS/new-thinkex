@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Share2 } from "lucide-react";
+import { MessageSquare, Share2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
@@ -133,8 +133,8 @@ export default function WorkspaceTopBar({
 										className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
 										onClick={() => openAiChat(workspace.id)}
 									>
-										<MessageCircle className="size-3.5" />
-										<span className="hidden lg:inline">AI Chat</span>
+										<MessageSquare className="size-3.5" />
+										<span>Chat</span>
 									</Button>
 								}
 							/>

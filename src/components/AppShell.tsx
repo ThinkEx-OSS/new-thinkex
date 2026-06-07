@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MessageSquarePlus } from "lucide-react";
 
-import { ModeToggle } from "#/components/mode-toggle";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
 import { Button } from "#/components/ui/button";
@@ -56,7 +55,6 @@ export default function AppShell({
 							<MessageSquarePlus className="size-3.5" />
 							<span>Feedback</span>
 						</Button>
-						<ModeToggle className="shrink-0" />
 						<div className="ml-2 flex shrink-0">
 							<UserProfileDropdown />
 						</div>
