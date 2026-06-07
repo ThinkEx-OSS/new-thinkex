@@ -1,41 +1,10 @@
-import type {
-	WorkspaceTab,
-	WorkspaceTabSession,
-} from "#/features/workspaces/state/workspace-tabs-store";
+import { createRootWorkspaceTab } from "#/features/workspaces/model/tab-primitives";
+import type { WorkspaceTabSession } from "#/features/workspaces/model/tab-types";
 
-export function createTabId() {
-	if (globalThis.crypto?.randomUUID) {
-		return `tab-${globalThis.crypto.randomUUID()}`;
-	}
-
-	return `tab-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-export function createRootWorkspaceTab(workspaceName: string): WorkspaceTab {
-	const now = Date.now();
-
-	return {
-		id: createTabId(),
-		title: workspaceName,
-		createdAt: now,
-		updatedAt: now,
-	};
-}
-
-export function createWorkspaceItemTab(input: {
-	itemId: string;
-	title: string;
-}): WorkspaceTab {
-	const now = Date.now();
-
-	return {
-		id: createTabId(),
-		title: input.title,
-		viewItemId: input.itemId,
-		createdAt: now,
-		updatedAt: now,
-	};
-}
+export {
+	createRootWorkspaceTab,
+	createWorkspaceItemTab,
+} from "#/features/workspaces/model/tab-primitives";
 
 export function normalizeWorkspaceTabSession(
 	session: WorkspaceTabSession | undefined,

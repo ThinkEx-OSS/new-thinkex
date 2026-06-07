@@ -142,6 +142,16 @@ export class WorkspaceKernelStore {
 		return descendantIds;
 	}
 
+	softDeleteItems(itemIds: string[], deletedAt: number) {
+		for (const itemId of itemIds) {
+			this.sql`
+				UPDATE kernel_items
+				SET deleted_at = ${deletedAt}, updated_at = ${deletedAt}
+				WHERE id = ${itemId} AND deleted_at IS NULL
+			`;
+		}
+	}
+
 	getAvailableItemName(input: {
 		type: WorkspaceItemType;
 		parentId: string | null;

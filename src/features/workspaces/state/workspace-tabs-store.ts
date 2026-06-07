@@ -1,87 +1,24 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import {
+	insertWorkspaceTabByIndex,
+	moveWorkspaceTabByIndex,
+} from "#/features/workspaces/model/tab-primitives";
+import {
 	createRootWorkspaceTab,
 	createWorkspaceItemTab,
 	normalizeWorkspaceTabSession,
 } from "#/features/workspaces/model/tab-state";
+import type {
+	WorkspaceTab,
+	WorkspaceTabsState,
+} from "#/features/workspaces/state/workspace-tabs-store-types";
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
-export type WorkspaceTab = {
-	id: string;
-	title: string;
-	viewItemId?: string;
-	createdAt: number;
-	updatedAt: number;
-};
-
-export type WorkspaceTabSession = {
-	activeTabId: string;
-	tabs: WorkspaceTab[];
-};
-
-type EnsureWorkspaceSessionInput = {
-	workspaceId: string;
-	workspaceName: string;
-	requestedTabId?: string;
-	validItemIds?: ReadonlySet<string>;
-};
-
-type WorkspaceTabsState = {
-	sessionsByWorkspaceId: Record<string, WorkspaceTabSession>;
-	ensureWorkspaceSession: (
-		input: EnsureWorkspaceSessionInput,
-	) => WorkspaceTabSession;
-	createRootTab: (input: {
-		workspaceId: string;
-		workspaceName: string;
-		insertIndex?: number;
-	}) => WorkspaceTab;
-	createItemTab: (input: {
-		workspaceId: string;
-		workspaceName: string;
-		itemId: string;
-		title: string;
-		insertIndex: number;
-		activate?: boolean;
-	}) => WorkspaceTab;
-	duplicateTab: (input: {
-		workspaceId: string;
-		workspaceName: string;
-		tabId: string;
-		insertIndex: number;
-	}) => WorkspaceTab | undefined;
-	replaceTabView: (input: {
-		workspaceId: string;
-		tabId: string;
-		title: string;
-		viewItemId?: string;
-	}) => WorkspaceTab;
-	activateTab: (input: { workspaceId: string; tabId: string }) => void;
-	reorderTabs: (input: {
-		workspaceId: string;
-		activeTabId: string;
-		overTabId: string;
-	}) => void;
-	moveTab: (input: {
-		workspaceId: string;
-		tabId: string;
-		toIndex: number;
-	}) => void;
-	closeTab: (input: {
-		workspaceId: string;
-		tabId: string;
-	}) => WorkspaceTabSession;
-	closeOtherTabs: (input: {
-		workspaceId: string;
-		tabId: string;
-	}) => WorkspaceTabSession | undefined;
-	closeTabsToRight: (input: {
-		workspaceId: string;
-		tabId: string;
-	}) => WorkspaceTabSession | undefined;
-	getSession: (workspaceId: string) => WorkspaceTabSession | undefined;
-};
+export type {
+	WorkspaceTab,
+	WorkspaceTabSession,
+} from "#/features/workspaces/state/workspace-tabs-store-types";
 
 export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 	devtools(
@@ -442,47 +379,3 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 		zustandDevtoolsOptions("WorkspaceTabsStore"),
 	),
 );
-
-function moveWorkspaceTabByIndex(input: {
-	tabs: WorkspaceTab[];
-	fromIndex: number;
-	toIndex: number;
-}) {
-	const { tabs, fromIndex, toIndex } = input;
-	const boundedToIndex = Math.max(0, Math.min(toIndex, tabs.length - 1));
-
-	if (
-		fromIndex < 0 ||
-		fromIndex >= tabs.length ||
-		fromIndex === boundedToIndex
-	) {
-		return undefined;
-	}
-
-	const nextTabs = tabs.slice();
-	const [movedTab] = nextTabs.splice(fromIndex, 1);
-
-	if (!movedTab) {
-		return undefined;
-	}
-
-	nextTabs.splice(boundedToIndex, 0, movedTab);
-
-	return nextTabs;
-}
-
-function insertWorkspaceTabByIndex(input: {
-	tabs: WorkspaceTab[];
-	tab: WorkspaceTab;
-	insertIndex: number;
-}) {
-	const boundedInsertIndex = Math.max(
-		0,
-		Math.min(input.insertIndex, input.tabs.length),
-	);
-	const nextTabs = input.tabs.slice();
-
-	nextTabs.splice(boundedInsertIndex, 0, input.tab);
-
-	return nextTabs;
-}

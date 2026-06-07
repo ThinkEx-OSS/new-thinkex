@@ -1,11 +1,5 @@
-import { PointerActivationConstraints } from "@dnd-kit/dom";
-import {
-	DragDropProvider,
-	KeyboardSensor,
-	PointerSensor,
-} from "@dnd-kit/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import {
 	applyWorkspaceEventToCache,
 	workspacePageQueryKey,
@@ -13,7 +7,14 @@ import {
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
+import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
+import {
+	hasWorkspacePaneKind,
+	WorkspaceMaximizedPresentation,
+	WorkspacePaneRenderer,
+	WorkspaceSplitPresentation,
+} from "#/features/workspaces/components/WorkspacePresentation";
 import {
 	WorkspaceSkeletonAiChatPanel,
 	WorkspaceSkeletonChrome,
@@ -24,21 +25,14 @@ import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
-import {
-	getWorkspaceDragCommand,
-	getWorkspaceItemMoveInput,
-	getWorkspaceItemTabInsertInput,
-	shouldPreventWorkspacePointerActivation,
-} from "#/features/workspaces/model/drag";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import {
+	selectWorkspaceUiSession,
 	useWorkspaceUiStore,
-	type WorkspacePane,
-	type WorkspacePresentation,
 } from "#/features/workspaces/state/workspace-ui-store";
 import { shouldIgnoreWorkspaceClientMutationEcho } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import {
@@ -49,27 +43,6 @@ import { useAppHotkey } from "#/lib/hotkeys-core";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
-const workspaceDragSensors = [
-	PointerSensor.configure({
-		activationConstraints(event) {
-			if (event.pointerType === "touch") {
-				return [
-					new PointerActivationConstraints.Delay({
-						value: 250,
-						tolerance: 5,
-					}),
-				];
-			}
-
-			return [new PointerActivationConstraints.Distance({ value: 6 })];
-		},
-		preventActivation(event, source) {
-			return shouldPreventWorkspacePointerActivation(event, source);
-		},
-	}),
-	KeyboardSensor,
-];
-
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;
 	items: WorkspaceItem[];
@@ -77,7 +50,6 @@ interface WorkspaceShellProps {
 	activeTabIdFromUrl?: string;
 	activeViewFromUrl?: string;
 }
-
 
 export function WorkspaceShell({
 	workspace,
@@ -134,27 +106,18 @@ export function WorkspaceShell({
 		openWorkspaceRoot,
 		scopedItems,
 		session,
+		validItemIds,
 	} = useWorkspaceNavigation({
 		workspace,
 		items,
 		activeTabIdFromUrl,
 		activeViewFromUrl,
 	});
-	const validItemIds = useMemo(() => new Set(itemsById.keys()), [itemsById]);
-	const uiSession = useWorkspaceUiStore(
-		(state) => state.sessionsByWorkspaceId[workspace.id],
-	);
-	const normalizedUiSession = useMemo(
-		() =>
-			uiSession ?? {
-				chatPanelCollapsed: false,
-				presentation: { mode: "standard" } as WorkspacePresentation,
-			},
-		[uiSession],
+	const normalizedUiSession = useWorkspaceUiStore(
+		selectWorkspaceUiSession(workspace.id),
 	);
 	const { chatPanelCollapsed, presentation } = normalizedUiSession;
-	const presentationHasChat = hasPaneKind(presentation, "chat");
-	const orderedScopedItems = scopedItems;
+	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
 	const createWorkspaceItem = (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
@@ -189,63 +152,26 @@ export function WorkspaceShell({
 
 	if (presentation.mode === "maximized") {
 		return (
-			<MaximizedWorkspaceSurface>
+			<WorkspaceMaximizedPresentation>
 				<WorkspacePaneRenderer
 					workspaceId={workspace.id}
 					pane={presentation.pane}
 					itemsById={itemsById}
-					scopedItems={orderedScopedItems}
+					scopedItems={scopedItems}
 					onCreateItem={createWorkspaceItem}
 					onOpenItem={openItem}
 				/>
-			</MaximizedWorkspaceSurface>
+			</WorkspaceMaximizedPresentation>
 		);
 	}
 
 	return (
-		<DragDropProvider
-			sensors={workspaceDragSensors}
-			onDragEnd={(event) => {
-				const command = getWorkspaceDragCommand(event);
-
-				if (command?.type === "move-tab-in-strip") {
-					dispatchWorkspaceDragCommand({
-						type: "move-tab-in-strip",
-						tabId: command.tabId,
-						toIndex: command.toIndex,
-					});
-					return;
-				}
-
-				if (command?.type === "reorder-tabs-over-tab") {
-					dispatchWorkspaceDragCommand({
-						type: "reorder-tabs-over-tab",
-						activeTabId: command.activeTabId,
-						overTabId: command.overTabId,
-					});
-					return;
-				}
-
-				const tabInsertInput = getWorkspaceItemTabInsertInput({
-					event,
-					items: orderedScopedItems,
-				});
-
-				if (tabInsertInput) {
-					openItemInNewTab(tabInsertInput);
-					return;
-				}
-
-				const moveInput = getWorkspaceItemMoveInput({
-					event,
-					items: orderedScopedItems,
-					workspaceId: workspace.id,
-				});
-
-				if (moveInput) {
-					moveWorkspaceItemMutation.mutate(moveInput);
-				}
-			}}
+		<WorkspaceDragProvider
+			items={scopedItems}
+			workspaceId={workspace.id}
+			onMoveItem={moveWorkspaceItemMutation.mutate}
+			onOpenItemInNewTab={openItemInNewTab}
+			onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
 		>
 			<WorkspaceFrame
 				chrome={
@@ -284,13 +210,13 @@ export function WorkspaceShell({
 							panes={presentation.panes}
 							direction={presentation.direction}
 							itemsById={itemsById}
-							scopedItems={orderedScopedItems}
+							scopedItems={scopedItems}
 							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
 						/>
 					) : (
 						<WorkspaceContent
-							items={orderedScopedItems}
+							items={scopedItems}
 							activeItem={activeItem}
 							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
@@ -303,126 +229,6 @@ export function WorkspaceShell({
 					)
 				}
 			/>
-		</DragDropProvider>
+		</WorkspaceDragProvider>
 	);
-}
-
-
-function MaximizedWorkspaceSurface({ children }: { children: ReactNode }) {
-	return (
-		<div className="h-screen overflow-hidden bg-background text-foreground">
-			{children}
-		</div>
-	);
-}
-
-function WorkspacePaneRenderer({
-	workspaceId,
-	pane,
-	itemsById,
-	scopedItems,
-	onCreateItem,
-	onOpenItem,
-}: {
-	workspaceId: string;
-	pane: WorkspacePane;
-	itemsById: Map<string, WorkspaceItem>;
-	scopedItems: WorkspaceItem[];
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
-	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
-}) {
-	switch (pane.kind) {
-		case "chat":
-			return <AiChatPanel workspaceId={workspaceId} />;
-		case "item": {
-			const item = itemsById.get(pane.itemId);
-
-			return (
-				<WorkspaceContent
-					items={scopedItems}
-					activeItem={item}
-					onCreateItem={onCreateItem}
-					onOpenItem={onOpenItem}
-				/>
-			);
-		}
-		case "root":
-			return (
-				<WorkspaceContent
-					items={scopedItems}
-					activeItem={undefined}
-					onCreateItem={onCreateItem}
-					onOpenItem={onOpenItem}
-				/>
-			);
-	}
-}
-
-function WorkspaceSplitPresentation({
-	workspaceId,
-	panes,
-	direction,
-	itemsById,
-	scopedItems,
-	onCreateItem,
-	onOpenItem,
-}: {
-	workspaceId: string;
-	panes: [WorkspacePane, WorkspacePane];
-	direction: "horizontal" | "vertical";
-	itemsById: Map<string, WorkspaceItem>;
-	scopedItems: WorkspaceItem[];
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
-	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
-}) {
-	return (
-		<ResizablePanelGroup
-			id="workspace-split-presentation"
-			orientation={direction}
-			className="min-h-[calc(100vh-5.75rem)]"
-		>
-			<ResizablePanel id={panes[0].id} minSize="18rem">
-				<WorkspacePaneRenderer
-					workspaceId={workspaceId}
-					pane={panes[0]}
-					itemsById={itemsById}
-					scopedItems={scopedItems}
-					onCreateItem={onCreateItem}
-					onOpenItem={onOpenItem}
-				/>
-			</ResizablePanel>
-			<ResizableHandle withHandle={true} />
-			<ResizablePanel id={panes[1].id} minSize="18rem">
-				<WorkspacePaneRenderer
-					workspaceId={workspaceId}
-					pane={panes[1]}
-					itemsById={itemsById}
-					scopedItems={scopedItems}
-					onCreateItem={onCreateItem}
-					onOpenItem={onOpenItem}
-				/>
-			</ResizablePanel>
-		</ResizablePanelGroup>
-	);
-}
-
-function hasPaneKind(
-	presentation: WorkspacePresentation,
-	kind: WorkspacePane["kind"],
-) {
-	if (presentation.mode === "standard") {
-		return false;
-	}
-
-	if (presentation.mode === "maximized") {
-		return presentation.pane.kind === kind;
-	}
-
-	return presentation.panes.some((pane) => pane.kind === kind);
 }

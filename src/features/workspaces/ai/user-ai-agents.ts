@@ -8,7 +8,17 @@ import {
 } from "#/features/workspaces/ai/ai-inspector";
 import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
 import { assertCanReadWorkspace } from "#/features/workspaces/ai/ai-thread-directory-permissions";
-import { ensureChatMetaColumns } from "#/features/workspaces/ai/ai-thread-directory-schema";
+import {
+	deleteThreadMeta,
+	ensureChatMetaStore,
+	getActiveThreadMetaRows,
+	insertThreadMeta,
+	markGeneratedThreadTitle,
+	markThreadMetaViewed,
+	markThreadRunFailed,
+	markThreadRunFinished,
+	markThreadRunStarted,
+} from "#/features/workspaces/ai/ai-thread-directory-store";
 import {
 	type AIThreadContext,
 	type AIThreadMetaRow,
@@ -46,27 +56,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	initialState: UserAIStoreState = { isLoaded: false, threads: [] };
 
 	onStart() {
-		this.sql`CREATE TABLE IF NOT EXISTS chat_meta (
-			id TEXT PRIMARY KEY,
-			workspace_id TEXT NOT NULL,
-			title TEXT NOT NULL,
-			status TEXT NOT NULL DEFAULT 'idle',
-			last_run_result TEXT,
-			last_activity_at INTEGER NOT NULL,
-			last_user_message_at INTEGER,
-			last_assistant_message_at INTEGER,
-			last_viewed_at INTEGER NOT NULL,
-			last_run_started_at INTEGER,
-			last_run_finished_at INTEGER,
-			last_error_message TEXT,
-			title_generated_at INTEGER,
-			created_at INTEGER NOT NULL,
-			updated_at INTEGER NOT NULL,
-			archived_at INTEGER
-		)`;
-		ensureChatMetaColumns(this);
-		this.sql`CREATE INDEX IF NOT EXISTS chat_meta_workspace_activity_idx
-			ON chat_meta (workspace_id, archived_at, last_activity_at)`;
+		ensureChatMetaStore(this);
 		this._refreshState();
 	}
 
@@ -120,44 +110,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		await this.subAgent(AIThread, id);
 
 		try {
-			this.sql`
-				INSERT INTO chat_meta (
-					id,
-					workspace_id,
-					title,
-					status,
-					last_run_result,
-					last_activity_at,
-					last_user_message_at,
-					last_assistant_message_at,
-					last_viewed_at,
-					last_run_started_at,
-					last_run_finished_at,
-					last_error_message,
-					title_generated_at,
-					created_at,
-					updated_at,
-					archived_at
-				)
-				VALUES (
-					${id},
-					${workspaceId},
-					${title},
-					'idle',
-					NULL,
-					${now},
-					NULL,
-					NULL,
-					${now},
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					${now},
-					${now},
-					NULL
-				)
-			`;
+			insertThreadMeta(this, { id, workspaceId, title, now });
 		} catch (error) {
 			await this.deleteSubAgent(AIThread, id);
 			throw error;
@@ -179,11 +132,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 		const now = Date.now();
 
-		this.sql`
-			UPDATE chat_meta
-			SET last_viewed_at = ${now}, updated_at = ${now}
-			WHERE id = ${threadId} AND archived_at IS NULL
-		`;
+		markThreadMetaViewed(this, threadId, now);
 		this._refreshState();
 	}
 
@@ -191,7 +140,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async deleteThread(threadId: string): Promise<void> {
 		await this._requireThreadMeta(threadId);
 		await this.deleteSubAgent(AIThread, threadId);
-		this.sql`DELETE FROM chat_meta WHERE id = ${threadId}`;
+		deleteThreadMeta(this, threadId);
 		this._refreshState();
 	}
 
@@ -231,19 +180,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async recordThreadRunStarted(threadId: string): Promise<void> {
 		const now = Date.now();
 
-		this.sql`
-			UPDATE chat_meta
-			SET
-				status = 'running',
-				last_run_result = NULL,
-				last_activity_at = ${now},
-				last_user_message_at = ${now},
-				last_run_started_at = ${now},
-				last_run_finished_at = NULL,
-				last_error_message = NULL,
-				updated_at = ${now}
-			WHERE id = ${threadId} AND archived_at IS NULL
-		`;
+		markThreadRunStarted(this, threadId, now);
 		this._refreshState();
 	}
 
@@ -255,21 +192,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		const now = Date.now();
 		const thread = await this._requireThreadMeta(threadId);
 
-		this.sql`
-			UPDATE chat_meta
-			SET
-				status = 'idle',
-				last_run_result = ${result.status},
-				last_activity_at = ${now},
-				last_assistant_message_at = ${
-					result.status === "completed" ? now : thread.last_assistant_message_at
-				},
-				last_viewed_at = ${options.viewed ? now : thread.last_viewed_at},
-				last_run_finished_at = ${now},
-				last_error_message = NULL,
-				updated_at = ${now}
-			WHERE id = ${threadId} AND archived_at IS NULL
-		`;
+		markThreadRunFinished(this, {
+			threadId,
+			result: result.status,
+			now,
+			lastAssistantMessageAt:
+				result.status === "completed" ? now : thread.last_assistant_message_at,
+			lastViewedAt: options.viewed ? now : thread.last_viewed_at,
+		});
 		this._refreshState();
 	}
 
@@ -287,13 +217,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 		const now = Date.now();
 
-		this.sql`
-			UPDATE chat_meta
-			SET title = ${title}, title_generated_at = ${now}, updated_at = ${now}
-			WHERE id = ${threadId}
-				AND archived_at IS NULL
-				AND title_generated_at IS NULL
-		`;
+		markGeneratedThreadTitle(this, threadId, title, now);
 		this._refreshState();
 	}
 
@@ -304,17 +228,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		const now = Date.now();
 		const errorMessage = normalizeThreadErrorMessage(error);
 
-		this.sql`
-			UPDATE chat_meta
-			SET
-				status = 'idle',
-				last_run_result = 'error',
-				last_activity_at = ${now},
-				last_run_finished_at = ${now},
-				last_error_message = ${errorMessage},
-				updated_at = ${now}
-			WHERE id = ${threadId} AND archived_at IS NULL
-		`;
+		markThreadRunFailed(this, threadId, errorMessage, now);
 		this._refreshState();
 	}
 
@@ -337,27 +251,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	private _getActiveThreadMetaRows() {
-		return this.sql<AIThreadMetaRow>`
-			SELECT
-				id,
-				workspace_id,
-				title,
-				status,
-				last_run_result,
-				last_activity_at,
-				last_user_message_at,
-				last_assistant_message_at,
-				last_viewed_at,
-				last_run_started_at,
-				last_run_finished_at,
-				last_error_message,
-				title_generated_at,
-				created_at,
-				updated_at,
-				archived_at
-			FROM chat_meta
-			WHERE archived_at IS NULL
-		`;
+		return getActiveThreadMetaRows(this);
 	}
 
 	private _getThreadSummary(threadId: string) {

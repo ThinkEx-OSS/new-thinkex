@@ -2,13 +2,20 @@ import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
 
+import {
+	type BrowserQuickActionBinding,
+	normalizeBrowserQuickActionResult,
+} from "#/features/workspaces/ai/browser-quick-action";
 import { assertPublicHttpUrl } from "#/features/workspaces/ai/web-access-policy";
+import {
+	isRedirect,
+	isTextLikeContentType,
+	readResponseText,
+	responseMetadata,
+} from "#/features/workspaces/ai/web-response";
 
 const DEFAULT_FETCH_MAX_BYTES = 200_000;
 const MAX_FETCH_BYTES = 512_000;
-const MAX_BROWSER_TEXT_BYTES = 1_000_000;
-const MAX_BROWSER_ARRAY_ITEMS = 300;
-const MAX_BROWSER_OBJECT_KEYS = 120;
 const MAX_REDIRECTS = 3;
 const REQUEST_TIMEOUT_MS = 8_000;
 
@@ -41,14 +48,6 @@ const readWebPageInputSchema = z.object({
 		.url()
 		.describe("Public HTTP(S) URL to load with Browser Run Quick Actions."),
 });
-
-type BrowserQuickAction = z.infer<typeof browserReadActionSchema>;
-type BrowserQuickActionBinding = Fetcher & {
-	quickAction(
-		action: BrowserQuickAction,
-		options: { url: string },
-	): Promise<Response>;
-};
 
 export function createAIThreadWebTools(env: Env): ToolSet {
 	return {
@@ -134,247 +133,4 @@ async function readPublicUrl(input: string, maxBytes: number) {
 	}
 
 	throw new Error(`Too many redirects. Limit is ${MAX_REDIRECTS}.`);
-}
-
-async function normalizeBrowserQuickActionResult(
-	action: BrowserQuickAction,
-	result: Response,
-) {
-	const contentType = result.headers.get("content-type") ?? "";
-	const metadata = responseMetadata(result);
-
-	if (contentType.includes("application/json")) {
-		return normalizeBrowserActionPayload(
-			action,
-			extractQuickActionResult(await result.json()),
-			metadata,
-		);
-	}
-
-	if (isTextLikeContentType(contentType)) {
-		const body = await readResponseText(result, MAX_BROWSER_TEXT_BYTES);
-		return normalizeBrowserActionPayload(action, body.text, metadata, {
-			truncated: body.truncated,
-		});
-	}
-
-	return {
-		kind: "unsupported_content_type",
-		metadata,
-		error:
-			"Browser Run returned binary content. This chat tool reports metadata only; saving binary artifacts to the workspace should use a dedicated import tool.",
-	};
-}
-
-function responseMetadata(response: Response, url?: URL) {
-	return {
-		browserMsUsed: response.headers.get("x-browser-ms-used"),
-		contentLength: getContentLength(response),
-		contentType: response.headers.get("content-type"),
-		status: response.status,
-		statusText: response.statusText,
-		url: url?.toString() ?? response.url,
-	};
-}
-
-function normalizeBrowserActionPayload(
-	action: BrowserQuickAction,
-	payload: unknown,
-	metadata: ReturnType<typeof responseMetadata>,
-	options: { truncated?: boolean } = {},
-) {
-	const compacted = compactBrowserPayload(payload);
-
-	if (action === "links") {
-		return {
-			kind: "links",
-			links: getStringArrayPayload(compacted.value),
-			metadata,
-			truncated: options.truncated || compacted.truncated,
-		};
-	}
-
-	const text = getStringPayload(compacted.value);
-	const truncated = options.truncated || compacted.truncated;
-
-	if (action === "markdown") {
-		return {
-			kind: "markdown",
-			markdown: text,
-			metadata,
-			truncated,
-		};
-	}
-
-	return {
-		kind: "content",
-		html: text,
-		metadata,
-		truncated,
-	};
-}
-
-async function readResponseText(response: Response, maxBytes: number) {
-	if (!response.body) {
-		return { text: "", truncated: false };
-	}
-
-	const reader = response.body.getReader();
-	const chunks: Uint8Array[] = [];
-	let received = 0;
-	let truncated = false;
-
-	while (true) {
-		const { done, value } = await reader.read();
-
-		if (done) {
-			break;
-		}
-
-		const remaining = maxBytes - received;
-
-		if (remaining <= 0) {
-			truncated = true;
-			break;
-		}
-
-		const chunk =
-			value.byteLength > remaining ? value.slice(0, remaining) : value;
-		chunks.push(chunk);
-		received += chunk.byteLength;
-
-		if (value.byteLength > remaining) {
-			truncated = true;
-			break;
-		}
-	}
-
-	await reader.cancel().catch(() => undefined);
-
-	return {
-		text: new TextDecoder().decode(concatBytes(chunks, received)),
-		truncated,
-	};
-}
-
-function concatBytes(chunks: Uint8Array[], length: number) {
-	const bytes = new Uint8Array(length);
-	let offset = 0;
-
-	for (const chunk of chunks) {
-		bytes.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-
-	return bytes;
-}
-
-function isRedirect(status: number) {
-	return status >= 300 && status < 400;
-}
-
-function isTextLikeContentType(contentType: string) {
-	const normalized = contentType.toLowerCase();
-
-	return (
-		normalized.startsWith("text/") ||
-		normalized.includes("json") ||
-		normalized.includes("xml") ||
-		normalized.includes("javascript") ||
-		normalized.includes("x-www-form-urlencoded")
-	);
-}
-
-function getContentLength(response: Response) {
-	const contentLength = response.headers.get("content-length");
-	const parsed = contentLength ? Number(contentLength) : undefined;
-
-	return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function extractQuickActionResult(value: unknown) {
-	if (isRecord(value) && "result" in value) {
-		return value.result;
-	}
-
-	return value;
-}
-
-function getStringPayload(value: unknown) {
-	if (typeof value === "string") {
-		return value;
-	}
-
-	return JSON.stringify(value) ?? "";
-}
-
-function getStringArrayPayload(value: unknown) {
-	if (Array.isArray(value)) {
-		return value.filter((item): item is string => typeof item === "string");
-	}
-
-	return typeof value === "string" ? [value] : [];
-}
-
-function compactBrowserPayload(value: unknown) {
-	const state = {
-		remainingCharacters: MAX_BROWSER_TEXT_BYTES,
-		truncated: false,
-	};
-	const compacted = compactLargeValues(value, state);
-
-	return {
-		truncated: state.truncated,
-		value: compacted,
-	};
-}
-
-function compactLargeValues(
-	value: unknown,
-	state: { remainingCharacters: number; truncated: boolean },
-): unknown {
-	if (typeof value === "string") {
-		if (value.length <= state.remainingCharacters) {
-			state.remainingCharacters -= value.length;
-			return value;
-		}
-
-		state.truncated = true;
-		const slice = value.slice(0, Math.max(0, state.remainingCharacters));
-		state.remainingCharacters = 0;
-		return `${slice}\n[truncated]`;
-	}
-
-	if (Array.isArray(value)) {
-		if (value.length > MAX_BROWSER_ARRAY_ITEMS) {
-			state.truncated = true;
-		}
-
-		return value
-			.slice(0, MAX_BROWSER_ARRAY_ITEMS)
-			.map((item) => compactLargeValues(item, state));
-	}
-
-	if (!value || typeof value !== "object") {
-		return value;
-	}
-
-	const entries = Object.entries(value);
-
-	if (entries.length > MAX_BROWSER_OBJECT_KEYS) {
-		state.truncated = true;
-	}
-
-	return Object.fromEntries(
-		entries
-			.slice(0, MAX_BROWSER_OBJECT_KEYS)
-			.map(([key, nestedValue]) => [
-				key,
-				compactLargeValues(nestedValue, state),
-			]),
-	);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

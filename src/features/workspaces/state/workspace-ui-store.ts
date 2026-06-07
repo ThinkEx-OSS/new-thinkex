@@ -1,6 +1,20 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
+import {
+	closeChatPanelSession,
+	defaultWorkspaceUiSession,
+	getUpdatedWorkspaceUiSession,
+	getWorkspaceUiSession,
+	maximizeChatSession,
+	maximizeItemSession,
+	normalizeWorkspaceUiSession,
+	openChatPanelSession,
+	restoreWorkspacePresentationSession,
+	setActiveAiChatThreadSession,
+	splitWorkspacePresentationSession,
+	toggleChatPanelCollapsedSession,
+} from "#/features/workspaces/model/workspace-ui";
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
 export type WorkspacePane =
@@ -64,88 +78,23 @@ type WorkspaceUiState = {
 	getSession: (workspaceId: string) => WorkspaceUiSession | undefined;
 };
 
-const standardPresentation: RestorableWorkspacePresentation = {
-	mode: "standard",
-};
-const defaultWorkspaceUiSession: WorkspaceUiSession = {
-	chatPanelCollapsed: false,
-	presentation: standardPresentation,
-};
-const chatPane: WorkspacePane = { id: "chat", kind: "chat" };
+export { defaultWorkspaceUiSession, getWorkspaceUiSession };
 
-function getRestorablePresentation(presentation: WorkspacePresentation) {
-	if (presentation.mode === "maximized") {
-		return presentation.restorePresentation;
-	}
+export const selectWorkspaceUiSession =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]);
 
-	return presentation;
-}
+export const selectWorkspacePresentation =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		selectWorkspaceUiSession(workspaceId)(state).presentation;
 
-function normalizeWorkspaceUiSession(
-	session: WorkspaceUiSession | undefined,
-	validItemIds?: ReadonlySet<string>,
-): WorkspaceUiSession {
-	if (!session) {
-		return defaultWorkspaceUiSession;
-	}
+export const selectWorkspaceChatPanelCollapsed =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		selectWorkspaceUiSession(workspaceId)(state).chatPanelCollapsed;
 
-	const presentation = normalizePresentation(
-		session.presentation,
-		validItemIds,
-	);
-
-	return presentation === session.presentation
-		? session
-		: { ...session, presentation };
-}
-
-function normalizePresentation(
-	presentation: WorkspacePresentation,
-	validItemIds?: ReadonlySet<string>,
-): WorkspacePresentation {
-	if (!validItemIds) {
-		return presentation;
-	}
-
-	if (presentation.mode === "standard") {
-		return presentation;
-	}
-
-	if (presentation.mode === "maximized") {
-		if (!isValidPane(presentation.pane, validItemIds)) {
-			return standardPresentation;
-		}
-
-		const normalizedRestorePresentation = normalizePresentation(
-			presentation.restorePresentation,
-			validItemIds,
-		);
-
-		if (normalizedRestorePresentation.mode === "maximized") {
-			return {
-				mode: "maximized",
-				pane: presentation.pane,
-				restorePresentation: standardPresentation,
-			};
-		}
-
-		return {
-			mode: "maximized",
-			pane: presentation.pane,
-			restorePresentation: normalizedRestorePresentation,
-		};
-	}
-
-	if (!presentation.panes.every((pane) => isValidPane(pane, validItemIds))) {
-		return standardPresentation;
-	}
-
-	return presentation;
-}
-
-function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
-	return pane.kind !== "item" || validItemIds.has(pane.itemId);
-}
+export const selectWorkspaceActiveAiChatThreadId =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		selectWorkspaceUiSession(workspaceId)(state).activeAiChatThreadId;
 
 function updateWorkspaceUiSession(
 	state: WorkspaceUiState,
@@ -153,24 +102,28 @@ function updateWorkspaceUiSession(
 	updateSession: (session: WorkspaceUiSession) => Partial<WorkspaceUiSession>,
 ) {
 	const currentSession = state.sessionsByWorkspaceId[workspaceId];
-	const session = normalizeWorkspaceUiSession(currentSession);
-	const nextSession = {
-		...session,
-		...updateSession(session),
-	};
+	const currentNormalizedSession = getWorkspaceUiSession(currentSession);
+	const nextSession = getUpdatedWorkspaceUiSession(
+		currentSession,
+		updateSession,
+	);
 
-	if (
-		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
-		session.chatPanelCollapsed === nextSession.chatPanelCollapsed &&
-		session.presentation === nextSession.presentation
-	) {
+	if (nextSession === currentNormalizedSession) {
 		return state;
 	}
 
+	return withWorkspaceUiSession(state, workspaceId, nextSession);
+}
+
+function withWorkspaceUiSession(
+	state: WorkspaceUiState,
+	workspaceId: string,
+	session: WorkspaceUiSession,
+) {
 	return {
 		sessionsByWorkspaceId: {
 			...state.sessionsByWorkspaceId,
-			[workspaceId]: nextSession,
+			[workspaceId]: session,
 		},
 	};
 }
@@ -188,98 +141,65 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					);
 
 					if (nextSession !== currentSession) {
-						set((state) => ({
-							sessionsByWorkspaceId: {
-								...state.sessionsByWorkspaceId,
-								[workspaceId]: nextSession,
-							},
-						}));
+						set((state) =>
+							withWorkspaceUiSession(state, workspaceId, nextSession),
+						);
 					}
 
 					return nextSession;
 				},
 				closeChatPanel: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) => ({
-							chatPanelCollapsed: true,
-							presentation:
-								session.presentation.mode === "maximized" &&
-								session.presentation.pane.kind === "chat"
-									? session.presentation.restorePresentation
-									: session.presentation,
-						})),
+						updateWorkspaceUiSession(state, workspaceId, closeChatPanelSession),
 					),
 				openChatPanel: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () => ({
-							chatPanelCollapsed: false,
-						})),
+						updateWorkspaceUiSession(state, workspaceId, openChatPanelSession),
 					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () => ({
-							activeAiChatThreadId: threadId,
-							chatPanelCollapsed: false,
-						})),
+						updateWorkspaceUiSession(state, workspaceId, () =>
+							setActiveAiChatThreadSession(threadId),
+						),
 					),
 				toggleChatPanelCollapsed: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) => ({
-							chatPanelCollapsed: !session.chatPanelCollapsed,
-							presentation:
-								session.presentation.mode === "maximized" &&
-								session.presentation.pane.kind === "chat"
-									? session.presentation.restorePresentation
-									: session.presentation,
-						})),
+						updateWorkspaceUiSession(
+							state,
+							workspaceId,
+							toggleChatPanelCollapsedSession,
+						),
 					),
 				maximizeChat: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) => ({
-							chatPanelCollapsed: false,
-							presentation: {
-								mode: "maximized",
-								pane: chatPane,
-								restorePresentation: getRestorablePresentation(
-									session.presentation,
-								),
-							},
-						})),
+						updateWorkspaceUiSession(state, workspaceId, maximizeChatSession),
 					),
 				maximizeItem: (workspaceId, itemId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) => ({
-							presentation: {
-								mode: "maximized",
-								pane: { id: `item:${itemId}`, kind: "item", itemId },
-								restorePresentation: getRestorablePresentation(
-									session.presentation,
-								),
-							},
-						})),
+						updateWorkspaceUiSession(state, workspaceId, (session) =>
+							maximizeItemSession(session, itemId),
+						),
 					),
 				restorePresentation: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) => ({
-							presentation:
-								session.presentation.mode === "maximized"
-									? session.presentation.restorePresentation
-									: standardPresentation,
-						})),
+						updateWorkspaceUiSession(
+							state,
+							workspaceId,
+							restoreWorkspacePresentationSession,
+						),
 					),
 				setSplitPresentation: (
 					workspaceId,
 					{ direction, panes, activePaneId },
 				) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () => ({
-							presentation: {
-								mode: "split",
+						updateWorkspaceUiSession(state, workspaceId, () =>
+							splitWorkspacePresentationSession({
 								direction,
 								panes,
 								activePaneId,
-							},
-						})),
+							}),
+						),
 					),
 				getSession: (workspaceId) => get().sessionsByWorkspaceId[workspaceId],
 			}),

@@ -1,0 +1,178 @@
+import type {
+	CreateWorkspaceItemInput,
+	MoveWorkspaceItemInput,
+	WorkspaceItemSummary,
+	WorkspacePage,
+} from "#/features/workspaces/contracts";
+import {
+	getAvailableWorkspaceItemName,
+	getWorkspaceItemTypeMeta,
+	WORKSPACE_ITEM_SORT_STEP,
+} from "#/features/workspaces/defaults";
+import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
+
+export function applyWorkspaceEventToPage(
+	page: WorkspacePage,
+	event: WorkspaceRealtimeEvent,
+): WorkspacePage {
+	switch (event.type) {
+		case "workspace.item.created":
+		case "workspace.item.renamed":
+		case "workspace.item.moved":
+		case "workspace.item.content.updated":
+			return upsertWorkspaceItemInPage(
+				page,
+				event.payload.item,
+				event.revision,
+			);
+		case "workspace.item.deleted":
+			return removeWorkspaceItemsFromPage(
+				page,
+				event.payload.deletedItemIds,
+				event.revision,
+			);
+	}
+}
+
+export function createWorkspaceItemInPage(
+	page: WorkspacePage,
+	input: CreateWorkspaceItemInput & { id: string },
+): WorkspacePage {
+	const parentId = input.parentId ?? null;
+	const now = new Date().toISOString();
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: page.items,
+		type: input.type,
+		parentId,
+		requestedName: input.name,
+	});
+
+	return upsertWorkspaceItemInPage(page, {
+		id: input.id,
+		workspaceId: input.workspaceId,
+		parentId,
+		type: input.type,
+		title: name,
+		name,
+		meta: getWorkspaceItemTypeMeta(input.type),
+		color: null,
+		metadataJson: {},
+		sortOrder: getNextWorkspaceItemSortOrder(page.items, parentId),
+		createdAt: now,
+		updatedAt: now,
+		deletedAt: null,
+	});
+}
+
+export function moveWorkspaceItemInPage(
+	page: WorkspacePage,
+	input: MoveWorkspaceItemInput,
+): { page: WorkspacePage; previousItem: WorkspaceItemSummary } | null {
+	const previousItem = page.items.find((item) => item.id === input.itemId);
+
+	if (!previousItem) {
+		return null;
+	}
+
+	const nextParentId = input.parentId ?? null;
+	const name = getAvailableWorkspaceItemNameInPage({
+		items: page.items,
+		type: previousItem.type,
+		parentId: nextParentId,
+		requestedName: previousItem.name,
+		excludeItemId: previousItem.id,
+	});
+
+	return {
+		previousItem,
+		page: upsertWorkspaceItemInPage(page, {
+			...previousItem,
+			parentId: nextParentId,
+			name,
+			title: name,
+			sortOrder:
+				input.sortOrder ??
+				getNextWorkspaceItemSortOrder(
+					page.items.filter((candidate) => candidate.id !== input.itemId),
+					nextParentId,
+				),
+			updatedAt: new Date().toISOString(),
+		}),
+	};
+}
+
+export function upsertWorkspaceItemInPage(
+	page: WorkspacePage,
+	item: WorkspaceItemSummary,
+	revision = page.revision,
+): WorkspacePage {
+	const items = page.items.some((candidate) => candidate.id === item.id)
+		? page.items.map((candidate) =>
+				candidate.id === item.id ? item : candidate,
+			)
+		: [...page.items, item];
+
+	return {
+		...page,
+		revision: Math.max(page.revision, revision),
+		items: items.sort(compareWorkspaceItems),
+	};
+}
+
+export function removeWorkspaceItemsFromPage(
+	page: WorkspacePage,
+	itemIds: string[],
+	revision = page.revision,
+): WorkspacePage {
+	const deletedIds = new Set(itemIds);
+
+	return {
+		...page,
+		revision: Math.max(page.revision, revision),
+		items: page.items.filter((item) => !deletedIds.has(item.id)),
+	};
+}
+
+function compareWorkspaceItems(
+	left: WorkspaceItemSummary,
+	right: WorkspaceItemSummary,
+) {
+	return (
+		(left.parentId ?? "").localeCompare(right.parentId ?? "") ||
+		left.sortOrder - right.sortOrder ||
+		left.name.localeCompare(right.name)
+	);
+}
+
+function getNextWorkspaceItemSortOrder(
+	items: WorkspaceItemSummary[],
+	parentId: string | null,
+) {
+	const siblingSortOrders = items
+		.filter((item) => item.parentId === parentId)
+		.map((item) => item.sortOrder);
+
+	return (
+		(siblingSortOrders.length > 0 ? Math.max(...siblingSortOrders) : 0) +
+		WORKSPACE_ITEM_SORT_STEP
+	);
+}
+
+function getAvailableWorkspaceItemNameInPage(input: {
+	items: WorkspaceItemSummary[];
+	type: WorkspaceItemSummary["type"];
+	parentId: string | null;
+	requestedName?: string;
+	excludeItemId?: string;
+}) {
+	return getAvailableWorkspaceItemName({
+		type: input.type,
+		requestedName: input.requestedName,
+		existingNames: input.items
+			.filter(
+				(item) =>
+					item.parentId === input.parentId && item.id !== input.excludeItemId,
+			)
+			.map((item) => item.name),
+	});
+}

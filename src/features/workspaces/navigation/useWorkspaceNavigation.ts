@@ -1,14 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceDragCommand } from "#/features/workspaces/model/drag";
-import {
-	getTabViewKey,
-	getWorkspaceTabSearch,
-	WORKSPACE_ROOT_VIEW,
-} from "#/features/workspaces/model/tabs";
+import { getWorkspaceTabSearch } from "#/features/workspaces/model/tabs";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
+import { useWorkspaceRouteTabsSync } from "#/features/workspaces/navigation/useWorkspaceRouteTabsSync";
 import {
 	useWorkspaceTabsStore,
 	type WorkspaceTab,
@@ -43,9 +40,6 @@ export function useWorkspaceNavigation({
 	const session = useWorkspaceTabsStore(
 		(state) => state.sessionsByWorkspaceId[workspace.id],
 	);
-	const ensureWorkspaceSession = useWorkspaceTabsStore(
-		(state) => state.ensureWorkspaceSession,
-	);
 	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
 	const createItemTab = useWorkspaceTabsStore((state) => state.createItemTab);
 	const duplicateTab = useWorkspaceTabsStore((state) => state.duplicateTab);
@@ -76,6 +70,15 @@ export function useWorkspaceNavigation({
 		[navigate, workspace.id],
 	);
 
+	useWorkspaceRouteTabsSync({
+		workspace,
+		itemsById,
+		validItemIds,
+		activeTabIdFromUrl,
+		activeViewFromUrl,
+		navigateToTab,
+	});
+
 	const replaceActiveTabView = useCallback(
 		(input: { item?: WorkspaceItem; tabId?: string }) =>
 			replaceTabView({
@@ -86,62 +89,6 @@ export function useWorkspaceNavigation({
 			}),
 		[activeTab?.id, replaceTabView, workspace.id, workspace.name],
 	);
-
-	useEffect(() => {
-		const nextSession = ensureWorkspaceSession({
-			workspaceId: workspace.id,
-			workspaceName: workspace.name,
-			requestedTabId: activeTabIdFromUrl,
-			validItemIds,
-		});
-		let nextActiveTab =
-			nextSession.tabs.find((tab) => tab.id === nextSession.activeTabId) ??
-			nextSession.tabs[0];
-		const requestedTabExists =
-			!activeTabIdFromUrl ||
-			nextSession.tabs.some((tab) => tab.id === activeTabIdFromUrl);
-		const hasExplicitView = typeof activeViewFromUrl === "string";
-		const shouldApplyView = hasExplicitView || Boolean(activeTabIdFromUrl);
-
-		if (shouldApplyView) {
-			const requestedItem =
-				activeViewFromUrl && activeViewFromUrl !== WORKSPACE_ROOT_VIEW
-					? itemsById.get(activeViewFromUrl)
-					: undefined;
-			const nextViewItemId = hasExplicitView
-				? requestedItem?.id
-				: nextActiveTab.viewItemId;
-
-			if (nextActiveTab.viewItemId !== nextViewItemId) {
-				nextActiveTab = replaceTabView({
-					workspaceId: workspace.id,
-					tabId: nextActiveTab.id,
-					title: requestedItem?.name ?? workspace.name,
-					viewItemId: nextViewItemId,
-				});
-			}
-		}
-
-		const shouldReplaceSearch =
-			!activeTabIdFromUrl ||
-			!requestedTabExists ||
-			activeTabIdFromUrl !== nextActiveTab.id ||
-			activeViewFromUrl !== getTabViewKey(nextActiveTab);
-
-		if (shouldReplaceSearch) {
-			navigateToTab(nextActiveTab, true);
-		}
-	}, [
-		activeTabIdFromUrl,
-		activeViewFromUrl,
-		ensureWorkspaceSession,
-		itemsById,
-		navigateToTab,
-		replaceTabView,
-		validItemIds,
-		workspace.id,
-		workspace.name,
-	]);
 
 	const getInsertIndexAfterActiveTab = () => {
 		const activeTabIndex =
@@ -319,6 +266,7 @@ export function useWorkspaceNavigation({
 		openWorkspaceRoot,
 		scopedItems,
 		session,
+		validItemIds,
 		activateWorkspaceTab,
 		dispatchWorkspaceDragCommand,
 		reorderWorkspaceTabs,

@@ -5,6 +5,7 @@ export { WorkspaceShell } from "./components/WorkspaceLayout";
 export { default as WorkspacePageRoute } from "./components/WorkspacePageRoute";
 export { default as WorkspaceSettingsDialog } from "./components/WorkspaceSettingsDialog";
 export {
+	getWorkspaceRootTabSearch,
 	getWorkspaceTabSearch,
 	WORKSPACE_ROOT_VIEW,
 } from "./model/tabs";

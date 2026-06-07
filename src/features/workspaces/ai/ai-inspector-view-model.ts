@@ -1,80 +1,28 @@
 import type { AIInspectorEvent } from "#/features/workspaces/ai/ai-inspector";
+import {
+	asRecord,
+	getNestedString,
+	getNumber,
+	getStepNumber,
+	getString,
+	normalizeText,
+	parseMessages,
+	parseToolDefinitions,
+} from "#/features/workspaces/ai/ai-inspector-view-parsing";
+import type {
+	AIInspectorRunView,
+	AIInspectorStepView,
+	AIInspectorToolCallView,
+} from "#/features/workspaces/ai/ai-inspector-view-types";
 
-export interface AIInspectorToolDefinitionView {
-	name: string;
-	description?: string;
-	inputSchema?: unknown;
-	metadata?: unknown;
-	strict?: unknown;
-	title?: string;
-}
-
-export interface AIInspectorMessageView {
-	role?: string;
-	text: string;
-	toolCalls: AIInspectorToolCallPreview[];
-	raw: unknown;
-}
-
-export interface AIInspectorToolCallPreview {
-	toolCallId?: string;
-	toolName?: string;
-	input?: unknown;
-	output?: unknown;
-	text?: string;
-	type?: string;
-}
-
-export interface AIInspectorToolCallView {
-	id: string;
-	toolName: string;
-	stepNumber?: number;
-	startedAt?: number;
-	finishedAt?: number;
-	durationMs?: number;
-	input?: unknown;
-	output?: unknown;
-	error?: unknown;
-	success?: boolean;
-}
-
-export interface AIInspectorStepView {
-	stepNumber: number;
-	startedAt?: number;
-	finishedAt?: number;
-	messages: AIInspectorMessageView[];
-	text: string;
-	reasoning: string;
-	finishReason?: string;
-	files?: unknown;
-	providerMetadata?: unknown;
-	sources?: unknown;
-	usage?: unknown;
-	request?: unknown;
-	response?: unknown;
-	warnings?: unknown;
-	otherChunks: unknown[];
-	toolCalls: AIInspectorToolCallView[];
-}
-
-export interface AIInspectorRunView {
-	runId: string;
-	startedAt?: number;
-	finishedAt?: number;
-	status: "running" | "completed" | "failed";
-	modelId?: string;
-	system?: string;
-	thread?: unknown;
-	body?: unknown;
-	tools: AIInspectorToolDefinitionView[];
-	messages: AIInspectorMessageView[];
-	steps: AIInspectorStepView[];
-	toolCalls: AIInspectorToolCallView[];
-	eventCount: number;
-	usage?: unknown;
-	error?: unknown;
-	rawEvents: AIInspectorEvent[];
-}
+export type {
+	AIInspectorMessageView,
+	AIInspectorRunView,
+	AIInspectorStepView,
+	AIInspectorToolCallPreview,
+	AIInspectorToolCallView,
+	AIInspectorToolDefinitionView,
+} from "#/features/workspaces/ai/ai-inspector-view-types";
 
 export function getAIInspectorRunViews(
 	events: AIInspectorEvent[],
@@ -305,114 +253,6 @@ function getToolCall(
 	toolCall.toolName =
 		getString(payload.toolName) ?? getString(payload.name) ?? toolCall.toolName;
 	return toolCall;
-}
-
-function parseToolDefinitions(tools: unknown): AIInspectorToolDefinitionView[] {
-	if (!Array.isArray(tools)) {
-		return [];
-	}
-
-	return tools.map((tool) => {
-		const record = asRecord(tool);
-		return {
-			name: getString(record.name) ?? "unknownTool",
-			description: getString(record.description),
-			inputSchema: record.inputSchema,
-			metadata: record.metadata,
-			strict: record.strict,
-			title: getString(record.title),
-		};
-	});
-}
-
-function parseMessages(messages: unknown): AIInspectorMessageView[] {
-	if (!Array.isArray(messages)) {
-		return [];
-	}
-
-	return messages.map((message) => {
-		const record = asRecord(message);
-		const content = record.parts ?? record.content;
-		const toolCalls = parseToolPreviews(content);
-		return {
-			role: getString(record.role),
-			text: normalizeText(content),
-			toolCalls,
-			raw: message,
-		};
-	});
-}
-
-function parseToolPreviews(content: unknown): AIInspectorToolCallPreview[] {
-	if (!Array.isArray(content)) {
-		return [];
-	}
-
-	return content.flatMap((part) => {
-		const record = asRecord(part);
-		const toolName = getString(record.toolName);
-		const toolCallId = getString(record.toolCallId);
-		if (!toolName && !toolCallId) {
-			return [];
-		}
-
-		return {
-			type: getString(record.type),
-			toolCallId,
-			toolName,
-			input: record.input,
-			output: record.output ?? record.result,
-			text: getString(record.text),
-		};
-	});
-}
-
-function normalizeText(value: unknown): string {
-	if (typeof value === "string") {
-		return value;
-	}
-
-	if (!Array.isArray(value)) {
-		return "";
-	}
-
-	return value
-		.map((part) => {
-			const record = asRecord(part);
-			return getString(record.text) ?? "";
-		})
-		.filter(Boolean)
-		.join("\n");
-}
-
-function getStepNumber(payload: Record<string, unknown>, fallback: number) {
-	const stepNumber = getNumber(payload.stepNumber);
-	return typeof stepNumber === "number" ? stepNumber + 1 : fallback;
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-	return value && typeof value === "object"
-		? (value as Record<string, unknown>)
-		: {};
-}
-
-function getNestedString(
-	record: Record<string, unknown>,
-	path: string[],
-): string | undefined {
-	let current: unknown = record;
-	for (const key of path) {
-		current = asRecord(current)[key];
-	}
-	return getString(current);
-}
-
-function getString(value: unknown): string | undefined {
-	return typeof value === "string" ? value : undefined;
-}
-
-function getNumber(value: unknown): number | undefined {
-	return typeof value === "number" ? value : undefined;
 }
 
 function bySequence(a: AIInspectorEvent, b: AIInspectorEvent) {
