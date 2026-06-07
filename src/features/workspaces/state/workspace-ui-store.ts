@@ -88,10 +88,6 @@ export const selectWorkspacePresentation =
 	(workspaceId: string) => (state: WorkspaceUiState) =>
 		selectWorkspaceUiSession(workspaceId)(state).presentation;
 
-export const selectWorkspaceChatPanelCollapsed =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		selectWorkspaceUiSession(workspaceId)(state).chatPanelCollapsed;
-
 export const selectWorkspaceActiveAiChatThreadId =
 	(workspaceId: string) => (state: WorkspaceUiState) =>
 		selectWorkspaceUiSession(workspaceId)(state).activeAiChatThreadId;

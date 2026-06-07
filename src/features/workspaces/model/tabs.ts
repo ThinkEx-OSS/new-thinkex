@@ -57,17 +57,6 @@ export function getWorkspaceSessionTabSearch(
 		: getWorkspaceRootTabSearch();
 }
 
-export function isWorkspaceRootTab(tab: WorkspaceTab | undefined) {
-	return !tab?.viewItemId;
-}
-
-export function isWorkspaceTabViewingItem(
-	tab: WorkspaceTab | undefined,
-	item: WorkspaceItem,
-) {
-	return tab?.viewItemId === item.id;
-}
-
 export function findItemForTab(
 	tab: WorkspaceTab,
 	itemsById: Map<string, WorkspaceItem>,
