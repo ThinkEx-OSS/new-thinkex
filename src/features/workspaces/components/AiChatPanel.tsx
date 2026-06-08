@@ -17,12 +17,13 @@ import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatP
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
+import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 
 interface AiChatPanelProps {
-	workspaceId: string;
+	context: WorkspaceAiContextScope;
 }
 
-export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
+export default function AiChatPanel({ context }: AiChatPanelProps) {
 	const {
 		activeThreadId,
 		areThreadsReady,
@@ -41,7 +42,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 		onThreadActivated,
 		selectedThread,
 		visibleThreadList,
-	} = useAiChatPanelController({ workspaceId });
+	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 
 	return (
 		<aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -63,6 +64,7 @@ export default function AiChatPanel({ workspaceId }: AiChatPanelProps) {
 			) : (
 				<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
 					<AiChatThreadView
+						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
 						hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
 						modelId={modelId}

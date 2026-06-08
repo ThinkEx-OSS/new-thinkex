@@ -10,7 +10,7 @@ export default function AiChatPromptAttachments() {
 	}
 
 	return (
-		<div className="flex min-w-0 flex-wrap gap-1.5 px-2 pt-2">
+		<div className="flex w-full min-w-0 flex-wrap gap-1.5 pt-2">
 			{attachments.files.map((file) => (
 				<div
 					key={file.id}

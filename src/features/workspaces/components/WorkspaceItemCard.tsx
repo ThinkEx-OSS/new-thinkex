@@ -2,7 +2,7 @@ import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { CheckIcon, FolderInput } from "lucide-react";
-import { type ComponentProps, type MouseEvent, useState } from "react";
+import type { ComponentProps, MouseEvent } from "react";
 
 import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -28,6 +28,13 @@ const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
 const WORKSPACE_ITEM_PREVIEW_CONTROL_ROW = "2.5rem";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_INSET = "px-2";
+const WORKSPACE_ITEM_CARD_BASE =
+	"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all active:cursor-grabbing";
+const WORKSPACE_ITEM_CARD_HOVER = "hover:bg-accent dark:hover:bg-accent/60";
+const WORKSPACE_ITEM_CARD_UNSELECTED_HOVER =
+	"not-data-[selected=true]:hover:shadow-md";
+const WORKSPACE_ITEM_CARD_SELECTED =
+	"data-[selected=true]:ring-2 data-[selected=true]:ring-white data-[selected=true]:ring-offset-2 data-[selected=true]:ring-offset-background data-[selected=true]:shadow-[0_0_0_2px_rgba(15,23,42,0.34),0_0_0_5px_rgba(15,23,42,0.08),0_16px_36px_rgba(15,23,42,0.20)] dark:data-[selected=true]:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_0_5px_rgba(255,255,255,0.08),0_16px_36px_rgba(0,0,0,0.45)]";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL =
 	"relative z-20 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY =
@@ -37,20 +44,25 @@ interface WorkspaceItemCardProps {
 	item: WorkspaceItem;
 	index: number;
 	items: WorkspaceItem[];
+	isSelected: boolean;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
+	onSelectionChange: (item: WorkspaceItem, selected: boolean) => void;
+	onElementChange: (itemId: string, element: HTMLElement | null) => void;
 }
 
 export default function WorkspaceItemCard({
 	item,
 	index,
 	items,
+	isSelected,
 	onOpenItem,
 	onRenameItem,
 	onDeleteItem,
+	onSelectionChange,
+	onElementChange,
 }: WorkspaceItemCardProps) {
-	const [isSelectionPreviewed, setIsSelectionPreviewed] = useState(false);
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
 	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
@@ -136,6 +148,7 @@ export default function WorkspaceItemCard({
 	const setCardRef = (element: HTMLDivElement | null) => {
 		sortableRef(element);
 		folderDropTargetRef(isFolder ? element : null);
+		onElementChange(item.id, element);
 	};
 	const showFolderDropAffordance =
 		isFolder &&
@@ -156,6 +169,12 @@ export default function WorkspaceItemCard({
 	} = getWorkspaceItemDisplay(item);
 
 	const handleOpen = (event: MouseEvent<HTMLElement>) => {
+		if (event.shiftKey) {
+			event.preventDefault();
+			onSelectionChange(item, !isSelected);
+			return;
+		}
+
 		if (event.metaKey || event.ctrlKey) {
 			onOpenItem(item, { background: true });
 			return;
@@ -169,14 +188,19 @@ export default function WorkspaceItemCard({
 	};
 	const handleSelectionPreviewClick = (event: MouseEvent<HTMLElement>) => {
 		event.stopPropagation();
-		setIsSelectionPreviewed((current) => !current);
+		onSelectionChange(item, !isSelected);
 	};
 
 	const card = (
 		<Card
 			ref={setCardRef}
+			data-workspace-selection-item
+			data-selected={isSelected ? "true" : undefined}
 			className={cn(
-				"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md active:cursor-grabbing dark:hover:bg-accent/60",
+				WORKSPACE_ITEM_CARD_BASE,
+				WORKSPACE_ITEM_CARD_HOVER,
+				WORKSPACE_ITEM_CARD_UNSELECTED_HOVER,
+				WORKSPACE_ITEM_CARD_SELECTED,
 				isDragging && "opacity-70 shadow-lg",
 				isDropTarget &&
 					!showFolderDropAffordance &&
@@ -211,21 +235,19 @@ export default function WorkspaceItemCard({
 				>
 					<WorkspaceItemPreviewControl
 						aria-label={`Select ${item.name}`}
-						aria-pressed={isSelectionPreviewed}
-						className={cn(
-							isSelectionPreviewed && "pointer-events-auto opacity-100",
-						)}
+						aria-pressed={isSelected}
+						className={cn(isSelected && "pointer-events-auto opacity-100")}
 						onClick={handleSelectionPreviewClick}
 					>
 						<span
 							className={cn(
 								"flex size-4 items-center justify-center rounded-[4px] border border-input bg-background shadow-xs transition-colors dark:bg-input/30",
-								isSelectionPreviewed &&
+								isSelected &&
 									"border-primary bg-primary text-primary-foreground dark:bg-primary",
 							)}
 							aria-hidden="true"
 						>
-							{isSelectionPreviewed ? <CheckIcon className="size-3.5" /> : null}
+							{isSelected ? <CheckIcon className="size-3.5" /> : null}
 						</span>
 					</WorkspaceItemPreviewControl>
 					<div aria-hidden="true" className="h-full flex-1" />

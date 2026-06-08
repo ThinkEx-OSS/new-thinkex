@@ -17,12 +17,14 @@ import type {
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
+import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 
 type AiChatPromptMessage = Parameters<
 	NonNullable<ComponentProps<typeof AiChatPromptInput>["onSubmit"]>
 >[0];
 
 export default function AiChatThreadView({
+	context,
 	getInspectorSnapshot,
 	hasPersistedMessages,
 	modelId,
@@ -30,6 +32,7 @@ export default function AiChatThreadView({
 	onThreadActivated,
 	threadId,
 }: {
+	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	hasPersistedMessages: boolean;
 	modelId: AiChatModelId;
@@ -65,6 +68,7 @@ export default function AiChatThreadView({
 
 	return (
 		<AiChatPanelBody
+			context={context}
 			isLoadingHistory={hasPersistedMessages && messages.length === 0}
 			error={error}
 			getInspectorSnapshot={getInspectorSnapshot}
@@ -83,6 +87,7 @@ export default function AiChatThreadView({
 }
 
 function AiChatPanelBody({
+	context,
 	error,
 	getInspectorSnapshot,
 	isLoadingHistory,
@@ -97,6 +102,7 @@ function AiChatPanelBody({
 	status,
 	threadId,
 }: {
+	context: WorkspaceAiContextScope;
 	error?: Error;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	isLoadingHistory?: boolean;
@@ -155,6 +161,7 @@ function AiChatPanelBody({
 					) : null}
 					<AiChatPromptInput
 						activeThreadId={threadId}
+						context={context}
 						getInspectorSnapshot={getInspectorSnapshot}
 						modelId={modelId}
 						status={status}

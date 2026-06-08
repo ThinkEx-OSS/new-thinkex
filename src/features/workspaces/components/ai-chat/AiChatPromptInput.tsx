@@ -33,14 +33,16 @@ import type {
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
+import WorkspaceAiChatContextChips from "#/features/workspaces/components/ai-chat/WorkspaceAiChatContextChips";
+import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import { cn } from "#/lib/utils";
 
 // InputGroup defaults to a single horizontal row. Stack vertically so the
 // footer toolbar stays visible below the textarea instead of being clipped.
 const PROMPT_INPUT_GROUP_CLASSNAME =
 	"h-auto flex-col border-border/70 bg-muted/30 shadow-none dark:bg-muted/30";
-const PROMPT_INPUT_PADDING_X = "px-3.5";
-const PROMPT_INPUT_FOOTER_PADDING_X = "pl-2 pr-3.5";
+const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
+const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5";
 const TOOLBAR_CONTROL_SIZE = "size-9";
 const TOOLBAR_ICON_SIZE = "size-5";
 const TOOLBAR_MUTED_TEXT = "text-muted-foreground";
@@ -56,6 +58,7 @@ const AiChatInspectorDialog = import.meta.env.DEV
 
 interface AiChatPromptInputProps {
 	activeThreadId?: string;
+	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	modelId?: AiChatModelId;
 	onModelChange?: (modelId: AiChatModelId) => void;
@@ -66,6 +69,7 @@ interface AiChatPromptInputProps {
 
 export default function AiChatPromptInput({
 	activeThreadId,
+	context,
 	getInspectorSnapshot,
 	modelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	onModelChange,
@@ -111,7 +115,8 @@ export default function AiChatPromptInput({
 				onSubmit={handleSubmit}
 				multiple
 			>
-				<PromptInputHeader>
+				<PromptInputHeader className={PROMPT_INPUT_INLINE_PADDING}>
+					<WorkspaceAiChatContextChips context={context} />
 					<AiChatPromptAttachments />
 				</PromptInputHeader>
 				<PromptInputBody>
@@ -122,13 +127,13 @@ export default function AiChatPromptInput({
 						placeholder="Ask anything"
 						onChange={(event) => setInput(event.currentTarget.value)}
 						className={cn(
-							"min-h-12 text-base md:text-base",
-							PROMPT_INPUT_PADDING_X,
+							"min-h-10 py-1.5 text-base md:text-base",
+							PROMPT_INPUT_INLINE_PADDING,
 						)}
 					/>
 				</PromptInputBody>
 
-				<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING_X}>
+				<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING}>
 					<PromptInputTools>
 						<PromptInputActionMenu>
 							<PromptInputActionMenuTrigger

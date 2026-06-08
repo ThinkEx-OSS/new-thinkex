@@ -9,18 +9,16 @@ import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent"
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
-import {
-	hasWorkspacePaneKind,
-	WorkspaceMaximizedPresentation,
-	WorkspacePaneRenderer,
-	WorkspaceSplitPresentation,
-} from "#/features/workspaces/components/WorkspacePresentation";
+import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
+import { WorkspaceMaximizedPresentation } from "#/features/workspaces/components/WorkspacePresentation";
 import {
 	WorkspaceSkeletonAiChatPanel,
 	WorkspaceSkeletonChrome,
 	WorkspaceSkeletonContent,
 } from "#/features/workspaces/components/WorkspaceShellSkeleton";
+import WorkspaceSplitPresentation from "#/features/workspaces/components/WorkspaceSplitPresentation";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
+import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -150,13 +148,19 @@ export function WorkspaceShell({
 		);
 	}
 
+	const aiContextScope = {
+		activeItem: isWorkspaceItemView(activeItem) ? activeItem : undefined,
+		itemsById,
+		tabs: session.tabs,
+		workspaceId: workspace.id,
+	};
+
 	if (presentation.mode === "maximized") {
 		return (
 			<WorkspaceMaximizedPresentation>
 				<WorkspacePaneRenderer
-					workspaceId={workspace.id}
+					aiContextScope={aiContextScope}
 					pane={presentation.pane}
-					itemsById={itemsById}
 					scopedItems={scopedItems}
 					onCreateItem={createWorkspaceItem}
 					onOpenItem={openItem}
@@ -206,10 +210,9 @@ export function WorkspaceShell({
 				content={
 					presentation.mode === "split" ? (
 						<WorkspaceSplitPresentation
-							workspaceId={workspace.id}
+							aiContextScope={aiContextScope}
 							panes={presentation.panes}
 							direction={presentation.direction}
-							itemsById={itemsById}
 							scopedItems={scopedItems}
 							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
@@ -218,6 +221,7 @@ export function WorkspaceShell({
 						<WorkspaceContent
 							items={scopedItems}
 							activeItem={activeItem}
+							workspaceId={workspace.id}
 							onCreateItem={createWorkspaceItem}
 							onOpenItem={openItem}
 						/>
@@ -225,7 +229,7 @@ export function WorkspaceShell({
 				}
 				chatPanel={
 					chatPanelCollapsed || presentationHasChat ? undefined : (
-						<AiChatPanel workspaceId={workspace.id} />
+						<AiChatPanel context={aiContextScope} />
 					)
 				}
 			/>
