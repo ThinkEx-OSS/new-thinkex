@@ -17,6 +17,7 @@ import type { LanguageModel, ToolSet } from "ai";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AIThreadInspectorRecorder } from "#/features/workspaces/ai/ai-thread-inspector-recorder";
 import {
+	AI_THREAD_ACTIVE_TOOLS,
 	createAIThreadTools,
 	generateAIThreadTitle,
 	getAIThreadSoulPrompt,
@@ -69,6 +70,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		getTools(): ToolSet {
 			return createAIThreadTools({
 				env: this.env,
+				workspace: this.workspace,
 				getThreadContext: () => this._getThreadContext(),
 			});
 		}
@@ -86,7 +88,10 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
 			const system = getAIThreadSystemPromptForWorkspace(
 				ctx.system,
-				thread.workspaceId,
+				thread.promptScope,
+				{
+					timeZone: getBodyString(ctx.body, "timeZone"),
+				},
 			);
 
 			await this.inspector.recordTurnStarted({
@@ -97,6 +102,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			});
 
 			return {
+				activeTools: [...AI_THREAD_ACTIVE_TOOLS],
 				model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
 				system,
 			};
@@ -211,4 +217,9 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			});
 		}
 	};
+}
+
+function getBodyString(body: Record<string, unknown> | undefined, key: string) {
+	const value = body?.[key];
+	return typeof value === "string" ? value : undefined;
 }

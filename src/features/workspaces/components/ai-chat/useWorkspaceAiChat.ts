@@ -28,6 +28,7 @@ export function useWorkspaceAiChat({
 		getInitialMessages: null,
 		body: () => ({
 			modelId,
+			timeZone: getClientTimeZone(),
 		}),
 	});
 	const {
@@ -87,4 +88,12 @@ export function useWorkspaceAiChat({
 		status,
 		stop,
 	};
+}
+
+function getClientTimeZone() {
+	try {
+		return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+	} catch {
+		return "UTC";
+	}
 }

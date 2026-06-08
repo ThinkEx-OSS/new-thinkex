@@ -30,9 +30,7 @@ const readUrlInputSchema = z.object({
 	url: z
 		.string()
 		.url()
-		.describe(
-			"Public HTTP(S) URL to fetch. Use for APIs, feeds, raw files, or simple static pages.",
-		),
+		.describe("Public HTTP(S) URL to fetch with a direct network request."),
 });
 
 const browserReadActionSchema = z.enum(["markdown", "content", "links"]);
@@ -41,27 +39,27 @@ const readWebPageInputSchema = z.object({
 	action: browserReadActionSchema
 		.optional()
 		.describe(
-			"Browser Run action to use. markdown is best for normal rendered-page reading; content returns rendered HTML; links returns final-page links.",
+			"Browser read mode. markdown is best for normal reading; content returns HTML; links returns page links.",
 		),
 	url: z
 		.string()
 		.url()
-		.describe("Public HTTP(S) URL to load with Browser Run Quick Actions."),
+		.describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
 });
 
 export function createAIThreadWebTools(env: Env): ToolSet {
 	return {
-		readUrl: tool({
+		web_fetch_url: tool({
 			description:
-				"Fetch a public HTTP(S) URL with a cheap network request. Use this for APIs, feeds, raw files, static text, and simple HTML. If the page is JavaScript-heavy or the user asks for rendered page content, use readWebPage instead.",
+				"Fetch a public URL with a direct network request. Best for APIs, feeds, raw files, static text, and simple HTML.",
 			inputSchema: readUrlInputSchema,
 			execute: async ({ maxBytes, url }) => {
 				return readPublicUrl(url, maxBytes ?? DEFAULT_FETCH_MAX_BYTES);
 			},
 		}),
-		readWebPage: tool({
+		web_read_page: tool({
 			description:
-				"Read a public webpage using Cloudflare Browser Run Quick Actions. Use this for rendered pages, JavaScript-heavy pages, markdown conversion, or final DOM links. This does not provide arbitrary browser control.",
+				"Read a public webpage with Cloudflare Browser Run. Best for rendered pages, JavaScript-heavy pages, markdown conversion, or final DOM links.",
 			inputSchema: readWebPageInputSchema,
 			execute: async ({ action = "markdown", url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
@@ -118,7 +116,7 @@ async function readPublicUrl(input: string, maxBytes: number) {
 				kind: "unsupported_content_type",
 				metadata: responseMetadata(response, currentUrl),
 				error:
-					"Response is not a supported text-like content type. Use readWebPage for rendered pages or a future asset import tool for binary content.",
+					"Response is not a supported text-like content type. Use web_read_page for rendered pages or a future asset import tool for binary content.",
 			};
 		}
 

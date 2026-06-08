@@ -1,9 +1,14 @@
+import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
+import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
 import { generateText, tool } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod";
 
-import type { AIThreadContext } from "#/features/workspaces/ai/ai-thread-metadata";
+import type {
+	AIThreadContext,
+	AIThreadPromptScope,
+} from "#/features/workspaces/ai/ai-thread-metadata";
 import {
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	getWorkspaceAiChatModel,
@@ -19,31 +24,47 @@ const workspaceItemListInputSchema = z.object({
 		.min(1)
 		.max(200)
 		.optional()
-		.describe("Maximum number of entries to return. Defaults to 100."),
+		.describe("Maximum number of workspace items to return. Defaults to 100."),
 	path: z
 		.string()
 		.min(1)
 		.optional()
-		.describe(
-			"Absolute workspace path to list. Defaults to the workspace root (/).",
-		),
+		.describe("Absolute path in the actual ThinkEx workspace. Defaults to /."),
 	recursive: z
 		.boolean()
 		.optional()
 		.describe(
-			"List nested descendants, like ls -R. Defaults to false for immediate children only.",
+			"Include nested descendants. Defaults to false for immediate children only.",
 		),
 });
 
+const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
+export const AI_THREAD_ACTIVE_TOOLS = [
+	"sandbox_read_file",
+	"sandbox_write_file",
+	"sandbox_edit_file",
+	"sandbox_list_files",
+	"sandbox_find_files",
+	"sandbox_search_files",
+	"sandbox_delete_file",
+	"web_fetch_url",
+	"web_read_page",
+	"workspace_list_items",
+] as const;
+
 export function createAIThreadTools(input: {
 	env: Env;
+	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 }): ToolSet {
+	const sandboxTools = createSandboxTools(input.workspace);
+
 	return {
+		...sandboxTools,
 		...createAIThreadWebTools(input.env),
-		listWorkspaceItems: tool({
+		workspace_list_items: tool({
 			description:
-				"List the real ThinkEx workspace like ls. Use absolute paths such as /. By default this returns immediate children; set recursive to true for a tree-style listing.",
+				"List items in the actual ThinkEx workspace. Use this for user-visible workspace structure; use absolute paths such as /.",
 			inputSchema: workspaceItemListInputSchema,
 			execute: async ({ limit, path, recursive }) => {
 				const thread = await input.getThreadContext();
@@ -61,6 +82,48 @@ export function createAIThreadTools(input: {
 				});
 			},
 		}),
+	};
+}
+
+function createSandboxTools(workspace: WorkspaceLike): ToolSet {
+	const tools = createWorkspaceTools(workspace);
+
+	return {
+		sandbox_read_file: {
+			...tools.read,
+			description:
+				"Read a private sandbox file. Text files return line-numbered content; images and PDFs are passed through when supported. Use offset and limit for large text files. This does not read the actual ThinkEx workspace.",
+		},
+		sandbox_write_file: {
+			...tools.write,
+			description:
+				"Write content to a private sandbox file for assistant scratch work. Creates parent directories automatically and overwrites existing files. This does not create or change actual ThinkEx workspace items.",
+		},
+		sandbox_edit_file: {
+			...tools.edit,
+			description:
+				"Edit a private sandbox file by replacing an exact string. The old_string must match exactly, including whitespace and indentation. This does not edit actual ThinkEx workspace items.",
+		},
+		sandbox_list_files: {
+			...tools.list,
+			description:
+				"List private sandbox files and directories at a path. Returns names, types, and sizes. This does not list the actual ThinkEx workspace.",
+		},
+		sandbox_find_files: {
+			...tools.find,
+			description:
+				"Find private sandbox files by glob pattern. Supports *, **, and ?. Returns matching paths with types and sizes. This does not search the actual ThinkEx workspace.",
+		},
+		sandbox_search_files: {
+			...tools.grep,
+			description:
+				"Search private sandbox file contents using a regex or fixed string. Returns matching lines with file paths and line numbers. This does not search actual ThinkEx workspace items.",
+		},
+		sandbox_delete_file: {
+			...tools.delete,
+			description:
+				"Delete a private sandbox file or directory. Set recursive to true for non-empty directories. This does not delete actual ThinkEx workspace items.",
+		},
 	};
 }
 
@@ -108,16 +171,15 @@ export async function generateAIThreadTitle(input: {
 
 export function getAIThreadSoulPrompt() {
 	return [
-		"You are Thinkex's workspace assistant.",
-		"WorkspaceKernel is the source of truth for user-visible workspace items, files, revisions, events, and permissions.",
-		"Your private Think workspace is scratch space only. Do not treat private scratch files as user-visible workspace state.",
-		"Use workspace tools when the user asks about workspace contents or structure.",
-		"Do not claim to have read workspace content unless a tool result provides it.",
-		"Use memory only for durable, concise user preferences, workspace goals, thread goals, and decisions that should help future turns in this thread.",
-		"Do not update memory for transient requests or information already stored in WorkspaceKernel.",
-		"Do not store full documents, item bodies, large file text, secrets, or source-of-truth workspace state in memory.",
-		"User-visible workspace output must be created or changed through product workspace tools.",
-		"Keep answers concise, concrete, and action-oriented.",
+		"You are ThinkEx's workspace assistant.",
+		"Help the user understand, organize, and work in their actual ThinkEx workspace.",
+		"Actual workspace means user-visible ThinkEx content. Private sandbox means assistant-only scratch files.",
+		"Use actual workspace tools to inspect workspace contents; change the workspace only through actual workspace mutation tools.",
+		"Never use private sandbox files as user-visible workspace items.",
+		"Do not claim to have read actual workspace content unless an actual workspace tool returned it.",
+		"Web tools read public web content only.",
+		"Use memory only for durable preferences, workspace goals, thread goals, and decisions. Do not store transient requests, secrets, full documents, item bodies, or actual workspace state.",
+		"Follow tool descriptions and schemas. Keep answers concise, concrete, and action-oriented.",
 	]
 		.filter(Boolean)
 		.join("\n");
@@ -125,16 +187,69 @@ export function getAIThreadSoulPrompt() {
 
 export function getAIThreadSystemPromptForWorkspace(
 	system: string,
-	workspaceId: string,
+	promptScope: AIThreadPromptScope,
+	options: {
+		now?: Date;
+		timeZone?: string;
+	} = {},
 ) {
 	return [
-		system,
-		[
-			"Current ThinkEx runtime scope:",
-			`- Workspace id: ${workspaceId}`,
-			"- Use absolute workspace paths such as / when calling workspace tools.",
-		].join("\n"),
+		stripThinkCapabilityBlock(system),
+		getThinkExRuntimeScopePrompt(promptScope, options),
 	].join("\n\n");
+}
+
+function stripThinkCapabilityBlock(system: string) {
+	const markerIndex = system.indexOf(THINK_CAPABILITY_BLOCK_MARKER);
+
+	if (markerIndex === -1) {
+		return system.trimEnd();
+	}
+
+	return system.slice(0, markerIndex).trimEnd();
+}
+
+function getThinkExRuntimeScopePrompt(
+	promptScope: AIThreadPromptScope,
+	options: {
+		now?: Date;
+		timeZone?: string;
+	},
+) {
+	const timeZone = getPromptTimeZone(options.timeZone);
+
+	return [
+		"Current turn:",
+		`- Workspace: ${promptScope.workspaceName}`,
+		`- Date/time: ${formatPromptDateTime(options.now ?? new Date(), timeZone)}`,
+		"- Actual workspace paths are absolute, such as /.",
+	].join("\n");
+}
+
+function getPromptTimeZone(value: string | undefined) {
+	if (!value?.trim()) {
+		return "UTC";
+	}
+
+	try {
+		new Intl.DateTimeFormat("en-US", { timeZone: value });
+		return value;
+	} catch {
+		return "UTC";
+	}
+}
+
+function formatPromptDateTime(date: Date, timeZone: string) {
+	return `${new Intl.DateTimeFormat("en-US", {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		timeZone,
+		timeZoneName: "short",
+	}).format(date)} (${timeZone})`;
 }
 
 function getFirstUserMessageText(messages: UIMessage[]) {

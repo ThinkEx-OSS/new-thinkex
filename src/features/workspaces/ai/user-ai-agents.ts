@@ -7,7 +7,6 @@ import {
 	isAIInspectorEnabled,
 } from "#/features/workspaces/ai/ai-inspector";
 import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
-import { assertCanReadWorkspace } from "#/features/workspaces/ai/ai-thread-directory-permissions";
 import {
 	deleteThreadMeta,
 	ensureChatMetaStore,
@@ -30,6 +29,7 @@ import {
 	normalizeThreadErrorMessage,
 	type UserAIStoreState,
 } from "#/features/workspaces/ai/ai-thread-metadata";
+import { getReadableWorkspacePromptScope } from "#/features/workspaces/ai/ai-thread-prompt-scope";
 
 export type {
 	AIThreadSummary,
@@ -95,7 +95,10 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			throw new Error("workspaceId is required");
 		}
 
-		await assertCanReadWorkspace({ userId: this.name, workspaceId });
+		await getReadableWorkspacePromptScope({
+			userId: this.name,
+			workspaceId,
+		});
 
 		const existingEmptyThread = this._getEmptyThreadSummary(workspaceId);
 
@@ -110,7 +113,12 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		await this.subAgent(AIThread, id);
 
 		try {
-			insertThreadMeta(this, { id, workspaceId, title, now });
+			insertThreadMeta(this, {
+				id,
+				workspaceId,
+				title,
+				now,
+			});
 		} catch (error) {
 			await this.deleteSubAgent(AIThread, id);
 			throw error;
@@ -161,10 +169,15 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async getThreadContext(threadId: string): Promise<AIThreadContext | null> {
 		try {
 			const thread = await this._requireThreadMeta(threadId);
+			const promptScope = await getReadableWorkspacePromptScope({
+				workspaceId: thread.workspace_id,
+				userId: this.name,
+			});
 
 			return {
 				id: thread.id,
 				workspaceId: thread.workspace_id,
+				promptScope,
 				userId: this.name,
 			};
 		} catch {
@@ -286,7 +299,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		}
 
 		try {
-			await assertCanReadWorkspace({
+			await getReadableWorkspacePromptScope({
 				userId: this.name,
 				workspaceId: thread.workspace_id,
 			});

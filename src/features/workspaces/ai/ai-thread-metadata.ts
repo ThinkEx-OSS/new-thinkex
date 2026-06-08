@@ -27,7 +27,12 @@ export interface UserAIStoreState {
 export interface AIThreadContext {
 	id: string;
 	workspaceId: string;
+	promptScope: AIThreadPromptScope;
 	userId: string;
+}
+
+export interface AIThreadPromptScope {
+	workspaceName: string;
 }
 
 export interface AIThreadMetaRow {
