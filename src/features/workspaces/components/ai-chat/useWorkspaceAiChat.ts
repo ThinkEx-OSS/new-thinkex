@@ -2,6 +2,11 @@ import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import { useCallback } from "react";
 
+import {
+	aiThreadAgentName,
+	userAIAgentName,
+	userAIBasePath,
+} from "#/features/workspaces/agent-routes";
 import type {
 	AiChatMessage,
 	AiChatModelId,
@@ -19,9 +24,9 @@ export function useWorkspaceAiChat({
 	threadId,
 }: UseWorkspaceAiChatOptions) {
 	const agent = useAgent({
-		agent: "UserAIStore",
-		basePath: "user-ai",
-		sub: [{ agent: "AIThread", name: threadId }],
+		agent: userAIAgentName,
+		basePath: userAIBasePath,
+		sub: [{ agent: aiThreadAgentName, name: threadId }],
 	});
 	const chat = useAgentChat<unknown, AiChatMessage>({
 		agent,

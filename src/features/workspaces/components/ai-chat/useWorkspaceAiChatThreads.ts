@@ -1,6 +1,10 @@
 import { useAgent } from "agents/react";
 import { useCallback, useMemo, useState } from "react";
 
+import {
+	userAIAgentName,
+	userAIBasePath,
+} from "#/features/workspaces/agent-routes";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import type {
 	AIThreadSummary,
@@ -16,8 +20,8 @@ export function useWorkspaceAiChatThreads({
 }: UseWorkspaceAiChatThreadsOptions) {
 	const [isEnsuringDraftThread, setIsEnsuringDraftThread] = useState(false);
 	const directory = useAgent<UserAIStoreState>({
-		agent: "UserAIStore",
-		basePath: "user-ai",
+		agent: userAIAgentName,
+		basePath: userAIBasePath,
 	});
 
 	const threads = useMemo(

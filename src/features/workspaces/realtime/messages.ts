@@ -1,7 +1,5 @@
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 
-export const workspaceKernelRealtimePathPrefix = "/workspace-kernel";
-
 export interface WorkspacePresenceUser {
 	id: string;
 	connectionId: string;

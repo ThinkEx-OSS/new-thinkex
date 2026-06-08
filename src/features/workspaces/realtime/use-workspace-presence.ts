@@ -2,10 +2,14 @@ import { useAgent } from "agents/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-	type WorkspacePresenceUser,
-	type WorkspaceRealtimeEvent,
-	type WorkspaceRealtimeServerMessage,
-	workspaceKernelRealtimePathPrefix,
+	getWorkspaceKernelRealtimePath,
+	workspaceKernelAgentName,
+	workspaceKernelBasePath,
+} from "#/features/workspaces/agent-routes";
+import type {
+	WorkspacePresenceUser,
+	WorkspaceRealtimeEvent,
+	WorkspaceRealtimeServerMessage,
 } from "./messages";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
@@ -131,9 +135,9 @@ export function useWorkspaceRealtime({
 	);
 
 	useAgent({
-		agent: "WorkspaceKernel",
-		basePath: workspaceKernelRealtimePathPrefix.slice(1),
-		path: `${workspaceId}/realtime`,
+		agent: workspaceKernelAgentName,
+		basePath: workspaceKernelBasePath,
+		path: getWorkspaceKernelRealtimePath(workspaceId),
 		onClose: handleClose,
 		onError: handleError,
 		onMessage: handleMessage,

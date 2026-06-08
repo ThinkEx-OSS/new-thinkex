@@ -2,6 +2,7 @@ import type { ChatResponseResult } from "@cloudflare/think";
 import { Agent, callable } from "agents";
 import { nanoid } from "nanoid";
 
+import { aiThreadAgentName } from "#/features/workspaces/agent-routes";
 import {
 	type AIInspectorSnapshot,
 	isAIInspectorEnabled,
@@ -64,7 +65,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		_request: Request,
 		{ className, name }: { className: string; name: string },
 	): Promise<Request | Response | undefined> {
-		if (className !== "AIThread") {
+		if (className !== aiThreadAgentName) {
 			return new Response("Chat thread not found", { status: 404 });
 		}
 

@@ -1,6 +1,11 @@
 import { getAgentByName } from "agents";
 
 import { createDbContext } from "#/db/server";
+import {
+	getWorkspaceKernelRouteWorkspaceId,
+	isWorkspaceKernelRequestPath,
+	workspaceKernelAgentName,
+} from "#/features/workspaces/agent-routes";
 import { setWorkspaceKernelUserHeaders } from "#/features/workspaces/kernel/workspace-kernel";
 import {
 	canReadWorkspace,
@@ -8,18 +13,14 @@ import {
 } from "#/features/workspaces/server/permissions";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
-const workspaceKernelPathPrefix = "/workspace-kernel/";
-
 export async function routeWorkspaceKernelRequest(request: Request, env: Env) {
 	const url = new URL(request.url);
 
-	if (!url.pathname.startsWith(workspaceKernelPathPrefix)) {
+	if (!isWorkspaceKernelRequestPath(url.pathname)) {
 		return null;
 	}
 
-	const [workspaceId] = url.pathname
-		.slice(workspaceKernelPathPrefix.length)
-		.split("/");
+	const workspaceId = getWorkspaceKernelRouteWorkspaceId(url.pathname);
 
 	if (!workspaceId) {
 		return new Response("Workspace not found", { status: 404 });
@@ -49,7 +50,10 @@ export async function routeWorkspaceKernelRequest(request: Request, env: Env) {
 				name: session.user.name,
 				image: session.user.image ?? null,
 			};
-			const kernel = await getAgentByName(env.WorkspaceKernel, workspaceId);
+			const kernel = await getAgentByName(
+				env[workspaceKernelAgentName],
+				workspaceId,
+			);
 
 			return kernel.fetch(setWorkspaceKernelUserHeaders(request, user));
 		} finally {
