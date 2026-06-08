@@ -128,8 +128,7 @@ export function getWorkspaceItemMoveInput(input: {
 
 	if (
 		dropTarget?.kind !== "workspace-item" ||
-		dropTarget.row !== dragSource.row ||
-		dropTarget.itemId === movedItem.id
+		dropTarget.row !== dragSource.row
 	) {
 		return undefined;
 	}
@@ -151,14 +150,13 @@ export function getWorkspaceItemMoveInput(input: {
 		.sort(compareWorkspaceItems);
 	const currentIds = siblings.map((item) => item.id);
 	const currentIndex = currentIds.indexOf(movedItem.id);
-	const targetIndex = currentIds.indexOf(targetItem.id);
+	const orderedIds = move(currentIds, event);
+	const nextIndex = orderedIds.indexOf(movedItem.id);
 
-	if (currentIndex < 0 || targetIndex < 0 || currentIndex === targetIndex) {
+	if (currentIndex < 0 || nextIndex < 0 || currentIndex === nextIndex) {
 		return undefined;
 	}
 
-	const orderedIds = move(currentIds, event);
-	const nextIndex = orderedIds.indexOf(movedItem.id);
 	const previousId = nextIndex > 0 ? orderedIds[nextIndex - 1] : undefined;
 	const nextId =
 		nextIndex < orderedIds.length - 1 ? orderedIds[nextIndex + 1] : undefined;
