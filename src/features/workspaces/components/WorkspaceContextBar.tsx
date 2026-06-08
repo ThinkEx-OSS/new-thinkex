@@ -9,21 +9,6 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "#/components/ui/breadcrumb";
-import {
-	Combobox,
-	ComboboxEmpty,
-	ComboboxGroup,
-	ComboboxInput,
-	ComboboxItem,
-	ComboboxList,
-} from "#/components/ui/combobox";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog";
 import WorkspaceContextActions from "#/features/workspaces/components/WorkspaceContextActions";
 import {
 	DeleteWorkspaceItemAlert,
@@ -51,9 +36,9 @@ const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
 const breadcrumbCurrentClassName = `${breadcrumbContentClassName} text-foreground`;
 const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`;
 const currentCrumbLabelClassName = "[text-shadow:0.025em_0_0_currentColor]";
+const openWorkspaceSearch = () => undefined;
 
 interface WorkspaceContextDialogState {
-	searchOpen: boolean;
 	settingsOpen: boolean;
 	renamingItem: WorkspaceItem | null;
 	deletingItem: WorkspaceItem | null;
@@ -61,7 +46,6 @@ interface WorkspaceContextDialogState {
 }
 
 const initialDialogState: WorkspaceContextDialogState = {
-	searchOpen: false,
 	settingsOpen: false,
 	renamingItem: null,
 	deletingItem: null,
@@ -96,13 +80,8 @@ export default function WorkspaceContextBar({
 	const [dialogState, setDialogState] =
 		useState<WorkspaceContextDialogState>(initialDialogState);
 	const workspaceItems = Array.from(itemsById.values());
-	const searchableItems = workspaceItems
-		.slice()
-		.sort((first, second) => first.name.localeCompare(second.name));
 	const updateDialogState = (patch: Partial<WorkspaceContextDialogState>) =>
 		setDialogState((current) => ({ ...current, ...patch }));
-	const setSearchOpen = (searchOpen: boolean) =>
-		updateDialogState({ searchOpen });
 	const setSettingsOpen = (settingsOpen: boolean) =>
 		updateDialogState({ settingsOpen });
 	const setRenamingItem = (renamingItem: WorkspaceItem | null) =>
@@ -113,19 +92,14 @@ export default function WorkspaceContextBar({
 		updateDialogState({ deletingItem: null, deleteAlertOpen: false });
 	const openDeleteAlert = (deletingItem: WorkspaceItem) =>
 		updateDialogState({ deletingItem, deleteAlertOpen: true });
-	const {
-		deleteAlertOpen,
-		deletingItem,
-		renamingItem,
-		searchOpen,
-		settingsOpen,
-	} = dialogState;
+	const { deleteAlertOpen, deletingItem, renamingItem, settingsOpen } =
+		dialogState;
 	const searchHotkey = formatAppHotkey(
 		getAppHotkey("workspace.search.open").hotkey,
 	);
 
 	useAppHotkey("workspace.search.open", () => {
-		setSearchOpen(true);
+		openWorkspaceSearch();
 	});
 
 	return (
@@ -161,65 +135,10 @@ export default function WorkspaceContextBar({
 					createParentId={createParentId}
 					searchHotkey={searchHotkey}
 					onCreateItem={onCreateItem}
-					onSearch={() => setSearchOpen(true)}
+					onSearch={openWorkspaceSearch}
 					onCloseItemView={onCloseItemView}
 				/>
 			</div>
-			<Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-				<DialogContent
-					className="gap-3 p-3 sm:max-w-lg"
-					showCloseButton={false}
-				>
-					<DialogHeader className="sr-only">
-						<DialogTitle>Search workspace</DialogTitle>
-						<DialogDescription>
-							Search files and folders in this workspace.
-						</DialogDescription>
-					</DialogHeader>
-					<Combobox<WorkspaceItem>
-						items={searchableItems}
-						itemToStringLabel={getSearchableItemLabel}
-						itemToStringValue={(item) => item.id}
-						isItemEqualToValue={(item, value) => item.id === value.id}
-						value={null}
-						inline
-						autoHighlight
-						onValueChange={(item) => {
-							if (!item) {
-								return;
-							}
-							onNavigateToItem(item);
-							setSearchOpen(false);
-						}}
-					>
-						<ComboboxInput
-							autoFocus
-							showTrigger={false}
-							placeholder="Search workspace..."
-							className="w-full"
-						/>
-						<ComboboxList className="max-h-80 p-1">
-							<ComboboxEmpty>No items found.</ComboboxEmpty>
-							<ComboboxGroup>
-								{searchableItems.map((item, index) => {
-									const { Icon, iconClassName, label } =
-										getWorkspaceItemDisplay(item);
-
-									return (
-										<ComboboxItem key={item.id} value={item} index={index}>
-											<Icon className={`size-4 ${iconClassName}`} />
-											<span className="truncate">{item.name}</span>
-											<span className="ml-auto text-xs text-muted-foreground">
-												{label}
-											</span>
-										</ComboboxItem>
-									);
-								})}
-							</ComboboxGroup>
-						</ComboboxList>
-					</Combobox>
-				</DialogContent>
-			</Dialog>
 			<WorkspaceSettingsDialog
 				workspace={workspace}
 				open={settingsOpen}
@@ -242,11 +161,6 @@ export default function WorkspaceContextBar({
 			/>
 		</>
 	);
-}
-
-function getSearchableItemLabel(item: WorkspaceItem) {
-	const { label } = getWorkspaceItemDisplay(item);
-	return `${item.name} ${label}`;
 }
 
 function WorkspaceBreadcrumbItem({
