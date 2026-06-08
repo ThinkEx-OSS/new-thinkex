@@ -35,6 +35,7 @@ export function useWorkspaceAiChat({
 		addToolApprovalResponse: addAgentToolApprovalResponse,
 		clearError,
 		error,
+		isRecovering,
 		isStreaming,
 		messages,
 		regenerate: regenerateAgentMessage,
@@ -68,19 +69,21 @@ export function useWorkspaceAiChat({
 	);
 
 	const regenerate = useCallback(() => {
-		if (isStreaming) {
+		if (isStreaming || isRecovering) {
 			return;
 		}
 
 		clearError();
 		void regenerateAgentMessage();
-	}, [clearError, isStreaming, regenerateAgentMessage]);
+	}, [clearError, isRecovering, isStreaming, regenerateAgentMessage]);
 
 	return {
 		addToolApprovalResponse,
 		clearError,
 		error,
+		isRecovering,
 		isStreaming,
+		isBusy: isStreaming || isRecovering,
 		messages,
 		modelId,
 		regenerate,

@@ -1,3 +1,5 @@
+import { RefreshCw } from "lucide-react";
+
 import { ConversationEmptyState } from "#/components/ai-elements/conversation";
 import { Message, MessageContent } from "#/components/ai-elements/message";
 import { Shimmer } from "#/components/ai-elements/shimmer";
@@ -11,6 +13,7 @@ import type {
 
 interface AiChatMessageListProps {
 	isLoadingHistory?: boolean;
+	isRecovering?: boolean;
 	messages: AiChatMessage[];
 	onRegenerateLastResponse?: () => void;
 	onToolApprovalResponse?: (response: AiChatToolApprovalResponse) => void;
@@ -19,6 +22,7 @@ interface AiChatMessageListProps {
 
 export default function AiChatMessageList({
 	isLoadingHistory = false,
+	isRecovering = false,
 	messages,
 	onRegenerateLastResponse,
 	onToolApprovalResponse,
@@ -27,6 +31,10 @@ export default function AiChatMessageList({
 	if (messages.length === 0) {
 		if (isLoadingHistory) {
 			return <AiChatThreadSkeleton />;
+		}
+
+		if (isRecovering) {
+			return <RecoveringAssistantMessage />;
 		}
 
 		if (status === "submitted") {
@@ -69,6 +77,7 @@ export default function AiChatMessageList({
 					onToolApprovalResponse={onToolApprovalResponse}
 				/>
 			))}
+			{isRecovering ? <RecoveringAssistantMessage /> : null}
 			{status === "submitted" ? <SubmittedAssistantMessage /> : null}
 		</>
 	);
@@ -79,6 +88,19 @@ function SubmittedAssistantMessage() {
 		<Message from="assistant" className="max-w-full">
 			<MessageContent>
 				<Shimmer duration={1}>{"Thinking\u2026"}</Shimmer>
+			</MessageContent>
+		</Message>
+	);
+}
+
+function RecoveringAssistantMessage() {
+	return (
+		<Message from="assistant" className="max-w-full">
+			<MessageContent>
+				<div className="flex items-center gap-2 text-muted-foreground">
+					<RefreshCw className="size-3.5 animate-spin" aria-hidden="true" />
+					<Shimmer duration={1.4}>{"Recovering response\u2026"}</Shimmer>
+				</div>
 			</MessageContent>
 		</Message>
 	);

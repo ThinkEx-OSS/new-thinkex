@@ -1,4 +1,5 @@
 import type {
+	ChatRecoveryConfig,
 	ChatResponseResult,
 	ChunkContext,
 	PrepareStepContext,
@@ -30,11 +31,26 @@ import {
 } from "#/features/workspaces/ai/models";
 import type { UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
 
+const aiThreadChatRecovery = {
+	noProgressTimeoutMs: 90_000,
+	terminalMessage:
+		"The assistant was interrupted and could not recover this turn.",
+	onExhausted: (ctx) => {
+		console.warn("[AIThread] Chat recovery exhausted", {
+			incidentId: ctx.incidentId,
+			reason: ctx.reason,
+			recoveryKind: ctx.recoveryKind,
+			requestId: ctx.requestId,
+		});
+	},
+} satisfies ChatRecoveryConfig;
+
 export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 	return class AIThread extends Think<Env> {
 		override maxSteps = 5;
 		override messageConcurrency = "latest" as const;
-		override chatRecovery = true;
+		override chatRecovery = aiThreadChatRecovery;
+		override chatStreamStallTimeoutMs = 90_000;
 		private shouldRefreshSessionPrompt = false;
 		private readonly inspector = new AIThreadInspectorRecorder(this);
 

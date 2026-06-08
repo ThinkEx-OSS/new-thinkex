@@ -44,6 +44,7 @@ export default function AiChatThreadView({
 	const {
 		addToolApprovalResponse,
 		error,
+		isRecovering,
 		messages,
 		regenerate,
 		sendMessage: sendChatMessage,
@@ -72,6 +73,7 @@ export default function AiChatThreadView({
 			isLoadingHistory={hasPersistedMessages && messages.length === 0}
 			error={error}
 			getInspectorSnapshot={getInspectorSnapshot}
+			isRecovering={isRecovering}
 			messages={messages}
 			onModelChange={onModelChange}
 			onRegenerateLastResponse={regenerate}
@@ -91,6 +93,7 @@ function AiChatPanelBody({
 	error,
 	getInspectorSnapshot,
 	isLoadingHistory,
+	isRecovering,
 	messages,
 	modelId,
 	onModelChange,
@@ -106,6 +109,7 @@ function AiChatPanelBody({
 	error?: Error;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	isLoadingHistory?: boolean;
+	isRecovering?: boolean;
 	messages: AiChatMessage[];
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
@@ -128,6 +132,7 @@ function AiChatPanelBody({
 				>
 					<AiChatMessageList
 						isLoadingHistory={isLoadingHistory}
+						isRecovering={isRecovering}
 						messages={messages}
 						status={status}
 						onRegenerateLastResponse={onRegenerateLastResponse}
@@ -164,7 +169,7 @@ function AiChatPanelBody({
 						context={context}
 						getInspectorSnapshot={getInspectorSnapshot}
 						modelId={modelId}
-						status={status}
+						status={isRecovering && status === "ready" ? "submitted" : status}
 						onModelChange={onModelChange}
 						onSubmit={onSubmit}
 						onStop={onStop}
