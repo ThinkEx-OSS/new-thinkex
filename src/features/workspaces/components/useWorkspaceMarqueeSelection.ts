@@ -52,6 +52,13 @@ export function useWorkspaceMarqueeSelection({
 	};
 	const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
 		if (
+			event.target instanceof Element &&
+			!event.currentTarget.contains(event.target)
+		) {
+			return;
+		}
+
+		if (
 			event.button !== 0 ||
 			(event.target instanceof Element &&
 				event.target.closest(WORKSPACE_MARQUEE_IGNORED_TARGET_SELECTOR))
