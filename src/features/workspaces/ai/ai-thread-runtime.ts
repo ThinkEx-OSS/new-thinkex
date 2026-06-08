@@ -38,6 +38,33 @@ const workspaceItemListInputSchema = z.object({
 		),
 });
 
+const timeCalculateRelativeInputSchema = z.object({
+	days_ago: z
+		.number()
+		.int()
+		.min(0)
+		.optional()
+		.describe("Days to subtract from now."),
+	months_ago: z
+		.number()
+		.int()
+		.min(0)
+		.optional()
+		.describe("Calendar months to subtract from now."),
+	weeks_ago: z
+		.number()
+		.int()
+		.min(0)
+		.optional()
+		.describe("Weeks to subtract from now."),
+	years_ago: z
+		.number()
+		.int()
+		.min(0)
+		.optional()
+		.describe("Calendar years to subtract from now."),
+});
+
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
 export const AI_THREAD_ACTIVE_TOOLS = [
 	"sandbox_read_file",
@@ -50,6 +77,8 @@ export const AI_THREAD_ACTIVE_TOOLS = [
 	"web_fetch_url",
 	"web_read_page",
 	"workspace_list_items",
+	"time_get_current",
+	"time_calculate_relative",
 ] as const;
 
 export function createAIThreadTools(input: {
@@ -62,6 +91,7 @@ export function createAIThreadTools(input: {
 	return {
 		...sandboxTools,
 		...createAIThreadWebTools(input.env),
+		...createAIThreadTimeTools(),
 		workspace_list_items: tool({
 			description:
 				"List items in the actual ThinkEx workspace. Use this for user-visible workspace structure; use absolute paths such as /.",
@@ -80,6 +110,42 @@ export function createAIThreadTools(input: {
 					recursive,
 					limit,
 				});
+			},
+		}),
+	};
+}
+
+function createAIThreadTimeTools(): ToolSet {
+	return {
+		time_get_current: tool({
+			description:
+				"Return the current UTC time as ISO 8601 plus Unix timestamps.",
+			inputSchema: z.object({}),
+			execute: async () => formatTimeToolResult(new Date()),
+		}),
+		time_calculate_relative: tool({
+			description:
+				"Return a past UTC time relative to now. Use for date filters like yesterday, last week, or 3 months ago.",
+			inputSchema: timeCalculateRelativeInputSchema,
+			execute: async ({ days_ago, months_ago, weeks_ago, years_ago }) => {
+				const current = new Date();
+				const calculated = subtractRelativeUtcDate(current, {
+					daysAgo: days_ago ?? 0,
+					monthsAgo: months_ago ?? 0,
+					weeksAgo: weeks_ago ?? 0,
+					yearsAgo: years_ago ?? 0,
+				});
+
+				return {
+					current: formatTimeToolResult(current),
+					calculated: formatTimeToolResult(calculated),
+					offset: {
+						days_ago: days_ago ?? 0,
+						months_ago: months_ago ?? 0,
+						weeks_ago: weeks_ago ?? 0,
+						years_ago: years_ago ?? 0,
+					},
+				};
 			},
 		}),
 	};
@@ -178,6 +244,7 @@ export function getAIThreadSoulPrompt() {
 		"Never use private sandbox files as user-visible workspace items.",
 		"Do not claim to have read actual workspace content unless an actual workspace tool returned it.",
 		"Web tools read public web content only.",
+		"Use time_get_current for exact UTC now and time_calculate_relative for UTC date filters; the current turn includes user-local date/time context.",
 		"Use memory only for durable preferences, workspace goals, thread goals, and decisions. Do not store transient requests, secrets, full documents, item bodies, or actual workspace state.",
 		"Follow tool descriptions and schemas. Keep answers concise, concrete, and action-oriented.",
 	]
@@ -250,6 +317,72 @@ function formatPromptDateTime(date: Date, timeZone: string) {
 		timeZone,
 		timeZoneName: "short",
 	}).format(date)} (${timeZone})`;
+}
+
+function formatTimeToolResult(date: Date) {
+	return {
+		timestampSeconds: Math.floor(date.getTime() / 1000),
+		timestampMilliseconds: date.getTime(),
+		isoUtc: date.toISOString(),
+		timeZone: "UTC",
+	};
+}
+
+function subtractRelativeUtcDate(
+	date: Date,
+	input: {
+		daysAgo: number;
+		monthsAgo: number;
+		weeksAgo: number;
+		yearsAgo: number;
+	},
+) {
+	const calendarAdjusted = subtractUtcCalendarMonthsAndYears(
+		date,
+		input.monthsAgo,
+		input.yearsAgo,
+	);
+	const days = input.daysAgo + input.weeksAgo * 7;
+
+	return new Date(calendarAdjusted.getTime() - days * 24 * 60 * 60 * 1000);
+}
+
+function subtractUtcCalendarMonthsAndYears(
+	date: Date,
+	monthsAgo: number,
+	yearsAgo: number,
+) {
+	const targetMonthStart = new Date(
+		Date.UTC(
+			date.getUTCFullYear() - yearsAgo,
+			date.getUTCMonth() - monthsAgo,
+			1,
+			date.getUTCHours(),
+			date.getUTCMinutes(),
+			date.getUTCSeconds(),
+			date.getUTCMilliseconds(),
+		),
+	);
+	const lastTargetMonthDay = new Date(
+		Date.UTC(
+			targetMonthStart.getUTCFullYear(),
+			targetMonthStart.getUTCMonth() + 1,
+			0,
+		),
+	).getUTCDate();
+	const targetDay = Math.min(date.getUTCDate(), lastTargetMonthDay);
+
+	return new Date(
+		Date.UTC(
+			targetMonthStart.getUTCFullYear(),
+			targetMonthStart.getUTCMonth(),
+			targetDay,
+			date.getUTCHours(),
+			date.getUTCMinutes(),
+			date.getUTCSeconds(),
+			date.getUTCMilliseconds(),
+		),
+	);
 }
 
 function getFirstUserMessageText(messages: UIMessage[]) {
