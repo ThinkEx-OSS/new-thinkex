@@ -8,8 +8,8 @@ export type WorkspaceAiContextChip =
 export type WorkspaceAiContextSingleChip = {
 	type: "single";
 	id: string;
-	icon: WorkspaceAiContextIcon;
-	item?: WorkspaceItem;
+	icon: WorkspaceAiContextSingleIcon;
+	item: WorkspaceItem;
 	label: string;
 };
 
@@ -17,49 +17,45 @@ export type WorkspaceAiContextListChip = {
 	type: "list";
 	id: string;
 	ariaLabel: string;
-	icon: WorkspaceAiContextIcon;
+	icon: "selected-items";
 	label: string;
 	items: WorkspaceAiContextListItem[];
 };
 
 export type WorkspaceAiContextListItem = {
 	id: string;
-	item?: WorkspaceItem;
+	item: WorkspaceItem;
 	label: string;
 };
 
 export type WorkspaceAiContextIcon =
-	| "current-item"
-	| "open-tabs"
-	| "selected-items"
-	| "workspace-item";
+	| WorkspaceAiContextSingleIcon
+	| "selected-items";
+
+export type WorkspaceAiContextSingleIcon = "current-item" | "workspace-item";
 
 export type WorkspaceAiContextScope = {
 	activeItem?: WorkspaceItem;
 	itemsById: ReadonlyMap<string, WorkspaceItem>;
+	// Kept for the future prompt-context payload, but not rendered as chips yet.
 	tabs: WorkspaceTab[];
 	workspaceId: string;
 };
 
 export type WorkspaceAiContextModelInput = {
 	activeItem?: WorkspaceItem;
-	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	selectedItems: WorkspaceItem[];
-	tabs: WorkspaceTab[];
 };
 
 const SELECTED_ITEM_INLINE_LIMIT = 2;
 
 export function getWorkspaceAiContextChips({
 	activeItem,
-	itemsById,
 	selectedItems,
-	tabs,
 }: WorkspaceAiContextModelInput): WorkspaceAiContextChip[] {
 	return [
 		...(activeItem ? [getActiveItemContextChip(activeItem)] : []),
 		...getSelectedItemContextChips(selectedItems),
-		...getOpenTabContextChips({ itemsById, tabs }),
 	];
 }
 
@@ -102,39 +98,6 @@ function getSelectedItemContextChips(
 		item,
 		label: item.name,
 	}));
-}
-
-function getOpenTabContextChips({
-	itemsById,
-	tabs,
-}: {
-	itemsById: ReadonlyMap<string, WorkspaceItem>;
-	tabs: WorkspaceTab[];
-}): WorkspaceAiContextChip[] {
-	if (tabs.length <= 1) {
-		return [];
-	}
-
-	const items = tabs.map((tab) => {
-		const item = tab.viewItemId ? itemsById.get(tab.viewItemId) : undefined;
-
-		return {
-			id: tab.id,
-			label: item?.name ?? tab.title,
-			item,
-		};
-	});
-
-	return [
-		{
-			type: "list",
-			id: "open-tabs",
-			icon: "open-tabs",
-			label: `${tabs.length} tabs`,
-			ariaLabel: `${tabs.length} open workspace tabs`,
-			items,
-		},
-	];
 }
 
 function getWorkspaceItemListContextItem(
