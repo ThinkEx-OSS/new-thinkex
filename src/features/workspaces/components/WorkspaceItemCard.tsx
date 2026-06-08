@@ -251,21 +251,17 @@ export default function WorkspaceItemCard({
 						</span>
 					</WorkspaceItemPreviewControl>
 					<div aria-hidden="true" className="h-full flex-1" />
-					{isFolder ? (
-						<div className="size-8" aria-hidden="true" />
-					) : (
-						<WorkspaceItemActionsMenu
-							item={item}
-							trigger={
-								<WorkspaceItemPreviewControl
-									aria-label={`Open actions for ${item.name}`}
-									onClick={(event) => event.stopPropagation()}
-								/>
-							}
-							onRenameItem={onRenameItem}
-							onDeleteItem={onDeleteItem}
-						/>
-					)}
+					<WorkspaceItemActionsMenu
+						item={item}
+						trigger={
+							<WorkspaceItemPreviewControl
+								aria-label={`Open actions for ${item.name}`}
+								onClick={(event) => event.stopPropagation()}
+							/>
+						}
+						onRenameItem={onRenameItem}
+						onDeleteItem={onDeleteItem}
+					/>
 				</div>
 				<div
 					className="flex items-center justify-center bg-transparent"
