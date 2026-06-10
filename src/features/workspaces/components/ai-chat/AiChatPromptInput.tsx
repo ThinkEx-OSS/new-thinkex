@@ -1,4 +1,4 @@
-import { Bug, Plus } from "lucide-react";
+import { Bug, Mic, Plus } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
 
 import {
@@ -16,7 +16,6 @@ import {
 	PromptInputSelectGroup,
 	PromptInputSelectItem,
 	PromptInputSelectTrigger,
-	PromptInputSelectValue,
 	PromptInputTextarea,
 	PromptInputTools,
 } from "#/components/ai-elements/prompt-input";
@@ -42,10 +41,13 @@ import { cn } from "#/lib/utils";
 const PROMPT_INPUT_GROUP_CLASSNAME =
 	"h-auto flex-col border-border/70 bg-muted/30 shadow-none dark:bg-muted/30";
 const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
-const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5";
-const TOOLBAR_CONTROL_SIZE = "size-9";
-const TOOLBAR_ICON_SIZE = "size-5";
-const TOOLBAR_MUTED_TEXT = "text-muted-foreground";
+const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-0";
+const TOOLBAR_ICON_BUTTON_CLASSNAME =
+	"size-8 text-muted-foreground hover:text-foreground";
+const TOOLBAR_MODEL_TRIGGER_CLASSNAME =
+	"h-8 w-auto border-none px-2 font-normal text-muted-foreground shadow-none hover:text-foreground focus-visible:ring-0 aria-expanded:text-foreground dark:bg-transparent [&>svg:last-child]:hidden";
+const TOOLBAR_ICON_SIZE = "size-4";
+const TOOLBAR_PLUS_ICON_SIZE = "size-4.5";
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
 			const module = await import(
@@ -80,6 +82,12 @@ export default function AiChatPromptInput({
 	const [input, setInput] = useState("");
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const selectedModel =
+		AI_CHAT_MODELS.find((item) => item.id === modelId) ??
+		AI_CHAT_MODELS.find(
+			(item) => item.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+		) ??
+		AI_CHAT_MODELS[0];
 
 	useTypeToFocusPrompt({
 		enabled: status === "ready",
@@ -127,7 +135,7 @@ export default function AiChatPromptInput({
 						placeholder="Ask anything"
 						onChange={(event) => setInput(event.currentTarget.value)}
 						className={cn(
-							"min-h-10 py-1.5 text-base md:text-base",
+							"min-h-10 pt-1.5 pb-0.5 text-base placeholder:text-foreground/45 md:text-base",
 							PROMPT_INPUT_INLINE_PADDING,
 						)}
 					/>
@@ -138,17 +146,15 @@ export default function AiChatPromptInput({
 						<PromptInputActionMenu>
 							<PromptInputActionMenuTrigger
 								aria-label="Add attachments"
-								className={cn(TOOLBAR_CONTROL_SIZE, TOOLBAR_MUTED_TEXT)}
+								className={TOOLBAR_ICON_BUTTON_CLASSNAME}
 							>
-								<Plus className={TOOLBAR_ICON_SIZE} />
+								<Plus className={TOOLBAR_PLUS_ICON_SIZE} />
 							</PromptInputActionMenuTrigger>
 							<PromptInputActionMenuContent>
 								<PromptInputActionAddAttachments />
 							</PromptInputActionMenuContent>
 						</PromptInputActionMenu>
-					</PromptInputTools>
 
-					<div className="ml-auto flex items-center gap-1">
 						<PromptInputSelect
 							onValueChange={(value) => handleModelChange(String(value))}
 							value={modelId}
@@ -157,10 +163,10 @@ export default function AiChatPromptInput({
 								size="sm"
 								className={cn(
 									buttonVariants({ variant: "ghost", size: "sm" }),
-									"h-8 w-auto border-none px-2 shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg:last-child]:hidden",
+									TOOLBAR_MODEL_TRIGGER_CLASSNAME,
 								)}
 							>
-								<PromptInputSelectValue />
+								{selectedModel.name}
 							</PromptInputSelectTrigger>
 							<PromptInputSelectContent side="top" align="end">
 								<PromptInputSelectGroup>
@@ -177,16 +183,27 @@ export default function AiChatPromptInput({
 							<Button
 								variant="ghost"
 								size="icon-sm"
-								className={cn("size-8", TOOLBAR_MUTED_TEXT)}
+								className={TOOLBAR_ICON_BUTTON_CLASSNAME}
 								aria-label="Open AI inspector"
 								disabled={!activeThreadId}
 								onClick={() => setIsInspectorOpen(true)}
 								type="button"
 							>
-								<Bug className="size-4" />
+								<Bug className={TOOLBAR_ICON_SIZE} />
 							</Button>
 						) : null}
+					</PromptInputTools>
 
+					<div className="ml-auto flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							className={TOOLBAR_ICON_BUTTON_CLASSNAME}
+							aria-label="Dictation unavailable"
+							type="button"
+						>
+							<Mic className={TOOLBAR_ICON_SIZE} />
+						</Button>
 						<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
 					</div>
 				</PromptInputFooter>
