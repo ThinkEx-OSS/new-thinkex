@@ -14,6 +14,7 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { ScrollArea } from "#/components/ui/scroll-area";
+import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
 import {
 	useWorkspaceMarqueeSelection,
 	type WorkspaceMarqueeRect,
@@ -96,6 +97,7 @@ export default function WorkspaceContent({
 			<>
 				<WorkspaceItemView
 					item={activeItem}
+					workspaceId={workspaceId}
 					onRenameItem={setRenamingItem}
 					onDeleteItem={openDeleteAlert}
 				/>
@@ -296,13 +298,19 @@ function WorkspaceContentActionDialogs({
 
 function WorkspaceItemView({
 	item,
+	workspaceId,
 	onRenameItem,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
+	workspaceId: string;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
+	if (item.type === "document") {
+		return <DocumentEditorSurface item={item} workspaceId={workspaceId} />;
+	}
+
 	const {
 		Icon: ItemIcon,
 		iconClassName,

@@ -1,4 +1,8 @@
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
+import {
+	createInitialTiptapDocumentJson,
+	stringifyTiptapDocumentJson,
+} from "#/features/workspaces/documents/tiptap-document";
 
 export function getWorkspaceKernelShellPath(input: {
 	id: string;
@@ -14,7 +18,7 @@ export function getWorkspaceKernelShellPath(input: {
 export function getWorkspaceKernelContentMimeType(type: WorkspaceItemType) {
 	switch (type) {
 		case "document":
-			return "text/markdown";
+			return "application/json";
 		case "flashcard":
 		case "quiz":
 			return "application/json";
@@ -31,7 +35,7 @@ export function getInitialWorkspaceKernelContent(
 ) {
 	switch (type) {
 		case "document":
-			return `# ${name}\n`;
+			return stringifyTiptapDocumentJson(createInitialTiptapDocumentJson(name));
 		case "flashcard":
 			return JSON.stringify({ version: 1, cards: [] }, null, 2);
 		case "quiz":
@@ -45,7 +49,7 @@ export function getInitialWorkspaceKernelContent(
 function getContentExtension(type: WorkspaceItemType) {
 	switch (type) {
 		case "document":
-			return "md";
+			return "json";
 		case "flashcard":
 		case "quiz":
 			return "json";

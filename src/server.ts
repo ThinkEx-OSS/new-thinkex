@@ -1,12 +1,14 @@
 import handler from "@tanstack/react-start/server-entry";
 
 import { routeUserAIRequest } from "#/features/workspaces/ai/auth";
+import { routeDocumentSessionRequest } from "#/features/workspaces/documents/document-session-auth";
 import { routeWorkspaceKernelRequest } from "#/features/workspaces/kernel/workspace-kernel-auth";
 
 export {
 	AIThread,
 	UserAIStore,
 } from "#/features/workspaces/ai/user-ai-agents";
+export { DocumentSession } from "#/features/workspaces/documents/document-session";
 export { WorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel";
 
 const isProduction = import.meta.env.PROD;
@@ -84,6 +86,15 @@ export default {
 
 		if (chatResponse) {
 			return chatResponse;
+		}
+
+		const documentSessionResponse = await routeDocumentSessionRequest(
+			request,
+			env,
+		);
+
+		if (documentSessionResponse) {
+			return documentSessionResponse;
 		}
 
 		const workspaceKernelResponse = await routeWorkspaceKernelRequest(

@@ -15,6 +15,7 @@ import {
 	RenameWorkspaceItemDialog,
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
+import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
 import type {
 	WorkspaceItemType,
@@ -104,8 +105,8 @@ export default function WorkspaceContextBar({
 
 	return (
 		<>
-			<div className="flex h-11 items-center justify-between gap-3 bg-workspace-chrome-active px-4 text-sm">
-				<Breadcrumb className="min-w-0">
+			<div className="flex h-11 items-center gap-3 bg-workspace-chrome-active px-4 text-sm">
+				<Breadcrumb className="min-w-0 flex-1">
 					<BreadcrumbList className="flex-nowrap gap-1.5 overflow-hidden sm:gap-1.5">
 						<BreadcrumbItem className="min-w-0">
 							<CrumbButton
@@ -130,14 +131,17 @@ export default function WorkspaceContextBar({
 					</BreadcrumbList>
 				</Breadcrumb>
 
-				<WorkspaceContextActions
-					activeItem={activeItem}
-					createParentId={createParentId}
-					searchHotkey={searchHotkey}
-					onCreateItem={onCreateItem}
-					onSearch={openWorkspaceSearch}
-					onCloseItemView={onCloseItemView}
-				/>
+				<div className="flex min-w-0 shrink-0 items-center gap-1">
+					<WorkspaceItemToolbarSlot activeItemId={activeItem?.id} />
+					<WorkspaceContextActions
+						activeItem={activeItem}
+						createParentId={createParentId}
+						searchHotkey={searchHotkey}
+						onCreateItem={onCreateItem}
+						onSearch={openWorkspaceSearch}
+						onCloseItemView={onCloseItemView}
+					/>
+				</div>
 			</div>
 			<WorkspaceSettingsDialog
 				workspace={workspace}

@@ -53,7 +53,7 @@ WorkspaceKernel(workspaceId)
   lifecycle boundary for future document sessions
 
 DocumentSession(workspaceId:itemId)
-  optional high-frequency collaboration room
+  named Durable Object per document item room
   Tiptap/Yjs document session state
   checkpoints meaningful snapshots back to WorkspaceKernel
 
@@ -216,16 +216,16 @@ WorkspaceKernel(workspaceId)
   compact committed events
 
 DocumentSession(workspaceId:itemId)
-  optional live collaboration room
-  bursty editor protocol
-  periodic checkpoints to WorkspaceKernel
+  normal named Durable Object per document item room
+  Yjs sync and awareness protocol
+  checkpoints document_json snapshots to WorkspaceKernel
 ```
 
-ThinkEx documents use Tiptap/Yjs for WYSIWYG editing and live collaboration. The durable product record should be a kernel-owned `document_json` snapshot. Markdown is a derived projection for import/export, AI context, and search/indexing, not the live collaboration source of truth.
+ThinkEx documents use Tiptap/Yjs for WYSIWYG editing and live collaboration. The durable product record is a kernel-owned `document_json` snapshot. Markdown is only a future derived projection for import/export, AI context, and search/indexing, not the live collaboration source of truth.
 
 Do not store Markdown as equal document truth. If Markdown becomes expensive enough to compute on demand, cache it as a derived artifact keyed by source snapshot id/revision and converter version so stale projections can be ignored or regenerated.
 
-`DocumentSession` should likely start as a `WorkspaceKernel` sub-agent, but this remains an implementation choice while the Tiptap/Yjs runtime is wired and tested.
+`DocumentSession` is a normal named Durable Object keyed by `workspaceId:itemId`. It owns Yjs binary update state and awareness for live cursors. `WorkspaceKernel` remains the durable product truth by receiving periodic `document_json` checkpoints from the session.
 
 ## AI Integration
 
@@ -405,7 +405,7 @@ Next implementation focus:
 
 - expose safe AI read/list/search tools over the kernel
 - add controlled create/edit document tools
-- move documents from the current markdown-backed `writeItem` path to canonical `document_json` snapshots
+- keep document writes on canonical `document_json` snapshots
 - require approval for destructive or bulk AI actions
 - define upload/import pipeline around Shell/R2 bytes and item registry records
 - add extraction/transcription/conversion jobs as durable workflows
@@ -446,13 +446,12 @@ Needed before production migration:
 ## Open Questions
 
 1. Should `WorkspaceKernel` continue extending Cloudflare `Agent`, or should it fall back to a plain Durable Object if SDK type/runtime constraints get in the way?
-2. Should `DocumentSession` be an Agent sub-agent or a normal named Durable Object after wiring the Tiptap/Yjs collaboration runtime?
-3. Should private AI threads remain under `UserAIStore` permanently, or should ThinkEx later add a shared workspace AI thread type?
-4. Should workspace membership stay only in central Postgres, or should the kernel cache membership for low-latency checks?
-5. What undo or recovery path is required before enabling destructive AI writes?
-6. What is the minimum export format for a self-contained workspace bundle?
-7. What should be inline in Durable Object SQLite versus stored as R2-backed snapshot body?
-8. What path rules should the product workspace expose to AI, including escaping slashes in item names and handling duplicate names?
+2. Should private AI threads remain under `UserAIStore` permanently, or should ThinkEx later add a shared workspace AI thread type?
+3. Should workspace membership stay only in central Postgres, or should the kernel cache membership for low-latency checks?
+4. What undo or recovery path is required before enabling destructive AI writes?
+5. What is the minimum export format for a self-contained workspace bundle?
+6. What should be inline in Durable Object SQLite versus stored as R2-backed snapshot body?
+7. What path rules should the product workspace expose to AI, including escaping slashes in item names and handling duplicate names?
 9. When should product AI tools add `cd`/`pwd` convenience on top of absolute paths?
 10. Which Shell operations should be exposed directly to AI inside the private Think workspace, and which product operations must be wrapped in kernel commands?
 11. How should kernel schema migrations run across many workspaces?

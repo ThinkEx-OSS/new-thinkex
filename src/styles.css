@@ -194,6 +194,238 @@
 	.workspace-item-card[data-dnd-placeholder="clone"] > * {
 		pointer-events: none;
 	}
+
+	.workspace-document-prose {
+		--workspace-document-code-background: var(--muted);
+		--workspace-document-highlight: oklch(0.9 0.14 90 / 70%);
+		--workspace-document-highlight-foreground: oklch(0.2 0.05 78);
+		--workspace-document-surface: color-mix(
+			in oklch,
+			var(--muted) 72%,
+			transparent
+		);
+		color: var(--foreground);
+	}
+
+	.dark .workspace-document-prose {
+		--workspace-document-highlight: oklch(0.82 0.12 88 / 82%);
+		--workspace-document-highlight-foreground: var(--foreground);
+	}
+
+	.workspace-document-prose > * + * {
+		margin-top: 0.85rem;
+	}
+
+	.workspace-document-prose h1,
+	.workspace-document-prose h2,
+	.workspace-document-prose h3 {
+		font-weight: 650;
+		line-height: 1.15;
+		text-wrap: balance;
+	}
+
+	.workspace-document-prose h1 {
+		margin-bottom: 1.1rem;
+		font-size: 2.25rem;
+	}
+
+	.workspace-document-prose h2 {
+		margin-top: 1.9rem;
+		font-size: 1.55rem;
+	}
+
+	.workspace-document-prose h3 {
+		margin-top: 1.45rem;
+		font-size: 1.2rem;
+	}
+
+	.workspace-document-prose p {
+		min-height: 1.65rem;
+		line-height: 1.7;
+	}
+
+	.workspace-document-prose ul,
+	.workspace-document-prose ol {
+		padding-left: 1.35rem;
+	}
+
+	.workspace-document-prose ul {
+		list-style: disc;
+	}
+
+	.workspace-document-prose ol {
+		list-style: decimal;
+	}
+
+	.workspace-document-prose ul[data-type="taskList"] {
+		list-style: none;
+		padding-left: 0;
+	}
+
+	.workspace-document-prose li {
+		margin: 0.28rem 0;
+		padding-left: 0.2rem;
+		line-height: 1.65;
+	}
+
+	.workspace-document-prose li[data-type="taskItem"] {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.6rem;
+		padding-left: 0;
+	}
+
+	.workspace-document-prose li[data-type="taskItem"] > label {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 0.38rem;
+	}
+
+	.workspace-document-prose li[data-type="taskItem"] input[type="checkbox"] {
+		width: 0.95rem;
+		height: 0.95rem;
+		accent-color: var(--primary);
+	}
+
+	.workspace-document-prose li[data-type="taskItem"] > div {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.workspace-document-prose li[data-type="taskItem"] > div > p {
+		margin: 0;
+	}
+
+	.workspace-document-prose blockquote {
+		border-left: 2px solid var(--border);
+		padding-left: 1rem;
+		color: var(--muted-foreground);
+	}
+
+	.workspace-document-prose a {
+		color: var(--primary);
+		text-decoration-line: underline;
+		text-decoration-thickness: 0.08em;
+		text-underline-offset: 0.18em;
+	}
+
+	.workspace-document-prose mark {
+		border-radius: var(--radius-sm);
+		background-color: var(--workspace-document-highlight);
+		color: var(--workspace-document-highlight-foreground);
+		padding: 0.05rem 0.12rem;
+	}
+
+	.workspace-document-prose mark code {
+		background: transparent;
+		color: inherit;
+	}
+
+	.workspace-document-prose [data-type="inline-math"] {
+		display: inline-flex;
+		align-items: baseline;
+		border-radius: var(--radius-sm);
+		padding: 0 0.12rem;
+		vertical-align: baseline;
+	}
+
+	.workspace-document-prose [data-type="block-math"] {
+		overflow-x: auto;
+		margin: 0.85rem 0;
+		background: transparent;
+		padding: 0.25rem 0;
+		text-align: center;
+	}
+
+	.workspace-document-prose .tiptap-mathematics-render--editable {
+		cursor: pointer;
+	}
+
+	.workspace-document-prose .inline-math-error,
+	.workspace-document-prose .block-math-error {
+		background: color-mix(in oklch, var(--destructive) 12%, transparent);
+		color: var(--destructive);
+	}
+
+	.workspace-document-prose pre {
+		overflow-x: auto;
+		border-radius: var(--radius-md);
+		background: var(--workspace-document-code-background);
+		padding: 0.9rem 1rem;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.workspace-document-prose code {
+		border-radius: var(--radius-sm);
+		background: var(--workspace-document-code-background);
+		padding: 0.08rem 0.28rem;
+		font-size: 0.9em;
+	}
+
+	.workspace-document-prose pre code {
+		background: transparent;
+		padding: 0;
+	}
+
+	.workspace-document-prose hr {
+		margin: 1.75rem 0;
+		border: 0;
+		border-top: 1px solid var(--border);
+	}
+
+	.workspace-document-prose .tableWrapper {
+		overflow-x: auto;
+		margin: 1.2rem 0;
+	}
+
+	.workspace-document-prose table {
+		width: 100%;
+		min-width: 28rem;
+		border-collapse: collapse;
+		table-layout: fixed;
+	}
+
+	.workspace-document-prose th,
+	.workspace-document-prose td {
+		position: relative;
+		border: 1px solid var(--border);
+		padding: 0.55rem 0.65rem;
+		vertical-align: top;
+	}
+
+	.workspace-document-prose th {
+		background: var(--workspace-document-surface);
+		font-weight: 600;
+	}
+
+	.workspace-document-prose .selectedCell::after {
+		position: absolute;
+		inset: 0;
+		background: color-mix(in oklch, var(--primary) 10%, transparent);
+		content: "";
+		pointer-events: none;
+	}
+
+	.workspace-document-prose .column-resize-handle {
+		position: absolute;
+		top: 0;
+		right: -2px;
+		bottom: -1px;
+		width: 4px;
+		background: var(--primary);
+		pointer-events: none;
+	}
+
+	.workspace-document-prose .is-editor-empty:first-child::before,
+	.workspace-document-prose .is-empty::before {
+		float: left;
+		height: 0;
+		color: var(--muted-foreground);
+		content: attr(data-placeholder);
+		pointer-events: none;
+	}
+
 }
 
 html,

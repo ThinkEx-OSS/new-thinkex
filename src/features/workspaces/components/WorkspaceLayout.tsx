@@ -9,6 +9,7 @@ import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent"
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
+import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
 import { WorkspaceMaximizedPresentation } from "#/features/workspaces/components/WorkspacePresentation";
 import {
@@ -177,62 +178,64 @@ export function WorkspaceShell({
 			onOpenItemInNewTab={openItemInNewTab}
 			onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
 		>
-			<WorkspaceFrame
-				chrome={
-					<WorkspaceTopBar
-						workspace={workspace}
-						itemsById={itemsById}
-						tabs={session.tabs}
-						activeTab={activeTab}
-						contextBar={
-							<WorkspaceContextBar
-								workspace={workspace}
-								activeItem={activeItem}
-								itemsById={itemsById}
+			<WorkspaceItemToolbarProvider>
+				<WorkspaceFrame
+					chrome={
+						<WorkspaceTopBar
+							workspace={workspace}
+							itemsById={itemsById}
+							tabs={session.tabs}
+							activeTab={activeTab}
+							contextBar={
+								<WorkspaceContextBar
+									workspace={workspace}
+									activeItem={activeItem}
+									itemsById={itemsById}
+									onCreateItem={createWorkspaceItem}
+									onCloseItemView={
+										isWorkspaceItemView(activeItem) ? closeItemView : undefined
+									}
+									onNavigateToRoot={openWorkspaceRoot}
+									onNavigateToItem={openItem}
+								/>
+							}
+							presence={realtime}
+							onActivateTab={activateWorkspaceTab}
+							onCloseTab={closeWorkspaceTab}
+							onCloseOtherTabs={closeOtherWorkspaceTabs}
+							onCloseTabsToRight={closeWorkspaceTabsToRight}
+							onCreateRootTab={createWorkspaceTab}
+							onCreateRootTabAfter={createWorkspaceTabAfter}
+							onDuplicateTab={duplicateWorkspaceTab}
+						/>
+					}
+					content={
+						presentation.mode === "split" ? (
+							<WorkspaceSplitPresentation
+								aiContextScope={aiContextScope}
+								panes={presentation.panes}
+								direction={presentation.direction}
+								scopedItems={scopedItems}
 								onCreateItem={createWorkspaceItem}
-								onCloseItemView={
-									isWorkspaceItemView(activeItem) ? closeItemView : undefined
-								}
-								onNavigateToRoot={openWorkspaceRoot}
-								onNavigateToItem={openItem}
+								onOpenItem={openItem}
 							/>
-						}
-						presence={realtime}
-						onActivateTab={activateWorkspaceTab}
-						onCloseTab={closeWorkspaceTab}
-						onCloseOtherTabs={closeOtherWorkspaceTabs}
-						onCloseTabsToRight={closeWorkspaceTabsToRight}
-						onCreateRootTab={createWorkspaceTab}
-						onCreateRootTabAfter={createWorkspaceTabAfter}
-						onDuplicateTab={duplicateWorkspaceTab}
-					/>
-				}
-				content={
-					presentation.mode === "split" ? (
-						<WorkspaceSplitPresentation
-							aiContextScope={aiContextScope}
-							panes={presentation.panes}
-							direction={presentation.direction}
-							scopedItems={scopedItems}
-							onCreateItem={createWorkspaceItem}
-							onOpenItem={openItem}
-						/>
-					) : (
-						<WorkspaceContent
-							items={scopedItems}
-							activeItem={activeItem}
-							workspaceId={workspace.id}
-							onCreateItem={createWorkspaceItem}
-							onOpenItem={openItem}
-						/>
-					)
-				}
-				chatPanel={
-					chatPanelCollapsed || presentationHasChat ? undefined : (
-						<AiChatPanel context={aiContextScope} />
-					)
-				}
-			/>
+						) : (
+							<WorkspaceContent
+								items={scopedItems}
+								activeItem={activeItem}
+								workspaceId={workspace.id}
+								onCreateItem={createWorkspaceItem}
+								onOpenItem={openItem}
+							/>
+						)
+					}
+					chatPanel={
+						chatPanelCollapsed || presentationHasChat ? undefined : (
+							<AiChatPanel context={aiContextScope} />
+						)
+					}
+				/>
+			</WorkspaceItemToolbarProvider>
 		</WorkspaceDragProvider>
 	);
 }

@@ -40,6 +40,10 @@
 			{
 				"name": "WorkspaceKernel",
 				"class_name": "WorkspaceKernel"
+			},
+			{
+				"name": "DocumentSession",
+				"class_name": "DocumentSession"
 			}
 		]
 	},
@@ -51,6 +55,10 @@
 		{
 			"tag": "v3_workspace_kernel",
 			"new_sqlite_classes": ["WorkspaceKernel"]
+		},
+		{
+			"tag": "v4_document_session",
+			"new_sqlite_classes": ["DocumentSession"]
 		}
 	],
 	"hyperdrive": [

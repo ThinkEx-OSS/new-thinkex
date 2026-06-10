@@ -7,6 +7,12 @@ export const workspaceKernelAgentName = "WorkspaceKernel";
 export const workspaceKernelPathPrefix = "/workspace-kernel";
 export const workspaceKernelBasePath = "workspace-kernel";
 export const workspaceKernelRealtimeSegment = "realtime";
+export const documentSessionPathPrefix = "/document-session";
+
+export interface DocumentSessionRouteParams {
+	workspaceId: string;
+	itemId: string;
+}
 
 export function isUserAIRequestPath(pathname: string) {
 	return matchesPathPrefix(pathname, userAIPathPrefix);
@@ -14,6 +20,10 @@ export function isUserAIRequestPath(pathname: string) {
 
 export function isWorkspaceKernelRequestPath(pathname: string) {
 	return pathname.startsWith(`${workspaceKernelPathPrefix}/`);
+}
+
+export function isDocumentSessionRequestPath(pathname: string) {
+	return pathname.startsWith(`${documentSessionPathPrefix}/`);
 }
 
 export function getWorkspaceKernelRouteWorkspaceId(pathname: string) {
@@ -28,8 +38,48 @@ export function getWorkspaceKernelRouteWorkspaceId(pathname: string) {
 	return workspaceId || null;
 }
 
+export function getDocumentSessionRouteParams(pathname: string) {
+	if (!isDocumentSessionRequestPath(pathname)) {
+		return null;
+	}
+
+	const [workspaceId, itemId] = pathname
+		.slice(documentSessionPathPrefix.length + 1)
+		.split("/");
+
+	if (!workspaceId || !itemId) {
+		return null;
+	}
+
+	return {
+		workspaceId: decodeURIComponent(workspaceId),
+		itemId: decodeURIComponent(itemId),
+	} satisfies DocumentSessionRouteParams;
+}
+
 export function getWorkspaceKernelRealtimePath(workspaceId: string) {
 	return `${workspaceId}/${workspaceKernelRealtimeSegment}`;
+}
+
+export function getDocumentSessionRoomName(input: {
+	itemId: string;
+	workspaceId: string;
+}) {
+	return `${input.workspaceId}:${input.itemId}`;
+}
+
+export function getDocumentSessionBaseUrl(workspaceId: string) {
+	if (typeof window === "undefined") {
+		return "";
+	}
+
+	const url = new URL(
+		`${documentSessionPathPrefix}/${encodeURIComponent(workspaceId)}`,
+		window.location.origin,
+	);
+	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+
+	return url.toString();
 }
 
 function matchesPathPrefix(pathname: string, pathPrefix: string) {

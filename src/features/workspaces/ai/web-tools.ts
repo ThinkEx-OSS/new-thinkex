@@ -63,7 +63,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 			inputSchema: readWebPageInputSchema,
 			execute: async ({ action = "markdown", url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
-				const browser = env.BROWSER as BrowserQuickActionBinding;
+				const browser = env.BROWSER as unknown as BrowserQuickActionBinding;
 				const result = await browser.quickAction(action, {
 					url: safeUrl.toString(),
 				});
