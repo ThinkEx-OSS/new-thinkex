@@ -18,6 +18,8 @@
 			"**/vitest.config.ts",
 			"**/drizzle.config.ts",
 			"**/wrangler.jsonc",
+			"!.reference/**/*",
+			"!**/.reference/**/*",
 			"!references/**/*",
 			"!**/references/**/*",
 			"!**/src/styles.css",

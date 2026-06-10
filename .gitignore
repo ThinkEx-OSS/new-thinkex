@@ -24,6 +24,7 @@ coverage
 .firecrawl/
 
 references/
+.reference/
 
 .dev.vars*
 !.dev.vars.example
