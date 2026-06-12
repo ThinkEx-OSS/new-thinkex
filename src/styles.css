@@ -356,6 +356,58 @@
 		line-height: 1.6;
 	}
 
+	.workspace-document-prose pre[data-workspace-code-block] {
+		overflow-x: auto;
+		border: 1px solid var(--border);
+		background: var(--workspace-document-code-background);
+		padding: 0;
+	}
+
+	.workspace-document-prose .workspace-document-code-block {
+		overflow: hidden;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--workspace-document-code-background);
+		padding: 0;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.workspace-document-prose pre[data-workspace-code-block]::before,
+	.workspace-document-prose .workspace-document-code-block-header {
+		position: sticky;
+		left: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		border-bottom: 1px solid var(--border);
+		background: color-mix(in oklch, var(--muted) 80%, transparent);
+		padding: 0.5rem 0.75rem;
+		color: var(--muted-foreground);
+		content: attr(data-language-label);
+		font-size: 0.75rem;
+		line-height: 1rem;
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.workspace-document-prose .workspace-document-code-block-header {
+		content: none;
+		pointer-events: auto;
+		user-select: auto;
+	}
+
+	.dark .workspace-document-prose pre.shiki {
+		background-color: var(--shiki-dark-bg) !important;
+		color: var(--shiki-dark) !important;
+	}
+
+	.dark .workspace-document-prose .workspace-document-code-block.shiki {
+		background-color: var(--shiki-dark-bg) !important;
+		color: var(--shiki-dark) !important;
+	}
+
 	.workspace-document-prose code {
 		border-radius: var(--radius-sm);
 		background: var(--workspace-document-code-background);
@@ -366,6 +418,52 @@
 	.workspace-document-prose pre code {
 		background: transparent;
 		padding: 0;
+	}
+
+	.workspace-document-prose pre[data-workspace-code-block] code {
+		display: block;
+		padding: 1rem;
+	}
+
+	.workspace-document-prose .workspace-document-code-block-body {
+		overflow-x: auto;
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		padding: 0;
+		font-size: inherit;
+		line-height: inherit;
+	}
+
+	.workspace-document-prose .workspace-document-code-block-content {
+		display: block;
+		border-radius: 0;
+		background: transparent;
+		padding: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		white-space: pre;
+	}
+
+	.workspace-document-prose
+		.workspace-document-code-block
+		[data-node-view-content-react] {
+		display: block;
+		background: transparent;
+		font: inherit;
+		white-space: inherit;
+	}
+
+	.dark .workspace-document-prose .shiki span {
+		color: var(--shiki-dark) !important;
+	}
+
+	.dark
+		.workspace-document-prose
+		.workspace-document-code-block.shiki
+		span {
+		color: var(--shiki-dark) !important;
 	}
 
 	.workspace-document-prose hr {
@@ -424,6 +522,21 @@
 		color: var(--muted-foreground);
 		content: attr(data-placeholder);
 		pointer-events: none;
+	}
+
+	.workspace-document-prose
+		.workspace-document-code-block.is-editor-empty::before,
+	.workspace-document-prose
+		.workspace-document-code-block
+		.is-editor-empty::before,
+	.workspace-document-prose .workspace-document-code-block.is-empty::before,
+	.workspace-document-prose .workspace-document-code-block .is-empty::before,
+	.workspace-document-prose .react-renderer.node-codeBlock.is-editor-empty::before,
+	.workspace-document-prose .react-renderer.node-codeBlock.is-empty::before,
+	.workspace-document-prose
+		.react-renderer.node-codeBlock[data-placeholder]::before {
+		display: none !important;
+		content: none !important;
 	}
 
 }

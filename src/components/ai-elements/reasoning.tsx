@@ -1,5 +1,4 @@
 import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
@@ -21,6 +20,7 @@ import {
 } from "#/components/ui/collapsible.tsx";
 import { cn } from "#/lib/utils.ts";
 
+import { MarkdownCodeBlock } from "./code-block";
 import { Shimmer } from "./shimmer";
 
 interface ReasoningContextValue {
@@ -194,7 +194,8 @@ export type ReasoningContentProps = ComponentProps<
 	children: string;
 };
 
-const streamdownPlugins = { cjk, code, math };
+const streamdownPlugins = { cjk, math };
+const streamdownComponents = { code: MarkdownCodeBlock };
 
 export const ReasoningContent = memo(
 	({ className, children, ...props }: ReasoningContentProps) => (
@@ -206,7 +207,9 @@ export const ReasoningContent = memo(
 			)}
 			{...props}
 		>
-			<Streamdown plugins={streamdownPlugins}>{children}</Streamdown>
+			<Streamdown components={streamdownComponents} plugins={streamdownPlugins}>
+				{children}
+			</Streamdown>
 		</CollapsibleContent>
 	),
 );

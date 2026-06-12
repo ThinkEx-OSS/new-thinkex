@@ -130,7 +130,8 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <CodeXml />,
 		label: "Code",
 		active: (editorState) => isStructureBlock(editorState, "codeBlock"),
-		run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
+		run: (editor) =>
+			editor.chain().focus().toggleCodeBlock({ language: "typescript" }).run(),
 	},
 	{
 		id: "horizontal-rule",

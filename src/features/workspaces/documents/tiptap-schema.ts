@@ -1,4 +1,5 @@
-import { getSchema } from "@tiptap/core";
+import { type AnyExtension, getSchema } from "@tiptap/core";
+import CodeBlock from "@tiptap/extension-code-block";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
@@ -10,16 +11,22 @@ import StarterKit from "@tiptap/starter-kit";
 
 export const tiptapDocumentYjsField = "default";
 
-export function getTiptapDocumentSchemaExtensions() {
+export function getTiptapDocumentSchemaExtensions({
+	codeBlock = CodeBlock,
+}: {
+	codeBlock?: AnyExtension;
+} = {}) {
 	return [
 		StarterKit.configure({
 			heading: {
 				levels: [1, 2, 3],
 			},
+			codeBlock: false,
 			link: false,
 			underline: false,
 			undoRedo: false,
 		}),
+		codeBlock,
 		UnderlineExtension,
 		Highlight,
 		Link.configure({

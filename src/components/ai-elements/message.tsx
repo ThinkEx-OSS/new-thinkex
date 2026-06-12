@@ -1,5 +1,4 @@
 import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -22,6 +21,8 @@ import {
 	TooltipTrigger,
 } from "#/components/ui/tooltip.tsx";
 import { cn } from "#/lib/utils.ts";
+
+import { MarkdownCodeBlock } from "./code-block";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 	from: UIMessage["role"];
@@ -312,15 +313,17 @@ export const MessageBranchPage = ({
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-const streamdownPlugins = { cjk, code, math };
+const streamdownPlugins = { cjk, math };
+const streamdownComponents = { code: MarkdownCodeBlock };
 
 export const MessageResponse = memo(
-	({ className, ...props }: MessageResponseProps) => (
+	({ className, components, ...props }: MessageResponseProps) => (
 		<Streamdown
 			className={cn(
 				"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
 				className,
 			)}
+			components={{ ...streamdownComponents, ...components }}
 			plugins={streamdownPlugins}
 			{...props}
 		/>
