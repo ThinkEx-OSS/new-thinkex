@@ -85,6 +85,7 @@ function DocumentEditorInstance({
 
 	const editor = useEditor({
 		immediatelyRender: false,
+		autofocus: "start",
 		enableContentCheck: true,
 		onContentError: ({ disableCollaboration }) => {
 			disableCollaboration();

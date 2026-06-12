@@ -143,9 +143,6 @@ importers:
       katex:
         specifier: ^0.16.46
         version: 0.16.46
-      lib0:
-        specifier: ^0.2.117
-        version: 0.2.117
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.6)
@@ -155,6 +152,9 @@ importers:
       nanoid:
         specifier: ^5.1.11
         version: 5.1.11
+      partyserver:
+        specifier: ^0.5.6
+        version: 0.5.6(@cloudflare/workers-types@4.20260607.1)
       pg:
         specifier: ^8.16.3
         version: 8.20.0
@@ -191,12 +191,12 @@ importers:
       workers-ai-provider:
         specifier: ^3.1.14
         version: 3.1.14(@ai-sdk/provider@3.0.10)(ai@6.0.190(zod@4.4.3))
+      y-partyserver:
+        specifier: ^2.2.0
+        version: 2.2.0(@cloudflare/workers-types@4.20260607.1)(partyserver@0.5.6(@cloudflare/workers-types@4.20260607.1))(yjs@13.6.31)
       y-protocols:
         specifier: ^1.0.7
         version: 1.0.7(yjs@13.6.31)
-      y-websocket:
-        specifier: ^3.0.0
-        version: 3.0.0(yjs@13.6.31)
       yjs:
         specifier: ^13.6.31
         version: 13.6.31
@@ -5544,6 +5544,9 @@ packages:
   lodash-es@4.18.1:
     resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
 
+  lodash.debounce@4.0.8:
+    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
+
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
@@ -7276,17 +7279,18 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
+  y-partyserver@2.2.0:
+    resolution: {integrity: sha512-AIsTEZ3jPicBe3VHO5c/VdSGSaFr0J9cAGj6+sgRL/RnXLTNSkP3oQXyXf1y8hQNeXv/j9zYDT5NnRv2k1eMGA==}
+    peerDependencies:
+      '@cloudflare/workers-types': ^4.20260424.1
+      partyserver: '>=0.2.0 <1.0.0'
+      yjs: ^13.6.14
+
   y-protocols@1.0.7:
     resolution: {integrity: sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     peerDependencies:
       yjs: ^13.0.0
-
-  y-websocket@3.0.0:
-    resolution: {integrity: sha512-mUHy7AzkOZ834T/7piqtlA8Yk6AchqKqcrCXjKW8J1w2lPtRDjz8W5/CvXz9higKAHgKRKqpI3T33YkRFLkPtg==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
-    peerDependencies:
-      yjs: ^13.5.6
 
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
@@ -12361,6 +12365,8 @@ snapshots:
 
   lodash-es@4.18.1: {}
 
+  lodash.debounce@4.0.8: {}
+
   lodash.merge@4.6.2: {}
 
   log-symbols@6.0.0:
@@ -14529,15 +14535,19 @@ snapshots:
 
   xtend@4.0.2: {}
 
+  y-partyserver@2.2.0(@cloudflare/workers-types@4.20260607.1)(partyserver@0.5.6(@cloudflare/workers-types@4.20260607.1))(yjs@13.6.31):
+    dependencies:
+      '@cloudflare/workers-types': 4.20260607.1
+      lib0: 0.2.117
+      lodash.debounce: 4.0.8
+      nanoid: 5.1.11
+      partyserver: 0.5.6(@cloudflare/workers-types@4.20260607.1)
+      y-protocols: 1.0.7(yjs@13.6.31)
+      yjs: 13.6.31
+
   y-protocols@1.0.7(yjs@13.6.31):
     dependencies:
       lib0: 0.2.117
-      yjs: 13.6.31
-
-  y-websocket@3.0.0(yjs@13.6.31):
-    dependencies:
-      lib0: 0.2.117
-      y-protocols: 1.0.7(yjs@13.6.31)
       yjs: 13.6.31
 
   y18n@5.0.8: {}
