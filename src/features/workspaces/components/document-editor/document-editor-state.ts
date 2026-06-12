@@ -152,12 +152,12 @@ function getActiveBlock(editor: Editor): DocumentEditorUiState["block"] {
 		return { kind: "structure", type: "blockMath" };
 	}
 
-	if (editor.isActive("table")) {
-		return { kind: "structure", type: "table" };
-	}
-
 	if (editor.isActive("codeBlock")) {
 		return { kind: "structure", type: "codeBlock" };
+	}
+
+	if (editor.isActive("table")) {
+		return { kind: "structure", type: "table" };
 	}
 
 	if (editor.isActive("bulletList")) {

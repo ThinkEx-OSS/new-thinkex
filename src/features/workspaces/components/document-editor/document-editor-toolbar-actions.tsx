@@ -35,6 +35,7 @@ import type {
 
 export interface DocumentToolbarAction {
 	active?: (editorState: DocumentEditorUiState) => boolean;
+	disabled?: (editorState: DocumentEditorUiState) => boolean;
 	icon?: ReactNode;
 	id: string;
 	label: string;
@@ -47,6 +48,7 @@ export const documentFontSizeActions: DocumentToolbarAction[] = [
 		icon: <Pilcrow />,
 		label: "Paragraph",
 		active: (editorState) => isFontSize(editorState, "16"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setParagraph().run(),
 	},
 	{
@@ -54,6 +56,7 @@ export const documentFontSizeActions: DocumentToolbarAction[] = [
 		icon: <Heading1 />,
 		label: "Heading 1",
 		active: (editorState) => isFontSize(editorState, "32"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setHeading({ level: 1 }).run(),
 	},
 	{
@@ -61,6 +64,7 @@ export const documentFontSizeActions: DocumentToolbarAction[] = [
 		icon: <Heading2 />,
 		label: "Heading 2",
 		active: (editorState) => isFontSize(editorState, "24"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setHeading({ level: 2 }).run(),
 	},
 	{
@@ -68,6 +72,7 @@ export const documentFontSizeActions: DocumentToolbarAction[] = [
 		icon: <Heading3 />,
 		label: "Heading 3",
 		active: (editorState) => isFontSize(editorState, "18"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setHeading({ level: 3 }).run(),
 	},
 ];
@@ -78,6 +83,7 @@ export const documentTextAlignActions: DocumentToolbarAction[] = [
 		icon: <AlignLeft />,
 		label: "Align left",
 		active: (editorState) => editorState.textAlign === "left",
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().unsetTextAlign().run(),
 	},
 	{
@@ -85,6 +91,7 @@ export const documentTextAlignActions: DocumentToolbarAction[] = [
 		icon: <AlignCenter />,
 		label: "Align center",
 		active: (editorState) => editorState.textAlign === "center",
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setTextAlign("center").run(),
 	},
 	{
@@ -92,6 +99,7 @@ export const documentTextAlignActions: DocumentToolbarAction[] = [
 		icon: <AlignRight />,
 		label: "Align right",
 		active: (editorState) => editorState.textAlign === "right",
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setTextAlign("right").run(),
 	},
 	{
@@ -99,6 +107,7 @@ export const documentTextAlignActions: DocumentToolbarAction[] = [
 		icon: <AlignJustify />,
 		label: "Justify",
 		active: (editorState) => editorState.textAlign === "justify",
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setTextAlign("justify").run(),
 	},
 ];
@@ -109,6 +118,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <List />,
 		label: "Bullet",
 		active: (editorState) => isStructureBlock(editorState, "bulletList"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleBulletList().run(),
 	},
 	{
@@ -116,6 +126,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <ListOrdered />,
 		label: "Numbered",
 		active: (editorState) => isStructureBlock(editorState, "orderedList"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleOrderedList().run(),
 	},
 	{
@@ -123,6 +134,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <CheckSquare />,
 		label: "Tasks",
 		active: (editorState) => isStructureBlock(editorState, "taskList"),
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleTaskList().run(),
 	},
 	{
@@ -137,6 +149,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		id: "horizontal-rule",
 		icon: <Minus />,
 		label: "Divider",
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().setHorizontalRule().run(),
 	},
 	{
@@ -144,6 +157,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <Sigma />,
 		label: "Equation",
 		active: (editorState) => isStructureBlock(editorState, "blockMath"),
+		disabled: isCodeBlock,
 		run: setBlockMath,
 	},
 	{
@@ -151,6 +165,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <Table2 />,
 		label: "Table",
 		active: (editorState) => isStructureBlock(editorState, "table"),
+		disabled: isCodeBlock,
 		run: (editor) =>
 			editor
 				.chain()
@@ -166,6 +181,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Bold />,
 		label: "Bold",
 		active: (editorState) => editorState.inlineMarks.bold,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleBold().run(),
 	},
 	{
@@ -173,6 +189,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Italic />,
 		label: "Italic",
 		active: (editorState) => editorState.inlineMarks.italic,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleItalic().run(),
 	},
 	{
@@ -180,6 +197,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Underline />,
 		label: "Underline",
 		active: (editorState) => editorState.inlineMarks.underline,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleUnderline().run(),
 	},
 	{
@@ -187,6 +205,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Strikethrough />,
 		label: "Strikethrough",
 		active: (editorState) => editorState.inlineMarks.strike,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleStrike().run(),
 	},
 	{
@@ -194,6 +213,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Code />,
 		label: "Inline code",
 		active: (editorState) => editorState.inlineMarks.code,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleCode().run(),
 	},
 	{
@@ -201,6 +221,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Highlighter />,
 		label: "Highlight",
 		active: (editorState) => editorState.inlineMarks.highlight,
+		disabled: isCodeBlock,
 		run: (editor) => editor.chain().focus().toggleHighlight().run(),
 	},
 	{
@@ -208,6 +229,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Link2 />,
 		label: "Link",
 		active: (editorState) => editorState.inlineMarks.link,
+		disabled: isCodeBlock,
 		run: setSelectionLink,
 	},
 	{
@@ -215,6 +237,7 @@ export const documentInlineActions: DocumentToolbarAction[] = [
 		icon: <Sigma />,
 		label: "Inline equation",
 		active: (editorState) => editorState.inlineMarks.inlineMath,
+		disabled: isCodeBlock,
 		run: setInlineMath,
 	},
 ];
@@ -299,6 +322,10 @@ function isStructureBlock(
 	return (
 		editorState.block.kind === "structure" && editorState.block.type === type
 	);
+}
+
+export function isCodeBlock(editorState: DocumentEditorUiState) {
+	return isStructureBlock(editorState, "codeBlock");
 }
 
 function setSelectionLink(editor: Editor) {

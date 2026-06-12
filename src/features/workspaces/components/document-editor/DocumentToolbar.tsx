@@ -40,6 +40,7 @@ import {
 	getInlineMarkIcon,
 	getStructureBlockIcon,
 	getTextAlignIcon,
+	isCodeBlock,
 } from "#/features/workspaces/components/document-editor/document-editor-toolbar-actions";
 import { cn } from "#/lib/utils";
 
@@ -135,6 +136,8 @@ function AlignMenu({
 	editor: Editor | null;
 	editorState: DocumentEditorUiState;
 }) {
+	const disabled = !editor || isCodeBlock(editorState);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -144,7 +147,7 @@ function AlignMenu({
 						variant="ghost"
 						size="icon-xs"
 						className={toolbarIconButtonClass}
-						disabled={!editor}
+						disabled={disabled}
 						aria-label="Text alignment"
 					/>
 				}
@@ -173,6 +176,7 @@ function InlineFormatMenu({
 	editorState: DocumentEditorUiState;
 }) {
 	const activeFormat = getActiveInlineFormat(editorState.inlineMarks);
+	const disabled = !editor || isCodeBlock(editorState);
 
 	return (
 		<DropdownMenu>
@@ -186,7 +190,7 @@ function InlineFormatMenu({
 							toolbarIconButtonClass,
 							activeFormat && "text-foreground",
 						)}
-						disabled={!editor}
+						disabled={disabled}
 						aria-label="Text formatting"
 					/>
 				}
@@ -219,13 +223,14 @@ function DocumentMenuAction({
 	editorState: DocumentEditorUiState;
 }) {
 	const active = action.active?.(editorState) ?? false;
+	const disabled = !editor || (action.disabled?.(editorState) ?? false);
 
 	return (
 		<DropdownMenuItem
 			className="[&_svg:not([class*='size-'])]:size-4"
-			disabled={!editor}
+			disabled={disabled}
 			onClick={() => {
-				if (editor) {
+				if (editor && !disabled) {
 					action.run(editor);
 				}
 			}}
