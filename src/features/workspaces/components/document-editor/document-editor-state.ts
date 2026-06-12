@@ -72,15 +72,6 @@ export function useDocumentEditorUiState(editor: Editor | null) {
 	);
 }
 
-export function isActiveStructureBlock(
-	editorState: DocumentEditorUiState,
-	type: DocumentStructureBlock,
-) {
-	return (
-		editorState.block.kind === "structure" && editorState.block.type === type
-	);
-}
-
 export function getActiveInlineFormat(
 	inlineMarks: DocumentEditorUiState["inlineMarks"],
 ): DocumentInlineMark | null {

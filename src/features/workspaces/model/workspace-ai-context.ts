@@ -28,10 +28,6 @@ export type WorkspaceAiContextListItem = {
 	label: string;
 };
 
-export type WorkspaceAiContextIcon =
-	| WorkspaceAiContextSingleIcon
-	| "selected-items";
-
 export type WorkspaceAiContextSingleIcon = "current-item" | "workspace-item";
 
 export type WorkspaceAiContextScope = {
