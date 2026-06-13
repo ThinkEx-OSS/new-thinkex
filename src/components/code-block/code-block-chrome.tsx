@@ -1,6 +1,6 @@
 import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import {
@@ -38,7 +38,7 @@ const codeFileExtensions: Record<string, string> = {
 	yaml: "yaml",
 };
 
-export const getCodeFileExtension = (language: string | null | undefined) =>
+const getCodeFileExtension = (language: string | null | undefined) =>
 	codeFileExtensions[language ?? ""] ?? "txt";
 
 export const CodeBlockHeader = ({
@@ -112,7 +112,7 @@ export const CodeBlockCopyButton = ({
 	const [isCopied, setIsCopied] = useState(false);
 	const timeoutRef = useRef<number | null>(null);
 
-	const copyToClipboard = useCallback(async () => {
+	const copyToClipboard = async () => {
 		if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
 			onError?.(new Error("Clipboard API not available"));
 			return;
@@ -131,7 +131,7 @@ export const CodeBlockCopyButton = ({
 		} catch (error) {
 			onError?.(error as Error);
 		}
-	}, [code, onCopy, onError, timeout]);
+	};
 
 	useEffect(
 		() => () => {
@@ -175,7 +175,7 @@ export const CodeBlockDownloadButton = ({
 	onError,
 	...props
 }: CodeBlockDownloadButtonProps) => {
-	const downloadCode = useCallback(() => {
+	const downloadCode = () => {
 		if (typeof window === "undefined") {
 			onError?.(new Error("Download is not available"));
 			return;
@@ -197,12 +197,12 @@ export const CodeBlockDownloadButton = ({
 			onDownload?.();
 		} catch (error) {
 			onError?.(error as Error);
-		} finally {
-			if (url) {
-				URL.revokeObjectURL(url);
-			}
 		}
-	}, [code, filename, language, onDownload, onError]);
+
+		if (url) {
+			URL.revokeObjectURL(url);
+		}
+	};
 
 	return (
 		<Button

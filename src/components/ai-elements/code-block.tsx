@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { isValidElement, memo, useEffect, useMemo, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import type {
 	BundledLanguage,
 	BundledTheme,
@@ -186,6 +186,7 @@ const highlighterCache = new Map<
 
 // Token cache
 const tokensCache = new Map<string, TokenizedCode>();
+const pendingTokenKeys = new Set<string>();
 
 // Subscribers for async token updates
 const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
@@ -253,6 +254,12 @@ const highlightCode = (
 		subscribers.get(tokensCacheKey)?.add(callback);
 	}
 
+	if (pendingTokenKeys.has(tokensCacheKey)) {
+		return null;
+	}
+
+	pendingTokenKeys.add(tokensCacheKey);
+
 	// Start highlighting in background - fire-and-forget async pattern
 	getHighlighter(language)
 		// oxlint-disable-next-line eslint-plugin-promise(prefer-await-to-then)
@@ -285,74 +292,59 @@ const highlightCode = (
 				}
 				subscribers.delete(tokensCacheKey);
 			}
+			pendingTokenKeys.delete(tokensCacheKey);
 		})
 		// oxlint-disable-next-line eslint-plugin-promise(prefer-await-to-then), eslint-plugin-promise(prefer-await-to-callbacks)
 		.catch((error) => {
 			console.error("Failed to highlight code:", error);
+			pendingTokenKeys.delete(tokensCacheKey);
 			subscribers.delete(tokensCacheKey);
 		});
 
 	return null;
 };
 
-const CodeBlockBody = memo(
-	({
-		tokenized,
-		showLineNumbers,
-		className,
-	}: {
-		tokenized: TokenizedCode;
-		showLineNumbers: boolean;
-		className?: string;
-	}) => {
-		const preStyle = useMemo(
-			() => ({
+function CodeBlockBody({
+	tokenized,
+	showLineNumbers,
+	className,
+}: {
+	tokenized: TokenizedCode;
+	showLineNumbers: boolean;
+	className?: string;
+}) {
+	const keyedLines = addKeysToTokens(tokenized.tokens);
+
+	return (
+		<pre
+			className={cn(
+				"dark:!bg-[var(--shiki-dark-bg)] dark:!text-[var(--shiki-dark)] m-0 p-4 text-sm",
+				className,
+			)}
+			style={{
 				backgroundColor: tokenized.bg,
 				color: tokenized.fg,
-			}),
-			[tokenized.bg, tokenized.fg],
-		);
-
-		const keyedLines = useMemo(
-			() => addKeysToTokens(tokenized.tokens),
-			[tokenized.tokens],
-		);
-
-		return (
-			<pre
+			}}
+		>
+			<code
 				className={cn(
-					"dark:!bg-[var(--shiki-dark-bg)] dark:!text-[var(--shiki-dark)] m-0 p-4 text-sm",
-					className,
+					"font-mono text-sm",
+					showLineNumbers && "[counter-increment:line_0] [counter-reset:line]",
 				)}
-				style={preStyle}
 			>
-				<code
-					className={cn(
-						"font-mono text-sm",
-						showLineNumbers &&
-							"[counter-increment:line_0] [counter-reset:line]",
-					)}
-				>
-					{keyedLines.map((keyedLine) => (
-						<LineSpan
-							key={keyedLine.key}
-							keyedLine={keyedLine}
-							showLineNumbers={showLineNumbers}
-						/>
-					))}
-				</code>
-			</pre>
-		);
-	},
-	(prevProps, nextProps) =>
-		prevProps.tokenized === nextProps.tokenized &&
-		prevProps.showLineNumbers === nextProps.showLineNumbers &&
-		prevProps.className === nextProps.className,
-);
+				{keyedLines.map((keyedLine) => (
+					<LineSpan
+						key={keyedLine.key}
+						keyedLine={keyedLine}
+						showLineNumbers={showLineNumbers}
+					/>
+				))}
+			</code>
+		</pre>
+	);
+}
 
-CodeBlockBody.displayName = "CodeBlockBody";
-
-export const CodeBlockContainer = ({
+const CodeBlockContainer = ({
 	className,
 	language,
 	style,
@@ -373,7 +365,7 @@ export const CodeBlockContainer = ({
 	/>
 );
 
-export const CodeBlockContent = ({
+const CodeBlockContent = ({
 	code,
 	language,
 	showLineNumbers = false,
@@ -382,14 +374,7 @@ export const CodeBlockContent = ({
 	language: CodeBlockLanguage;
 	showLineNumbers?: boolean;
 }) => {
-	// Memoized raw tokens for immediate display
-	const rawTokens = useMemo(() => createRawTokens(code), [code]);
-
-	// Synchronous cache lookup — avoids setState in effect for cached results
-	const syncTokens = useMemo(
-		() => highlightCode(code, language) ?? rawTokens,
-		[code, language, rawTokens],
-	);
+	const syncTokens = highlightCode(code, language) ?? createRawTokens(code);
 
 	const [asyncTokens, setAsyncTokens] = useState<{
 		code: string;
