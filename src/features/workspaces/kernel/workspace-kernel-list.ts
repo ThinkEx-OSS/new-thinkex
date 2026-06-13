@@ -1,4 +1,5 @@
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
+import { normalizeWorkspaceItemName } from "#/features/workspaces/defaults";
 
 export interface ListWorkspaceKernelItemsResult {
 	path: string;
@@ -180,7 +181,7 @@ function joinWorkspacePathSegment(parentPath: string, name: string) {
 }
 
 function toWorkspacePathSegment(name: string) {
-	return name.trim().replaceAll("/", "-") || "Untitled";
+	return normalizeWorkspaceItemName(name);
 }
 
 function normalizeWorkspacePath(path: string) {

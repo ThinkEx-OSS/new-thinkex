@@ -17,6 +17,7 @@ import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedWorkspacesWorkspaceIdRouteImport } from './routes/_protected/workspaces.$workspaceId'
+import { Route as ApiV1WorkspacesWorkspaceIdFileUploadRouteImport } from './routes/api/v1/workspaces.$workspaceId.file-upload'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -58,6 +59,12 @@ const ProtectedWorkspacesWorkspaceIdRoute =
     path: '/workspaces/$workspaceId',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ApiV1WorkspacesWorkspaceIdFileUploadRoute =
+  ApiV1WorkspacesWorkspaceIdFileUploadRouteImport.update({
+    id: '/$workspaceId/file-upload',
+    path: '/$workspaceId/file-upload',
+    getParentRoute: () => ApiV1WorkspacesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,7 +73,8 @@ export interface FileRoutesByFullPath {
   '/home': typeof ProtectedHomeRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,7 +83,8 @@ export interface FileRoutesByTo {
   '/home': typeof ProtectedHomeRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,7 +95,8 @@ export interface FileRoutesById {
   '/_protected/home': typeof ProtectedHomeRoute
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/file-upload'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/file-upload'
   id:
     | '__root__'
     | '/'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/_protected/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/file-upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -125,7 +138,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
+  ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedWorkspacesWorkspaceIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/api/v1/workspaces/$workspaceId/file-upload': {
+      id: '/api/v1/workspaces/$workspaceId/file-upload'
+      path: '/$workspaceId/file-upload'
+      fullPath: '/api/v1/workspaces/$workspaceId/file-upload'
+      preLoaderRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRouteImport
+      parentRoute: typeof ApiV1WorkspacesRoute
+    }
   }
 }
 
@@ -203,13 +223,26 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
   ProtectedRouteChildren,
 )
 
+interface ApiV1WorkspacesRouteChildren {
+  ApiV1WorkspacesWorkspaceIdFileUploadRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
+}
+
+const ApiV1WorkspacesRouteChildren: ApiV1WorkspacesRouteChildren = {
+  ApiV1WorkspacesWorkspaceIdFileUploadRoute:
+    ApiV1WorkspacesWorkspaceIdFileUploadRoute,
+}
+
+const ApiV1WorkspacesRouteWithChildren = ApiV1WorkspacesRoute._addFileChildren(
+  ApiV1WorkspacesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
+  ApiV1WorkspacesRoute: ApiV1WorkspacesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

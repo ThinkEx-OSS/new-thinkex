@@ -15,6 +15,13 @@ export function getWorkspaceKernelShellPath(input: {
 	return `/items/${input.id}/content.${getContentExtension(input.type)}`;
 }
 
+export function getWorkspaceKernelFileShellPath(input: {
+	itemId: string;
+	extension: string;
+}) {
+	return `/items/${input.itemId}/content.${input.extension}`;
+}
+
 export function getWorkspaceKernelContentMimeType(type: WorkspaceItemType) {
 	switch (type) {
 		case "document":

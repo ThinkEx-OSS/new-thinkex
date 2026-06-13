@@ -45,7 +45,9 @@ export function getAvailableWorkspaceItemName(input: {
 	existingNames: Iterable<string>;
 	requestedName?: string;
 }) {
-	const requestedName = input.requestedName?.trim();
+	const requestedName = input.requestedName
+		? normalizeWorkspaceItemName(input.requestedName, "")
+		: "";
 	const baseName = requestedName || getDefaultWorkspaceItemName(input.type);
 	const existingNames = new Set(input.existingNames);
 
@@ -74,6 +76,31 @@ export function getAvailableWorkspaceItemName(input: {
 	}
 
 	return `${baseName} ${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export function normalizeWorkspaceItemName(
+	name: string | null | undefined,
+	fallback = "Untitled",
+) {
+	const normalized =
+		stripControlCharacters(name ?? "")
+			.replace(/[\\/]+/g, "-")
+			.replace(/\s+/g, " ")
+			.trim()
+			.slice(0, 160)
+			.trim() ?? "";
+
+	return normalized || fallback;
+}
+
+function stripControlCharacters(value: string) {
+	return Array.from(value)
+		.filter((character) => {
+			const code = character.charCodeAt(0);
+
+			return code >= 32 && code !== 127;
+		})
+		.join("");
 }
 
 export function createOptimisticWorkspace(

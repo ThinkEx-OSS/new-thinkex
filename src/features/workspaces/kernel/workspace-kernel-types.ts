@@ -59,6 +59,16 @@ export interface WriteWorkspaceKernelItemArgs {
 	clientMutationId?: string | null;
 }
 
+export interface CreateWorkspaceKernelFileFromUploadArgs {
+	parentId?: string | null;
+	fileName: string;
+	fileSize: number;
+	objectKey: string;
+	contentType?: string | null;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
+}
+
 export interface DeleteWorkspaceKernelItemResult {
 	id: string;
 	deletedItemIds: string[];

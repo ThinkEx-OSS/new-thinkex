@@ -50,6 +50,15 @@ interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	createFileFromUpload(input: {
+		parentId?: string | null;
+		fileName: string;
+		fileSize: number;
+		objectKey: string;
+		contentType?: string | null;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
 	renameItem(input: {
 		itemId: string;
 		name: string;
@@ -140,6 +149,36 @@ export async function createWorkspaceKernelItem(
 			parentId: input.parentId ?? null,
 			type: input.type,
 			name: input.name,
+			actorUserId: input.userId,
+			clientMutationId: input.clientMutationId ?? null,
+		});
+	} finally {
+		await dbContext.dispose();
+	}
+}
+
+export async function createWorkspaceFileFromUpload(input: {
+	workspaceId: string;
+	userId: string;
+	parentId?: string | null;
+	fileName: string;
+	fileSize: number;
+	objectKey: string;
+	contentType?: string | null;
+	clientMutationId?: string | null;
+}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+	const dbContext = await createDbContext();
+
+	try {
+		await assertCanMutateWorkspace(dbContext.db, input);
+		const kernel = await getWorkspaceKernel(input.workspaceId);
+
+		return await kernel.createFileFromUpload({
+			parentId: input.parentId ?? null,
+			fileName: input.fileName,
+			fileSize: input.fileSize,
+			objectKey: input.objectKey,
+			contentType: input.contentType ?? null,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

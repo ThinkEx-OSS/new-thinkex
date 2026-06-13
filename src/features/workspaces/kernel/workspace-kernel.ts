@@ -3,6 +3,7 @@ import { Agent, type Connection, type ConnectionContext } from "agents";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
+import { WorkspaceKernelFileCommands } from "#/features/workspaces/kernel/workspace-kernel-file-commands";
 import { WorkspaceKernelItemCommands } from "#/features/workspaces/kernel/workspace-kernel-item-commands";
 import {
 	getWorkspaceKernelPresenceUsers,
@@ -15,6 +16,7 @@ import {
 } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
+	CreateWorkspaceKernelFileFromUploadArgs,
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemResult,
@@ -64,6 +66,13 @@ export class WorkspaceKernel extends Agent<Env> {
 		workspace: this.workspace,
 		workspaceId: () => this.name,
 	});
+	private readonly fileCommands = new WorkspaceKernelFileCommands({
+		events: this.events,
+		r2: this.env.WORKSPACE_KERNEL_FILES,
+		sql: this.kernelSql,
+		store: this.store,
+		workspace: this.workspace,
+	});
 
 	onStart() {
 		initializeWorkspaceKernelStorage(this.kernelSql);
@@ -106,6 +115,12 @@ export class WorkspaceKernel extends Agent<Env> {
 		input: CreateWorkspaceKernelItemArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		return await this.itemCommands.createItem(input);
+	}
+
+	async createFileFromUpload(
+		input: CreateWorkspaceKernelFileFromUploadArgs,
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+		return await this.fileCommands.createFileFromUpload(input);
 	}
 
 	async renameItem(
