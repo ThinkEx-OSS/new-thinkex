@@ -1,5 +1,5 @@
-import { FolderOpen } from "lucide-react";
-import { useState } from "react";
+import { FolderOpen, Upload } from "lucide-react";
+import { type DragEvent, useState } from "react";
 
 import {
 	ContextMenu,
@@ -21,13 +21,13 @@ import {
 } from "#/features/workspaces/components/useWorkspaceMarqueeSelection";
 import { useWorkspaceSelection } from "#/features/workspaces/components/useWorkspaceSelection";
 import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/components/WorkspaceCreateMenu";
+import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import {
 	DeleteWorkspaceItemAlert,
 	RenameWorkspaceItemDialog,
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
-import { WorkspaceNativeFileDropZone } from "#/features/workspaces/components/WorkspaceNativeFileDropZone";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
@@ -40,7 +40,10 @@ import {
 	getWorkspaceBrowseParentId,
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
-import { formatWorkspaceFileSize } from "#/features/workspaces/workspace-file-uploads";
+import {
+	formatWorkspaceFileSize,
+	workspaceFileUploadTypeLabel,
+} from "#/features/workspaces/workspace-file-uploads";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
@@ -66,6 +69,8 @@ export default function WorkspaceContent({
 	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
 	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
 	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
+	const { uploadFiles } = useWorkspaceFileUpload();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = isWorkspaceItemView(activeItem)
 		? []
@@ -93,6 +98,34 @@ export default function WorkspaceContent({
 		setDeletingItem(item);
 		setDeleteAlertOpen(true);
 	};
+	const handleNativeFileDrag = (event: DragEvent<HTMLElement>) => {
+		if (!hasNativeFiles(event.dataTransfer)) {
+			return;
+		}
+
+		event.preventDefault();
+		event.dataTransfer.dropEffect = "copy";
+		setIsNativeFileDropTarget(true);
+	};
+	const handleNativeFileDragLeave = (event: DragEvent<HTMLElement>) => {
+		if (
+			event.relatedTarget instanceof Node &&
+			event.currentTarget.contains(event.relatedTarget)
+		) {
+			return;
+		}
+
+		setIsNativeFileDropTarget(false);
+	};
+	const handleNativeFileDrop = (event: DragEvent<HTMLElement>) => {
+		if (!hasNativeFiles(event.dataTransfer)) {
+			return;
+		}
+
+		event.preventDefault();
+		setIsNativeFileDropTarget(false);
+		uploadFiles(Array.from(event.dataTransfer.files), parentId);
+	};
 
 	if (isWorkspaceItemView(activeItem)) {
 		return (
@@ -118,66 +151,72 @@ export default function WorkspaceContent({
 
 	return (
 		<>
-			<WorkspaceNativeFileDropZone
-				parentId={parentId}
-				className="h-[calc(100vh-5.75rem)]"
-				data-prompt-type-to-focus-surface
-				tabIndex={-1}
-				{...marqueeSurfaceProps}
-			>
-				<ScrollArea className="h-full">
-					<ContextMenu>
-						<ContextMenuTrigger
-							render={
-								<section className="min-h-full space-y-5 px-4 py-3 outline-none" />
-							}
-						>
-							{folders.length > 0 ? (
-								<WorkspaceItemGrid
-									items={folders}
-									allItems={items}
-									selectedItemIds={selectedItemIds}
-									onOpenItem={onOpenItem}
-									onRenameItem={setRenamingItem}
-									onDeleteItem={openDeleteAlert}
-									onSelectionChange={setItemSelected}
-									onItemElementChange={registerItemElement}
-								/>
-							) : null}
-							{nonFolderItems.length > 0 ? (
-								<WorkspaceItemGrid
-									items={nonFolderItems}
-									allItems={items}
-									selectedItemIds={selectedItemIds}
-									onOpenItem={onOpenItem}
-									onRenameItem={setRenamingItem}
-									onDeleteItem={openDeleteAlert}
-									onSelectionChange={setItemSelected}
-									onItemElementChange={registerItemElement}
-								/>
-							) : null}
-							{children.length === 0 ? (
-								<Empty className="border border-dashed bg-muted/20">
-									<EmptyHeader>
-										<EmptyMedia variant="icon">
-											<FolderOpen />
-										</EmptyMedia>
-										<EmptyTitle>No items in this folder</EmptyTitle>
-										<EmptyDescription>
-											Items you add here will appear in this workspace view.
-										</EmptyDescription>
-									</EmptyHeader>
-								</Empty>
-							) : null}
-						</ContextMenuTrigger>
-						<ContextMenuContent className="w-56">
-							<WorkspaceCreateContextMenuContent
-								parentId={parentId}
-								onCreateItem={onCreateItem}
+			<div className="relative h-[calc(100vh-5.75rem)]">
+				<ContextMenu>
+					<ContextMenuTrigger
+						render={
+							<section
+								className="h-full outline-none"
+								aria-label="Workspace content"
+								data-prompt-type-to-focus-surface
+								tabIndex={-1}
+								onDragEnter={handleNativeFileDrag}
+								onDragOver={handleNativeFileDrag}
+								onDragLeave={handleNativeFileDragLeave}
+								onDrop={handleNativeFileDrop}
+								{...marqueeSurfaceProps}
 							/>
-						</ContextMenuContent>
-					</ContextMenu>
-				</ScrollArea>
+						}
+					>
+						<ScrollArea className="h-full">
+							<section className="min-h-full space-y-5 px-4 py-3 outline-none">
+								{folders.length > 0 ? (
+									<WorkspaceItemGrid
+										items={folders}
+										allItems={items}
+										selectedItemIds={selectedItemIds}
+										onOpenItem={onOpenItem}
+										onRenameItem={setRenamingItem}
+										onDeleteItem={openDeleteAlert}
+										onSelectionChange={setItemSelected}
+										onItemElementChange={registerItemElement}
+									/>
+								) : null}
+								{nonFolderItems.length > 0 ? (
+									<WorkspaceItemGrid
+										items={nonFolderItems}
+										allItems={items}
+										selectedItemIds={selectedItemIds}
+										onOpenItem={onOpenItem}
+										onRenameItem={setRenamingItem}
+										onDeleteItem={openDeleteAlert}
+										onSelectionChange={setItemSelected}
+										onItemElementChange={registerItemElement}
+									/>
+								) : null}
+								{children.length === 0 ? (
+									<Empty className="border border-dashed bg-muted/20">
+										<EmptyHeader>
+											<EmptyMedia variant="icon">
+												<FolderOpen />
+											</EmptyMedia>
+											<EmptyTitle>No items in this folder</EmptyTitle>
+											<EmptyDescription>
+												Items you add here will appear in this workspace view.
+											</EmptyDescription>
+										</EmptyHeader>
+									</Empty>
+								) : null}
+							</section>
+						</ScrollArea>
+					</ContextMenuTrigger>
+					<ContextMenuContent className="w-56">
+						<WorkspaceCreateContextMenuContent
+							parentId={parentId}
+							onCreateItem={onCreateItem}
+						/>
+					</ContextMenuContent>
+				</ContextMenu>
 				<WorkspaceSelectionActionBar
 					selectedCount={selectedItems.length}
 					onAskAi={noopWorkspaceSelectionAction}
@@ -186,7 +225,8 @@ export default function WorkspaceContent({
 					onClear={clearSelection}
 				/>
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
-			</WorkspaceNativeFileDropZone>
+				{isNativeFileDropTarget ? <WorkspaceNativeFileDropOverlay /> : null}
+			</div>
 			<WorkspaceContentActionDialogs
 				renamingItem={renamingItem}
 				deletingItem={deletingItem}
@@ -259,6 +299,30 @@ function WorkspaceMarqueeOverlay({
 			}}
 		/>
 	);
+}
+
+function WorkspaceNativeFileDropOverlay() {
+	return (
+		<div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-background/80 p-6 backdrop-blur-[2px]">
+			<div className="flex min-h-40 w-full max-w-md flex-col items-center justify-center gap-3 rounded-md border border-primary/40 border-dashed bg-card/90 px-6 py-8 text-center shadow-lg ring-1 ring-primary/15">
+				<div className="flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+					<Upload className="size-5" aria-hidden="true" />
+				</div>
+				<div className="space-y-1">
+					<p className="font-medium text-foreground text-sm">
+						Drop {workspaceFileUploadTypeLabel} to upload
+					</p>
+					<p className="text-muted-foreground text-xs">
+						Files will be added here.
+					</p>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function hasNativeFiles(dataTransfer: DataTransfer) {
+	return Array.from(dataTransfer.types).includes("Files");
 }
 
 function WorkspaceContentActionDialogs({
