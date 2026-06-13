@@ -68,9 +68,8 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							onClick={async () => {
 								try {
 									await authClient.signOut();
-									await refetch();
 									removeAuthSession(queryClient);
-									await router.invalidate();
+									await Promise.all([refetch(), router.invalidate()]);
 									await navigate({ to: "/" });
 								} catch (error) {
 									toast.error(
@@ -101,9 +100,11 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 								provider: "google",
 								callbackURL,
 							});
-							await refetch();
-							await refreshAuthSession(queryClient);
-							await router.invalidate();
+							await Promise.all([
+								refetch(),
+								refreshAuthSession(queryClient),
+								router.invalidate(),
+							]);
 						} catch (error) {
 							setErrorMessage("Failed to sign in with Google");
 							toast.error(
