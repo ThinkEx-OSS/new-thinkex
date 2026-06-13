@@ -68,10 +68,10 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 		{
 			id: "upload-file",
 			label: "Upload",
-			description: "Soon",
+			description: "PDF",
 			Icon: Upload,
 			iconClassName: "text-rose-600 dark:text-rose-400",
-			disabled: true,
+			disabled: false,
 		},
 		{
 			id: "record-audio",

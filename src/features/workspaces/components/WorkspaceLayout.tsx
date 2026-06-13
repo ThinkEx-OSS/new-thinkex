@@ -8,6 +8,7 @@ import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
+import { WorkspaceFileUploadProvider } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
 import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
@@ -156,8 +157,8 @@ export function WorkspaceShell({
 		workspaceId: workspace.id,
 	};
 
-	if (presentation.mode === "maximized") {
-		return (
+	const presentationContent =
+		presentation.mode === "maximized" ? (
 			<WorkspaceMaximizedPresentation>
 				<WorkspacePaneRenderer
 					aiContextScope={aiContextScope}
@@ -167,75 +168,80 @@ export function WorkspaceShell({
 					onOpenItem={openItem}
 				/>
 			</WorkspaceMaximizedPresentation>
+		) : (
+			<WorkspaceDragProvider
+				items={scopedItems}
+				workspaceId={workspace.id}
+				onMoveItem={moveWorkspaceItemMutation.mutate}
+				onOpenItemInNewTab={openItemInNewTab}
+				onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
+			>
+				<WorkspaceItemToolbarProvider>
+					<WorkspaceFrame
+						chrome={
+							<WorkspaceTopBar
+								workspace={workspace}
+								itemsById={itemsById}
+								tabs={session.tabs}
+								activeTab={activeTab}
+								contextBar={
+									<WorkspaceContextBar
+										workspace={workspace}
+										activeItem={activeItem}
+										itemsById={itemsById}
+										onCreateItem={createWorkspaceItem}
+										onCloseItemView={
+											isWorkspaceItemView(activeItem)
+												? closeItemView
+												: undefined
+										}
+										onNavigateToRoot={openWorkspaceRoot}
+										onNavigateToItem={openItem}
+									/>
+								}
+								presence={realtime}
+								onActivateTab={activateWorkspaceTab}
+								onCloseTab={closeWorkspaceTab}
+								onCloseOtherTabs={closeOtherWorkspaceTabs}
+								onCloseTabsToRight={closeWorkspaceTabsToRight}
+								onCreateRootTab={createWorkspaceTab}
+								onCreateRootTabAfter={createWorkspaceTabAfter}
+								onDuplicateTab={duplicateWorkspaceTab}
+							/>
+						}
+						content={
+							presentation.mode === "split" ? (
+								<WorkspaceSplitPresentation
+									aiContextScope={aiContextScope}
+									panes={presentation.panes}
+									direction={presentation.direction}
+									scopedItems={scopedItems}
+									onCreateItem={createWorkspaceItem}
+									onOpenItem={openItem}
+								/>
+							) : (
+								<WorkspaceContent
+									items={scopedItems}
+									activeItem={activeItem}
+									workspaceId={workspace.id}
+									onCreateItem={createWorkspaceItem}
+									onOpenItem={openItem}
+								/>
+							)
+						}
+						chatPanel={
+							chatPanelCollapsed || presentationHasChat ? undefined : (
+								<AiChatPanel context={aiContextScope} />
+							)
+						}
+					/>
+				</WorkspaceItemToolbarProvider>
+			</WorkspaceDragProvider>
 		);
-	}
 
 	return (
-		<WorkspaceDragProvider
-			items={scopedItems}
-			workspaceId={workspace.id}
-			onMoveItem={moveWorkspaceItemMutation.mutate}
-			onOpenItemInNewTab={openItemInNewTab}
-			onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
-		>
-			<WorkspaceItemToolbarProvider>
-				<WorkspaceFrame
-					chrome={
-						<WorkspaceTopBar
-							workspace={workspace}
-							itemsById={itemsById}
-							tabs={session.tabs}
-							activeTab={activeTab}
-							contextBar={
-								<WorkspaceContextBar
-									workspace={workspace}
-									activeItem={activeItem}
-									itemsById={itemsById}
-									onCreateItem={createWorkspaceItem}
-									onCloseItemView={
-										isWorkspaceItemView(activeItem) ? closeItemView : undefined
-									}
-									onNavigateToRoot={openWorkspaceRoot}
-									onNavigateToItem={openItem}
-								/>
-							}
-							presence={realtime}
-							onActivateTab={activateWorkspaceTab}
-							onCloseTab={closeWorkspaceTab}
-							onCloseOtherTabs={closeOtherWorkspaceTabs}
-							onCloseTabsToRight={closeWorkspaceTabsToRight}
-							onCreateRootTab={createWorkspaceTab}
-							onCreateRootTabAfter={createWorkspaceTabAfter}
-							onDuplicateTab={duplicateWorkspaceTab}
-						/>
-					}
-					content={
-						presentation.mode === "split" ? (
-							<WorkspaceSplitPresentation
-								aiContextScope={aiContextScope}
-								panes={presentation.panes}
-								direction={presentation.direction}
-								scopedItems={scopedItems}
-								onCreateItem={createWorkspaceItem}
-								onOpenItem={openItem}
-							/>
-						) : (
-							<WorkspaceContent
-								items={scopedItems}
-								activeItem={activeItem}
-								workspaceId={workspace.id}
-								onCreateItem={createWorkspaceItem}
-								onOpenItem={openItem}
-							/>
-						)
-					}
-					chatPanel={
-						chatPanelCollapsed || presentationHasChat ? undefined : (
-							<AiChatPanel context={aiContextScope} />
-						)
-					}
-				/>
-			</WorkspaceItemToolbarProvider>
-		</WorkspaceDragProvider>
+		<WorkspaceFileUploadProvider workspaceId={workspace.id}>
+			{presentationContent}
+		</WorkspaceFileUploadProvider>
 	);
 }

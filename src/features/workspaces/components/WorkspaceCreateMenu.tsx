@@ -6,6 +6,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import {
 	workspaceContextMenuRenderer,
 	workspaceDropdownMenuRenderer,
@@ -63,8 +64,14 @@ export function WorkspaceCreateMenuContent({
 }: WorkspaceCreateMenuProps & {
 	renderer?: WorkspaceMenuRenderer;
 }) {
+	const { requestFileUpload } = useWorkspaceFileUpload();
+
 	return renderWorkspaceMenuActions(
-		getWorkspaceCreateMenuActions({ parentId, onCreateItem }),
+		getWorkspaceCreateMenuActions({
+			parentId,
+			onCreateItem,
+			onUploadFile: requestFileUpload,
+		}),
 		renderer,
 	);
 }
@@ -83,7 +90,10 @@ export function WorkspaceCreateContextMenuContent(
 function getWorkspaceCreateMenuActions({
 	parentId,
 	onCreateItem,
-}: WorkspaceCreateMenuProps) {
+	onUploadFile,
+}: WorkspaceCreateMenuProps & {
+	onUploadFile: (parentId: string | null) => void;
+}) {
 	return [
 		...workspaceItemPrimaryCreateActions.map(
 			({ type, label, description, Icon, iconClassName }) => ({
@@ -103,6 +113,8 @@ function getWorkspaceCreateMenuActions({
 				trailing: description,
 				disabled,
 				leading: <Icon className={`size-4 ${iconClassName}`} />,
+				onSelect:
+					id === "upload-file" ? () => onUploadFile(parentId) : undefined,
 			}),
 		),
 		{ kind: "separator" as const, id: "learn-separator" },

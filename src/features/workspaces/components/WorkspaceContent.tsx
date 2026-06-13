@@ -27,6 +27,7 @@ import {
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
+import { WorkspaceNativeFileDropZone } from "#/features/workspaces/components/WorkspaceNativeFileDropZone";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
@@ -39,6 +40,7 @@ import {
 	getWorkspaceBrowseParentId,
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
+import { formatWorkspaceFileSize } from "#/features/workspaces/workspace-file-uploads";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
@@ -116,17 +118,18 @@ export default function WorkspaceContent({
 
 	return (
 		<>
-			<div className="relative h-[calc(100vh-5.75rem)]">
+			<WorkspaceNativeFileDropZone
+				parentId={parentId}
+				className="h-[calc(100vh-5.75rem)]"
+				data-prompt-type-to-focus-surface
+				tabIndex={-1}
+				{...marqueeSurfaceProps}
+			>
 				<ScrollArea className="h-full">
 					<ContextMenu>
 						<ContextMenuTrigger
 							render={
-								<div
-									className="space-y-5 px-4 py-3 outline-none"
-									data-prompt-type-to-focus-surface
-									tabIndex={-1}
-									{...marqueeSurfaceProps}
-								/>
+								<section className="min-h-full space-y-5 px-4 py-3 outline-none" />
 							}
 						>
 							{folders.length > 0 ? (
@@ -183,7 +186,7 @@ export default function WorkspaceContent({
 					onClear={clearSelection}
 				/>
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
-			</div>
+			</WorkspaceNativeFileDropZone>
 			<WorkspaceContentActionDialogs
 				renamingItem={renamingItem}
 				deletingItem={deletingItem}
@@ -316,6 +319,8 @@ function WorkspaceItemView({
 		iconClassName,
 		surfaceClassName,
 	} = getWorkspaceItemDisplay(item);
+	const fileDetails =
+		item.type === "file" ? getWorkspaceFileDetails(item) : null;
 
 	return (
 		<div className="h-[calc(100vh-5.75rem)] p-4">
@@ -330,11 +335,24 @@ function WorkspaceItemView({
 						/>
 					}
 				>
-					<ItemIcon
-						className={cn("size-12", iconClassName)}
-						strokeWidth={1.75}
-						aria-hidden="true"
-					/>
+					<div className="flex flex-col items-center gap-3 text-center">
+						<ItemIcon
+							className={cn("size-12", iconClassName)}
+							strokeWidth={1.75}
+							aria-hidden="true"
+						/>
+						<div className="space-y-1">
+							<h2 className="font-medium text-foreground text-sm">
+								{item.name}
+							</h2>
+							{fileDetails ? (
+								<p className="text-muted-foreground text-xs">
+									{fileDetails.typeLabel}
+									{fileDetails.sizeLabel ? ` / ${fileDetails.sizeLabel}` : ""}
+								</p>
+							) : null}
+						</div>
+					</div>
 				</ContextMenuTrigger>
 				<WorkspaceItemActionsContextMenuContent
 					item={item}
@@ -344,4 +362,30 @@ function WorkspaceItemView({
 			</ContextMenu>
 		</div>
 	);
+}
+
+function getWorkspaceFileDetails(item: WorkspaceItem) {
+	const assetFamily = getMetadataString(item, "assetFamily");
+	const mimeType = getMetadataString(item, "mimeType");
+	const sizeBytes = getMetadataNumber(item, "sizeBytes");
+	const typeLabel =
+		assetFamily === "pdf" || mimeType === "application/pdf" ? "PDF" : "File";
+
+	return {
+		typeLabel,
+		sizeLabel:
+			typeof sizeBytes === "number" ? formatWorkspaceFileSize(sizeBytes) : "",
+	};
+}
+
+function getMetadataString(item: WorkspaceItem, key: string) {
+	const value = item.metadataJson[key];
+
+	return typeof value === "string" ? value : null;
+}
+
+function getMetadataNumber(item: WorkspaceItem, key: string) {
+	const value = item.metadataJson[key];
+
+	return typeof value === "number" ? value : null;
 }

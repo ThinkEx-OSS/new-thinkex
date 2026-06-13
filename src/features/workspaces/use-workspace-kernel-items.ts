@@ -15,7 +15,9 @@ import type {
 	DeleteWorkspaceItemInput,
 	MoveWorkspaceItemInput,
 	RenameWorkspaceItemInput,
+	WorkspaceItemSummary,
 } from "#/features/workspaces/contracts";
+import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	createWorkspaceItemFn,
 	deleteWorkspaceItemFn,
@@ -23,6 +25,7 @@ import {
 	renameWorkspaceItemFn,
 } from "#/features/workspaces/server/functions";
 import { prepareWorkspaceClientMutationInput } from "#/features/workspaces/use-workspace-client-mutation-echo";
+import { apiErrorSchema } from "#/lib/api/contracts";
 import { getErrorMessage } from "#/lib/error-message";
 
 export function useCreateWorkspaceItemMutation() {
@@ -84,6 +87,61 @@ export function useRenameWorkspaceItemMutation() {
 	});
 }
 
+export function useUploadWorkspaceFileMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (input: {
+			workspaceId: string;
+			parentId: string | null;
+			file: File;
+			clientMutationId?: string;
+		}) => {
+			const inputWithClientMutation =
+				prepareWorkspaceClientMutationInput(input);
+			const formData = new FormData();
+
+			formData.set("file", inputWithClientMutation.file);
+			formData.set(
+				"clientMutationId",
+				inputWithClientMutation.clientMutationId,
+			);
+
+			if (inputWithClientMutation.parentId) {
+				formData.set("parentId", inputWithClientMutation.parentId);
+			}
+
+			const uploadResponse = await fetch(
+				`/api/v1/workspaces/${inputWithClientMutation.workspaceId}/file-upload`,
+				{
+					method: "POST",
+					body: formData,
+				},
+			);
+
+			if (!uploadResponse.ok) {
+				throw new Error(await getUploadErrorMessage(uploadResponse));
+			}
+
+			return (await uploadResponse.json()) as WorkspaceCommandResult<WorkspaceItemSummary>;
+		},
+		onMutate: (input) => ({
+			toastId: toast.loading(`Uploading ${input.file.name}...`),
+		}),
+		onSuccess: (command, input, context) => {
+			applyWorkspaceEventToCache(queryClient, command.event);
+			toast.success(`Uploaded ${input.file.name}.`, {
+				id: context.toastId,
+			});
+		},
+		onError: (error, _input, context) => {
+			toast.error(getErrorMessage(error, "Unable to upload file right now."), {
+				id: context?.toastId,
+			});
+		},
+	});
+}
+
 export function useMoveWorkspaceItemMutation() {
 	const moveWorkspaceItem = useServerFn(moveWorkspaceItemFn);
 	const queryClient = useQueryClient();
@@ -134,4 +192,16 @@ export function useDeleteWorkspaceItemMutation() {
 			);
 		},
 	});
+}
+
+async function getUploadErrorMessage(response: Response) {
+	const fallback = "Unable to upload file to workspace storage.";
+
+	try {
+		const payload = apiErrorSchema.safeParse(await response.json());
+
+		return payload.success ? payload.data.message : fallback;
+	} catch {
+		return fallback;
+	}
 }
