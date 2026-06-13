@@ -14,6 +14,12 @@ import type {
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
+interface PresenceState {
+	status: ConnectionStatus;
+	users: WorkspacePresenceUser[];
+	workspaceId: string;
+}
+
 interface UseWorkspaceRealtimeInput {
 	workspaceId: string;
 	lastSeenRevision?: number;
@@ -34,6 +40,14 @@ function parseServerMessage(data: unknown) {
 	}
 }
 
+function getInitialPresenceState(workspaceId: string): PresenceState {
+	return {
+		status: "connecting",
+		users: [],
+		workspaceId,
+	};
+}
+
 export function useWorkspaceRealtime({
 	workspaceId,
 	lastSeenRevision,
@@ -41,11 +55,14 @@ export function useWorkspaceRealtime({
 	onReconnect,
 	onRevisionGap,
 }: UseWorkspaceRealtimeInput) {
-	const [users, setUsers] = useState<WorkspacePresenceUser[]>([]);
-	const [status, setStatus] = useState<ConnectionStatus>("connecting");
+	const [presence, setPresence] = useState(() =>
+		getInitialPresenceState(workspaceId),
+	);
 	const hasConnectedRef = useRef(false);
+	const connectionWorkspaceRef = useRef(workspaceId);
 	const lastSeenRevisionRef = useRef(lastSeenRevision ?? 0);
 	const latestRevisionInputRef = useRef(lastSeenRevision ?? 0);
+	const revisionWorkspaceRef = useRef(workspaceId);
 	const onEventRef = useRef(onEvent);
 	const onReconnectRef = useRef(onReconnect);
 	const onRevisionGapRef = useRef(onRevisionGap);
@@ -56,18 +73,20 @@ export function useWorkspaceRealtime({
 		onRevisionGapRef.current = onRevisionGap;
 	}, [onEvent, onReconnect, onRevisionGap]);
 
+	let currentPresence = presence;
+	if (presence.workspaceId !== workspaceId) {
+		currentPresence = getInitialPresenceState(workspaceId);
+		setPresence(currentPresence);
+	}
+
 	useEffect(() => {
-		if (!workspaceId) {
+		if (revisionWorkspaceRef.current !== workspaceId) {
+			revisionWorkspaceRef.current = workspaceId;
+			latestRevisionInputRef.current = lastSeenRevision ?? 0;
+			lastSeenRevisionRef.current = lastSeenRevision ?? 0;
 			return;
 		}
 
-		hasConnectedRef.current = false;
-		lastSeenRevisionRef.current = latestRevisionInputRef.current;
-		setStatus("connecting");
-		setUsers([]);
-	}, [workspaceId]);
-
-	useEffect(() => {
 		if (lastSeenRevision === undefined) {
 			return;
 		}
@@ -77,26 +96,42 @@ export function useWorkspaceRealtime({
 			lastSeenRevisionRef.current,
 			lastSeenRevision,
 		);
-	}, [lastSeenRevision]);
+	}, [lastSeenRevision, workspaceId]);
 
 	const handleOpen = useCallback(() => {
-		setStatus("connected");
+		if (connectionWorkspaceRef.current !== workspaceId) {
+			connectionWorkspaceRef.current = workspaceId;
+			hasConnectedRef.current = false;
+		}
+
+		setPresence((current) => ({
+			...current,
+			status: "connected",
+			workspaceId,
+		}));
 
 		if (hasConnectedRef.current) {
 			onReconnectRef.current?.();
 		}
 
 		hasConnectedRef.current = true;
-	}, []);
+	}, [workspaceId]);
 
 	const handleClose = useCallback(() => {
-		setStatus("disconnected");
-		setUsers([]);
-	}, []);
+		setPresence({
+			status: "disconnected",
+			users: [],
+			workspaceId,
+		});
+	}, [workspaceId]);
 
 	const handleError = useCallback(() => {
-		setStatus("disconnected");
-	}, []);
+		setPresence((current) => ({
+			...current,
+			status: "disconnected",
+			workspaceId,
+		}));
+	}, [workspaceId]);
 
 	const handleMessage = useCallback(
 		(event: MessageEvent) => {
@@ -106,7 +141,11 @@ export function useWorkspaceRealtime({
 				message?.type === "presence.snapshot" &&
 				message.workspaceId === workspaceId
 			) {
-				setUsers(message.users);
+				setPresence((current) => ({
+					...current,
+					users: message.users,
+					workspaceId,
+				}));
 			}
 
 			if (
@@ -146,9 +185,9 @@ export function useWorkspaceRealtime({
 
 	return useMemo(
 		() => ({
-			users,
-			status,
+			users: currentPresence.users,
+			status: currentPresence.status,
 		}),
-		[status, users],
+		[currentPresence.status, currentPresence.users],
 	);
 }

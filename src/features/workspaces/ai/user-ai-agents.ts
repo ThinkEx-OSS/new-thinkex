@@ -157,11 +157,11 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async getThreadInspectorSnapshot(
 		threadId: string,
 	): Promise<AIInspectorSnapshot> {
-		await this._requireThreadMeta(threadId);
-
 		if (!isAIInspectorEnabled()) {
 			return { isEnabled: false, threadId, events: [] };
 		}
+
+		await this._requireThreadMeta(threadId);
 
 		const thread = await this.subAgent(AIThread, threadId);
 		return thread.getInspectorSnapshot();
@@ -249,11 +249,15 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	private _refreshState() {
 		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
+		const threads: AIThreadSummary[] = [];
 
-		const threads = this._getActiveThreadMetaRows()
-			.filter((row) => threadIds.has(row.id))
-			.map(mapThreadMetaRow)
-			.sort(compareThreadRecentFirst);
+		for (const row of this._getActiveThreadMetaRows()) {
+			if (threadIds.has(row.id)) {
+				threads.push(mapThreadMetaRow(row));
+			}
+		}
+
+		threads.sort(compareThreadRecentFirst);
 
 		this.setState({ ...this.state, isLoaded: true, threads });
 	}
@@ -277,13 +281,21 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	private _getEmptyThreadSummary(workspaceId: string) {
 		const registry = this.listSubAgents(AIThread);
 		const threadIds = new Set(registry.map((entry) => entry.name));
-		const thread = this._getActiveThreadMetaRows()
-			.filter(
-				(row) =>
-					row.workspace_id === workspaceId && row.last_user_message_at === null,
-			)
-			.sort((left, right) => right.created_at - left.created_at)
-			.find((row) => threadIds.has(row.id));
+		let thread: AIThreadMetaRow | null = null;
+
+		for (const row of this._getActiveThreadMetaRows()) {
+			if (
+				row.workspace_id !== workspaceId ||
+				row.last_user_message_at !== null ||
+				!threadIds.has(row.id)
+			) {
+				continue;
+			}
+
+			if (!thread || row.created_at > thread.created_at) {
+				thread = row;
+			}
+		}
 
 		return thread ? mapThreadMetaRow(thread) : null;
 	}

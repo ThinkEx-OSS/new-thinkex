@@ -77,13 +77,17 @@ export function normalizeText(value: unknown): string {
 		return "";
 	}
 
-	return value
-		.map((part) => {
-			const record = asRecord(part);
-			return getString(record.text) ?? "";
-		})
-		.filter(Boolean)
-		.join("\n");
+	const textParts: string[] = [];
+
+	for (const part of value) {
+		const text = getString(asRecord(part).text);
+
+		if (text) {
+			textParts.push(text);
+		}
+	}
+
+	return textParts.join("\n");
 }
 
 export function getStepNumber(

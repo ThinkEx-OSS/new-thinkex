@@ -126,11 +126,15 @@ function EmptyAssistantResponse({
 }
 
 function getCopyableMessageText(message: AiChatMessage) {
-	return message.parts
-		.filter((part) => part.type === "text")
-		.map((part) => part.text)
-		.join("\n\n")
-		.trim();
+	const textParts: string[] = [];
+
+	for (const part of message.parts) {
+		if (part.type === "text") {
+			textParts.push(part.text);
+		}
+	}
+
+	return textParts.join("\n\n").trim();
 }
 
 async function copyTextToClipboard(text: string) {

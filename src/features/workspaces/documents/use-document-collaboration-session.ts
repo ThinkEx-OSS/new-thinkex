@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { WebsocketProvider } from "y-partyserver/provider";
 import * as Y from "yjs";
 
@@ -33,6 +33,7 @@ interface CachedDocumentCollaborationSession
 	destroyTimer: ReturnType<typeof setTimeout> | null;
 	key: string;
 	lastUsedAt: number;
+	publicSession: DocumentCollaborationSession | null;
 	refs: number;
 	subscribe(listener: () => void): () => void;
 	subscribers: Set<() => void>;
@@ -45,37 +46,60 @@ const documentSessionCache = new Map<
 
 export function useDocumentCollaborationSession(input: {
 	itemId: string;
-	user: DocumentCollaborationUser | null;
+	userId: string | null;
+	userImage?: string | null;
+	userName: string | null;
 	workspaceId: string;
 }) {
-	const [session, setSession] = useState<DocumentCollaborationSession | null>(
-		null,
-	);
-	const { itemId, user, workspaceId } = input;
+	const { itemId, userId, userImage, userName, workspaceId } = input;
+	const sessionKey =
+		userId && userName
+			? getDocumentSessionCacheKey({ itemId, workspaceId })
+			: null;
 
-	useEffect(() => {
-		if (!user) {
-			setSession(null);
-			return;
+	const subscribe = useCallback(
+		(listener: () => void) => {
+			if (!userId || !userName) {
+				return () => {};
+			}
+
+			const cachedSession = acquireDocumentSession({
+				itemId,
+				user: {
+					id: userId,
+					image: userImage ?? null,
+					name: userName,
+				},
+				workspaceId,
+			});
+			const unsubscribe = cachedSession.subscribe(listener);
+
+			queueMicrotask(listener);
+
+			return () => {
+				unsubscribe();
+				releaseDocumentSession(cachedSession);
+			};
+		},
+		[itemId, userId, userImage, userName, workspaceId],
+	);
+
+	const getSnapshot = useCallback(() => {
+		if (!userId || !userName) {
+			return null;
 		}
 
-		const cachedSession = acquireDocumentSession({ itemId, user, workspaceId });
-		const updateSession = () => {
-			setSession(cachedSession.ready ? getPublicSession(cachedSession) : null);
-		};
-		const unsubscribe = cachedSession.subscribe(updateSession);
+		return sessionKey
+			? (documentSessionCache.get(sessionKey)?.publicSession ?? null)
+			: null;
+	}, [sessionKey, userId, userName]);
 
-		updateSession();
-
-		return () => {
-			unsubscribe();
-			releaseDocumentSession(cachedSession);
-		};
-	}, [itemId, user, workspaceId]);
+	const session = useSyncExternalStore(subscribe, getSnapshot, () => null);
 
 	return session?.workspaceId === input.workspaceId &&
 		session.itemId === input.itemId &&
-		input.user &&
+		input.userId &&
+		input.userName &&
 		session.ready
 		? session
 		: null;
@@ -151,6 +175,7 @@ function createCachedDocumentSession(input: {
 		key: input.key,
 		lastUsedAt: Date.now(),
 		provider: input.provider,
+		publicSession: null,
 		ready: input.provider.synced,
 		refs: 1,
 		status: input.provider.wsconnected ? "connected" : "connecting",
@@ -164,12 +189,15 @@ function createCachedDocumentSession(input: {
 		workspaceId: input.workspaceId,
 		ydoc: input.ydoc,
 	};
+	session.publicSession = session.ready ? getPublicSession(session) : null;
 	const handleStatus = (event: { status: DocumentCollaborationStatus }) => {
 		session.status = event.status;
+		session.publicSession = session.ready ? getPublicSession(session) : null;
 		notifyDocumentSessionSubscribers(session);
 	};
 	const handleSync = (synced: boolean) => {
 		session.ready ||= synced;
+		session.publicSession = session.ready ? getPublicSession(session) : null;
 		notifyDocumentSessionSubscribers(session);
 	};
 

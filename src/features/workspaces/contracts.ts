@@ -70,19 +70,19 @@ export const workspaceItemSummarySchema = z.object({
 });
 
 export const createWorkspaceItemInputSchema = z.object({
-	id: z.string().uuid().optional(),
+	id: z.uuid().optional(),
 	workspaceId: z.string().min(1),
 	parentId: z.string().min(1).nullable().optional(),
 	type: workspaceItemTypeSchema,
 	name: z.string().trim().min(1).max(160).optional(),
-	clientMutationId: z.string().uuid().optional(),
+	clientMutationId: z.uuid().optional(),
 });
 
 export const renameWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
 	name: z.string().trim().min(1).max(160),
-	clientMutationId: z.string().uuid().optional(),
+	clientMutationId: z.uuid().optional(),
 });
 
 export const moveWorkspaceItemInputSchema = z.object({
@@ -90,17 +90,17 @@ export const moveWorkspaceItemInputSchema = z.object({
 	itemId: z.string().min(1),
 	parentId: z.string().min(1).nullable().optional(),
 	sortOrder: z.number().int().optional(),
-	clientMutationId: z.string().uuid().optional(),
+	clientMutationId: z.uuid().optional(),
 });
 
 export const deleteWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
-	clientMutationId: z.string().uuid().optional(),
+	clientMutationId: z.uuid().optional(),
 });
 
 export const createWorkspaceInputSchema = z.object({
-	id: z.string().uuid().optional(),
+	id: z.uuid().optional(),
 	name: z.string().trim().min(1).max(120).optional(),
 	color: workspaceColorSchema.nullable().optional(),
 });

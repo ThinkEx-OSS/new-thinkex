@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, notFound } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import { workspacePageQueryOptions } from "#/features/workspaces/query-options";
 import { useRecordWorkspaceOpenedMutation } from "#/features/workspaces/use-record-workspace-opened";
@@ -17,20 +17,20 @@ export default function WorkspacePageRoute() {
 		}),
 		structuralSharing: true,
 	});
-	const recordedWorkspaceIds = useRef(new Set<string>());
+	const [recordedWorkspaceIds] = useState(() => new Set<string>());
 	const recordWorkspaceOpenedMutation = useRecordWorkspaceOpenedMutation();
 	const { data: page } = useSuspenseQuery(
 		workspacePageQueryOptions(workspaceId),
 	);
 
 	useEffect(() => {
-		if (recordedWorkspaceIds.current.has(workspaceId)) {
+		if (recordedWorkspaceIds.has(workspaceId)) {
 			return;
 		}
 
-		recordedWorkspaceIds.current.add(workspaceId);
+		recordedWorkspaceIds.add(workspaceId);
 		recordWorkspaceOpenedMutation.mutate({ workspaceId });
-	}, [recordWorkspaceOpenedMutation, workspaceId]);
+	}, [recordWorkspaceOpenedMutation, recordedWorkspaceIds, workspaceId]);
 
 	if (!page) {
 		throw notFound({ data: { resource: "workspace" } });

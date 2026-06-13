@@ -1,17 +1,20 @@
+import type { Editor } from "@tiptap/react";
 import {
 	createContext,
 	type Dispatch,
 	type ReactNode,
 	type SetStateAction,
-	useContext,
+	use,
 	useEffect,
-	useMemo,
 	useState,
 } from "react";
 
+import { TooltipProvider } from "#/components/ui/tooltip";
+import { DocumentToolbar } from "#/features/workspaces/components/document-editor/DocumentToolbar";
+
 interface WorkspaceItemToolbarRegistration {
+	editor: Editor | null;
 	itemId: string;
-	toolbar: ReactNode;
 }
 
 interface WorkspaceItemToolbarContextValue {
@@ -31,20 +34,19 @@ export function WorkspaceItemToolbarProvider({
 }) {
 	const [registration, setRegistration] =
 		useState<WorkspaceItemToolbarRegistration | null>(null);
-	const value = useMemo(
-		() => ({ registration, setRegistration }),
-		[registration],
-	);
 
 	return (
-		<WorkspaceItemToolbarContext value={value}>
+		<WorkspaceItemToolbarContext value={{ registration, setRegistration }}>
 			{children}
 		</WorkspaceItemToolbarContext>
 	);
 }
 
-export function useWorkspaceItemToolbar(itemId: string, toolbar: ReactNode) {
-	const context = useContext(WorkspaceItemToolbarContext);
+export function useDocumentEditorToolbar(
+	itemId: string,
+	editor: Editor | null,
+) {
+	const context = use(WorkspaceItemToolbarContext);
 	const setRegistration = context?.setRegistration;
 
 	useEffect(() => {
@@ -52,13 +54,13 @@ export function useWorkspaceItemToolbar(itemId: string, toolbar: ReactNode) {
 			return;
 		}
 
-		const registration = { itemId, toolbar };
+		const registration = { editor, itemId };
 		setRegistration(registration);
 
 		return () => {
 			setRegistration((current) => (current === registration ? null : current));
 		};
-	}, [itemId, setRegistration, toolbar]);
+	}, [editor, itemId, setRegistration]);
 }
 
 export function WorkspaceItemToolbarSlot({
@@ -66,7 +68,7 @@ export function WorkspaceItemToolbarSlot({
 }: {
 	activeItemId?: string;
 }) {
-	const context = useContext(WorkspaceItemToolbarContext);
+	const context = use(WorkspaceItemToolbarContext);
 	const registration = context?.registration;
 
 	if (!activeItemId || registration?.itemId !== activeItemId) {
@@ -75,7 +77,9 @@ export function WorkspaceItemToolbarSlot({
 
 	return (
 		<div className="flex min-w-0 shrink-0 items-center overflow-hidden">
-			{registration.toolbar}
+			<TooltipProvider>
+				<DocumentToolbar editor={registration.editor} />
+			</TooltipProvider>
 		</div>
 	);
 }

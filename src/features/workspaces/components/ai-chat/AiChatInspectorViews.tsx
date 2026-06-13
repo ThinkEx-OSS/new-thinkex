@@ -201,12 +201,14 @@ function RawPanel({ events }: { events: AIInspectorEvent[] }) {
 	);
 }
 
+const inspectorTimeFormatter = new Intl.DateTimeFormat(undefined, {
+	hour: "numeric",
+	minute: "2-digit",
+	second: "2-digit",
+});
+
 function formatInspectorTime(timestamp: number) {
-	return new Intl.DateTimeFormat(undefined, {
-		hour: "numeric",
-		minute: "2-digit",
-		second: "2-digit",
-	}).format(new Date(timestamp));
+	return inspectorTimeFormatter.format(new Date(timestamp));
 }
 
 function formatDuration(run: AIInspectorRunView) {

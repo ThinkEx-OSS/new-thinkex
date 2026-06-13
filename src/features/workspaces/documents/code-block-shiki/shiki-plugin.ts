@@ -303,6 +303,10 @@ export function ShikiPlugin({
 					this.activeLoadKey = loadKey;
 
 					try {
+						if (this.destroyed || view.isDestroyed) {
+							return;
+						}
+
 						const didLoad = await initHighlighter({
 							customThemes: customThemes ?? undefined,
 							defaultLanguage,

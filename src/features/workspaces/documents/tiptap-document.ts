@@ -12,11 +12,10 @@ export interface TiptapDocumentJson {
 }
 
 export const tiptapDocumentJsonSchema = z
-	.object({
+	.looseObject({
 		type: z.literal("doc"),
 		content: z.array(jsonValueSchema).optional(),
 	})
-	.passthrough()
 	.transform((value) => normalizeTiptapDocumentJson(value));
 
 export function createInitialTiptapDocumentJson(

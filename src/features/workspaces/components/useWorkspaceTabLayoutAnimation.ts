@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { WORKSPACE_SORTABLE_TAB_TRANSITION } from "#/features/workspaces/components/workspace-tab-motion";
 
@@ -15,22 +15,22 @@ export function useWorkspaceTabLayoutAnimation(input: {
 }) {
 	const { itemKeys, enabled } = input;
 	const itemKeySignature = itemKeys.join("\u0000");
-	const elementsRef = useRef(new Map<string, HTMLDivElement>());
-	const rectsRef = useRef(new Map<string, DOMRect>());
-	const animationsRef = useRef(new Map<string, Animation>());
+	const [elements] = useState(() => new Map<string, HTMLDivElement>());
+	const previousRectsRef = useRef<Map<string, DOMRect> | null>(null);
+	const [animations] = useState(() => new Map<string, Animation>());
 
 	const setItemElement = useCallback<WorkspaceTabLayoutElementHandler>(
 		(key, element) => {
 			if (element) {
-				elementsRef.current.set(key, element);
+				elements.set(key, element);
 				return;
 			}
 
-			elementsRef.current.delete(key);
-			animationsRef.current.get(key)?.cancel();
-			animationsRef.current.delete(key);
+			elements.delete(key);
+			animations.get(key)?.cancel();
+			animations.delete(key);
 		},
-		[],
+		[animations, elements],
 	);
 
 	// dnd-kit animates real sortable tab moves; this FLIP pass covers target-side projections that are not sortable sources.
@@ -39,16 +39,15 @@ export function useWorkspaceTabLayoutAnimation(input: {
 			? itemKeySignature.split("\u0000")
 			: [];
 		const nextRects = new Map<string, DOMRect>();
-		const activeAnimations = animationsRef.current;
 
-		for (const animation of activeAnimations.values()) {
+		for (const animation of animations.values()) {
 			animation.cancel();
 		}
 
-		activeAnimations.clear();
+		animations.clear();
 
 		for (const key of currentKeys) {
-			const element = elementsRef.current.get(key);
+			const element = elements.get(key);
 
 			if (element) {
 				nextRects.set(key, element.getBoundingClientRect());
@@ -56,12 +55,14 @@ export function useWorkspaceTabLayoutAnimation(input: {
 		}
 
 		if (prefersReducedWorkspaceMotion() || !enabled) {
-			rectsRef.current = nextRects;
+			previousRectsRef.current = nextRects;
 			return;
 		}
 
+		const previousRects = previousRectsRef.current;
+
 		for (const [key, nextRect] of nextRects) {
-			const previousRect = rectsRef.current.get(key);
+			const previousRect = previousRects?.get(key);
 
 			if (!previousRect) {
 				continue;
@@ -77,7 +78,7 @@ export function useWorkspaceTabLayoutAnimation(input: {
 				continue;
 			}
 
-			const element = elementsRef.current.get(key);
+			const element = elements.get(key);
 
 			if (!element || typeof element.animate !== "function") {
 				continue;
@@ -91,18 +92,18 @@ export function useWorkspaceTabLayoutAnimation(input: {
 				WORKSPACE_SORTABLE_TAB_TRANSITION,
 			);
 
-			activeAnimations.set(key, animation);
+			animations.set(key, animation);
 			void animation.finished
 				.catch(() => undefined)
 				.then(() => {
-					if (activeAnimations.get(key) === animation) {
-						activeAnimations.delete(key);
+					if (animations.get(key) === animation) {
+						animations.delete(key);
 					}
 				});
 		}
 
-		rectsRef.current = nextRects;
-	}, [itemKeySignature, enabled]);
+		previousRectsRef.current = nextRects;
+	}, [animations, elements, itemKeySignature, enabled]);
 
 	return setItemElement;
 }

@@ -34,6 +34,22 @@ const workspaceColors: Record<WorkspaceColor, { bg: string; text: string }> = {
 		text: "text-emerald-600 dark:text-emerald-400",
 	},
 };
+const workspaceRecencyTimeFormatter = new Intl.DateTimeFormat(undefined, {
+	hour: "numeric",
+	minute: "2-digit",
+});
+const workspaceRecencyDateFormatter = new Intl.DateTimeFormat(undefined, {
+	month: "short",
+	day: "numeric",
+});
+const workspaceRecencyDateWithYearFormatter = new Intl.DateTimeFormat(
+	undefined,
+	{
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	},
+);
 
 export const workspaceIconOptions = [
 	{ value: "compass", label: "Compass", Icon: Compass },
@@ -84,10 +100,7 @@ export function formatWorkspaceRecency(timestamp: string, now = new Date()) {
 	}
 
 	if (isSameLocalDay(date, now)) {
-		return new Intl.DateTimeFormat(undefined, {
-			hour: "numeric",
-			minute: "2-digit",
-		}).format(date);
+		return workspaceRecencyTimeFormatter.format(date);
 	}
 
 	const dayDelta = getLocalDayDelta(date, now);
@@ -96,11 +109,9 @@ export function formatWorkspaceRecency(timestamp: string, now = new Date()) {
 		return `${dayDelta} ${dayDelta === 1 ? "day" : "days"} ago`;
 	}
 
-	return new Intl.DateTimeFormat(undefined, {
-		month: "short",
-		day: "numeric",
-		year: date.getFullYear() === now.getFullYear() ? undefined : "numeric",
-	}).format(date);
+	return date.getFullYear() === now.getFullYear()
+		? workspaceRecencyDateFormatter.format(date)
+		: workspaceRecencyDateWithYearFormatter.format(date);
 }
 
 function isSameLocalDay(left: Date, right: Date) {

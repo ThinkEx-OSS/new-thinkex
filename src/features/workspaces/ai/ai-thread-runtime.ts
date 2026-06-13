@@ -306,8 +306,16 @@ function getPromptTimeZone(value: string | undefined) {
 	}
 }
 
-function formatPromptDateTime(date: Date, timeZone: string) {
-	return `${new Intl.DateTimeFormat("en-US", {
+const promptDateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getPromptDateTimeFormatter(timeZone: string) {
+	const cachedFormatter = promptDateTimeFormatters.get(timeZone);
+
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat("en-US", {
 		weekday: "long",
 		year: "numeric",
 		month: "long",
@@ -316,7 +324,14 @@ function formatPromptDateTime(date: Date, timeZone: string) {
 		minute: "2-digit",
 		timeZone,
 		timeZoneName: "short",
-	}).format(date)} (${timeZone})`;
+	});
+	promptDateTimeFormatters.set(timeZone, formatter);
+
+	return formatter;
+}
+
+function formatPromptDateTime(date: Date, timeZone: string) {
+	return `${getPromptDateTimeFormatter(timeZone).format(date)} (${timeZone})`;
 }
 
 function formatTimeToolResult(date: Date) {

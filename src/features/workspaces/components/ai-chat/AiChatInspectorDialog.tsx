@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -29,58 +30,31 @@ export function AiChatInspectorDialog({
 	open,
 	threadId,
 }: AiChatInspectorDialogProps) {
-	const [snapshot, setSnapshot] = useState<AIInspectorSnapshot>();
-	const [error, setError] = useState<string>();
-	const [isLoading, setIsLoading] = useState(false);
-	const [selectedRunId, setSelectedRunId] = useState<string>();
+	const [selectedRunIdDraft, setSelectedRunIdDraft] = useState<string>();
+	const {
+		data: snapshot,
+		error: snapshotError,
+		isFetching: isSnapshotFetching,
+		refetch: refetchSnapshot,
+	} = useQuery({
+		enabled: open && Boolean(threadId),
+		queryFn: () => getSnapshot(threadId as string),
+		queryKey: ["ai-inspector-snapshot", threadId, getSnapshot],
+	});
+	const error =
+		snapshotError instanceof Error
+			? snapshotError.message
+			: snapshotError
+				? "Failed to load AI inspector events."
+				: undefined;
 
-	const loadSnapshot = useCallback(async () => {
-		if (!threadId) {
-			setSnapshot(undefined);
-			return;
-		}
-
-		setIsLoading(true);
-		setError(undefined);
-
-		try {
-			setSnapshot(await getSnapshot(threadId));
-		} catch (loadError) {
-			setError(
-				loadError instanceof Error
-					? loadError.message
-					: "Failed to load AI inspector events.",
-			);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [getSnapshot, threadId]);
-
-	useEffect(() => {
-		if (!open) {
-			return;
-		}
-
-		void loadSnapshot();
-	}, [loadSnapshot, open]);
-
-	const runs = useMemo(
-		() => getAIInspectorRunViews(snapshot?.events ?? []),
-		[snapshot?.events],
-	);
+	const runs = getAIInspectorRunViews(snapshot?.events ?? []);
+	const selectedRunId =
+		selectedRunIdDraft && runs.some((run) => run.runId === selectedRunIdDraft)
+			? selectedRunIdDraft
+			: runs[0]?.runId;
 	const selectedRun =
 		runs.find((run) => run.runId === selectedRunId) ?? runs[0];
-
-	useEffect(() => {
-		if (runs.length === 0) {
-			setSelectedRunId(undefined);
-			return;
-		}
-
-		if (!selectedRunId || !runs.some((run) => run.runId === selectedRunId)) {
-			setSelectedRunId(runs[0]?.runId);
-		}
-	}, [runs, selectedRunId]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,11 +72,11 @@ export function AiChatInspectorDialog({
 							variant="outline"
 							size="sm"
 							className="shrink-0 gap-1.5"
-							disabled={!threadId || isLoading}
-							onClick={() => void loadSnapshot()}
+							disabled={!threadId || isSnapshotFetching}
+							onClick={() => void refetchSnapshot()}
 						>
 							<RefreshCw
-								className={cn("size-3.5", isLoading && "animate-spin")}
+								className={cn("size-3.5", isSnapshotFetching && "animate-spin")}
 								aria-hidden="true"
 							/>
 							Refresh
@@ -137,7 +111,7 @@ export function AiChatInspectorDialog({
 										}
 										size="sm"
 										className="gap-2"
-										onClick={() => setSelectedRunId(run.runId)}
+										onClick={() => setSelectedRunIdDraft(run.runId)}
 									>
 										Run {runs.length - index}
 										<Badge

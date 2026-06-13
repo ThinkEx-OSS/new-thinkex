@@ -24,8 +24,10 @@ import {
 export async function createWorkspaceForCurrentUser(
 	input: CreateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 	const workspaceId = input.id ?? crypto.randomUUID();
 	const openedAt = new Date();
 
@@ -69,29 +71,34 @@ export async function createWorkspaceForCurrentUser(
 export async function recordWorkspaceOpenedForCurrentUser(
 	workspaceId: string,
 ): Promise<WorkspaceSummary | null> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 	const openedAt = new Date();
 
 	try {
 		await assertCanReadWorkspace(dbContext.db, { workspaceId, userId });
 
-		const [membership] = await dbContext.db
-			.update(workspaceMembers)
-			.set({ lastOpenedAt: openedAt })
-			.where(
-				and(
-					eq(workspaceMembers.workspaceId, workspaceId),
-					eq(workspaceMembers.userId, userId),
-				),
-			)
-			.returning({ lastOpenedAt: workspaceMembers.lastOpenedAt });
-
-		const [workspace] = await dbContext.db
-			.select()
-			.from(workspaces)
-			.where(and(eq(workspaces.id, workspaceId), isNull(workspaces.archivedAt)))
-			.limit(1);
+		const [[membership], [workspace]] = await Promise.all([
+			dbContext.db
+				.update(workspaceMembers)
+				.set({ lastOpenedAt: openedAt })
+				.where(
+					and(
+						eq(workspaceMembers.workspaceId, workspaceId),
+						eq(workspaceMembers.userId, userId),
+					),
+				)
+				.returning({ lastOpenedAt: workspaceMembers.lastOpenedAt }),
+			dbContext.db
+				.select()
+				.from(workspaces)
+				.where(
+					and(eq(workspaces.id, workspaceId), isNull(workspaces.archivedAt)),
+				)
+				.limit(1),
+		]);
 
 		if (!membership || !workspace) {
 			return null;
@@ -109,8 +116,10 @@ export async function recordWorkspaceOpenedForCurrentUser(
 export async function updateWorkspaceForCurrentUser(
 	input: UpdateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, {
@@ -164,8 +173,10 @@ export async function updateWorkspaceForCurrentUser(
 export async function deleteWorkspaceForCurrentUser(
 	input: DeleteWorkspaceInput,
 ) {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 
 	try {
 		await assertCanDeleteWorkspace(dbContext.db, {

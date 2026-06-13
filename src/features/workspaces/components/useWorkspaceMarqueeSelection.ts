@@ -31,7 +31,7 @@ export function useWorkspaceMarqueeSelection({
 	selectedItemIds,
 	setSelectedItemIds,
 }: WorkspaceMarqueeSelectionInput) {
-	const itemElementsRef = useRef(new Map<string, HTMLElement>());
+	const [itemElements] = useState(() => new Map<string, HTMLElement>());
 	const marqueeStateRef = useRef<WorkspaceMarqueeState | null>(null);
 	const [marqueeState, setMarqueeState] =
 		useState<WorkspaceMarqueeState | null>(null);
@@ -44,11 +44,11 @@ export function useWorkspaceMarqueeSelection({
 	};
 	const registerItemElement = (itemId: string, element: HTMLElement | null) => {
 		if (element) {
-			itemElementsRef.current.set(itemId, element);
+			itemElements.set(itemId, element);
 			return;
 		}
 
-		itemElementsRef.current.delete(itemId);
+		itemElements.delete(itemId);
 	};
 	const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
 		if (
@@ -98,7 +98,7 @@ export function useWorkspaceMarqueeSelection({
 			setSelectedItemIds(
 				getWorkspaceMarqueeSelection({
 					baseSelectedItemIds: next.baseSelectedItemIds,
-					itemElements: itemElementsRef.current,
+					itemElements,
 					selectionRect: getWorkspaceMarqueeRect(next.start, next.current),
 				}),
 			);

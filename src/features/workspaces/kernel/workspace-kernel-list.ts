@@ -195,11 +195,10 @@ function normalizeWorkspacePath(path: string) {
 		throw new Error("Workspace path must be absolute.");
 	}
 
-	const segments = trimmedPath
-		.split("/")
-		.filter(Boolean)
-		.map((segment) => segment.trim())
-		.filter(Boolean);
+	const segments = trimmedPath.split("/").flatMap((segment) => {
+		const normalizedSegment = segment.trim();
+		return normalizedSegment ? [normalizedSegment] : [];
+	});
 
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
 }

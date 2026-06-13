@@ -1,13 +1,10 @@
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useMemo } from "react";
 
 import { Skeleton } from "#/components/ui/skeleton";
-import { TooltipProvider } from "#/components/ui/tooltip";
-import { DocumentToolbar } from "#/features/workspaces/components/document-editor/DocumentToolbar";
 import { DocumentWordCount } from "#/features/workspaces/components/document-editor/DocumentWordCount";
-import { useWorkspaceItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
+import { useDocumentEditorToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import {
 	getTiptapDocumentBaseExtensions,
 	tiptapDocumentYjsField,
@@ -27,22 +24,15 @@ export function DocumentEditorSurface({
 	workspaceId: string;
 }) {
 	const sessionQuery = authClient.useSession();
-	const collaborationUser = useMemo(() => {
-		if (!sessionQuery.data?.user) {
-			return null;
-		}
-
-		return {
-			id: sessionQuery.data.user.id,
-			image: sessionQuery.data.user.image ?? null,
-			name:
-				sessionQuery.data.user.name || sessionQuery.data.user.email || "User",
-		};
-	}, [sessionQuery.data?.user]);
+	const sessionUser = sessionQuery.data?.user;
 	const collaborationSession = useDocumentCollaborationSession({
 		workspaceId,
 		itemId: item.id,
-		user: collaborationUser,
+		userId: sessionUser?.id ?? null,
+		userImage: sessionUser?.image ?? null,
+		userName: sessionUser
+			? sessionUser.name || sessionUser.email || "User"
+			: null,
 	});
 
 	if (!collaborationSession) {
@@ -64,25 +54,6 @@ function DocumentEditorInstance({
 	collaborationSession: DocumentCollaborationSession;
 	item: WorkspaceItem;
 }) {
-	const extensions = useMemo(() => {
-		const baseExtensions = getTiptapDocumentBaseExtensions();
-
-		return [
-			...baseExtensions,
-			Collaboration.configure({
-				document: collaborationSession.ydoc,
-				field: tiptapDocumentYjsField,
-			}),
-			CollaborationCaret.configure({
-				provider: collaborationSession.provider,
-				user:
-					collaborationSession.provider.awareness.getLocalState()?.user ?? {},
-				render: renderCollaborationCaret,
-				selectionRender: renderCollaborationSelection,
-			}),
-		];
-	}, [collaborationSession.provider, collaborationSession.ydoc]);
-
 	const editor = useEditor({
 		immediatelyRender: false,
 		autofocus: "start",
@@ -90,7 +61,7 @@ function DocumentEditorInstance({
 		onContentError: ({ disableCollaboration }) => {
 			disableCollaboration();
 		},
-		extensions,
+		extensions: getDocumentEditorExtensions(collaborationSession),
 		editorProps: {
 			attributes: {
 				"aria-label": `${item.name} editor`,
@@ -99,16 +70,8 @@ function DocumentEditorInstance({
 			},
 		},
 	});
-	const toolbar = useMemo(
-		() => (
-			<TooltipProvider>
-				<DocumentToolbar editor={editor} />
-			</TooltipProvider>
-		),
-		[editor],
-	);
 
-	useWorkspaceItemToolbar(item.id, toolbar);
+	useDocumentEditorToolbar(item.id, editor);
 
 	return (
 		<section className="relative flex h-[calc(100vh-5.75rem)] min-h-0 flex-col bg-background">
@@ -120,6 +83,26 @@ function DocumentEditorInstance({
 			<DocumentWordCount editor={editor} />
 		</section>
 	);
+}
+
+function getDocumentEditorExtensions(
+	collaborationSession: DocumentCollaborationSession,
+) {
+	const baseExtensions = getTiptapDocumentBaseExtensions();
+
+	return [
+		...baseExtensions,
+		Collaboration.configure({
+			document: collaborationSession.ydoc,
+			field: tiptapDocumentYjsField,
+		}),
+		CollaborationCaret.configure({
+			provider: collaborationSession.provider,
+			user: collaborationSession.provider.awareness.getLocalState()?.user ?? {},
+			render: renderCollaborationCaret,
+			selectionRender: renderCollaborationSelection,
+		}),
+	];
 }
 
 function renderCollaborationCaret(user: Record<string, unknown>) {

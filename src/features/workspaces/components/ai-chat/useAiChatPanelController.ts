@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
@@ -49,7 +49,7 @@ export function useAiChatPanelController({
 	const [selectedDraftThreadId, setSelectedDraftThreadId] = useState<string>();
 	const [threadPendingDeletion, setThreadPendingDeletion] =
 		useState<AiChatThreadForDialog>();
-	const markingViewedThreadIdsRef = useRef<Set<string>>(new Set());
+	const [markingViewedThreadIds] = useState(() => new Set<string>());
 	const {
 		deleteThread,
 		ensureDraftThread,
@@ -123,15 +123,16 @@ export function useAiChatPanelController({
 			return;
 		}
 
-		if (markingViewedThreadIdsRef.current.has(selectedThread.id)) {
+		if (markingViewedThreadIds.has(selectedThread.id)) {
 			return;
 		}
 
-		markingViewedThreadIdsRef.current.add(selectedThread.id);
+		markingViewedThreadIds.add(selectedThread.id);
 		void markThreadViewed(selectedThread.id).finally(() => {
-			markingViewedThreadIdsRef.current.delete(selectedThread.id);
+			markingViewedThreadIds.delete(selectedThread.id);
 		});
 	}, [
+		markingViewedThreadIds,
 		markThreadViewed,
 		selectedThread?.hasUnreadCompletion,
 		selectedThread?.id,

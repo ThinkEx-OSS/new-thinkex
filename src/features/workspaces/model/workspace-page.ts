@@ -148,14 +148,15 @@ function getNextWorkspaceItemSortOrder(
 	items: WorkspaceItemSummary[],
 	parentId: string | null,
 ) {
-	const siblingSortOrders = items
-		.filter((item) => item.parentId === parentId)
-		.map((item) => item.sortOrder);
+	let maxSortOrder = 0;
 
-	return (
-		(siblingSortOrders.length > 0 ? Math.max(...siblingSortOrders) : 0) +
-		WORKSPACE_ITEM_SORT_STEP
-	);
+	for (const item of items) {
+		if (item.parentId === parentId) {
+			maxSortOrder = Math.max(maxSortOrder, item.sortOrder);
+		}
+	}
+
+	return maxSortOrder + WORKSPACE_ITEM_SORT_STEP;
 }
 
 function getAvailableWorkspaceItemNameInPage(input: {
@@ -165,14 +166,17 @@ function getAvailableWorkspaceItemNameInPage(input: {
 	requestedName?: string;
 	excludeItemId?: string;
 }) {
+	const existingNames: string[] = [];
+
+	for (const item of input.items) {
+		if (item.parentId === input.parentId && item.id !== input.excludeItemId) {
+			existingNames.push(item.name);
+		}
+	}
+
 	return getAvailableWorkspaceItemName({
 		type: input.type,
 		requestedName: input.requestedName,
-		existingNames: input.items
-			.filter(
-				(item) =>
-					item.parentId === input.parentId && item.id !== input.excludeItemId,
-			)
-			.map((item) => item.name),
+		existingNames,
 	});
 }

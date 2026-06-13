@@ -18,8 +18,10 @@ type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 export async function listWorkspacesForCurrentUser(): Promise<
 	WorkspaceSummary[]
 > {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 
 	try {
 		return await listWorkspacesForUser(dbContext.db, userId);
@@ -60,8 +62,10 @@ export async function listWorkspacesForUser(
 export async function getWorkspacePageForCurrentUser(
 	workspaceId: string,
 ): Promise<WorkspacePage | null> {
-	const userId = await getCurrentUserId();
-	const dbContext = await createDbContext();
+	const [userId, dbContext] = await Promise.all([
+		getCurrentUserId(),
+		createDbContext(),
+	]);
 
 	try {
 		const [workspaceRow] = await dbContext.db

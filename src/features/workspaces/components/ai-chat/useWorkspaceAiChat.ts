@@ -1,6 +1,5 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
-import { useCallback } from "react";
 
 import {
 	aiThreadAgentName,
@@ -49,38 +48,30 @@ export function useWorkspaceAiChat({
 		stop,
 	} = chat;
 
-	const sendMessage = useCallback(
-		(message: AiChatSendMessage) => {
-			if (
-				message.parts.length === 0 ||
-				status === "submitted" ||
-				status === "streaming"
-			) {
-				return false;
-			}
+	const sendMessage = (message: AiChatSendMessage) => {
+		if (
+			message.parts.length === 0 ||
+			status === "submitted" ||
+			status === "streaming"
+		) {
+			return false;
+		}
 
-			clearError();
-			void sendAgentMessage(message);
-			return true;
-		},
-		[clearError, sendAgentMessage, status],
-	);
-
-	const addToolApprovalResponse = useCallback(
-		(response: AiChatToolApprovalResponse) => {
-			void addAgentToolApprovalResponse(response);
-		},
-		[addAgentToolApprovalResponse],
-	);
-
-	const regenerate = useCallback(() => {
+		clearError();
+		void sendAgentMessage(message);
+		return true;
+	};
+	const addToolApprovalResponse = (response: AiChatToolApprovalResponse) => {
+		void addAgentToolApprovalResponse(response);
+	};
+	const regenerate = () => {
 		if (isStreaming || isRecovering) {
 			return;
 		}
 
 		clearError();
 		void regenerateAgentMessage();
-	}, [clearError, isRecovering, isStreaming, regenerateAgentMessage]);
+	};
 
 	return {
 		addToolApprovalResponse,

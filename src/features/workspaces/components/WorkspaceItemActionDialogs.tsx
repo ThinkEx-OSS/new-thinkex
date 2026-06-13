@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId } from "react";
 
 import {
 	AlertDialog,
@@ -57,25 +57,23 @@ function RenameWorkspaceItemDialogContent({
 }) {
 	const nameInputId = useId();
 	const renameWorkspaceItemMutation = useRenameWorkspaceItemMutation();
-	const [name, setName] = useState(item.name);
-	const trimmedName = name.trim();
 
 	return (
 		<DialogContent>
 			<form
 				className="grid gap-6"
-				onSubmit={(event) => {
-					event.preventDefault();
+				action={(formData) => {
+					const name = String(formData.get("name") ?? "").trim();
 
-					if (!trimmedName) {
+					if (!name) {
 						return;
 					}
 
-					if (trimmedName !== item.name) {
+					if (name !== item.name) {
 						renameWorkspaceItemMutation.mutate({
 							workspaceId: item.workspaceId,
 							itemId: item.id,
-							name: trimmedName,
+							name,
 						});
 					}
 
@@ -93,8 +91,9 @@ function RenameWorkspaceItemDialogContent({
 						<FieldLabel htmlFor={nameInputId}>Name</FieldLabel>
 						<Input
 							id={nameInputId}
-							value={name}
-							onChange={(event) => setName(event.target.value)}
+							name="name"
+							defaultValue={item.name}
+							required
 							autoFocus
 						/>
 					</Field>
@@ -109,7 +108,7 @@ function RenameWorkspaceItemDialogContent({
 					</Button>
 					<Button
 						type="submit"
-						disabled={!trimmedName || renameWorkspaceItemMutation.isPending}
+						disabled={renameWorkspaceItemMutation.isPending}
 					>
 						Save
 					</Button>
@@ -133,10 +132,9 @@ export function DeleteWorkspaceItemAlert({
 	onClosed: () => void;
 }) {
 	const deleteWorkspaceItemMutation = useDeleteWorkspaceItemMutation();
-	const descendantCount = useMemo(
-		() => (item ? getWorkspaceDescendantIds(items, item.id).length : 0),
-		[item, items],
-	);
+	const descendantCount = item
+		? getWorkspaceDescendantIds(items, item.id).length
+		: 0;
 	const isFolderWithChildren = item?.type === "folder" && descendantCount > 0;
 
 	return (

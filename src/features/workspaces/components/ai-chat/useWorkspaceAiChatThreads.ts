@@ -1,5 +1,5 @@
 import { useAgent } from "agents/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
 	userAIAgentName,
@@ -24,49 +24,42 @@ export function useWorkspaceAiChatThreads({
 		basePath: userAIBasePath,
 	});
 
-	const threads = useMemo(
-		() =>
-			(directory.state?.threads ?? []).filter(
-				(thread) => thread.workspaceId === workspaceId,
-			),
-		[directory.state?.threads, workspaceId],
+	const threads = (directory.state?.threads ?? []).filter(
+		(thread) => thread.workspaceId === workspaceId,
 	);
 
-	const ensureDraftThread = useCallback(async () => {
+	const ensureDraftThread = async () => {
 		setIsEnsuringDraftThread(true);
 
 		try {
-			return await directory.call<AIThreadSummary>("ensureDraftThread", [
-				{ workspaceId },
-			]);
-		} finally {
-			setIsEnsuringDraftThread(false);
-		}
-	}, [directory, workspaceId]);
-
-	const deleteThread = useCallback(
-		async (threadId: string) => {
-			await directory.call("deleteThread", [threadId]);
-		},
-		[directory],
-	);
-
-	const markThreadViewed = useCallback(
-		async (threadId: string) => {
-			await directory.call("markThreadViewed", [threadId]);
-		},
-		[directory],
-	);
-
-	const getThreadInspectorSnapshot = useCallback(
-		async (threadId: string): Promise<AIInspectorSnapshot> => {
-			return await directory.call<AIInspectorSnapshot>(
-				"getThreadInspectorSnapshot",
-				[threadId],
+			const thread = await directory.call<AIThreadSummary>(
+				"ensureDraftThread",
+				[{ workspaceId }],
 			);
-		},
-		[directory],
-	);
+			setIsEnsuringDraftThread(false);
+			return thread;
+		} catch (error) {
+			setIsEnsuringDraftThread(false);
+			throw error;
+		}
+	};
+
+	const deleteThread = async (threadId: string) => {
+		await directory.call("deleteThread", [threadId]);
+	};
+
+	const markThreadViewed = async (threadId: string) => {
+		await directory.call("markThreadViewed", [threadId]);
+	};
+
+	const getThreadInspectorSnapshot = async (
+		threadId: string,
+	): Promise<AIInspectorSnapshot> => {
+		return await directory.call<AIInspectorSnapshot>(
+			"getThreadInspectorSnapshot",
+			[threadId],
+		);
+	};
 
 	return {
 		deleteThread,

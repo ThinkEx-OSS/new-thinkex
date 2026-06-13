@@ -28,7 +28,6 @@ const readUrlInputSchema = z.object({
 		.optional()
 		.describe("Maximum response bytes to read. Defaults to 200000."),
 	url: z
-		.string()
 		.url()
 		.describe("Public HTTP(S) URL to fetch with a direct network request."),
 });
@@ -42,7 +41,6 @@ const readWebPageInputSchema = z.object({
 			"Browser read mode. markdown is best for normal reading; content returns HTML; links returns page links.",
 		),
 	url: z
-		.string()
 		.url()
 		.describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
 });
