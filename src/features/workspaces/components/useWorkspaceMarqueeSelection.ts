@@ -1,4 +1,4 @@
-import { type PointerEvent, useRef, useState } from "react";
+import { type PointerEvent, useEffect, useRef, useState } from "react";
 
 type WorkspaceMarqueePoint = {
 	x: number;
@@ -106,16 +106,32 @@ export function useWorkspaceMarqueeSelection({
 
 		setCurrentMarqueeState(next);
 	};
-	const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
+	const handlePointerEnd = (event: PointerEvent<HTMLElement>) => {
 		const current = marqueeStateRef.current;
 
 		if (!current || current.pointerId !== event.pointerId) {
 			return;
 		}
 
-		event.currentTarget.releasePointerCapture(event.pointerId);
+		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+			event.currentTarget.releasePointerCapture(event.pointerId);
+		}
+
 		setCurrentMarqueeState(null);
 	};
+
+	useEffect(() => {
+		const handleWindowBlur = () => {
+			marqueeStateRef.current = null;
+			setMarqueeState(null);
+		};
+
+		window.addEventListener("blur", handleWindowBlur);
+
+		return () => {
+			window.removeEventListener("blur", handleWindowBlur);
+		};
+	}, []);
 
 	return {
 		marqueeRect,
@@ -123,8 +139,9 @@ export function useWorkspaceMarqueeSelection({
 		surfaceProps: {
 			onPointerDown: handlePointerDown,
 			onPointerMove: handlePointerMove,
-			onPointerUp: handlePointerUp,
-			onPointerCancel: handlePointerUp,
+			onPointerUp: handlePointerEnd,
+			onPointerCancel: handlePointerEnd,
+			onLostPointerCapture: handlePointerEnd,
 		},
 	};
 }
