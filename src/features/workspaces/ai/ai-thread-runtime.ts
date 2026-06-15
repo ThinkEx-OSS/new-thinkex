@@ -15,29 +15,8 @@ import {
 	type resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
 import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
-import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
+import { createAIThreadWorkspaceTools } from "#/features/workspaces/ai/workspace-tools";
 import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/workspace-ai-context";
-
-const workspaceItemListInputSchema = z.object({
-	limit: z
-		.number()
-		.int()
-		.min(1)
-		.max(200)
-		.optional()
-		.describe("Maximum number of workspace items to return. Defaults to 100."),
-	path: z
-		.string()
-		.min(1)
-		.optional()
-		.describe("Absolute path in the actual ThinkEx workspace. Defaults to /."),
-	recursive: z
-		.boolean()
-		.optional()
-		.describe(
-			"Include nested descendants. Defaults to false for immediate children only.",
-		),
-});
 
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
@@ -78,6 +57,8 @@ export const AI_THREAD_ACTIVE_TOOLS = [
 	"web_fetch_url",
 	"web_read_page",
 	"workspace_list_items",
+	"workspace_read_items",
+	"workspace_edit_item",
 	"time_get_current",
 	"time_calculate_relative",
 ] as const;
@@ -93,25 +74,8 @@ export function createAIThreadTools(input: {
 		...sandboxTools,
 		...createAIThreadWebTools(input.env),
 		...createAIThreadTimeTools(),
-		workspace_list_items: tool({
-			description:
-				"List items in the actual ThinkEx workspace. Use this for user-visible workspace structure; use absolute paths such as /.",
-			inputSchema: workspaceItemListInputSchema,
-			execute: async ({ limit, path, recursive }) => {
-				const thread = await input.getThreadContext();
-
-				if (!thread) {
-					throw new Error("Chat thread not found");
-				}
-
-				return await listWorkspaceKernelItems({
-					workspaceId: thread.workspaceId,
-					userId: thread.userId,
-					path,
-					recursive,
-					limit,
-				});
-			},
+		...createAIThreadWorkspaceTools({
+			getThreadContext: input.getThreadContext,
 		}),
 	};
 }

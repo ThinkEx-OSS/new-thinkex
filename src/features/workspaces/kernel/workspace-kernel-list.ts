@@ -1,25 +1,29 @@
-import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { normalizeWorkspaceItemName } from "#/features/workspaces/defaults";
+import type {
+	WorkspaceItemSummary,
+	WorkspaceItemType,
+} from "#/features/workspaces/contracts";
+import {
+	buildWorkspaceKernelTree,
+	joinWorkspacePathSegment,
+	resolveWorkspaceKernelCwd,
+} from "#/features/workspaces/kernel/workspace-kernel-paths";
 
 export interface ListWorkspaceKernelItemsResult {
 	path: string;
 	count: number;
 	more: boolean;
-	entries: string[];
+	entries: WorkspaceKernelListEntry[];
 }
 
-interface WorkspaceKernelTree {
-	childrenByParentId: Map<string | null, WorkspaceItemSummary[]>;
+export interface WorkspaceKernelListEntry {
+	path: string;
+	title: string;
+	type: WorkspaceItemType;
 }
 
 interface WorkspaceKernelListEntries {
-	entries: string[];
+	entries: WorkspaceKernelListEntry[];
 	truncated: boolean;
-}
-
-interface WorkspaceKernelCwd {
-	path: string;
-	parentId: string | null;
 }
 
 export function listWorkspaceKernelPageItems(input: {
@@ -33,6 +37,7 @@ export function listWorkspaceKernelPageItems(input: {
 	const boundedLimit = clampWorkspaceListLimit(input.limit);
 	const listing = collectWorkspaceKernelListEntries({
 		parentId: cwd.parentId,
+		basePath: cwd.path,
 		recursive: input.recursive ?? false,
 		limit: boundedLimit,
 		childrenByParentId: tree.childrenByParentId,
@@ -46,67 +51,20 @@ export function listWorkspaceKernelPageItems(input: {
 	};
 }
 
-function buildWorkspaceKernelTree(
-	items: WorkspaceItemSummary[],
-): WorkspaceKernelTree {
-	const childrenByParentId = new Map<string | null, WorkspaceItemSummary[]>();
-
-	for (const item of items) {
-		const children = childrenByParentId.get(item.parentId) ?? [];
-		children.push(item);
-		childrenByParentId.set(item.parentId, children);
-	}
-
-	for (const children of childrenByParentId.values()) {
-		children.sort(compareWorkspaceKernelItems);
-	}
-
-	return {
-		childrenByParentId,
-	};
-}
-
-function resolveWorkspaceKernelCwd(
-	path: string,
-	tree: WorkspaceKernelTree,
-): WorkspaceKernelCwd {
-	const normalizedPath = normalizeWorkspacePath(path);
-
-	if (normalizedPath === "/") {
-		return {
-			path: "/",
-			parentId: null,
-		};
-	}
-
-	const item = getWorkspaceItemByPath(normalizedPath, tree);
-
-	if (!item) {
-		throw new Error("Workspace path not found.");
-	}
-
-	if (item.type !== "folder") {
-		throw new Error("Workspace path is not a folder.");
-	}
-
-	return {
-		path: normalizedPath,
-		parentId: item.id,
-	};
-}
-
 function collectWorkspaceKernelListEntries({
 	parentId,
+	basePath,
 	recursive,
 	limit,
 	childrenByParentId,
 }: {
 	parentId: string | null;
+	basePath: string;
 	recursive: boolean;
 	limit: number;
 	childrenByParentId: Map<string | null, WorkspaceItemSummary[]>;
 }): WorkspaceKernelListEntries {
-	const entries: string[] = [];
+	const entries: WorkspaceKernelListEntry[] = [];
 	const visitedIds = new Set<string>();
 	let truncated = false;
 
@@ -131,7 +89,12 @@ function collectWorkspaceKernelListEntries({
 				return false;
 			}
 
-			entries.push(formatWorkspaceKernelLsEntry(child, relativePath));
+			entries.push(
+				formatWorkspaceKernelListEntry({
+					item: child,
+					path: toAbsoluteWorkspaceListPath(basePath, relativePath),
+				}),
+			);
 
 			if (recursive && !visit(child.id, relativePath)) {
 				return false;
@@ -149,80 +112,25 @@ function collectWorkspaceKernelListEntries({
 	};
 }
 
-function formatWorkspaceKernelLsEntry(
-	item: WorkspaceItemSummary,
-	displayPath: string,
-) {
-	if (item.type === "folder") {
-		return `${displayPath}/`;
+function formatWorkspaceKernelListEntry(input: {
+	item: WorkspaceItemSummary;
+	path: string;
+}): WorkspaceKernelListEntry {
+	return {
+		path: input.path,
+		title: input.item.name,
+		type: input.item.type,
+	};
+}
+
+function toAbsoluteWorkspaceListPath(basePath: string, relativePath: string) {
+	if (basePath === "/") {
+		return `/${relativePath}`;
 	}
 
-	return `${displayPath} [${item.type}]`;
+	return `${basePath}/${relativePath}`;
 }
 
 function clampWorkspaceListLimit(limit: number | undefined) {
 	return Math.max(1, Math.min(limit ?? 100, 200));
-}
-
-function compareWorkspaceKernelItems(
-	left: WorkspaceItemSummary,
-	right: WorkspaceItemSummary,
-) {
-	return (
-		left.sortOrder - right.sortOrder ||
-		left.name.localeCompare(right.name) ||
-		left.id.localeCompare(right.id)
-	);
-}
-
-function joinWorkspacePathSegment(parentPath: string, name: string) {
-	const segment = toWorkspacePathSegment(name);
-	return parentPath ? `${parentPath}/${segment}` : segment;
-}
-
-function toWorkspacePathSegment(name: string) {
-	return normalizeWorkspaceItemName(name);
-}
-
-function normalizeWorkspacePath(path: string) {
-	const trimmedPath = path.trim();
-
-	if (!trimmedPath || trimmedPath === "/") {
-		return "/";
-	}
-
-	if (!trimmedPath.startsWith("/")) {
-		throw new Error("Workspace path must be absolute.");
-	}
-
-	const segments = trimmedPath.split("/").flatMap((segment) => {
-		const normalizedSegment = segment.trim();
-		return normalizedSegment ? [normalizedSegment] : [];
-	});
-
-	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
-}
-
-function getWorkspaceItemByPath(
-	path: string,
-	tree: WorkspaceKernelTree,
-): WorkspaceItemSummary | null {
-	const segments = path.split("/").filter(Boolean);
-	let parentId: string | null = null;
-	let item: WorkspaceItemSummary | null = null;
-
-	for (const segment of segments) {
-		item =
-			(tree.childrenByParentId.get(parentId) ?? []).find((child) => {
-				return toWorkspacePathSegment(child.name) === segment;
-			}) ?? null;
-
-		if (!item) {
-			return null;
-		}
-
-		parentId = item.id;
-	}
-
-	return item;
 }

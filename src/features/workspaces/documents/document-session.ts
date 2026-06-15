@@ -1,11 +1,24 @@
-import { prosemirrorJSONToYDoc, yDocToProsemirrorJSON } from "@tiptap/y-tiptap";
+import {
+	prosemirrorJSONToYDoc,
+	prosemirrorJSONToYXmlFragment,
+	yDocToProsemirrorJSON,
+} from "@tiptap/y-tiptap";
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
-
 import type { DocumentSessionRouteParams } from "#/features/workspaces/agent-routes";
+import {
+	parseMarkdownToTiptapDocument,
+	serializeTiptapDocumentToMarkdown,
+} from "#/features/workspaces/documents/document-markdown";
+import {
+	applyDocumentMarkdownEdits,
+	type DocumentMarkdownEdit,
+	type DocumentMarkdownEditResultStatus,
+} from "#/features/workspaces/documents/document-markdown-edits";
 import {
 	parseTiptapDocumentJson,
 	stringifyTiptapDocumentJson,
+	type TiptapDocumentJson,
 	tiptapDocumentJsonSchema,
 } from "#/features/workspaces/documents/tiptap-document";
 import {
@@ -14,8 +27,8 @@ import {
 } from "#/features/workspaces/documents/tiptap-schema";
 
 const persistedYDocUpdateKey = "document-session:yjs-update";
-const checkpointDelayMs = 2_000;
-const checkpointMaxWaitMs = 10_000;
+const checkpointDelayMs = 1_500;
+const checkpointMaxWaitMs = 8_000;
 
 interface WorkspaceKernelClient {
 	readItem(input: { itemId: string }): Promise<{
@@ -32,6 +45,17 @@ interface WorkspaceKernelClient {
 
 interface WorkspaceKernelNamespace {
 	getByName(name: string): WorkspaceKernelClient;
+}
+
+export interface DocumentSessionApplyMarkdownEditsInput {
+	edits: DocumentMarkdownEdit[];
+}
+
+export interface DocumentSessionApplyMarkdownEditsResult {
+	applied: number;
+	failed: number;
+	failures: { code: string; index: number }[];
+	status: DocumentMarkdownEditResultStatus;
 }
 
 export class DocumentSession extends YServer {
@@ -75,10 +99,55 @@ export class DocumentSession extends YServer {
 	}
 
 	override async onSave() {
-		const room = getDocumentSessionRoomNameParts(this.name);
+		await this.persistYDoc();
+		await this.checkpointToKernel();
+	}
+
+	async applyMarkdownEdits(
+		input: DocumentSessionApplyMarkdownEditsInput,
+	): Promise<DocumentSessionApplyMarkdownEditsResult> {
+		const currentDocument = this.getCurrentTiptapDocument();
+		const markdown = serializeTiptapDocumentToMarkdown(currentDocument);
+		const editResult = applyDocumentMarkdownEdits(markdown, input.edits);
+
+		if (editResult.applied === 0) {
+			return {
+				applied: editResult.applied,
+				failed: editResult.failed,
+				failures: editResult.failures,
+				status: editResult.status,
+			};
+		}
+
+		try {
+			this.replaceCurrentDocument(
+				parseMarkdownToTiptapDocument(editResult.content),
+			);
+		} catch {
+			return {
+				applied: 0,
+				failed: input.edits.length,
+				failures: [
+					...editResult.failures,
+					{ code: "invalid_document_projection", index: -1 },
+				],
+				status: "rejected",
+			};
+		}
 
 		await this.persistYDoc();
+		await this.checkpointToKernel();
 
+		return {
+			applied: editResult.applied,
+			failed: editResult.failed,
+			failures: editResult.failures,
+			status: editResult.status,
+		};
+	}
+
+	private async checkpointToKernel() {
+		const room = getDocumentSessionRoomNameParts(this.name);
 		const document = tiptapDocumentJsonSchema.parse(
 			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
 		);
@@ -90,6 +159,25 @@ export class DocumentSession extends YServer {
 			actorUserId: null,
 			clientMutationId: null,
 		});
+	}
+
+	private getCurrentTiptapDocument() {
+		return tiptapDocumentJsonSchema.parse(
+			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
+		);
+	}
+
+	private replaceCurrentDocument(document: TiptapDocumentJson) {
+		const fragment = this.document.getXmlFragment(tiptapDocumentYjsField);
+
+		this.document.transact(() => {
+			fragment.delete(0, fragment.length);
+			prosemirrorJSONToYXmlFragment(
+				getTiptapDocumentSchema(),
+				document,
+				fragment,
+			);
+		}, this);
 	}
 
 	private async persistYDoc() {

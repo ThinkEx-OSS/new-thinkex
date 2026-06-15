@@ -36,7 +36,7 @@ interface DeleteWorkspaceItemResult {
 	deletedItemIds: string[];
 }
 
-interface WorkspaceKernelClient {
+export interface WorkspaceKernelClient {
 	getPage(): Promise<{
 		workspaceId: string;
 		items: WorkspaceItemSummary[];
@@ -254,7 +254,7 @@ export async function deleteWorkspaceKernelItem(
 	}
 }
 
-async function getWorkspaceKernel(workspaceId: string) {
+export async function getWorkspaceKernel(workspaceId: string) {
 	const { env } = await import("cloudflare:workers");
 	const workspaceKernelNamespace = env.WorkspaceKernel as unknown as {
 		getByName(name: string): WorkspaceKernelClient;

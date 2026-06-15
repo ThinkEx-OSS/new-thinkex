@@ -1,4 +1,5 @@
 import { getWorkspaceItemTypeMeta } from "#/features/workspaces/defaults";
+import { joinWorkspacePathSegment } from "#/features/workspaces/kernel/workspace-kernel-paths";
 import type { WorkspaceTab } from "#/features/workspaces/model/tab-types";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -50,6 +51,10 @@ function getWorkspaceAiContextItemPath(
 		item,
 		itemsById instanceof Map ? itemsById : new Map(itemsById),
 	);
+	const relativePath = breadcrumbItems.reduce(
+		(path, entry) => joinWorkspacePathSegment(path, entry.name),
+		"",
+	);
 
-	return `/${breadcrumbItems.map((entry) => entry.name).join("/")}`;
+	return `/${relativePath}`;
 }
