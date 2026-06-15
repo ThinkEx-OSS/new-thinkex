@@ -52,6 +52,17 @@ export interface ReadWorkspaceKernelItemArgs {
 	itemId: string;
 }
 
+export interface ReadWorkspaceKernelFileContentArgs {
+	itemId: string;
+}
+
+export interface ReadWorkspaceKernelFileContentResult {
+	bytes: Uint8Array;
+	contentType: string;
+	fileName: string;
+	sizeBytes: number;
+}
+
 export interface WriteWorkspaceKernelItemArgs {
 	itemId: string;
 	content: string;

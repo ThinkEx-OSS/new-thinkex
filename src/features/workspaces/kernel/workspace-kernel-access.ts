@@ -80,12 +80,35 @@ export interface WorkspaceKernelClient {
 	readItem(input: {
 		itemId: string;
 	}): Promise<{ item: WorkspaceItemSummary; content: string | null }>;
+	readFileContent(input: { itemId: string }): Promise<{
+		bytes: Uint8Array;
+		contentType: string;
+		fileName: string;
+		sizeBytes: number;
+	}>;
 	writeItem(input: {
 		itemId: string;
 		content: string;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+}
+
+export async function readWorkspaceKernelFileContent(input: {
+	workspaceId: string;
+	userId: string;
+	itemId: string;
+}) {
+	const dbContext = await createDbContext();
+
+	try {
+		await assertCanReadWorkspace(dbContext.db, input);
+		const kernel = await getWorkspaceKernel(input.workspaceId);
+
+		return await kernel.readFileContent({ itemId: input.itemId });
+	} finally {
+		await dbContext.dispose();
+	}
 }
 
 export async function getWorkspaceKernelPage(input: {

@@ -23,6 +23,7 @@ import type {
 	ListWorkspaceKernelEventsArgs,
 	ListWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemArgs,
+	ReadWorkspaceKernelFileContentArgs,
 	ReadWorkspaceKernelItemArgs,
 	RenameWorkspaceKernelItemArgs,
 	WorkspaceKernelPage,
@@ -121,6 +122,10 @@ export class WorkspaceKernel extends Agent<Env> {
 		input: CreateWorkspaceKernelFileFromUploadArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		return await this.fileCommands.createFileFromUpload(input);
+	}
+
+	async readFileContent(input: ReadWorkspaceKernelFileContentArgs) {
+		return await this.fileCommands.readFileContent(input);
 	}
 
 	async renameItem(

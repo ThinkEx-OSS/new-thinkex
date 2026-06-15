@@ -8,7 +8,11 @@ import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/works
 import { getWorkspaceKernelFileShellPath } from "#/features/workspaces/kernel/workspace-kernel-files";
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
-import type { CreateWorkspaceKernelFileFromUploadArgs } from "#/features/workspaces/kernel/workspace-kernel-types";
+import type {
+	CreateWorkspaceKernelFileFromUploadArgs,
+	ReadWorkspaceKernelFileContentArgs,
+	ReadWorkspaceKernelFileContentResult,
+} from "#/features/workspaces/kernel/workspace-kernel-types";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	getWorkspaceFileTypeForUpload,
@@ -138,6 +142,34 @@ export class WorkspaceKernelFileCommands {
 
 		return { result: item, event };
 	}
+
+	async readFileContent(
+		input: ReadWorkspaceKernelFileContentArgs,
+	): Promise<ReadWorkspaceKernelFileContentResult> {
+		const row = this.store.assertActiveItem(input.itemId);
+
+		if (row.type !== "file") {
+			throw new Error("Workspace item is not a file.");
+		}
+
+		const bytes = await this.workspace.readFileBytes(row.shell_path);
+
+		if (!bytes) {
+			throw new Error("Workspace file content was not found.");
+		}
+
+		const item = this.store.requireItem(input.itemId);
+		const contentType = getMetadataString(item.metadataJson, "mimeType");
+		const originalName = getMetadataString(item.metadataJson, "originalName");
+		const sizeBytes = getMetadataNumber(item.metadataJson, "sizeBytes");
+
+		return {
+			bytes,
+			contentType: contentType ?? "application/octet-stream",
+			fileName: originalName ?? item.name,
+			sizeBytes: sizeBytes ?? bytes.byteLength,
+		};
+	}
 }
 
 function createFileMetadata(input: {
@@ -159,4 +191,16 @@ function createFileMetadata(input: {
 			},
 		},
 	};
+}
+
+function getMetadataString(metadata: Record<string, JsonValue>, key: string) {
+	const value = metadata[key];
+
+	return typeof value === "string" ? value : null;
+}
+
+function getMetadataNumber(metadata: Record<string, JsonValue>, key: string) {
+	const value = metadata[key];
+
+	return typeof value === "number" ? value : null;
 }
