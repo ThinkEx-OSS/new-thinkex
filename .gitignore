@@ -10,6 +10,8 @@ dist-ssr
 .nitro
 .tanstack
 .wrangler
+.tmp
+tmp
 .output
 .vinxi
 __unconfig*
