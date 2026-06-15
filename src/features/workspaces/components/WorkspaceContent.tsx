@@ -1,5 +1,5 @@
 import { FolderOpen, Upload } from "lucide-react";
-import { type DragEvent, useState } from "react";
+import { type DragEvent, lazy, Suspense, useState } from "react";
 
 import {
 	ContextMenu,
@@ -29,6 +29,7 @@ import {
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
+import { isWorkspacePdfItem } from "#/features/workspaces/components/workspace-pdf-item";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import {
@@ -40,13 +41,11 @@ import {
 	getWorkspaceBrowseParentId,
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
-import {
-	formatWorkspaceFileSize,
-	workspaceFileUploadTypeLabel,
-} from "#/features/workspaces/workspace-file-uploads";
+import { workspaceFileUploadTypeLabel } from "#/features/workspaces/workspace-file-uploads";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
+	instanceId?: string;
 	items: WorkspaceItem[];
 	activeItem?: WorkspaceItem;
 	workspaceId: string;
@@ -59,8 +58,12 @@ interface WorkspaceContentProps {
 }
 
 const noopWorkspaceSelectionAction = () => {};
+const WorkspacePdfViewer = lazy(
+	() => import("#/features/workspaces/components/WorkspacePdfViewer"),
+);
 
 export default function WorkspaceContent({
+	instanceId,
 	items,
 	activeItem,
 	workspaceId,
@@ -142,6 +145,7 @@ export default function WorkspaceContent({
 			<>
 				<WorkspaceItemView
 					item={activeItem}
+					viewInstanceId={instanceId ?? activeItem.id}
 					workspaceId={workspaceId}
 					onRenameItem={setRenamingItem}
 					onDeleteItem={openDeleteAlert}
@@ -375,17 +379,50 @@ function WorkspaceContentActionDialogs({
 
 function WorkspaceItemView({
 	item,
+	viewInstanceId,
 	workspaceId,
 	onRenameItem,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
+	viewInstanceId: string;
 	workspaceId: string;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
 	if (item.type === "document") {
-		return <DocumentEditorSurface item={item} workspaceId={workspaceId} />;
+		return (
+			<DocumentEditorSurface
+				item={item}
+				toolbarSlotId={viewInstanceId}
+				workspaceId={workspaceId}
+			/>
+		);
+	}
+
+	if (isWorkspacePdfItem(item)) {
+		return (
+			<div className="h-[calc(100vh-5.75rem)]">
+				<ContextMenu>
+					<ContextMenuTrigger
+						render={<section className="h-full min-h-0 overflow-hidden" />}
+					>
+						<Suspense fallback={<WorkspacePdfViewerSkeleton />}>
+							<WorkspacePdfViewer
+								item={item}
+								toolbarSlotId={viewInstanceId}
+								workspaceId={workspaceId}
+							/>
+						</Suspense>
+					</ContextMenuTrigger>
+					<WorkspaceItemActionsContextMenuContent
+						item={item}
+						onRenameItem={onRenameItem}
+						onDeleteItem={onDeleteItem}
+					/>
+				</ContextMenu>
+			</div>
+		);
 	}
 
 	const {
@@ -393,17 +430,15 @@ function WorkspaceItemView({
 		iconClassName,
 		surfaceClassName,
 	} = getWorkspaceItemDisplay(item);
-	const fileDetails =
-		item.type === "file" ? getWorkspaceFileDetails(item) : null;
 
 	return (
-		<div className="h-[calc(100vh-5.75rem)] p-4">
+		<div className="h-[calc(100vh-5.75rem)]">
 			<ContextMenu>
 				<ContextMenuTrigger
 					render={
 						<section
 							className={cn(
-								"flex h-full min-h-64 items-center justify-center rounded-md border border-dashed bg-muted/20",
+								"flex h-full min-h-0 items-center justify-center bg-muted/20",
 								surfaceClassName,
 							)}
 						/>
@@ -419,12 +454,6 @@ function WorkspaceItemView({
 							<h2 className="font-medium text-foreground text-sm">
 								{item.name}
 							</h2>
-							{fileDetails ? (
-								<p className="text-muted-foreground text-xs">
-									{fileDetails.typeLabel}
-									{fileDetails.sizeLabel ? ` / ${fileDetails.sizeLabel}` : ""}
-								</p>
-							) : null}
 						</div>
 					</div>
 				</ContextMenuTrigger>
@@ -438,28 +467,10 @@ function WorkspaceItemView({
 	);
 }
 
-function getWorkspaceFileDetails(item: WorkspaceItem) {
-	const assetFamily = getMetadataString(item, "assetFamily");
-	const mimeType = getMetadataString(item, "mimeType");
-	const sizeBytes = getMetadataNumber(item, "sizeBytes");
-	const typeLabel =
-		assetFamily === "pdf" || mimeType === "application/pdf" ? "PDF" : "File";
-
-	return {
-		typeLabel,
-		sizeLabel:
-			typeof sizeBytes === "number" ? formatWorkspaceFileSize(sizeBytes) : "",
-	};
-}
-
-function getMetadataString(item: WorkspaceItem, key: string) {
-	const value = item.metadataJson[key];
-
-	return typeof value === "string" ? value : null;
-}
-
-function getMetadataNumber(item: WorkspaceItem, key: string) {
-	const value = item.metadataJson[key];
-
-	return typeof value === "number" ? value : null;
+function WorkspacePdfViewerSkeleton() {
+	return (
+		<div className="grid h-full min-h-0 place-items-center overflow-hidden bg-muted/20 text-muted-foreground text-xs">
+			Loading PDF viewer...
+		</div>
+	);
 }

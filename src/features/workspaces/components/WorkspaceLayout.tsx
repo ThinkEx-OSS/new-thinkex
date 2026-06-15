@@ -5,13 +5,13 @@ import {
 	workspacePageQueryKey,
 } from "#/features/workspaces/cache";
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
-import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import { WorkspaceFileUploadProvider } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
 import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
+import { WorkspacePdfEngineProvider } from "#/features/workspaces/components/WorkspacePdfEngineProvider";
 import { WorkspaceMaximizedPresentation } from "#/features/workspaces/components/WorkspacePresentation";
 import {
 	WorkspaceSkeletonAiChatPanel,
@@ -19,7 +19,9 @@ import {
 	WorkspaceSkeletonContent,
 } from "#/features/workspaces/components/WorkspaceShellSkeleton";
 import WorkspaceSplitPresentation from "#/features/workspaces/components/WorkspaceSplitPresentation";
+import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
+import { isWorkspacePdfItem } from "#/features/workspaces/components/workspace-pdf-item";
 import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
@@ -131,6 +133,7 @@ export function WorkspaceShell({
 	);
 	const { chatPanelCollapsed, presentation } = normalizedUiSession;
 	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
+	const hasPdfItems = scopedItems.some(isWorkspacePdfItem);
 	const addItemsToAiContext = (itemsToAdd: WorkspaceItem[]) => {
 		addAiContextItems(
 			workspace.id,
@@ -216,6 +219,7 @@ export function WorkspaceShell({
 									workspace={workspace}
 									activeItem={activeItem}
 									itemsById={itemsById}
+									toolbarSlotId={activeTab.id}
 									onCreateItem={createWorkspaceItem}
 									onCloseItemView={
 										isWorkspaceItemView(activeItem) ? closeItemView : undefined
@@ -246,9 +250,11 @@ export function WorkspaceShell({
 								onOpenItem={openItem}
 							/>
 						) : (
-							<WorkspaceContent
-								items={scopedItems}
-								activeItem={activeItem}
+							<WorkspaceStandardTabPanes
+								activeTabId={activeTab.id}
+								itemsById={itemsById}
+								scopedItems={scopedItems}
+								tabs={session.tabs}
 								workspaceId={workspace.id}
 								onAddItemsToAiContext={addItemsToAiContext}
 								onCreateItem={createWorkspaceItem}
@@ -265,7 +271,7 @@ export function WorkspaceShell({
 			</WorkspaceItemToolbarProvider>
 		);
 
-	return (
+	const workspaceInteractionContent = (
 		<WorkspaceFileUploadProvider workspaceId={workspace.id}>
 			<WorkspaceDragProvider
 				items={scopedItems}
@@ -279,5 +285,13 @@ export function WorkspaceShell({
 				{presentationContent}
 			</WorkspaceDragProvider>
 		</WorkspaceFileUploadProvider>
+	);
+
+	return hasPdfItems ? (
+		<WorkspacePdfEngineProvider>
+			{workspaceInteractionContent}
+		</WorkspacePdfEngineProvider>
+	) : (
+		workspaceInteractionContent
 	);
 }

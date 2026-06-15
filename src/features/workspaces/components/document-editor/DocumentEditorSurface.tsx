@@ -18,9 +18,11 @@ import { authClient } from "#/lib/auth-client";
 
 export function DocumentEditorSurface({
 	item,
+	toolbarSlotId,
 	workspaceId,
 }: {
 	item: WorkspaceItem;
+	toolbarSlotId?: string;
 	workspaceId: string;
 }) {
 	const sessionQuery = authClient.useSession();
@@ -43,6 +45,7 @@ export function DocumentEditorSurface({
 		<DocumentEditorInstance
 			collaborationSession={collaborationSession}
 			item={item}
+			toolbarSlotId={toolbarSlotId}
 		/>
 	);
 }
@@ -50,9 +53,11 @@ export function DocumentEditorSurface({
 function DocumentEditorInstance({
 	collaborationSession,
 	item,
+	toolbarSlotId,
 }: {
 	collaborationSession: DocumentCollaborationSession;
 	item: WorkspaceItem;
+	toolbarSlotId?: string;
 }) {
 	const editor = useEditor({
 		immediatelyRender: false,
@@ -71,7 +76,7 @@ function DocumentEditorInstance({
 		},
 	});
 
-	useDocumentEditorToolbar(item.id, editor);
+	useDocumentEditorToolbar(toolbarSlotId ?? item.id, editor);
 
 	return (
 		<section className="relative flex h-[calc(100vh-5.75rem)] min-h-0 flex-col bg-background">

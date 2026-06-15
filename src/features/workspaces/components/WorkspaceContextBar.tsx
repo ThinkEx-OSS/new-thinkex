@@ -55,6 +55,7 @@ interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
 	activeItem?: WorkspaceItem;
 	itemsById: Map<string, WorkspaceItem>;
+	toolbarSlotId?: string;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
@@ -68,6 +69,7 @@ export default function WorkspaceContextBar({
 	workspace,
 	activeItem,
 	itemsById,
+	toolbarSlotId,
 	onCreateItem,
 	onCloseItemView,
 	onNavigateToRoot,
@@ -147,7 +149,9 @@ export default function WorkspaceContextBar({
 				</Breadcrumb>
 
 				<div className="flex min-w-0 shrink-0 items-center gap-1">
-					<WorkspaceItemToolbarSlot activeItemId={activeItem?.id} />
+					<WorkspaceItemToolbarSlot
+						activeToolbarSlotId={toolbarSlotId ?? activeItem?.id}
+					/>
 					<WorkspaceContextActions
 						activeItem={activeItem}
 						createParentId={createParentId}

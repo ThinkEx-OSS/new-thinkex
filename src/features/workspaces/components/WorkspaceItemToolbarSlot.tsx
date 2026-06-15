@@ -11,16 +11,25 @@ import {
 
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { DocumentToolbar } from "#/features/workspaces/components/document-editor/DocumentToolbar";
+import { PdfToolbar } from "#/features/workspaces/components/PdfToolbar";
 
-interface WorkspaceItemToolbarRegistration {
-	editor: Editor | null;
-	itemId: string;
-}
+type WorkspaceItemToolbarRegistration =
+	| {
+			editor: Editor | null;
+			kind: "document";
+			slotId: string;
+	  }
+	| {
+			fileName: string;
+			fileUrl: string;
+			kind: "pdf";
+			slotId: string;
+	  };
 
 interface WorkspaceItemToolbarContextValue {
-	registration: WorkspaceItemToolbarRegistration | null;
+	registrationsBySlotId: Record<string, WorkspaceItemToolbarRegistration>;
 	setRegistration: Dispatch<
-		SetStateAction<WorkspaceItemToolbarRegistration | null>
+		SetStateAction<Record<string, WorkspaceItemToolbarRegistration>>
 	>;
 }
 
@@ -32,18 +41,21 @@ export function WorkspaceItemToolbarProvider({
 }: {
 	children: ReactNode;
 }) {
-	const [registration, setRegistration] =
-		useState<WorkspaceItemToolbarRegistration | null>(null);
+	const [registrationsBySlotId, setRegistration] = useState<
+		Record<string, WorkspaceItemToolbarRegistration>
+	>({});
 
 	return (
-		<WorkspaceItemToolbarContext value={{ registration, setRegistration }}>
+		<WorkspaceItemToolbarContext
+			value={{ registrationsBySlotId, setRegistration }}
+		>
 			{children}
 		</WorkspaceItemToolbarContext>
 	);
 }
 
 export function useDocumentEditorToolbar(
-	itemId: string,
+	slotId: string,
 	editor: Editor | null,
 ) {
 	const context = use(WorkspaceItemToolbarContext);
@@ -54,31 +66,90 @@ export function useDocumentEditorToolbar(
 			return;
 		}
 
-		const registration = { editor, itemId };
-		setRegistration(registration);
+		const registration = { editor, kind: "document" as const, slotId };
+		setRegistration((current) => ({
+			...current,
+			[slotId]: registration,
+		}));
 
 		return () => {
-			setRegistration((current) => (current === registration ? null : current));
+			setRegistration((current) => {
+				if (current[slotId] !== registration) {
+					return current;
+				}
+
+				const next = { ...current };
+				delete next[slotId];
+
+				return next;
+			});
 		};
-	}, [editor, itemId, setRegistration]);
+	}, [editor, slotId, setRegistration]);
+}
+
+export function usePdfItemToolbar({
+	fileName,
+	fileUrl,
+	slotId,
+}: {
+	fileName: string;
+	fileUrl: string;
+	slotId: string;
+}) {
+	const context = use(WorkspaceItemToolbarContext);
+	const setRegistration = context?.setRegistration;
+
+	useEffect(() => {
+		if (!setRegistration) {
+			return;
+		}
+
+		const registration = { fileName, fileUrl, kind: "pdf" as const, slotId };
+		setRegistration((current) => ({
+			...current,
+			[slotId]: registration,
+		}));
+
+		return () => {
+			setRegistration((current) => {
+				if (current[slotId] !== registration) {
+					return current;
+				}
+
+				const next = { ...current };
+				delete next[slotId];
+
+				return next;
+			});
+		};
+	}, [fileName, fileUrl, slotId, setRegistration]);
 }
 
 export function WorkspaceItemToolbarSlot({
-	activeItemId,
+	activeToolbarSlotId,
 }: {
-	activeItemId?: string;
+	activeToolbarSlotId?: string;
 }) {
 	const context = use(WorkspaceItemToolbarContext);
-	const registration = context?.registration;
+	const registration = activeToolbarSlotId
+		? context?.registrationsBySlotId[activeToolbarSlotId]
+		: null;
 
-	if (!activeItemId || registration?.itemId !== activeItemId) {
+	if (!activeToolbarSlotId || !registration) {
 		return null;
 	}
 
 	return (
 		<div className="flex min-w-0 shrink-0 items-center overflow-hidden">
 			<TooltipProvider>
-				<DocumentToolbar editor={registration.editor} />
+				{registration.kind === "document" ? (
+					<DocumentToolbar editor={registration.editor} />
+				) : (
+					<PdfToolbar
+						fileName={registration.fileName}
+						fileUrl={registration.fileUrl}
+					/>
+				)}
 			</TooltipProvider>
 		</div>
 	);

@@ -42,10 +42,8 @@ import {
 	getTextAlignIcon,
 	isCodeBlock,
 } from "#/features/workspaces/components/document-editor/document-editor-toolbar-actions";
+import { workspaceItemToolbarIconButtonClass } from "#/features/workspaces/components/workspace-item-toolbar-styles";
 import { cn } from "#/lib/utils";
-
-const toolbarIconButtonClass =
-	"size-7 justify-center px-0 text-muted-foreground hover:bg-transparent hover:text-foreground aria-expanded:bg-transparent aria-expanded:text-foreground [&_svg:not([class*='size-'])]:size-4";
 
 export function DocumentToolbar({ editor }: { editor: Editor | null }) {
 	const editorState = useDocumentEditorUiState(editor);
@@ -89,7 +87,7 @@ function BlockTypeMenu({
 						type="button"
 						variant="ghost"
 						size="icon-xs"
-						className={toolbarIconButtonClass}
+						className={workspaceItemToolbarIconButtonClass}
 						disabled={!editor}
 						aria-label="Text block"
 					/>
@@ -146,7 +144,7 @@ function AlignMenu({
 						type="button"
 						variant="ghost"
 						size="icon-xs"
-						className={toolbarIconButtonClass}
+						className={workspaceItemToolbarIconButtonClass}
 						disabled={disabled}
 						aria-label="Text alignment"
 					/>
@@ -187,7 +185,7 @@ function InlineFormatMenu({
 						variant="ghost"
 						size="icon-xs"
 						className={cn(
-							toolbarIconButtonClass,
+							workspaceItemToolbarIconButtonClass,
 							activeFormat && "text-foreground",
 						)}
 						disabled={disabled}
@@ -255,7 +253,7 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 						type="button"
 						variant="ghost"
 						size="icon-xs"
-						className={toolbarIconButtonClass}
+						className={workspaceItemToolbarIconButtonClass}
 						disabled={disabled}
 						aria-label="More document actions"
 					/>
@@ -318,7 +316,7 @@ function ToolbarButton({
 			type="button"
 			variant="ghost"
 			size="icon-xs"
-			className={toolbarIconButtonClass}
+			className={workspaceItemToolbarIconButtonClass}
 			disabled={disabled}
 			aria-label={label}
 			onClick={onClick}
