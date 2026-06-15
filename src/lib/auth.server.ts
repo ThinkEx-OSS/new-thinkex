@@ -103,6 +103,8 @@ function createAuth(
 		baseURL,
 		trustedOrigins: getTrustedOrigins(baseURL),
 		session: {
+			expiresIn: 60 * 60 * 24 * 90,
+			updateAge: 60 * 60 * 24,
 			cookieCache: {
 				enabled: true,
 				maxAge: 5 * 60,
