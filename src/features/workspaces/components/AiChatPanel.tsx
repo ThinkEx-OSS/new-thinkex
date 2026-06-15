@@ -1,4 +1,3 @@
-import { useDragOperation } from "@dnd-kit/react";
 import { Suspense } from "react";
 import {
 	Conversation,
@@ -23,7 +22,6 @@ import {
 	WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
 	workspaceAiContextCollisionDetector,
 } from "#/features/workspaces/components/workspace-ai-context-collision";
-import { getWorkspaceDragSource } from "#/features/workspaces/model/drag";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import { cn } from "#/lib/utils";
 
@@ -51,9 +49,6 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 		selectedThread,
 		visibleThreadList,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
-	const dragOperation = useDragOperation();
-	const dragSource = getWorkspaceDragSource(dragOperation.source);
-	const isWorkspaceItemDrag = dragSource?.kind === "workspace-item";
 	const { isDropTarget, ref } = useWorkspaceAiContextDropTarget({
 		workspaceId: context.workspaceId,
 		collisionDetector: workspaceAiContextCollisionDetector,
@@ -65,9 +60,6 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 			ref={ref}
 			className={cn(
 				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
-				isWorkspaceItemDrag &&
-					!isDropTarget &&
-					"workspace-drag-drop-affordance",
 				isDropTarget && "ring-2 ring-primary/45 ring-inset",
 			)}
 		>

@@ -19,7 +19,6 @@ import {
 } from "#/features/workspaces/components/workspace-tab-bar-model";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
-import { getWorkspaceDragSource } from "#/features/workspaces/model/drag";
 import { getWorkspaceDragProjection } from "#/features/workspaces/model/drag-projection";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { findItemForTab } from "#/features/workspaces/model/tabs";
@@ -56,8 +55,6 @@ export default function WorkspaceTabBar({
 }: WorkspaceTabBarProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
 	const dragOperation = useDragOperation();
-	const dragSource = getWorkspaceDragSource(dragOperation.source);
-	const isWorkspaceItemDrag = dragSource?.kind === "workspace-item";
 	const projection = getWorkspaceDragProjection({
 		source: dragOperation.source,
 		target: dragOperation.target,
@@ -83,10 +80,7 @@ export default function WorkspaceTabBar({
 
 	return (
 		<nav
-			className={cn(
-				"flex min-w-0 flex-1 items-center gap-1 rounded-md transition-shadow",
-				isWorkspaceItemDrag && "workspace-drag-drop-affordance",
-			)}
+			className="flex min-w-0 flex-1 items-center gap-1"
 			aria-label="Workspace tabs"
 			onPointerLeave={closeResizeLock.release}
 		>
