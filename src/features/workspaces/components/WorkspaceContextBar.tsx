@@ -40,14 +40,12 @@ const currentCrumbLabelClassName = "[text-shadow:0.025em_0_0_currentColor]";
 const openWorkspaceSearch = () => undefined;
 
 interface WorkspaceContextDialogState {
-	settingsOpen: boolean;
 	renamingItem: WorkspaceItem | null;
 	deletingItem: WorkspaceItem | null;
 	deleteAlertOpen: boolean;
 }
 
 const initialDialogState: WorkspaceContextDialogState = {
-	settingsOpen: false,
 	renamingItem: null,
 	deletingItem: null,
 	deleteAlertOpen: false,
@@ -83,8 +81,6 @@ export default function WorkspaceContextBar({
 	const workspaceItems = Array.from(itemsById.values());
 	const updateDialogState = (patch: Partial<WorkspaceContextDialogState>) =>
 		setDialogState((current) => ({ ...current, ...patch }));
-	const setSettingsOpen = (settingsOpen: boolean) =>
-		updateDialogState({ settingsOpen });
 	const setRenamingItem = (renamingItem: WorkspaceItem | null) =>
 		updateDialogState({ renamingItem });
 	const setDeleteAlertOpen = (deleteAlertOpen: boolean) =>
@@ -93,8 +89,7 @@ export default function WorkspaceContextBar({
 		updateDialogState({ deletingItem: null, deleteAlertOpen: false });
 	const openDeleteAlert = (deletingItem: WorkspaceItem) =>
 		updateDialogState({ deletingItem, deleteAlertOpen: true });
-	const { deleteAlertOpen, deletingItem, renamingItem, settingsOpen } =
-		dialogState;
+	const { deleteAlertOpen, deletingItem, renamingItem } = dialogState;
 	const searchHotkey = formatAppHotkey(
 		getAppHotkey("workspace.search.open").hotkey,
 	);
@@ -109,14 +104,34 @@ export default function WorkspaceContextBar({
 				<Breadcrumb className="min-w-0 flex-1">
 					<BreadcrumbList className="flex-nowrap gap-1.5 overflow-hidden sm:gap-1.5">
 						<BreadcrumbItem className="min-w-0">
-							<CrumbButton
-								icon={WorkspaceIcon}
-								label={workspace.name}
-								iconClassName={color.text}
-								isCurrent={!activeItem}
-								onClick={onNavigateToRoot}
-								onCurrentClick={() => setSettingsOpen(true)}
-							/>
+							{activeItem ? (
+								<CrumbButton
+									icon={WorkspaceIcon}
+									label={workspace.name}
+									iconClassName={color.text}
+									isCurrent={false}
+									onClick={onNavigateToRoot}
+								/>
+							) : (
+								<WorkspaceSettingsDialog
+									workspace={workspace}
+									trigger={
+										<button
+											type="button"
+											className={breadcrumbCurrentClassName}
+											aria-label={`Open settings for ${workspace.name}`}
+										>
+											<CrumbContent
+												icon={WorkspaceIcon}
+												label={workspace.name}
+												iconClassName={color.text}
+												isCurrent={true}
+												showDisclosure={true}
+											/>
+										</button>
+									}
+								/>
+							)}
 						</BreadcrumbItem>
 						{breadcrumbs.map((item) => (
 							<WorkspaceBreadcrumbItem
@@ -143,11 +158,6 @@ export default function WorkspaceContextBar({
 					/>
 				</div>
 			</div>
-			<WorkspaceSettingsDialog
-				workspace={workspace}
-				open={settingsOpen}
-				onOpenChange={setSettingsOpen}
-			/>
 			<RenameWorkspaceItemDialog
 				item={renamingItem}
 				onOpenChange={(open) => {
@@ -229,37 +239,16 @@ function CrumbButton({
 	iconClassName,
 	isCurrent,
 	onClick,
-	onCurrentClick,
 }: {
 	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 	label: string;
 	iconClassName?: string;
 	isCurrent: boolean;
 	onClick: () => void;
-	onCurrentClick?: () => void;
 }) {
 	const iconColor = iconClassName ?? "text-muted-foreground";
 
 	if (isCurrent) {
-		if (onCurrentClick) {
-			return (
-				<button
-					type="button"
-					className={breadcrumbCurrentClassName}
-					onClick={onCurrentClick}
-					aria-label={`Open settings for ${label}`}
-				>
-					<CrumbContent
-						icon={Icon}
-						label={label}
-						iconClassName={iconColor}
-						isCurrent={true}
-						showDisclosure={true}
-					/>
-				</button>
-			);
-		}
-
 		return (
 			<BreadcrumbPage className={breadcrumbCurrentClassName}>
 				<CrumbContent

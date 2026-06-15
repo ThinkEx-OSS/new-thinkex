@@ -1,7 +1,10 @@
 import { Trash2 } from "lucide-react";
 import {
+	type Dispatch,
 	type KeyboardEvent,
 	type PointerEvent,
+	type ReactElement,
+	type SetStateAction,
 	useEffect,
 	useId,
 	useRef,
@@ -16,6 +19,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from "#/components/ui/dialog";
 import { Field, FieldGroup, FieldTitle } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
@@ -35,49 +39,75 @@ import { cn } from "#/lib/utils";
 
 interface WorkspaceSettingsDialogProps {
 	workspace: WorkspaceSummary;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
+	trigger: ReactElement;
 }
+
+interface WorkspaceSettingsDraft {
+	name: string;
+	icon: WorkspaceIcon;
+	color: WorkspaceColor;
+}
+
+const getWorkspaceSettingsDraft = (
+	workspace: WorkspaceSummary,
+): WorkspaceSettingsDraft => ({
+	name: workspace.name,
+	icon: workspace.icon ?? "compass",
+	color: workspace.color ?? "sky",
+});
 
 export default function WorkspaceSettingsDialog({
 	workspace,
-	open,
-	onOpenChange,
+	trigger,
 }: WorkspaceSettingsDialogProps) {
+	const [open, setOpen] = useState(false);
+	const [draft, setDraft] = useState(() =>
+		getWorkspaceSettingsDraft(workspace),
+	);
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (nextOpen) {
+			setDraft(getWorkspaceSettingsDraft(workspace));
+		}
+
+		setOpen(nextOpen);
+	};
+
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogTrigger render={trigger} />
 			<WorkspaceSettingsDialogContent
-				key={`${workspace.id}:${open ? "open" : "closed"}`}
+				draft={draft}
+				setDraft={setDraft}
 				workspace={workspace}
-				onOpenChange={onOpenChange}
+				onOpenChange={handleOpenChange}
 			/>
 		</Dialog>
 	);
 }
 
 function WorkspaceSettingsDialogContent({
+	draft,
+	setDraft,
 	workspace,
 	onOpenChange,
 }: {
+	draft: WorkspaceSettingsDraft;
+	setDraft: Dispatch<SetStateAction<WorkspaceSettingsDraft>>;
 	workspace: WorkspaceSummary;
 	onOpenChange: (open: boolean) => void;
 }) {
 	const nameInputId = useId();
 	const updateWorkspaceMutation = useUpdateWorkspaceMutation();
 	const deleteWorkspaceMutation = useDeleteWorkspaceMutation();
-	const [nameDraft, setNameDraft] = useState<string>();
-	const [iconDraft, setIconDraft] = useState<WorkspaceIcon>();
-	const [colorDraft, setColorDraft] = useState<WorkspaceColor>();
-	const name = nameDraft ?? workspace.name;
-	const icon = iconDraft ?? workspace.icon ?? "compass";
-	const color = colorDraft ?? workspace.color ?? "sky";
-	const normalizedName = name.trim();
+	const workspaceDraft = getWorkspaceSettingsDraft(workspace);
+	const normalizedName = draft.name.trim();
 	const canSave =
 		normalizedName.length > 0 &&
 		!updateWorkspaceMutation.isPending &&
 		(normalizedName !== workspace.name ||
-			icon !== (workspace.icon ?? "compass") ||
-			color !== (workspace.color ?? "sky"));
+			draft.icon !== workspaceDraft.icon ||
+			draft.color !== workspaceDraft.color);
 	const updateError =
 		updateWorkspaceMutation.error instanceof Error
 			? updateWorkspaceMutation.error.message
@@ -96,8 +126,8 @@ function WorkspaceSettingsDialogContent({
 		updateWorkspaceMutation.mutate({
 			workspaceId: workspace.id,
 			name: normalizedName,
-			icon,
-			color,
+			icon: draft.icon,
+			color: draft.color,
 		});
 	};
 
@@ -115,8 +145,13 @@ function WorkspaceSettingsDialogContent({
 					<Label htmlFor={nameInputId}>Name</Label>
 					<Input
 						id={nameInputId}
-						value={name}
-						onChange={(event) => setNameDraft(event.target.value)}
+						value={draft.name}
+						onChange={(event) =>
+							setDraft((current) => ({
+								...current,
+								name: event.target.value,
+							}))
+						}
 						maxLength={120}
 						aria-invalid={normalizedName.length === 0}
 					/>
@@ -131,12 +166,14 @@ function WorkspaceSettingsDialogContent({
 								type="button"
 								className={cn(
 									"flex h-16 flex-col items-center justify-center gap-1 rounded-md border bg-background text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
-									icon === value
+									draft.icon === value
 										? "border-ring bg-muted text-foreground"
 										: "border-border text-muted-foreground",
 								)}
-								aria-pressed={icon === value}
-								onClick={() => setIconDraft(value)}
+								aria-pressed={draft.icon === value}
+								onClick={() =>
+									setDraft((current) => ({ ...current, icon: value }))
+								}
 							>
 								<Icon className="size-5" aria-hidden="true" />
 								<span>{label}</span>
@@ -154,12 +191,17 @@ function WorkspaceSettingsDialogContent({
 								type="button"
 								className={cn(
 									"flex h-14 flex-col items-center justify-center gap-1 rounded-md border bg-background text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
-									color === option.value
+									draft.color === option.value
 										? "border-ring bg-muted text-foreground"
 										: "border-border text-muted-foreground",
 								)}
-								aria-pressed={color === option.value}
-								onClick={() => setColorDraft(option.value)}
+								aria-pressed={draft.color === option.value}
+								onClick={() =>
+									setDraft((current) => ({
+										...current,
+										color: option.value,
+									}))
+								}
 							>
 								<span
 									className={cn("size-4 rounded-full", option.bg)}
