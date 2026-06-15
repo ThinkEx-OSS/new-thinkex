@@ -107,6 +107,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				thread.promptScope,
 				{
 					timeZone: getBodyString(ctx.body, "timeZone"),
+					workspaceAiContext: ctx.body?.workspaceAiContext,
 				},
 			);
 

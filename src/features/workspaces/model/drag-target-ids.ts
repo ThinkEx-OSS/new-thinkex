@@ -11,6 +11,10 @@ export function getWorkspaceFolderDropTargetId(folderId: string) {
 	return `${WORKSPACE_FOLDER_DROP_TARGET_ID_PREFIX}${folderId}`;
 }
 
+export function getWorkspaceAiContextDropTargetId(workspaceId: string) {
+	return `${WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX}${encodeWorkspaceDropTargetSegment(workspaceId)}`;
+}
+
 export function getWorkspaceFolderDropTargetFolderId(id: unknown) {
 	if (typeof id !== "string") {
 		return undefined;
@@ -107,4 +111,8 @@ function decodeWorkspaceDropTargetSegment(value: string) {
 	} catch {
 		return undefined;
 	}
+}
+
+function encodeWorkspaceDropTargetSegment(value: string) {
+	return encodeURIComponent(value);
 }

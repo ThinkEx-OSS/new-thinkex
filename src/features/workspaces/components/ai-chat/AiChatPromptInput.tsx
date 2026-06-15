@@ -3,11 +3,8 @@ import { lazy, Suspense, useRef, useState } from "react";
 
 import {
 	PromptInput,
-	PromptInputActionAddAttachments,
-	PromptInputActionMenu,
-	PromptInputActionMenuContent,
-	PromptInputActionMenuTrigger,
 	PromptInputBody,
+	PromptInputButton,
 	PromptInputFooter,
 	PromptInputHeader,
 	type PromptInputMessage,
@@ -18,6 +15,7 @@ import {
 	PromptInputSelectTrigger,
 	PromptInputTextarea,
 	PromptInputTools,
+	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
 import { Button, buttonVariants } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
@@ -57,6 +55,20 @@ const AiChatInspectorDialog = import.meta.env.DEV
 			return { default: module.AiChatInspectorDialog };
 		})
 	: null;
+
+function AiChatAttachmentButton() {
+	const attachments = usePromptInputAttachments();
+
+	return (
+		<PromptInputButton
+			aria-label="Add attachments"
+			className={TOOLBAR_ICON_BUTTON_CLASSNAME}
+			onClick={attachments.openFileDialog}
+		>
+			<Plus className={TOOLBAR_PLUS_ICON_SIZE} />
+		</PromptInputButton>
+	);
+}
 
 interface AiChatPromptInputProps {
 	activeThreadId?: string;
@@ -143,17 +155,7 @@ export default function AiChatPromptInput({
 
 				<PromptInputFooter className={PROMPT_INPUT_FOOTER_PADDING}>
 					<PromptInputTools>
-						<PromptInputActionMenu>
-							<PromptInputActionMenuTrigger
-								aria-label="Add attachments"
-								className={TOOLBAR_ICON_BUTTON_CLASSNAME}
-							>
-								<Plus className={TOOLBAR_PLUS_ICON_SIZE} />
-							</PromptInputActionMenuTrigger>
-							<PromptInputActionMenuContent>
-								<PromptInputActionAddAttachments />
-							</PromptInputActionMenuContent>
-						</PromptInputActionMenu>
+						<AiChatAttachmentButton />
 
 						<PromptInputSelect
 							onValueChange={(value) => handleModelChange(String(value))}

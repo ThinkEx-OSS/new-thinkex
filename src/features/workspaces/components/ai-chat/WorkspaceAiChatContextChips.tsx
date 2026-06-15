@@ -1,21 +1,15 @@
-import { Check, Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import type { ComponentType } from "react";
 
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "#/components/ui/hover-card";
-import { useWorkspaceSelectedItems } from "#/features/workspaces/components/useWorkspaceSelection";
+import { Button } from "#/components/ui/button";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	getWorkspaceAiContextChips,
 	type WorkspaceAiContextChip,
-	type WorkspaceAiContextListItem,
 	type WorkspaceAiContextScope,
-	type WorkspaceAiContextSingleIcon,
 } from "#/features/workspaces/model/workspace-ai-context";
+import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
 export default function WorkspaceAiChatContextChips({
@@ -23,14 +17,10 @@ export default function WorkspaceAiChatContextChips({
 }: {
 	context: WorkspaceAiContextScope;
 }) {
-	const selectedItems = useWorkspaceSelectedItems({
-		itemsById: context.itemsById,
-		workspaceId: context.workspaceId,
-	});
-	const chips = getWorkspaceAiContextChips({
-		activeItem: context.activeItem,
-		selectedItems,
-	});
+	const removeAiContextItem = useWorkspaceUiStore(
+		(state) => state.removeAiContextItem,
+	);
+	const chips = getWorkspaceAiContextChips(context);
 
 	if (chips.length === 0) {
 		return null;
@@ -39,7 +29,11 @@ export default function WorkspaceAiChatContextChips({
 	return (
 		<div className="flex w-full min-w-0 flex-wrap items-center gap-1 pt-2">
 			{chips.map((chip) => (
-				<WorkspaceAiChatContextChipRenderer key={chip.id} chip={chip} />
+				<WorkspaceAiChatContextChipRenderer
+					key={chip.id}
+					chip={chip}
+					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
+				/>
 			))}
 		</div>
 	);
@@ -47,103 +41,67 @@ export default function WorkspaceAiChatContextChips({
 
 function WorkspaceAiChatContextChipRenderer({
 	chip,
+	onRemove,
 }: {
 	chip: WorkspaceAiContextChip;
+	onRemove: () => void;
 }) {
-	if (chip.type === "list") {
-		return (
-			<WorkspaceAiChatContextListChip
-				ariaLabel={chip.ariaLabel}
-				items={chip.items}
-				label={chip.label}
-			/>
-		);
-	}
-
 	return (
 		<WorkspaceAiChatContextChip
-			icon={chip.icon}
+			isActiveVisible={chip.isActiveVisible}
 			item={chip.item}
 			label={chip.label}
+			path={chip.path}
+			onRemove={onRemove}
 		/>
 	);
 }
 
-function WorkspaceAiChatContextListChip({
-	ariaLabel,
-	items,
-	label,
-}: {
-	ariaLabel: string;
-	items: WorkspaceAiContextListItem[];
-	label: string;
-}) {
-	const { Icon, iconClassName } = getWorkspaceAiChatContextListChipIcon();
-
-	return (
-		<HoverCard>
-			<HoverCardTrigger
-				delay={250}
-				render={
-					<button
-						type="button"
-						className={getWorkspaceAiChatContextChipClassName("cursor-default")}
-						aria-label={ariaLabel}
-					/>
-				}
-			>
-				<WorkspaceAiChatContextChipContent
-					Icon={Icon}
-					iconClassName={iconClassName}
-					label={label}
-				/>
-			</HoverCardTrigger>
-			<HoverCardContent
-				align="start"
-				side="top"
-				className="w-64 rounded-md p-2"
-			>
-				<div className="max-h-64 space-y-1 overflow-y-auto">
-					{items.map((item) => (
-						<WorkspaceAiChatContextListRow key={item.id} item={item} />
-					))}
-				</div>
-			</HoverCardContent>
-		</HoverCard>
-	);
-}
-
 function WorkspaceAiChatContextChip({
-	icon,
+	isActiveVisible,
 	item,
 	label,
+	path,
+	onRemove,
 }: {
-	icon: WorkspaceAiContextSingleIcon;
+	isActiveVisible: boolean;
 	item: WorkspaceItem;
 	label: string;
+	path: string;
+	onRemove: () => void;
 }) {
-	const { Icon, iconClassName } = getWorkspaceAiChatContextChipIcon({
-		icon,
-		item,
-	});
+	const { Icon, iconClassName } = getWorkspaceAiChatContextChipIcon(item);
 
 	return (
-		<div className={getWorkspaceAiChatContextChipClassName()} title={label}>
+		<div className={getWorkspaceAiChatContextChipClassName()} title={path}>
 			<WorkspaceAiChatContextChipContent
 				Icon={Icon}
+				isActiveVisible={isActiveVisible}
 				iconClassName={iconClassName}
 				label={label}
 			/>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-xs"
+				className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
+				aria-label={`Remove ${label} from AI context`}
+				onClick={onRemove}
+			>
+				<X className="size-3" />
+			</Button>
 		</div>
 	);
 }
 
 function WorkspaceAiChatContextChipContent({
 	Icon,
+	isActiveVisible,
 	iconClassName,
 	label,
 }: {
 	Icon: ComponentType<{ className?: string }>;
+	isActiveVisible: boolean;
 	iconClassName?: string;
 	label: string;
 }) {
@@ -153,52 +111,20 @@ function WorkspaceAiChatContextChipContent({
 				className={cn("size-3 shrink-0 text-muted-foreground", iconClassName)}
 			/>
 			<span className="min-w-0 truncate font-medium">{label}</span>
+			{isActiveVisible ? (
+				<Eye
+					className="size-3 shrink-0 text-primary"
+					aria-label="Active item"
+				/>
+			) : null}
 		</>
 	);
 }
 
-function WorkspaceAiChatContextListRow({
-	item,
-}: {
-	item: WorkspaceAiContextListItem;
-}) {
-	const itemDisplay = getWorkspaceItemDisplay(item.item);
-	const Icon = itemDisplay.Icon;
-
-	return (
-		<div className="flex min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-sm">
-			<Icon
-				className={cn(
-					"size-3.5 shrink-0 text-muted-foreground",
-					itemDisplay.iconClassName,
-				)}
-			/>
-			<span className="min-w-0 truncate">{item.label}</span>
-		</div>
-	);
-}
-
-function getWorkspaceAiChatContextListChipIcon(): {
+function getWorkspaceAiChatContextChipIcon(item: WorkspaceItem): {
 	Icon: ComponentType<{ className?: string }>;
 	iconClassName?: string;
 } {
-	return { Icon: Check };
-}
-
-function getWorkspaceAiChatContextChipIcon({
-	icon,
-	item,
-}: {
-	icon: WorkspaceAiContextSingleIcon;
-	item: WorkspaceItem;
-}): {
-	Icon: ComponentType<{ className?: string }>;
-	iconClassName?: string;
-} {
-	if (icon === "current-item") {
-		return { Icon: Eye };
-	}
-
 	const { Icon, iconClassName } = getWorkspaceItemDisplay(item);
 
 	return { Icon, iconClassName };
@@ -206,7 +132,7 @@ function getWorkspaceAiChatContextChipIcon({
 
 function getWorkspaceAiChatContextChipClassName(className?: string) {
 	return cn(
-		"flex min-h-7 min-w-0 max-w-40 items-center gap-1 rounded-md bg-muted px-1.5 py-1.5 text-xs dark:bg-input/30",
+		"flex min-h-7 min-w-0 max-w-48 items-center gap-1 rounded-md bg-muted px-1.5 py-1 text-xs dark:bg-input/30",
 		"outline-none focus-visible:ring-2 focus-visible:ring-ring",
 		className,
 	);

@@ -9,6 +9,7 @@ import {
 import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import type { WorkspaceTabLayoutElementHandler } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
+import { workspaceControlledSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	WORKSPACE_TAB_ITEM_CLASS,
 	type WorkspaceTabInsertProjection,
@@ -103,6 +104,7 @@ export function WorkspaceTabItem({
 			...WORKSPACE_SORTABLE_TAB_TRANSITION,
 			idle: false,
 		},
+		plugins: workspaceControlledSortablePlugins,
 		data: createWorkspaceTabDragData(tab.id),
 	});
 	const showAttachedChrome = isActive && !isDragSource;

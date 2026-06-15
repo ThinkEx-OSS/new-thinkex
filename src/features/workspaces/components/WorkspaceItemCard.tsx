@@ -1,4 +1,3 @@
-import { Feedback } from "@dnd-kit/dom";
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { CheckIcon, FolderInput } from "lucide-react";
@@ -11,6 +10,7 @@ import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/u
 import WorkspaceItemActionsMenu, {
 	WorkspaceItemActionsContextMenuContent,
 } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
+import { workspaceItemSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	createWorkspaceItemDragData,
 	getWorkspaceDragSource,
@@ -127,10 +127,7 @@ export default function WorkspaceItemCard({
 			easing: "cubic-bezier(0.2, 0, 0, 1)",
 			idle: false,
 		},
-		plugins: (defaults) => [
-			...defaults,
-			Feedback.configure({ feedback: "clone", dropAnimation: null }),
-		],
+		plugins: workspaceItemSortablePlugins,
 		data: createWorkspaceItemDragData({
 			itemId: item.id,
 			parentId: item.parentId,

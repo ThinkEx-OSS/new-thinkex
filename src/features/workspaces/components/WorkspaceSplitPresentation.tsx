@@ -12,6 +12,7 @@ export default function WorkspaceSplitPresentation({
 	panes,
 	direction,
 	scopedItems,
+	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: WorkspacePresentationProps & {
@@ -29,6 +30,7 @@ export default function WorkspaceSplitPresentation({
 					aiContextScope={aiContextScope}
 					pane={panes[0]}
 					scopedItems={scopedItems}
+					onAddItemsToAiContext={onAddItemsToAiContext}
 					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
@@ -39,6 +41,7 @@ export default function WorkspaceSplitPresentation({
 					aiContextScope={aiContextScope}
 					pane={panes[1]}
 					scopedItems={scopedItems}
+					onAddItemsToAiContext={onAddItemsToAiContext}
 					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>

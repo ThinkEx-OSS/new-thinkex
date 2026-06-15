@@ -14,6 +14,7 @@ export const standardPresentation: RestorableWorkspacePresentation = {
 };
 
 export const defaultWorkspaceUiSession: WorkspaceUiSession = {
+	aiContextItemIds: [],
 	chatPanelCollapsed: false,
 	presentation: standardPresentation,
 };
@@ -36,10 +37,15 @@ export function normalizeWorkspaceUiSession(
 		session.presentation,
 		validItemIds,
 	);
+	const aiContextItemIds = normalizeAiContextItemIds(
+		session.aiContextItemIds,
+		validItemIds,
+	);
 
-	return presentation === session.presentation
+	return presentation === session.presentation &&
+		aiContextItemIds === session.aiContextItemIds
 		? session
-		: { ...session, presentation };
+		: { ...session, aiContextItemIds, presentation };
 }
 
 export function getUpdatedWorkspaceUiSession(
@@ -69,6 +75,35 @@ export function closeChatPanelSession(session: WorkspaceUiSession) {
 export function openChatPanelSession() {
 	return {
 		chatPanelCollapsed: false,
+	};
+}
+
+export function addWorkspaceAiContextItemsSession(
+	session: WorkspaceUiSession,
+	itemIds: string[],
+) {
+	const nextIds = normalizeAiContextItemIds([
+		...session.aiContextItemIds,
+		...itemIds,
+	]);
+
+	return {
+		aiContextItemIds:
+			nextIds === session.aiContextItemIds ? session.aiContextItemIds : nextIds,
+		chatPanelCollapsed: false,
+	};
+}
+
+export function removeWorkspaceAiContextItemSession(
+	session: WorkspaceUiSession,
+	itemId: string,
+) {
+	if (!session.aiContextItemIds.includes(itemId)) {
+		return {};
+	}
+
+	return {
+		aiContextItemIds: session.aiContextItemIds.filter((id) => id !== itemId),
 	};
 }
 
@@ -196,13 +231,55 @@ function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
 	return pane.kind !== "item" || validItemIds.has(pane.itemId);
 }
 
+function normalizeAiContextItemIds(
+	itemIds: string[] | undefined,
+	validItemIds?: ReadonlySet<string>,
+) {
+	if (!itemIds?.length) {
+		return defaultWorkspaceUiSession.aiContextItemIds;
+	}
+
+	const seen = new Set<string>();
+	const normalizedIds: string[] = [];
+
+	for (const itemId of itemIds) {
+		if (
+			!itemId ||
+			seen.has(itemId) ||
+			(validItemIds && !validItemIds.has(itemId))
+		) {
+			continue;
+		}
+
+		seen.add(itemId);
+		normalizedIds.push(itemId);
+	}
+
+	if (
+		normalizedIds.length === itemIds.length &&
+		normalizedIds.every((id, index) => id === itemIds[index])
+	) {
+		return itemIds;
+	}
+
+	return normalizedIds;
+}
+
 function isSameWorkspaceUiSession(
 	session: WorkspaceUiSession,
 	nextSession: WorkspaceUiSession,
 ) {
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
+		isSameStringArray(session.aiContextItemIds, nextSession.aiContextItemIds) &&
 		session.chatPanelCollapsed === nextSession.chatPanelCollapsed &&
 		session.presentation === nextSession.presentation
+	);
+}
+
+function isSameStringArray(left: readonly string[], right: readonly string[]) {
+	return (
+		left.length === right.length &&
+		left.every((value, index) => value === right[index])
 	);
 }

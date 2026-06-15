@@ -17,7 +17,13 @@ import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatP
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
+import { useWorkspaceAiContextDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
+import {
+	WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
+	workspaceAiContextCollisionDetector,
+} from "#/features/workspaces/components/workspace-ai-context-collision";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
+import { cn } from "#/lib/utils";
 
 interface AiChatPanelProps {
 	context: WorkspaceAiContextScope;
@@ -43,9 +49,20 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 		selectedThread,
 		visibleThreadList,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
+	const { isDropTarget, ref } = useWorkspaceAiContextDropTarget({
+		workspaceId: context.workspaceId,
+		collisionDetector: workspaceAiContextCollisionDetector,
+		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
+	});
 
 	return (
-		<aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
+		<aside
+			ref={ref}
+			className={cn(
+				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
+				isDropTarget && "ring-2 ring-primary/45 ring-inset",
+			)}
+		>
 			<AiChatPanelToolbar
 				activeThreadId={activeThreadId}
 				isMaximized={isMaximized}

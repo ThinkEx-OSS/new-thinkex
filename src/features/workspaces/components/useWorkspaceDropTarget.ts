@@ -1,8 +1,10 @@
 import { type UseDroppableInput, useDroppable } from "@dnd-kit/react";
 
 import {
+	createWorkspaceAiContextDropTargetData,
 	createWorkspaceFolderDropTargetData,
 	createWorkspaceTabItemInsertDropTargetData,
+	getWorkspaceAiContextDropTargetId,
 	getWorkspaceFolderDropTargetId,
 	getWorkspaceTabItemInsertDropTargetId,
 	WORKSPACE_FOLDER_DRAG_TYPE,
@@ -60,5 +62,22 @@ export function useWorkspaceTabItemInsertDropTarget(
 		disabled: input.disabled,
 		element: input.element,
 		data: createWorkspaceTabItemInsertDropTargetData(input.index),
+	});
+}
+
+export function useWorkspaceAiContextDropTarget(
+	input: WorkspaceDropTargetBehavior & {
+		workspaceId: string;
+	},
+) {
+	return useWorkspaceDropTarget({
+		id: getWorkspaceAiContextDropTargetId(input.workspaceId),
+		type: "workspace-ai-context-drop-target",
+		accept: WORKSPACE_ITEM_DRAG_TYPES,
+		collisionDetector: input.collisionDetector,
+		collisionPriority: input.collisionPriority,
+		disabled: input.disabled,
+		element: input.element,
+		data: createWorkspaceAiContextDropTargetData(input.workspaceId),
 	});
 }

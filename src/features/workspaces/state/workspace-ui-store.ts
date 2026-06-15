@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
 import {
+	addWorkspaceAiContextItemsSession,
 	closeChatPanelSession,
 	defaultWorkspaceUiSession,
 	getUpdatedWorkspaceUiSession,
@@ -10,6 +11,7 @@ import {
 	maximizeItemSession,
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
+	removeWorkspaceAiContextItemSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
 	splitWorkspacePresentationSession,
@@ -43,6 +45,7 @@ type RestorableWorkspacePresentation = Exclude<
 
 export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
+	aiContextItemIds: string[];
 	chatPanelCollapsed: boolean;
 	presentation: WorkspacePresentation;
 };
@@ -57,8 +60,10 @@ type WorkspaceUiState = {
 	ensureWorkspaceSession: (
 		input: EnsureWorkspaceUiSessionInput,
 	) => WorkspaceUiSession;
+	addAiContextItems: (workspaceId: string, itemIds: string[]) => void;
 	closeChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
+	removeAiContextItem: (workspaceId: string, itemId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
@@ -91,6 +96,10 @@ export const selectWorkspacePresentation =
 export const selectWorkspaceActiveAiChatThreadId =
 	(workspaceId: string) => (state: WorkspaceUiState) =>
 		selectWorkspaceUiSession(workspaceId)(state).activeAiChatThreadId;
+
+export const selectWorkspaceAiContextItemIds =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		selectWorkspaceUiSession(workspaceId)(state).aiContextItemIds;
 
 function updateWorkspaceUiSession(
 	state: WorkspaceUiState,
@@ -144,6 +153,12 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 
 					return nextSession;
 				},
+				addAiContextItems: (workspaceId, itemIds) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, (session) =>
+							addWorkspaceAiContextItemsSession(session, itemIds),
+						),
+					),
 				closeChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, closeChatPanelSession),
@@ -151,6 +166,12 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 				openChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, openChatPanelSession),
+					),
+				removeAiContextItem: (workspaceId, itemId) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, (session) =>
+							removeWorkspaceAiContextItemSession(session, itemId),
+						),
 					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>

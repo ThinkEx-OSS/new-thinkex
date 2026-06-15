@@ -117,12 +117,13 @@ function getWorkspaceCreateMenuActions({
 					id === "upload-file" ? () => onUploadFile(parentId) : undefined,
 			}),
 		),
-		{ kind: "separator" as const, id: "learn-separator" },
 		...workspaceItemLearnCreateActions.map(
 			({ type, label, Icon, iconClassName }) => ({
 				kind: "item" as const,
 				id: type,
 				label,
+				trailing: "Soon",
+				disabled: true,
 				leading: <Icon className={`size-4 ${iconClassName}`} />,
 				onSelect: () => onCreateItem({ type, parentId }),
 			}),

@@ -1,4 +1,10 @@
-import type { ChatStatus, DynamicToolUIPart, ToolUIPart, UIMessage } from "ai";
+import type {
+	ChatRequestOptions,
+	ChatStatus,
+	DynamicToolUIPart,
+	ToolUIPart,
+	UIMessage,
+} from "ai";
 
 import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
 
@@ -11,6 +17,8 @@ export interface AiChatSendMessage {
 	role: "user";
 	parts: AiChatMessagePart[];
 }
+
+export type AiChatSendMessageOptions = ChatRequestOptions;
 
 export interface AiChatToolApprovalResponse {
 	id: string;

@@ -4,6 +4,7 @@ import {
 	getWorkspaceItemDragRow,
 } from "./drag-data";
 import {
+	getWorkspaceAiContextDropTargetId,
 	getWorkspaceAiContextDropTargetWorkspaceId,
 	getWorkspaceFolderDropTargetFolderId,
 	getWorkspaceFolderDropTargetId,
@@ -22,6 +23,7 @@ import {
 } from "./drag-types";
 
 export {
+	getWorkspaceAiContextDropTargetId,
 	getWorkspaceFolderDropTargetId,
 	getWorkspaceTabItemInsertDropTargetId,
 };

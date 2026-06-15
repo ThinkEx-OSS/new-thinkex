@@ -18,6 +18,7 @@ import type {
 } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
+import { buildWorkspaceAiContextSnapshot } from "#/features/workspaces/model/workspace-ai-context";
 
 type AiChatPromptMessage = Parameters<
 	NonNullable<ComponentProps<typeof AiChatPromptInput>["onSubmit"]>
@@ -58,7 +59,11 @@ export default function AiChatThreadView({
 			return false;
 		}
 
-		const didSend = sendChatMessage(chatMessage);
+		const didSend = sendChatMessage(chatMessage, {
+			body: {
+				workspaceAiContext: buildWorkspaceAiContextSnapshot(context),
+			},
+		});
 
 		if (didSend) {
 			onThreadActivated?.();

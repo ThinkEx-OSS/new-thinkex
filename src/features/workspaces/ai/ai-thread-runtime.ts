@@ -16,6 +16,7 @@ import {
 } from "#/features/workspaces/ai/models";
 import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
+import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/workspace-ai-context";
 
 const workspaceItemListInputSchema = z.object({
 	limit: z
@@ -258,6 +259,7 @@ export function getAIThreadSystemPromptForWorkspace(
 	options: {
 		now?: Date;
 		timeZone?: string;
+		workspaceAiContext?: unknown;
 	} = {},
 ) {
 	return [
@@ -281,15 +283,20 @@ function getThinkExRuntimeScopePrompt(
 	options: {
 		now?: Date;
 		timeZone?: string;
+		workspaceAiContext?: unknown;
 	},
 ) {
 	const timeZone = getPromptTimeZone(options.timeZone);
+	const workspaceAiContext = formatWorkspaceAiContextForPrompt(
+		options.workspaceAiContext,
+	);
 
 	return [
 		"Current turn:",
 		`- Workspace: ${promptScope.workspaceName}`,
 		`- Date/time: ${formatPromptDateTime(options.now ?? new Date(), timeZone)}`,
 		"- Actual workspace paths are absolute, such as /.",
+		workspaceAiContext ? `\n${workspaceAiContext}` : "",
 	].join("\n");
 }
 

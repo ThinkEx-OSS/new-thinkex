@@ -54,6 +54,7 @@ interface WorkspaceContentProps {
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => void;
+	onAddItemsToAiContext?: (items: WorkspaceItem[]) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 
@@ -63,6 +64,7 @@ export default function WorkspaceContent({
 	items,
 	activeItem,
 	workspaceId,
+	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: WorkspaceContentProps) {
@@ -125,6 +127,14 @@ export default function WorkspaceContent({
 		event.preventDefault();
 		setIsNativeFileDropTarget(false);
 		uploadFiles(Array.from(event.dataTransfer.files), parentId);
+	};
+	const handleAskAi = () => {
+		if (selectedItems.length === 0) {
+			return;
+		}
+
+		onAddItemsToAiContext?.(selectedItems);
+		clearSelection();
 	};
 
 	if (isWorkspaceItemView(activeItem)) {
@@ -219,7 +229,7 @@ export default function WorkspaceContent({
 				</ContextMenu>
 				<WorkspaceSelectionActionBar
 					selectedCount={selectedItems.length}
-					onAskAi={noopWorkspaceSelectionAction}
+					onAskAi={handleAskAi}
 					onMove={noopWorkspaceSelectionAction}
 					onDelete={noopWorkspaceSelectionAction}
 					onClear={clearSelection}

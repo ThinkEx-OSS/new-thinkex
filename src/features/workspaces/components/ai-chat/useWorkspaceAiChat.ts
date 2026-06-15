@@ -10,6 +10,7 @@ import type {
 	AiChatMessage,
 	AiChatModelId,
 	AiChatSendMessage,
+	AiChatSendMessageOptions,
 	AiChatToolApprovalResponse,
 } from "#/features/workspaces/components/ai-chat/types";
 
@@ -48,7 +49,10 @@ export function useWorkspaceAiChat({
 		stop,
 	} = chat;
 
-	const sendMessage = (message: AiChatSendMessage) => {
+	const sendMessage = (
+		message: AiChatSendMessage,
+		options?: AiChatSendMessageOptions,
+	) => {
 		if (
 			message.parts.length === 0 ||
 			status === "submitted" ||
@@ -58,7 +62,7 @@ export function useWorkspaceAiChat({
 		}
 
 		clearError();
-		void sendAgentMessage(message);
+		void sendAgentMessage(message, options);
 		return true;
 	};
 	const addToolApprovalResponse = (response: AiChatToolApprovalResponse) => {

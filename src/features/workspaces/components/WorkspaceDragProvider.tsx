@@ -9,9 +9,7 @@ import type { ReactNode } from "react";
 import type { MoveWorkspaceItemInput } from "#/features/workspaces/contracts";
 import {
 	type DndDragEndEvent,
-	getWorkspaceDragCommand,
-	getWorkspaceItemMoveInput,
-	getWorkspaceItemTabInsertInput,
+	getWorkspaceDropIntent,
 	shouldPreventWorkspacePointerActivation,
 	type WorkspaceDragCommand,
 } from "#/features/workspaces/model/drag";
@@ -41,7 +39,12 @@ const workspaceDragSensors = [
 interface WorkspaceDragProviderProps {
 	children: ReactNode;
 	items: WorkspaceItem[];
+	selectedItemIds?: ReadonlySet<string>;
 	workspaceId: string;
+	onAddItemsToAiContext?: (input: {
+		clearSelection: boolean;
+		itemIds: string[];
+	}) => void;
 	onMoveItem: (input: MoveWorkspaceItemInput) => void;
 	onOpenItemInNewTab: (input: {
 		item: WorkspaceItem;
@@ -53,37 +56,38 @@ interface WorkspaceDragProviderProps {
 export default function WorkspaceDragProvider({
 	children,
 	items,
+	selectedItemIds,
 	workspaceId,
+	onAddItemsToAiContext,
 	onMoveItem,
 	onOpenItemInNewTab,
 	onWorkspaceDragCommand,
 }: WorkspaceDragProviderProps) {
 	const handleDragEnd = (event: DndDragEndEvent) => {
-		const command = getWorkspaceDragCommand(event);
-
-		if (command) {
-			onWorkspaceDragCommand(command);
-			return;
-		}
-
-		const tabInsertInput = getWorkspaceItemTabInsertInput({
+		const intent = getWorkspaceDropIntent({
 			event,
 			items,
-		});
-
-		if (tabInsertInput) {
-			onOpenItemInNewTab(tabInsertInput);
-			return;
-		}
-
-		const moveInput = getWorkspaceItemMoveInput({
-			event,
-			items,
+			selectedItemIds,
 			workspaceId,
 		});
 
-		if (moveInput) {
-			onMoveItem(moveInput);
+		if (!intent) {
+			return;
+		}
+
+		switch (intent.kind) {
+			case "workspace-drag-command":
+				onWorkspaceDragCommand(intent.command);
+				break;
+			case "add-items-to-ai-context":
+				onAddItemsToAiContext?.(intent.input);
+				break;
+			case "open-item-in-new-tab":
+				onOpenItemInNewTab(intent.input);
+				break;
+			case "move-item":
+				onMoveItem(intent.input);
+				break;
 		}
 	};
 

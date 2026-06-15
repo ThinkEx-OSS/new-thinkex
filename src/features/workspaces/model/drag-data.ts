@@ -47,6 +47,15 @@ export function createWorkspaceTabItemInsertDropTargetData(
 	};
 }
 
+export function createWorkspaceAiContextDropTargetData(
+	workspaceId: string,
+): WorkspaceDropTargetData {
+	return {
+		kind: "workspace-ai-context-drop-target",
+		workspaceId,
+	};
+}
+
 export function getWorkspaceDragData(
 	data: unknown,
 ): WorkspaceDragData | undefined {
@@ -110,6 +119,17 @@ export function getWorkspaceDropTargetData(
 		return {
 			kind: "workspace-tab-item-insert-drop-target",
 			index: data.index,
+		};
+	}
+
+	if (
+		data.kind === "workspace-ai-context-drop-target" &&
+		typeof data.workspaceId === "string" &&
+		data.workspaceId
+	) {
+		return {
+			kind: "workspace-ai-context-drop-target",
+			workspaceId: data.workspaceId,
 		};
 	}
 
