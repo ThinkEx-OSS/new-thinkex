@@ -2,6 +2,11 @@ import { createPluginRegistration } from "@embedpdf/core";
 import { EmbedPDF, type PluginBatchRegistrations } from "@embedpdf/core/react";
 import { useEngineContext } from "@embedpdf/engines/react";
 import {
+	AnnotationLayer,
+	AnnotationPluginPackage,
+	LockModeType,
+} from "@embedpdf/plugin-annotation/react";
+import {
 	DocumentContent,
 	DocumentManagerPluginPackage,
 	useDocumentManagerCapability,
@@ -58,6 +63,9 @@ const pdfPlugins: PluginBatchRegistrations = [
 		marquee: {
 			enabled: false,
 		},
+	}),
+	createPluginRegistration(AnnotationPluginPackage, {
+		locked: { type: LockModeType.All },
 	}),
 	createPluginRegistration(ZoomPluginPackage, {
 		defaultZoomLevel: ZoomMode.FitWidth,
@@ -278,6 +286,11 @@ function WorkspacePdfDocumentContent({
 									documentId={documentId}
 									pageIndex={pageIndex}
 									textStyle={{ background: "rgb(147 197 253 / 0.24)" }}
+								/>
+								<AnnotationLayer
+									className="absolute inset-0"
+									documentId={documentId}
+									pageIndex={pageIndex}
 								/>
 							</PagePointerProvider>
 						</div>
