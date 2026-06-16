@@ -1,9 +1,6 @@
 import { createDbContext } from "#/db/server";
 import { getDocumentSessionRoomName } from "#/features/workspaces/agent-routes";
-import type {
-	JsonValue,
-	WorkspaceItemSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
 import type { DocumentMarkdownEdit } from "#/features/workspaces/documents/document-markdown-edits";
 import type { DocumentSessionApplyMarkdownEditsResult } from "#/features/workspaces/documents/document-session";
@@ -20,6 +17,10 @@ import {
 	resolveWorkspaceKernelItemPath,
 	WorkspaceKernelPathError,
 } from "#/features/workspaces/kernel/workspace-kernel-paths";
+import type {
+	ReadWorkspaceKernelFileProjectionResult,
+	WorkspaceKernelFileProjectionStatus,
+} from "#/features/workspaces/kernel/workspace-kernel-types";
 import {
 	assertCanMutateWorkspace,
 	assertCanReadWorkspace,
@@ -31,7 +32,22 @@ interface DocumentSessionClient {
 	}): Promise<DocumentSessionApplyMarkdownEditsResult>;
 }
 
+interface WorkspaceKernelAiFileExtraction {
+	errorMessage?: string | null;
+	reason: string;
+	status: WorkspaceKernelFileProjectionStatus;
+}
+
+interface WorkspaceKernelAiContentPage {
+	lineTruncated?: boolean;
+	next?: number;
+	offset?: number;
+	truncated: boolean;
+}
+
 export interface ReadWorkspaceKernelAiItemsInput {
+	contentLimit?: number;
+	contentOffset?: number;
 	paths: string[];
 	recursive?: boolean;
 	userId: string;
@@ -41,6 +57,7 @@ export interface ReadWorkspaceKernelAiItemsInput {
 export type WorkspaceKernelAiReadItem =
 	| {
 			content: string;
+			page?: WorkspaceKernelAiContentPage;
 			path: string;
 			title: string;
 			type: "document";
@@ -52,12 +69,14 @@ export type WorkspaceKernelAiReadItem =
 			type: "folder";
 	  }
 	| {
-			metadata: {
+			content?: string;
+			extraction: WorkspaceKernelAiFileExtraction;
+			metadata?: {
 				assetFamily: string | null;
 				mimeType: string | null;
-				projections: JsonValue | null;
 				sizeBytes: number | null;
 			};
+			page?: WorkspaceKernelAiContentPage;
 			path: string;
 			title: string;
 			type: "file";
@@ -80,6 +99,11 @@ export interface EditWorkspaceKernelAiItemInput {
 	userId: string;
 	workspaceId: string;
 }
+
+const DEFAULT_AI_READ_CONTENT_LIMIT = 2000;
+const MAX_AI_READ_CONTENT_LINES = 2000;
+const MAX_AI_READ_LINE_LENGTH = 2000;
+const TRUNCATED_LINE_SUFFIX = `... (line truncated to ${MAX_AI_READ_LINE_LENGTH} chars)`;
 
 export async function readWorkspaceKernelAiItems(
 	input: ReadWorkspaceKernelAiItemsInput,
@@ -126,6 +150,8 @@ export async function readWorkspaceKernelAiItems(
 
 				result.items.push(
 					await readWorkspaceKernelAiItem({
+						contentLimit: input.contentLimit,
+						contentOffset: input.contentOffset,
 						item,
 						kernel,
 						path: normalizedPath,
@@ -182,6 +208,8 @@ export async function editWorkspaceKernelAiItem(
 }
 
 async function readWorkspaceKernelAiItem(input: {
+	contentLimit?: number;
+	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
 	pageItems: WorkspaceItemSummary[];
@@ -205,11 +233,17 @@ async function readWorkspaceKernelAiItem(input: {
 
 	if (item.type === "document") {
 		const { content } = await input.kernel.readItem({ itemId: item.id });
+		const markdown = serializeTiptapDocumentToMarkdown(
+			parseTiptapDocumentJson(content),
+		);
+		const page = pageWorkspaceAiMarkdown(markdown, {
+			limit: input.contentLimit,
+			offset: input.contentOffset,
+		});
 
 		return {
-			content: serializeTiptapDocumentToMarkdown(
-				parseTiptapDocumentJson(content),
-			),
+			content: page.content,
+			...(page.page ? { page: page.page } : {}),
 			path: input.path,
 			title: item.name,
 			type: "document",
@@ -217,17 +251,7 @@ async function readWorkspaceKernelAiItem(input: {
 	}
 
 	if (item.type === "file") {
-		return {
-			metadata: {
-				assetFamily: getMetadataString(item, "assetFamily"),
-				mimeType: getMetadataString(item, "mimeType"),
-				projections: item.metadataJson.projections ?? null,
-				sizeBytes: getMetadataNumber(item, "sizeBytes"),
-			},
-			path: input.path,
-			title: item.name,
-			type: "file",
-		};
+		return await readWorkspaceKernelAiFileItem(input);
 	}
 
 	return {
@@ -236,6 +260,108 @@ async function readWorkspaceKernelAiItem(input: {
 		title: item.name,
 		type: item.type,
 	};
+}
+
+async function readWorkspaceKernelAiFileItem(input: {
+	contentLimit?: number;
+	contentOffset?: number;
+	item: WorkspaceItemSummary;
+	kernel: WorkspaceKernelClient;
+	path: string;
+}): Promise<WorkspaceKernelAiReadItem> {
+	const { item } = input;
+	const metadata = {
+		assetFamily: getMetadataString(item, "assetFamily"),
+		mimeType: getMetadataString(item, "mimeType"),
+		sizeBytes: getMetadataNumber(item, "sizeBytes"),
+	};
+
+	if (metadata.assetFamily !== "pdf") {
+		return {
+			extraction: {
+				reason: "unsupported_file_type",
+				status: "not_started",
+			},
+			metadata,
+			path: input.path,
+			title: item.name,
+			type: "file",
+		};
+	}
+
+	const projection = await input.kernel.readFileProjection({
+		itemId: item.id,
+		format: "markdown",
+	});
+
+	if (projection?.content && isReadableProjectionStatus(projection.status)) {
+		const page = pageWorkspaceAiMarkdown(projection.content, {
+			limit: input.contentLimit,
+			offset: input.contentOffset,
+		});
+
+		return {
+			content: page.content,
+			extraction: {
+				reason:
+					projection.status === "needs_review"
+						? "extracted_markdown_needs_review"
+						: "extracted_markdown_ready",
+				status: projection.status,
+			},
+			...(page.page ? { page: page.page } : {}),
+			path: input.path,
+			title: item.name,
+			type: "file",
+		};
+	}
+
+	return {
+		extraction: getFileExtractionStatus(projection),
+		path: input.path,
+		title: item.name,
+		type: "file",
+	};
+}
+
+function isReadableProjectionStatus(
+	status: WorkspaceKernelFileProjectionStatus,
+) {
+	return status === "ready" || status === "needs_review";
+}
+
+function getFileExtractionStatus(
+	projection: ReadWorkspaceKernelFileProjectionResult | null,
+): WorkspaceKernelAiFileExtraction {
+	if (!projection) {
+		return {
+			reason: "extraction_not_started",
+			status: "not_started",
+		};
+	}
+
+	return {
+		errorMessage: projection.errorMessage,
+		reason: getFileExtractionReason(projection.status),
+		status: projection.status,
+	};
+}
+
+function getFileExtractionReason(status: WorkspaceKernelFileProjectionStatus) {
+	switch (status) {
+		case "queued":
+			return "extraction_queued_try_again_later";
+		case "processing":
+			return "extraction_processing_try_again_later";
+		case "failed":
+			return "extraction_failed";
+		case "needs_review":
+			return "extracted_markdown_needs_review_but_content_missing";
+		case "ready":
+			return "extracted_markdown_ready_but_content_missing";
+		case "not_started":
+			return "extraction_not_started";
+	}
 }
 
 async function getDocumentSession(input: {
@@ -262,11 +388,80 @@ function failedWorkspaceAiEditResult(
 }
 
 function getWorkspaceAiErrorCode(error: unknown) {
+	if (error instanceof WorkspaceAiContentPageError) {
+		return error.code;
+	}
+
 	if (error instanceof WorkspaceKernelPathError) {
 		return error.code;
 	}
 
 	return "workspace_read_failed";
+}
+
+function pageWorkspaceAiMarkdown(
+	content: string,
+	input: { limit?: number; offset?: number },
+): { content: string; page?: WorkspaceKernelAiContentPage } {
+	const offset = input.offset ?? 1;
+	const limit = Math.min(
+		input.limit ?? DEFAULT_AI_READ_CONTENT_LIMIT,
+		MAX_AI_READ_CONTENT_LINES,
+	);
+	const lines = content === "" ? [] : content.split(/\r?\n/);
+
+	if (offset > Math.max(lines.length, 1)) {
+		throw new WorkspaceAiContentPageError("content_offset_out_of_range");
+	}
+
+	const selected: string[] = [];
+	let lineTruncated = false;
+	let truncated = false;
+	let next: number | undefined;
+
+	for (let index = offset - 1; index < lines.length; index += 1) {
+		if (selected.length >= limit) {
+			truncated = true;
+			next = index + 1;
+			break;
+		}
+
+		const line = truncateWorkspaceAiMarkdownLine(lines[index] ?? "");
+		lineTruncated = lineTruncated || line.truncated;
+		selected.push(line.value);
+	}
+
+	const page: WorkspaceKernelAiContentPage | undefined =
+		truncated || lineTruncated || offset !== 1
+			? {
+					...(lineTruncated ? { lineTruncated } : {}),
+					...(offset !== 1 ? { offset } : {}),
+					truncated: truncated || lineTruncated,
+					...(next === undefined ? {} : { next }),
+				}
+			: undefined;
+
+	return {
+		content: selected.join("\n"),
+		...(page ? { page } : {}),
+	};
+}
+
+function truncateWorkspaceAiMarkdownLine(line: string) {
+	if (line.length <= MAX_AI_READ_LINE_LENGTH) {
+		return { truncated: false, value: line };
+	}
+
+	return {
+		truncated: true,
+		value: line.slice(0, MAX_AI_READ_LINE_LENGTH) + TRUNCATED_LINE_SUFFIX,
+	};
+}
+
+class WorkspaceAiContentPageError extends Error {
+	constructor(readonly code: string) {
+		super(code);
+	}
 }
 
 function getMetadataString(item: WorkspaceItemSummary, key: string) {

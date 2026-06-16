@@ -11,6 +11,11 @@ import {
 	type ListWorkspaceKernelItemsResult,
 	listWorkspaceKernelPageItems,
 } from "#/features/workspaces/kernel/workspace-kernel-list";
+import type {
+	ReadWorkspaceKernelFileProjectionArgs,
+	ReadWorkspaceKernelFileProjectionResult,
+	UpsertWorkspaceKernelFileProjectionArgs,
+} from "#/features/workspaces/kernel/workspace-kernel-types";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	assertCanMutateWorkspace,
@@ -86,6 +91,12 @@ export interface WorkspaceKernelClient {
 		fileName: string;
 		sizeBytes: number;
 	}>;
+	upsertFileProjection(
+		input: UpsertWorkspaceKernelFileProjectionArgs,
+	): Promise<void>;
+	readFileProjection(
+		input: ReadWorkspaceKernelFileProjectionArgs,
+	): Promise<ReadWorkspaceKernelFileProjectionResult | null>;
 	writeItem(input: {
 		itemId: string;
 		content: string;
@@ -279,6 +290,11 @@ export async function deleteWorkspaceKernelItem(
 
 export async function getWorkspaceKernel(workspaceId: string) {
 	const { env } = await import("cloudflare:workers");
+
+	return getWorkspaceKernelFromEnv(env, workspaceId);
+}
+
+export function getWorkspaceKernelFromEnv(env: Env, workspaceId: string) {
 	const workspaceKernelNamespace = env.WorkspaceKernel as unknown as {
 		getByName(name: string): WorkspaceKernelClient;
 	};

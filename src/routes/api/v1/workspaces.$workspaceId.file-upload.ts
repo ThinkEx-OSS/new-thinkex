@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { createDbContext } from "#/db/server";
+import { requestWorkspaceFileExtraction } from "#/features/workspaces/extraction/request-workspace-file-extraction";
 import { createWorkspaceFileFromUpload } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	assertCanMutateWorkspace,
@@ -96,6 +97,12 @@ async function handleWorkspaceFileUpload(
 		});
 
 		objectKey = null;
+		await requestFileExtractionAfterUpload({
+			workspaceId,
+			itemId: command.result.id,
+			actorUserId: session.user.id,
+		});
+
 		return apiJson(command, requestId);
 	} catch (error) {
 		if (error instanceof WorkspaceForbiddenError) {
@@ -142,6 +149,21 @@ function getWorkspaceFileUploadObjectKey(workspaceId: string) {
 
 function getNullableString(value: FormDataEntryValue | null) {
 	return typeof value === "string" && value.trim() ? value : null;
+}
+
+async function requestFileExtractionAfterUpload(input: {
+	workspaceId: string;
+	itemId: string;
+	actorUserId: string;
+}) {
+	try {
+		await requestWorkspaceFileExtraction(input);
+	} catch (error) {
+		console.warn(
+			"[WorkspaceFileUpload] Uploaded file, but extraction could not be queued",
+			error,
+		);
+	}
 }
 
 export { handleWorkspaceFileUpload };

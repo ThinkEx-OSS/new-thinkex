@@ -30,6 +30,24 @@ export function initializeWorkspaceKernelStorage(sql: WorkspaceKernelSql) {
 		ON kernel_items (type, deleted_at)`;
 	createSiblingNameIndexes(sql);
 	sql`
+		CREATE TABLE IF NOT EXISTS kernel_item_projections (
+			item_id TEXT NOT NULL,
+			format TEXT NOT NULL,
+			status TEXT NOT NULL,
+			provider TEXT,
+			provider_mode TEXT,
+			content_shell_path TEXT,
+			error_message TEXT,
+			source_hash TEXT,
+			metadata_json TEXT NOT NULL DEFAULT '{}',
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL,
+			PRIMARY KEY (item_id, format)
+		)
+	`;
+	sql`CREATE INDEX IF NOT EXISTS kernel_item_projections_status_idx
+		ON kernel_item_projections (status, updated_at)`;
+	sql`
 		CREATE TABLE IF NOT EXISTS kernel_meta (
 			key TEXT PRIMARY KEY,
 			value TEXT NOT NULL,

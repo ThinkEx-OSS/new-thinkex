@@ -63,6 +63,48 @@ export interface ReadWorkspaceKernelFileContentResult {
 	sizeBytes: number;
 }
 
+export type WorkspaceKernelFileProjectionFormat = "markdown";
+
+export type WorkspaceKernelFileProjectionStatus =
+	| "not_started"
+	| "queued"
+	| "processing"
+	| "ready"
+	| "failed"
+	| "needs_review";
+
+export interface UpsertWorkspaceKernelFileProjectionArgs {
+	itemId: string;
+	format: WorkspaceKernelFileProjectionFormat;
+	status: WorkspaceKernelFileProjectionStatus;
+	content?: string | null;
+	provider?: string | null;
+	providerMode?: string | null;
+	errorMessage?: string | null;
+	sourceHash?: string | null;
+	metadataJson?: Record<string, JsonValue>;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
+}
+
+export interface ReadWorkspaceKernelFileProjectionArgs {
+	itemId: string;
+	format: WorkspaceKernelFileProjectionFormat;
+}
+
+export interface ReadWorkspaceKernelFileProjectionResult {
+	itemId: string;
+	format: WorkspaceKernelFileProjectionFormat;
+	status: WorkspaceKernelFileProjectionStatus;
+	content: string | null;
+	provider: string | null;
+	providerMode: string | null;
+	errorMessage: string | null;
+	sourceHash: string | null;
+	metadataJson: Record<string, JsonValue>;
+	updatedAt: string;
+}
+
 export interface WriteWorkspaceKernelItemArgs {
 	itemId: string;
 	content: string;

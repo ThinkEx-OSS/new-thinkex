@@ -16,6 +16,9 @@
 	"browser": {
 		"binding": "BROWSER"
 	},
+	"vars": {
+		"FIRECRAWL_API_URL": "https://api.firecrawl.dev"
+	},
 	"r2_buckets": [
 		{
 			"binding": "WORKSPACE_KERNEL_FILES",
@@ -27,9 +30,17 @@
 			"BETTER_AUTH_URL",
 			"BETTER_AUTH_SECRET",
 			"GOOGLE_CLIENT_ID",
-			"GOOGLE_CLIENT_SECRET"
+			"GOOGLE_CLIENT_SECRET",
+			"FIRECRAWL_API_KEY"
 		]
 	},
+	"workflows": [
+		{
+			"name": "workspace-file-extraction",
+			"binding": "WORKSPACE_FILE_EXTRACTION_WORKFLOW",
+			"class_name": "WorkspaceFileExtractionWorkflow"
+		}
+	],
 	"upload_source_maps": true,
 	"durable_objects": {
 		"bindings": [

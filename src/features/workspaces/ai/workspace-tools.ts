@@ -32,6 +32,23 @@ const workspaceItemListInputSchema = z.object({
 });
 
 const workspaceReadItemsInputSchema = z.object({
+	contentLimit: z
+		.number()
+		.int()
+		.min(1)
+		.max(2000)
+		.optional()
+		.describe(
+			"Maximum Markdown lines to return for documents and extracted PDFs. Defaults to 2000.",
+		),
+	contentOffset: z
+		.number()
+		.int()
+		.min(1)
+		.optional()
+		.describe(
+			"1-based Markdown line offset for documents and extracted PDFs. Use the returned page.next value to continue.",
+		),
 	paths: z
 		.array(z.string().min(1))
 		.min(1)
@@ -83,12 +100,14 @@ export function createAIThreadWorkspaceTools(input: {
 		}),
 		workspace_read_items: tool({
 			description:
-				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. PDF files return metadata/projection status. Unsupported item types are reported explicitly.",
+				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Ready PDF files return extracted Markdown; PDFs still queued, processing, or failed return concise extraction status. A page object is included only when content is truncated or a non-default offset was requested; if page.next is present, use contentOffset=page.next to continue. Unsupported item types are reported explicitly.",
 			inputSchema: workspaceReadItemsInputSchema,
-			execute: async ({ paths, recursive }) => {
+			execute: async ({ contentLimit, contentOffset, paths, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
 				return await readWorkspaceKernelAiItems({
+					contentLimit,
+					contentOffset,
 					workspaceId: thread.workspaceId,
 					userId: thread.userId,
 					paths,

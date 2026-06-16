@@ -9,6 +9,7 @@ export {
 	UserAIStore,
 } from "#/features/workspaces/ai/user-ai-agents";
 export { DocumentSession } from "#/features/workspaces/documents/document-session";
+export { WorkspaceFileExtractionWorkflow } from "#/features/workspaces/extraction/workspace-file-extraction-workflow";
 export { WorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel";
 
 const isProduction = import.meta.env.PROD;

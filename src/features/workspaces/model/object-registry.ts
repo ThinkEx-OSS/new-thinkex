@@ -104,7 +104,7 @@ export const workspaceObjectRegistry = {
 			"workspace_kernel.assets",
 			"workspace_kernel.snapshots",
 		],
-		contentFormats: ["pdf", "plain_text", "markdown", "transcript_json"],
+		contentFormats: ["pdf", "markdown", "transcript_json"],
 		assetFamilies: ["pdf"],
 		capabilities: ["view", "index", "ai_read"],
 		realtime: "workspace-events",

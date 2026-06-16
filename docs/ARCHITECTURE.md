@@ -360,6 +360,38 @@ Good durable jobs:
 
 Durable execution should orchestrate Shell operations and kernel commands. It should produce progress events as useful, but it should not replace simple synchronous commands like rename or move.
 
+### PDF Extraction Pipeline
+
+Uploaded PDFs follow the kernel-first job pattern:
+
+```txt
+Upload route
+  validates user and file
+  stores source bytes in WORKSPACE_KERNEL_FILES
+  calls WorkspaceKernel.createFileFromUpload
+  requests WorkspaceFileExtractionWorkflow
+
+WorkspaceFileExtractionWorkflow
+  marks file projections queued/processing in WorkspaceKernel
+  reads canonical PDF bytes from WorkspaceKernel/Shell
+  asks the extraction router for provider + mode
+  calls the selected provider
+  writes the markdown projection back through WorkspaceKernel
+  marks projections ready, needs_review, or failed
+
+WorkspaceKernel
+  keeps original PDF bytes as source truth
+  stores projection status/provider metadata in kernel_item_projections
+  stores projection bodies as Shell files so large markdown can spill to R2
+  keeps extraction state out of normal item metadata because users do not browse it directly
+```
+
+The active provider is Firecrawl `/v2/parse` with PDF `auto` mode. `auto` is the default route because it attempts embedded-text extraction first and falls back to OCR for scanned or image-heavy pages. The canonical extraction output is Markdown plus provider metadata. Workers AI To Markdown, Mistral OCR, and LlamaParse are intentionally present only as stubbed provider ids until their credentials, pricing limits, data-retention posture, quality gates, and routing rules are explicit.
+
+Provider routing belongs in `routePdfExtraction`, not in upload routes or kernel commands. Future routing inputs should include org policy, file size/page count, privacy tier, language hints, cost ceiling, retry history, and quality feedback.
+
+The model-facing `workspace_read_items` tool reads extracted PDF Markdown only after the projection is `ready` or `needs_review`. The tool returns clean Markdown and includes a small `page` cursor only when the response is truncated or a non-default offset was requested; long documents and extracted PDFs are continued with `contentOffset=page.next` when `next` is present. Provider-specific metadata stays out of the model read payload unless it directly explains extraction status.
+
 ## File And Item Model
 
 The kernel should keep stable product item ids and map them to Shell paths. This keeps rename/move semantics product-controlled instead of making paths the public identity.
@@ -400,6 +432,7 @@ Already completed in the current foundation work:
 - Shared TanStack Query workspace event applier.
 - `UserAIStore` / `AIThread` runtime names and `/user-ai` routing.
 - `AIThread` list-workspace-items tool routed through `workspace-kernel-access`.
+- PDF upload extraction primitives: `WorkspaceFileExtractionWorkflow`, provider router, Firecrawl provider, provider stubs, and kernel-local projection status/body storage.
 
 Next implementation focus:
 
@@ -407,8 +440,8 @@ Next implementation focus:
 - add controlled create/edit document tools
 - keep document writes on canonical `document_json` snapshots
 - require approval for destructive or bulk AI actions
-- define upload/import pipeline around Shell/R2 bytes and item registry records
-- add extraction/transcription/conversion jobs as durable workflows
+- expand upload/import beyond PDFs and route non-PDF documents through the same provider/job boundary
+- add transcription/conversion jobs as durable workflows
 - define the Tiptap/Yjs document editor/session contract
 
 ## Operations And Repair

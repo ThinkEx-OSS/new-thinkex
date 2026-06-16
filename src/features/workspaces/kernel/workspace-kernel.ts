@@ -24,8 +24,10 @@ import type {
 	ListWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemArgs,
 	ReadWorkspaceKernelFileContentArgs,
+	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelItemArgs,
 	RenameWorkspaceKernelItemArgs,
+	UpsertWorkspaceKernelFileProjectionArgs,
 	WorkspaceKernelPage,
 	WriteWorkspaceKernelItemArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
@@ -126,6 +128,14 @@ export class WorkspaceKernel extends Agent<Env> {
 
 	async readFileContent(input: ReadWorkspaceKernelFileContentArgs) {
 		return await this.fileCommands.readFileContent(input);
+	}
+
+	async upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs) {
+		return await this.fileCommands.upsertFileProjection(input);
+	}
+
+	async readFileProjection(input: ReadWorkspaceKernelFileProjectionArgs) {
+		return await this.fileCommands.readFileProjection(input);
 	}
 
 	async renameItem(
