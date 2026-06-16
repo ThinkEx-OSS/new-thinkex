@@ -357,10 +357,17 @@
 
 	.workspace-document-prose [data-type="block-math"] {
 		overflow-x: auto;
+		overflow-y: hidden;
 		margin: 0.85rem 0;
 		background: transparent;
-		padding: 0.25rem 0;
+		padding: 0.4rem 0;
 		text-align: center;
+	}
+
+	.workspace-document-prose [data-type="block-math"] .block-math-inner {
+		display: inline-block;
+		max-width: 100%;
+		min-width: max-content;
 	}
 
 	.workspace-document-prose .tiptap-mathematics-render--editable {
