@@ -50,8 +50,8 @@ export interface UpdateWorkspaceKernelItemColorArgs {
 	clientMutationId?: string | null;
 }
 
-export interface DeleteWorkspaceKernelItemArgs {
-	itemId: string;
+export interface DeleteWorkspaceKernelItemsArgs {
+	itemIds: string[];
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }
@@ -130,8 +130,8 @@ export interface CreateWorkspaceKernelFileFromUploadArgs {
 	clientMutationId?: string | null;
 }
 
-export interface DeleteWorkspaceKernelItemResult {
-	id: string;
+export interface DeleteWorkspaceKernelItemsResult {
+	itemIds: string[];
 	deletedItemIds: string[];
 }
 

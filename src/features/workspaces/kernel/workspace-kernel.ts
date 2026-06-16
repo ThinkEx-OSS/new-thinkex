@@ -18,8 +18,8 @@ import { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-ker
 import type {
 	CreateWorkspaceKernelFileFromUploadArgs,
 	CreateWorkspaceKernelItemArgs,
-	DeleteWorkspaceKernelItemArgs,
-	DeleteWorkspaceKernelItemResult,
+	DeleteWorkspaceKernelItemsArgs,
+	DeleteWorkspaceKernelItemsResult,
 	ListWorkspaceKernelEventsArgs,
 	ListWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemArgs,
@@ -157,10 +157,10 @@ export class WorkspaceKernel extends Agent<Env> {
 		return await this.itemCommands.updateItemColor(input);
 	}
 
-	async deleteItem(
-		input: DeleteWorkspaceKernelItemArgs,
-	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemResult>> {
-		return await this.itemCommands.deleteItem(input);
+	async deleteItems(
+		input: DeleteWorkspaceKernelItemsArgs,
+	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemsResult>> {
+		return await this.itemCommands.deleteItems(input);
 	}
 
 	async readItem(input: ReadWorkspaceKernelItemArgs) {

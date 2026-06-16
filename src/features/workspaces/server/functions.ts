@@ -5,7 +5,7 @@ import {
 	createWorkspaceInputSchema,
 	createWorkspaceItemInputSchema,
 	deleteWorkspaceInputSchema,
-	deleteWorkspaceItemInputSchema,
+	deleteWorkspaceItemsInputSchema,
 	moveWorkspaceItemInputSchema,
 	renameWorkspaceItemInputSchema,
 	updateWorkspaceInputSchema,
@@ -13,7 +13,7 @@ import {
 } from "#/features/workspaces/contracts";
 import {
 	createWorkspaceKernelItem,
-	deleteWorkspaceKernelItem,
+	deleteWorkspaceKernelItems,
 	moveWorkspaceKernelItem,
 	renameWorkspaceKernelItem,
 	updateWorkspaceKernelItemColor,
@@ -98,10 +98,10 @@ export const updateWorkspaceItemColorFn = createServerFn({ method: "POST" })
 		}),
 	);
 
-export const deleteWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(deleteWorkspaceItemInputSchema)
+export const deleteWorkspaceItemsFn = createServerFn({ method: "POST" })
+	.inputValidator(deleteWorkspaceItemsInputSchema)
 	.handler(async ({ data }) =>
-		deleteWorkspaceKernelItem({
+		deleteWorkspaceKernelItems({
 			...data,
 			userId: await getCurrentUserId(),
 		}),

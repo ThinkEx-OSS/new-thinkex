@@ -15,7 +15,7 @@ import {
 } from "#/features/workspaces/cache";
 import type {
 	CreateWorkspaceItemInput,
-	DeleteWorkspaceItemInput,
+	DeleteWorkspaceItemsInput,
 	MoveWorkspaceItemInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
@@ -24,7 +24,7 @@ import type {
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	createWorkspaceItemFn,
-	deleteWorkspaceItemFn,
+	deleteWorkspaceItemsFn,
 	moveWorkspaceItemFn,
 	renameWorkspaceItemFn,
 	updateWorkspaceItemColorFn,
@@ -227,25 +227,54 @@ export function useUpdateWorkspaceItemColorMutation() {
 	return { mutate };
 }
 
-export function useDeleteWorkspaceItemMutation() {
-	const deleteWorkspaceItem = useServerFn(deleteWorkspaceItemFn);
+export function useDeleteWorkspaceItemsMutation() {
+	const deleteWorkspaceItems = useServerFn(deleteWorkspaceItemsFn);
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: DeleteWorkspaceItemInput) => {
+		mutationFn: (input: DeleteWorkspaceItemsInput) => {
 			const inputWithClientMutation =
 				prepareWorkspaceClientMutationInput(input);
-			return deleteWorkspaceItem({ data: inputWithClientMutation });
+			const deletePromise = deleteWorkspaceItems({
+				data: inputWithClientMutation,
+			});
+
+			void toast.promise(deletePromise, {
+				loading: getDeleteWorkspaceItemsToastMessage(
+					"Deleting",
+					input.itemIds.length,
+					"...",
+				),
+				success: getDeleteWorkspaceItemsToastMessage(
+					"Deleted",
+					input.itemIds.length,
+					".",
+				),
+				error: (error) =>
+					getErrorMessage(
+						error,
+						getDeleteWorkspaceItemsToastMessage(
+							"Unable to delete",
+							input.itemIds.length,
+							" right now.",
+						),
+					),
+			});
+
+			return deletePromise;
 		},
 		onSuccess: (command) => {
 			applyWorkspaceEventToCache(queryClient, command.event);
 		},
-		onError: (error) => {
-			toast.error(
-				getErrorMessage(error, "Unable to delete workspace item right now."),
-			);
-		},
 	});
+}
+
+function getDeleteWorkspaceItemsToastMessage(
+	action: "Deleting" | "Deleted" | "Unable to delete",
+	itemCount: number,
+	suffix: string,
+) {
+	return `${action} ${itemCount === 1 ? "item" : `${itemCount} items`}${suffix}`;
 }
 
 async function getUploadErrorMessage(response: Response) {

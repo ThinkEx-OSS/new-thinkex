@@ -1,7 +1,7 @@
 import { createDbContext } from "#/db/server";
 import type {
 	CreateWorkspaceItemInput,
-	DeleteWorkspaceItemInput,
+	DeleteWorkspaceItemsInput,
 	MoveWorkspaceItemInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
@@ -13,6 +13,7 @@ import {
 	listWorkspaceKernelPageItems,
 } from "#/features/workspaces/kernel/workspace-kernel-list";
 import type {
+	DeleteWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileProjectionResult,
 	UpsertWorkspaceKernelFileProjectionArgs,
@@ -31,13 +32,8 @@ export interface ListWorkspaceKernelItemsInput {
 	limit?: number;
 }
 
-interface DeleteWorkspaceKernelItemResult {
-	id: string;
-	deletedItemIds: string[];
-}
-
-interface DeleteWorkspaceItemResult {
-	id: string;
+interface DeleteWorkspaceItemsResult {
+	itemIds: string[];
 	workspaceId: string;
 	deletedItemIds: string[];
 }
@@ -85,11 +81,11 @@ export interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
-	deleteItem(input: {
-		itemId: string;
+	deleteItems(input: {
+		itemIds: string[];
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
-	}): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemResult>>;
+	}): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemsResult>>;
 	readItem(input: {
 		itemId: string;
 	}): Promise<{ item: WorkspaceItemSummary; content: string | null }>;
@@ -291,16 +287,16 @@ export async function updateWorkspaceKernelItemColor(
 	}
 }
 
-export async function deleteWorkspaceKernelItem(
-	input: DeleteWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceCommandResult<DeleteWorkspaceItemResult>> {
+export async function deleteWorkspaceKernelItems(
+	input: DeleteWorkspaceItemsInput & { userId: string },
+): Promise<WorkspaceCommandResult<DeleteWorkspaceItemsResult>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
-		const command = await kernel.deleteItem({
-			itemId: input.itemId,
+		const command = await kernel.deleteItems({
+			itemIds: input.itemIds,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

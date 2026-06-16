@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { type ComponentType, useState } from "react";
+import type { ComponentType } from "react";
 
 import {
 	Breadcrumb,
@@ -9,6 +9,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "#/components/ui/breadcrumb";
+import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import WorkspaceContextActions from "#/features/workspaces/components/WorkspaceContextActions";
 import {
 	DeleteWorkspaceItemAlert,
@@ -39,18 +40,6 @@ const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border
 const currentCrumbLabelClassName = "[text-shadow:0.025em_0_0_currentColor]";
 const openWorkspaceSearch = () => undefined;
 
-interface WorkspaceContextDialogState {
-	renamingItem: WorkspaceItem | null;
-	deletingItem: WorkspaceItem | null;
-	deleteAlertOpen: boolean;
-}
-
-const initialDialogState: WorkspaceContextDialogState = {
-	renamingItem: null,
-	deletingItem: null,
-	deleteAlertOpen: false,
-};
-
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
 	activeItem?: WorkspaceItem;
@@ -78,20 +67,16 @@ export default function WorkspaceContextBar({
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const createParentId = getWorkspaceBrowseParentId(activeItem);
-	const [dialogState, setDialogState] =
-		useState<WorkspaceContextDialogState>(initialDialogState);
+	const {
+		clearDeletingItem,
+		deleteAlertOpen,
+		deletingItem,
+		openDeleteAlert,
+		renamingItem,
+		setDeleteAlertOpen,
+		setRenamingItem,
+	} = useWorkspaceItemActionDialogState();
 	const workspaceItems = Array.from(itemsById.values());
-	const updateDialogState = (patch: Partial<WorkspaceContextDialogState>) =>
-		setDialogState((current) => ({ ...current, ...patch }));
-	const setRenamingItem = (renamingItem: WorkspaceItem | null) =>
-		updateDialogState({ renamingItem });
-	const setDeleteAlertOpen = (deleteAlertOpen: boolean) =>
-		updateDialogState({ deleteAlertOpen });
-	const clearDeletingItem = () =>
-		updateDialogState({ deletingItem: null, deleteAlertOpen: false });
-	const openDeleteAlert = (deletingItem: WorkspaceItem) =>
-		updateDialogState({ deletingItem, deleteAlertOpen: true });
-	const { deleteAlertOpen, deletingItem, renamingItem } = dialogState;
 	const searchHotkey = formatAppHotkey(
 		getAppHotkey("workspace.search.open").hotkey,
 	);
@@ -170,13 +155,15 @@ export default function WorkspaceContextBar({
 					}
 				}}
 			/>
-			<DeleteWorkspaceItemAlert
-				open={deleteAlertOpen}
-				item={deletingItem}
-				items={workspaceItems}
-				onOpenChange={setDeleteAlertOpen}
-				onClosed={clearDeletingItem}
-			/>
+			{deletingItem ? (
+				<DeleteWorkspaceItemAlert
+					open={deleteAlertOpen}
+					item={deletingItem}
+					items={workspaceItems}
+					onOpenChange={setDeleteAlertOpen}
+					onClosed={clearDeletingItem}
+				/>
+			) : null}
 		</>
 	);
 }

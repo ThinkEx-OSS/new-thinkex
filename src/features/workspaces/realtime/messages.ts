@@ -28,7 +28,7 @@ export type WorkspaceRealtimeEvent =
 	  })
 	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.deleted";
-			payload: { itemId: string; deletedItemIds: string[] };
+			payload: { itemIds: string[]; deletedItemIds: string[] };
 	  });
 
 export interface WorkspaceCommandResult<T> {

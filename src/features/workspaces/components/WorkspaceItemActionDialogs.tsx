@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { type ReactNode, useId } from "react";
 
 import {
 	AlertDialog,
@@ -24,7 +24,7 @@ import { Input } from "#/components/ui/input";
 import { getWorkspaceDescendantIds } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
-	useDeleteWorkspaceItemMutation,
+	useDeleteWorkspaceItemsMutation,
 	useRenameWorkspaceItemMutation,
 } from "#/features/workspaces/use-workspace-kernel-items";
 
@@ -118,6 +118,79 @@ function RenameWorkspaceItemDialogContent({
 	);
 }
 
+export function DeleteWorkspaceItemsAlert({
+	open,
+	workspaceId,
+	itemIds,
+	title,
+	description,
+	onOpenChange,
+	onDeleted,
+	onClosed,
+}: {
+	open: boolean;
+	workspaceId: string;
+	itemIds: string[];
+	title: string;
+	description: ReactNode;
+	onOpenChange: (open: boolean) => void;
+	onDeleted?: () => void;
+	onClosed?: () => void;
+}) {
+	const deleteWorkspaceItemsMutation = useDeleteWorkspaceItemsMutation();
+
+	return (
+		<AlertDialog
+			open={open}
+			onOpenChange={onOpenChange}
+			onOpenChangeComplete={(nextOpen) => {
+				if (!nextOpen) {
+					onClosed?.();
+				}
+			}}
+		>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>{title}</AlertDialogTitle>
+					<AlertDialogDescription>{description}</AlertDialogDescription>
+				</AlertDialogHeader>
+
+				<AlertDialogFooter>
+					<AlertDialogCancel>Cancel</AlertDialogCancel>
+					<AlertDialogAction
+						variant="destructive"
+						disabled={
+							itemIds.length === 0 || deleteWorkspaceItemsMutation.isPending
+						}
+						onClick={(event) => {
+							event.preventDefault();
+
+							if (itemIds.length === 0) {
+								return;
+							}
+
+							deleteWorkspaceItemsMutation.mutate(
+								{
+									workspaceId,
+									itemIds,
+								},
+								{
+									onSuccess: () => {
+										onDeleted?.();
+										onOpenChange(false);
+									},
+								},
+							);
+						}}
+					>
+						Delete
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
+
 export function DeleteWorkspaceItemAlert({
 	open,
 	item,
@@ -126,64 +199,58 @@ export function DeleteWorkspaceItemAlert({
 	onClosed,
 }: {
 	open: boolean;
-	item: WorkspaceItem | null;
+	item: WorkspaceItem;
 	items: WorkspaceItem[];
 	onOpenChange: (open: boolean) => void;
 	onClosed: () => void;
 }) {
-	const deleteWorkspaceItemMutation = useDeleteWorkspaceItemMutation();
-	const descendantCount = item
-		? getWorkspaceDescendantIds(items, item.id).length
-		: 0;
-	const isFolderWithChildren = item?.type === "folder" && descendantCount > 0;
+	return (
+		<DeleteWorkspaceItemsAlert
+			open={open}
+			workspaceId={item.workspaceId}
+			itemIds={[item.id]}
+			title={`Delete ${item.type === "folder" ? "folder" : "item"}?`}
+			description={<WorkspaceDeleteItemDescription item={item} items={items} />}
+			onOpenChange={onOpenChange}
+			onClosed={onClosed}
+		/>
+	);
+}
+
+function WorkspaceDeleteItemDescription({
+	item,
+	items,
+}: {
+	item: WorkspaceItem;
+	items: WorkspaceItem[];
+}) {
+	const descendantCount = getWorkspaceDescendantIds(items, item.id).length;
+	const isFolderWithChildren = item.type === "folder" && descendantCount > 0;
 
 	return (
-		<AlertDialog
-			open={open}
-			onOpenChange={onOpenChange}
-			onOpenChangeComplete={(nextOpen) => {
-				if (!nextOpen) {
-					onClosed();
-				}
-			}}
-		>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						Delete {item?.type === "folder" ? "folder" : "item"}?
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						This cannot be undone.
-						{item ? ` "${item.name}" will be removed from the workspace.` : ""}
-						{isFolderWithChildren
-							? ` This also deletes ${descendantCount} nested ${
-									descendantCount === 1 ? "item" : "items"
-								}.`
-							: ""}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
+		<>
+			This cannot be undone. "{item.name}" will be removed from the workspace.
+			{isFolderWithChildren
+				? ` This also deletes ${descendantCount} nested ${
+						descendantCount === 1 ? "item" : "items"
+					}.`
+				: ""}
+		</>
+	);
+}
 
-				<AlertDialogFooter>
-					<AlertDialogCancel>Cancel</AlertDialogCancel>
-					<AlertDialogAction
-						variant="destructive"
-						disabled={deleteWorkspaceItemMutation.isPending}
-						onClick={() => {
-							if (!item) {
-								return;
-							}
+export function WorkspaceDeleteSelectedItemsDescription({
+	selectedCount,
+}: {
+	selectedCount: number;
+}) {
+	const itemLabel = selectedCount === 1 ? "item" : "items";
 
-							deleteWorkspaceItemMutation.mutate({
-								workspaceId: item.workspaceId,
-								itemId: item.id,
-							});
-							onOpenChange(false);
-						}}
-					>
-						Delete
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+	return (
+		<>
+			This cannot be undone. {selectedCount} selected {itemLabel} will be
+			removed from the workspace. Anything inside selected folders will also be
+			deleted.
+		</>
 	);
 }

@@ -16,6 +16,7 @@ import {
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Spinner } from "#/components/ui/spinner";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
+import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import {
 	useWorkspaceMarqueeSelection,
 	type WorkspaceMarqueeRect,
@@ -25,7 +26,9 @@ import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/compone
 import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import {
 	DeleteWorkspaceItemAlert,
+	DeleteWorkspaceItemsAlert,
 	RenameWorkspaceItemDialog,
+	WorkspaceDeleteSelectedItemsDescription,
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
@@ -72,9 +75,16 @@ export default function WorkspaceContent({
 	onCreateItem,
 	onOpenItem,
 }: WorkspaceContentProps) {
-	const [renamingItem, setRenamingItem] = useState<WorkspaceItem | null>(null);
-	const [deletingItem, setDeletingItem] = useState<WorkspaceItem | null>(null);
-	const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+	const {
+		clearDeletingItem,
+		deleteAlertOpen,
+		deletingItem,
+		openDeleteAlert,
+		renamingItem,
+		setDeleteAlertOpen,
+		setRenamingItem,
+	} = useWorkspaceItemActionDialogState();
+	const [deleteSelectedAlertOpen, setDeleteSelectedAlertOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
 	const { uploadFiles } = useWorkspaceFileUpload();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
@@ -100,10 +110,6 @@ export default function WorkspaceContent({
 		selectedItemIds,
 		setSelectedItemIds,
 	});
-	const openDeleteAlert = (item: WorkspaceItem) => {
-		setDeletingItem(item);
-		setDeleteAlertOpen(true);
-	};
 	const handleNativeFileDrag = (event: DragEvent<HTMLElement>) => {
 		if (!hasNativeFiles(event.dataTransfer)) {
 			return;
@@ -140,6 +146,13 @@ export default function WorkspaceContent({
 		onAddItemsToAiContext?.(selectedItems);
 		clearSelection();
 	};
+	const openDeleteSelectedAlert = () => {
+		if (selectedItems.length === 0) {
+			return;
+		}
+
+		setDeleteSelectedAlertOpen(true);
+	};
 
 	if (isWorkspaceItemView(activeItem)) {
 		return (
@@ -158,7 +171,7 @@ export default function WorkspaceContent({
 					items={items}
 					onRenamingItemChange={setRenamingItem}
 					onDeleteAlertOpenChange={setDeleteAlertOpen}
-					onDeletingItemClear={() => setDeletingItem(null)}
+					onDeletingItemClear={clearDeletingItem}
 				/>
 			</>
 		);
@@ -236,7 +249,7 @@ export default function WorkspaceContent({
 					selectedCount={selectedItems.length}
 					onAskAi={handleAskAi}
 					onMove={noopWorkspaceSelectionAction}
-					onDelete={noopWorkspaceSelectionAction}
+					onDelete={openDeleteSelectedAlert}
 					onClear={clearSelection}
 				/>
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
@@ -249,7 +262,20 @@ export default function WorkspaceContent({
 				items={items}
 				onRenamingItemChange={setRenamingItem}
 				onDeleteAlertOpenChange={setDeleteAlertOpen}
-				onDeletingItemClear={() => setDeletingItem(null)}
+				onDeletingItemClear={clearDeletingItem}
+			/>
+			<DeleteWorkspaceItemsAlert
+				open={deleteSelectedAlertOpen}
+				workspaceId={workspaceId}
+				itemIds={selectedItems.map((item) => item.id)}
+				title="Delete selected items?"
+				description={
+					<WorkspaceDeleteSelectedItemsDescription
+						selectedCount={selectedItems.length}
+					/>
+				}
+				onOpenChange={setDeleteSelectedAlertOpen}
+				onDeleted={clearSelection}
 			/>
 		</>
 	);
@@ -367,13 +393,15 @@ function WorkspaceContentActionDialogs({
 					}
 				}}
 			/>
-			<DeleteWorkspaceItemAlert
-				open={deleteAlertOpen}
-				item={deletingItem}
-				items={items}
-				onOpenChange={onDeleteAlertOpenChange}
-				onClosed={onDeletingItemClear}
-			/>
+			{deletingItem ? (
+				<DeleteWorkspaceItemAlert
+					open={deleteAlertOpen}
+					item={deletingItem}
+					items={items}
+					onOpenChange={onDeleteAlertOpenChange}
+					onClosed={onDeletingItemClear}
+				/>
+			) : null}
 		</>
 	);
 }

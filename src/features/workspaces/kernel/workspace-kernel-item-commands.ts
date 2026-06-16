@@ -8,13 +8,16 @@ import {
 	getWorkspaceKernelContentMimeType,
 	getWorkspaceKernelShellPath,
 } from "#/features/workspaces/kernel/workspace-kernel-files";
-import { mapKernelItemRow } from "#/features/workspaces/kernel/workspace-kernel-rows";
+import {
+	type KernelItemRow,
+	mapKernelItemRow,
+} from "#/features/workspaces/kernel/workspace-kernel-rows";
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
 	CreateWorkspaceKernelItemArgs,
-	DeleteWorkspaceKernelItemArgs,
-	DeleteWorkspaceKernelItemResult,
+	DeleteWorkspaceKernelItemsArgs,
+	DeleteWorkspaceKernelItemsResult,
 	MoveWorkspaceKernelItemArgs,
 	ReadWorkspaceKernelItemArgs,
 	RenameWorkspaceKernelItemArgs,
@@ -197,32 +200,32 @@ export class WorkspaceKernelItemCommands {
 		});
 	}
 
-	async deleteItem(
-		input: DeleteWorkspaceKernelItemArgs,
-	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemResult>> {
-		const root = this.store.assertActiveItem(input.itemId);
-		const deleteIds = [root.id, ...this.store.getDescendantIds(root.id)];
+	async deleteItems(
+		input: DeleteWorkspaceKernelItemsArgs,
+	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemsResult>> {
+		const roots = this.getDeleteRootRows(input.itemIds);
+		const rootIds = roots.map((root) => root.id);
+		const deleteIds = this.getDeleteItemIds(roots);
+		const rowsToRemove = deleteIds
+			.map((id) => this.store.getItemRowIncludingDeleted(id))
+			.filter((row): row is KernelItemRow => Boolean(row));
 
 		this.store.softDeleteItems(deleteIds, Date.now());
 		await Promise.all(
-			deleteIds.map(async (id) => {
-				const row = this.store.getItemRowIncludingDeleted(id);
-
-				if (row) {
-					await this.workspace.rm(row.shell_path, {
-						recursive: true,
-						force: true,
-					});
-				}
-			}),
+			rowsToRemove.map((row) =>
+				this.workspace.rm(row.shell_path, {
+					recursive: true,
+					force: true,
+				}),
+			),
 		);
 
-		const result = { id: root.id, deletedItemIds: deleteIds };
+		const result = { itemIds: rootIds, deletedItemIds: deleteIds };
 		const event = this.events.commit({
 			type: "workspace.item.deleted",
 			actorUserId: input.actorUserId ?? null,
 			clientMutationId: input.clientMutationId ?? null,
-			payload: { itemId: root.id, deletedItemIds: deleteIds },
+			payload: { itemIds: rootIds, deletedItemIds: deleteIds },
 		});
 
 		return { result, event };
@@ -309,5 +312,66 @@ export class WorkspaceKernelItemCommands {
 		});
 
 		return { result: item, event };
+	}
+
+	private getDeleteRootRows(itemIds: string[]) {
+		const uniqueItemIds = Array.from(new Set(itemIds));
+
+		if (uniqueItemIds.length === 0) {
+			throw new Error("At least one workspace item is required.");
+		}
+
+		const selectedItemIds = new Set(uniqueItemIds);
+
+		return uniqueItemIds
+			.map((itemId) => this.store.assertActiveItem(itemId))
+			.filter((row) => !this.hasSelectedAncestor(row, selectedItemIds));
+	}
+
+	private hasSelectedAncestor(
+		row: KernelItemRow,
+		selectedItemIds: ReadonlySet<string>,
+	) {
+		const seenItemIds = new Set<string>([row.id]);
+		let parentId = row.parent_id;
+
+		while (parentId) {
+			if (selectedItemIds.has(parentId)) {
+				return true;
+			}
+
+			if (seenItemIds.has(parentId)) {
+				return false;
+			}
+
+			seenItemIds.add(parentId);
+			const parent = this.store.getItemRowIncludingDeleted(parentId);
+
+			if (!parent || parent.deleted_at) {
+				return false;
+			}
+
+			parentId = parent.parent_id;
+		}
+
+		return false;
+	}
+
+	private getDeleteItemIds(roots: KernelItemRow[]) {
+		const itemIds: string[] = [];
+		const seenItemIds = new Set<string>();
+
+		for (const root of roots) {
+			for (const itemId of [root.id, ...this.store.getDescendantIds(root.id)]) {
+				if (seenItemIds.has(itemId)) {
+					continue;
+				}
+
+				seenItemIds.add(itemId);
+				itemIds.push(itemId);
+			}
+		}
+
+		return itemIds;
 	}
 }

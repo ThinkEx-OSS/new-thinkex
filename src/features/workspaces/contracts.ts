@@ -230,9 +230,9 @@ export const moveWorkspaceItemInputSchema = z.object({
 	clientMutationId: z.uuid().optional(),
 });
 
-export const deleteWorkspaceItemInputSchema = z.object({
+export const deleteWorkspaceItemsInputSchema = z.object({
 	workspaceId: z.string().min(1),
-	itemId: z.string().min(1),
+	itemIds: z.array(z.string().min(1)).min(1),
 	clientMutationId: z.uuid().optional(),
 });
 
@@ -283,8 +283,8 @@ export type RenameWorkspaceItemInput = z.infer<
 export type MoveWorkspaceItemInput = z.infer<
 	typeof moveWorkspaceItemInputSchema
 >;
-export type DeleteWorkspaceItemInput = z.infer<
-	typeof deleteWorkspaceItemInputSchema
+export type DeleteWorkspaceItemsInput = z.infer<
+	typeof deleteWorkspaceItemsInputSchema
 >;
 export type UpdateWorkspaceItemColorInput = z.infer<
 	typeof updateWorkspaceItemColorInputSchema
