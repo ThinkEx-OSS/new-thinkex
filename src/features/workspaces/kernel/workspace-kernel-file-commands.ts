@@ -18,6 +18,7 @@ import type {
 	WorkspaceKernelFileProjectionFormat,
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
+import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	getWorkspaceFileTypeForUpload,
@@ -82,6 +83,7 @@ export class WorkspaceKernelFileCommands {
 
 		const now = Date.now();
 		const itemId = crypto.randomUUID();
+		const color = getRandomWorkspaceColor();
 		const requestedName = normalizeWorkspaceUploadFileName(
 			input.fileName,
 			descriptor,
@@ -127,7 +129,7 @@ export class WorkspaceKernelFileCommands {
 				${parentId},
 				${"file"},
 				${name},
-				NULL,
+				${color},
 				${JSON.stringify(metadataJson)},
 				${this.store.getNextSortOrder(parentId)},
 				${shellPath},

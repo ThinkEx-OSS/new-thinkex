@@ -18,8 +18,10 @@ import type {
 	MoveWorkspaceKernelItemArgs,
 	ReadWorkspaceKernelItemArgs,
 	RenameWorkspaceKernelItemArgs,
+	UpdateWorkspaceKernelItemColorArgs,
 	WriteWorkspaceKernelItemArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
+import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelItemCommands {
@@ -49,6 +51,7 @@ export class WorkspaceKernelItemCommands {
 		const type = workspaceItemTypeSchema.parse(input.type);
 		const id = input.id ?? crypto.randomUUID();
 		const parentId = input.parentId ?? null;
+		const color = input.color ?? getRandomWorkspaceColor();
 		const now = Date.now();
 
 		if (this.store.getItemRowIncludingDeleted(id)) {
@@ -89,7 +92,7 @@ export class WorkspaceKernelItemCommands {
 				${parentId},
 				${type},
 				${name},
-				${input.color ?? null},
+				${color},
 				${JSON.stringify(input.metadataJson ?? {})},
 				${this.store.getNextSortOrder(parentId)},
 				${shellPath},
@@ -169,6 +172,25 @@ export class WorkspaceKernelItemCommands {
 
 		return this.commitItemEvent({
 			type: "workspace.item.moved",
+			itemId: input.itemId,
+			actorUserId: input.actorUserId,
+			clientMutationId: input.clientMutationId,
+		});
+	}
+
+	async updateItemColor(
+		input: UpdateWorkspaceKernelItemColorArgs,
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+		this.store.assertActiveItem(input.itemId);
+
+		this.sql`
+			UPDATE kernel_items
+			SET color = ${input.color}, updated_at = ${Date.now()}
+			WHERE id = ${input.itemId} AND deleted_at IS NULL
+		`;
+
+		return this.commitItemEvent({
+			type: "workspace.item.color.updated",
 			itemId: input.itemId,
 			actorUserId: input.actorUserId,
 			clientMutationId: input.clientMutationId,
@@ -272,6 +294,7 @@ export class WorkspaceKernelItemCommands {
 		type:
 			| "workspace.item.renamed"
 			| "workspace.item.moved"
+			| "workspace.item.color.updated"
 			| "workspace.item.content.updated";
 		itemId: string;
 		actorUserId?: string | null;

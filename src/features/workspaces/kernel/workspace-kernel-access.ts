@@ -4,6 +4,7 @@ import type {
 	DeleteWorkspaceItemInput,
 	MoveWorkspaceItemInput,
 	RenameWorkspaceItemInput,
+	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
 } from "#/features/workspaces/contracts";
@@ -52,6 +53,7 @@ export interface WorkspaceKernelClient {
 		parentId?: string | null;
 		type: CreateWorkspaceItemInput["type"];
 		name?: string;
+		color?: CreateWorkspaceItemInput["color"];
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
@@ -74,6 +76,12 @@ export interface WorkspaceKernelClient {
 		itemId: string;
 		parentId?: string | null;
 		sortOrder?: number;
+		actorUserId?: string | null;
+		clientMutationId?: string | null;
+	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	updateItemColor(input: {
+		itemId: string;
+		color: UpdateWorkspaceItemColorInput["color"];
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
@@ -183,6 +191,7 @@ export async function createWorkspaceKernelItem(
 			parentId: input.parentId ?? null,
 			type: input.type,
 			name: input.name,
+			color: input.color,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});
@@ -254,6 +263,26 @@ export async function moveWorkspaceKernelItem(
 			itemId: input.itemId,
 			parentId: input.parentId ?? null,
 			sortOrder: input.sortOrder,
+			actorUserId: input.userId,
+			clientMutationId: input.clientMutationId ?? null,
+		});
+	} finally {
+		await dbContext.dispose();
+	}
+}
+
+export async function updateWorkspaceKernelItemColor(
+	input: UpdateWorkspaceItemColorInput & { userId: string },
+): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+	const dbContext = await createDbContext();
+
+	try {
+		await assertCanMutateWorkspace(dbContext.db, input);
+		const kernel = await getWorkspaceKernel(input.workspaceId);
+
+		return await kernel.updateItemColor({
+			itemId: input.itemId,
+			color: input.color,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

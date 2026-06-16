@@ -9,12 +9,14 @@ import {
 	moveWorkspaceItemInputSchema,
 	renameWorkspaceItemInputSchema,
 	updateWorkspaceInputSchema,
+	updateWorkspaceItemColorInputSchema,
 } from "#/features/workspaces/contracts";
 import {
 	createWorkspaceKernelItem,
 	deleteWorkspaceKernelItem,
 	moveWorkspaceKernelItem,
 	renameWorkspaceKernelItem,
+	updateWorkspaceKernelItemColor,
 } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	createWorkspaceForCurrentUser,
@@ -82,6 +84,15 @@ export const moveWorkspaceItemFn = createServerFn({ method: "POST" })
 	.inputValidator(moveWorkspaceItemInputSchema)
 	.handler(async ({ data }) =>
 		moveWorkspaceKernelItem({
+			...data,
+			userId: await getCurrentUserId(),
+		}),
+	);
+
+export const updateWorkspaceItemColorFn = createServerFn({ method: "POST" })
+	.inputValidator(updateWorkspaceItemColorInputSchema)
+	.handler(async ({ data }) =>
+		updateWorkspaceKernelItemColor({
 			...data,
 			userId: await getCurrentUserId(),
 		}),

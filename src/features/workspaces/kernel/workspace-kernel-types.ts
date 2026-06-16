@@ -1,5 +1,6 @@
 import type {
 	JsonValue,
+	WorkspaceItemColor,
 	WorkspaceItemSummary,
 	WorkspaceItemType,
 } from "#/features/workspaces/contracts";
@@ -20,7 +21,7 @@ export interface CreateWorkspaceKernelItemArgs {
 	parentId?: string | null;
 	type: WorkspaceItemType;
 	name?: string;
-	color?: string | null;
+	color?: WorkspaceItemColor;
 	metadataJson?: Record<string, JsonValue>;
 	initialContent?: string;
 	actorUserId?: string | null;
@@ -38,6 +39,13 @@ export interface MoveWorkspaceKernelItemArgs {
 	itemId: string;
 	parentId?: string | null;
 	sortOrder?: number;
+	actorUserId?: string | null;
+	clientMutationId?: string | null;
+}
+
+export interface UpdateWorkspaceKernelItemColorArgs {
+	itemId: string;
+	color: WorkspaceItemColor;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }

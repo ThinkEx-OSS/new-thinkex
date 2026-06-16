@@ -1,5 +1,8 @@
 import { type LucideIcon, Mic, Upload } from "lucide-react";
-
+import {
+	type WorkspaceItemColor,
+	workspaceItemColorSchema,
+} from "#/features/workspaces/contracts";
 import {
 	creatableWorkspaceObjectEntries,
 	getWorkspaceObjectRegistryEntry,
@@ -8,6 +11,12 @@ import type {
 	WorkspaceItem,
 	WorkspaceItemType,
 } from "#/features/workspaces/model/types";
+import {
+	workspaceColorOptions,
+	workspaceColors,
+} from "#/features/workspaces/model/workspace-colors";
+
+export const workspaceItemColorOptions = workspaceColorOptions;
 
 export function getWorkspaceItemTypeDisplay(type: WorkspaceItemType) {
 	return getWorkspaceObjectRegistryEntry(type);
@@ -15,11 +24,29 @@ export function getWorkspaceItemTypeDisplay(type: WorkspaceItemType) {
 
 export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	const typeDisplay = getWorkspaceItemTypeDisplay(item.type);
+	const colorDisplay = getWorkspaceItemColorDisplay(item.color);
 
 	return {
 		...typeDisplay,
 		Icon: typeDisplay.icon,
+		iconClassName: colorDisplay?.iconClassName ?? typeDisplay.iconClassName,
+		surfaceClassName:
+			colorDisplay?.surfaceClassName ?? typeDisplay.surfaceClassName,
 	};
+}
+
+export function getWorkspaceItemColorValue(
+	color: string | null,
+): WorkspaceItemColor | null {
+	const parsed = workspaceItemColorSchema.safeParse(color);
+
+	return parsed.success ? parsed.data : null;
+}
+
+function getWorkspaceItemColorDisplay(color: string | null) {
+	const value = getWorkspaceItemColorValue(color);
+
+	return value ? workspaceColors[value] : null;
 }
 
 export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(

@@ -58,6 +58,7 @@
 		"@streamdown/cjk": "^1.0.3",
 		"@streamdown/math": "^1.0.2",
 		"@tailwindcss/vite": "^4.1.18",
+		"@tanstack/pacer": "^0.21.1",
 		"@tanstack/react-devtools": "latest",
 		"@tanstack/react-hotkeys": "^0.10.0",
 		"@tanstack/react-query": "latest",

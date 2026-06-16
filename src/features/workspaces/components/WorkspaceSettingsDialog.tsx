@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { ChevronDown, Search, Trash2 } from "lucide-react";
 import {
 	type Dispatch,
 	type KeyboardEvent,
@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { Button } from "#/components/ui/button";
+import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -21,6 +22,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "#/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldTitle } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
@@ -30,7 +36,9 @@ import type {
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import {
+	filterWorkspaceIconOptions,
 	workspaceColorOptions,
+	workspaceColors,
 	workspaceIconOptions,
 } from "#/features/workspaces/model/display";
 import { useDeleteWorkspaceMutation } from "#/features/workspaces/use-delete-workspace";
@@ -98,6 +106,8 @@ function WorkspaceSettingsDialogContent({
 	onOpenChange: (open: boolean) => void;
 }) {
 	const nameInputId = useId();
+	const [iconPickerOpen, setIconPickerOpen] = useState(false);
+	const [colorPickerOpen, setColorPickerOpen] = useState(false);
 	const updateWorkspaceMutation = useUpdateWorkspaceMutation();
 	const deleteWorkspaceMutation = useDeleteWorkspaceMutation();
 	const workspaceDraft = getWorkspaceSettingsDraft(workspace);
@@ -157,61 +167,33 @@ function WorkspaceSettingsDialogContent({
 					/>
 				</Field>
 
-				<Field>
-					<FieldTitle>Icon</FieldTitle>
-					<div className="grid grid-cols-4 gap-2">
-						{workspaceIconOptions.map(({ value, label, Icon }) => (
-							<button
-								key={value}
-								type="button"
-								className={cn(
-									"flex h-16 flex-col items-center justify-center gap-1 rounded-md border bg-background text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
-									draft.icon === value
-										? "border-ring bg-muted text-foreground"
-										: "border-border text-muted-foreground",
-								)}
-								aria-pressed={draft.icon === value}
-								onClick={() =>
-									setDraft((current) => ({ ...current, icon: value }))
-								}
-							>
-								<Icon className="size-5" aria-hidden="true" />
-								<span>{label}</span>
-							</button>
-						))}
-					</div>
-				</Field>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<Field>
+						<FieldTitle>Icon</FieldTitle>
+						<WorkspaceIconDropdown
+							open={iconPickerOpen}
+							value={draft.icon}
+							onOpenChange={setIconPickerOpen}
+							onValueChange={(icon) => {
+								setDraft((current) => ({ ...current, icon }));
+								setIconPickerOpen(false);
+							}}
+						/>
+					</Field>
 
-				<Field>
-					<FieldTitle>Color</FieldTitle>
-					<div className="grid grid-cols-4 gap-2">
-						{workspaceColorOptions.map((option) => (
-							<button
-								key={option.value}
-								type="button"
-								className={cn(
-									"flex h-14 flex-col items-center justify-center gap-1 rounded-md border bg-background text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
-									draft.color === option.value
-										? "border-ring bg-muted text-foreground"
-										: "border-border text-muted-foreground",
-								)}
-								aria-pressed={draft.color === option.value}
-								onClick={() =>
-									setDraft((current) => ({
-										...current,
-										color: option.value,
-									}))
-								}
-							>
-								<span
-									className={cn("size-4 rounded-full", option.bg)}
-									aria-hidden="true"
-								/>
-								<span>{option.label}</span>
-							</button>
-						))}
-					</div>
-				</Field>
+					<Field>
+						<FieldTitle>Color</FieldTitle>
+						<WorkspaceColorDropdown
+							open={colorPickerOpen}
+							value={draft.color}
+							onOpenChange={setColorPickerOpen}
+							onValueChange={(color) => {
+								setDraft((current) => ({ ...current, color }));
+								setColorPickerOpen(false);
+							}}
+						/>
+					</Field>
+				</div>
 
 				{updateError || deleteError ? (
 					<p className="text-destructive text-sm">
@@ -245,6 +227,159 @@ function WorkspaceSettingsDialogContent({
 				</div>
 			</DialogFooter>
 		</DialogContent>
+	);
+}
+
+function WorkspaceIconDropdown({
+	open,
+	value,
+	onOpenChange,
+	onValueChange,
+}: {
+	open: boolean;
+	value: WorkspaceIcon;
+	onOpenChange: (open: boolean) => void;
+	onValueChange: (value: WorkspaceIcon) => void;
+}) {
+	const searchInputId = useId();
+	const [query, setQuery] = useState("");
+	const selectedIcon = workspaceIconOptions.find(
+		(option) => option.value === value,
+	);
+	const SelectedIcon = selectedIcon?.Icon ?? workspaceIconOptions[0].Icon;
+	const filteredIconOptions = filterWorkspaceIconOptions(query);
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) {
+			setQuery("");
+		}
+
+		onOpenChange(nextOpen);
+	};
+
+	return (
+		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full justify-between"
+					>
+						<span className="flex min-w-0 items-center gap-2">
+							<SelectedIcon className="size-4" aria-hidden="true" />
+							<span className="truncate">{selectedIcon?.label ?? "Icon"}</span>
+						</span>
+						<ChevronDown className="size-4 text-muted-foreground" />
+					</Button>
+				}
+			/>
+			<DropdownMenuContent align="start" className="w-80 p-2">
+				<div className="relative">
+					<Search
+						className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<Input
+						id={searchInputId}
+						value={query}
+						aria-label="Search icons"
+						placeholder="Search icons"
+						className="h-9 pl-8"
+						onChange={(event) => setQuery(event.target.value)}
+						onKeyDown={(event) => event.stopPropagation()}
+					/>
+				</div>
+				{filteredIconOptions.length > 0 ? (
+					<div className="mt-2 grid max-h-72 grid-cols-7 gap-1.5 overflow-y-auto pr-1">
+						{filteredIconOptions.map(
+							({ value: optionValue, label, Icon, aliases }) => (
+								<button
+									key={optionValue}
+									type="button"
+									className={cn(
+										"flex size-9 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+										value === optionValue
+											? "bg-muted text-foreground"
+											: "text-muted-foreground",
+									)}
+									aria-label={`${label}. ${aliases.join(", ")}`}
+									aria-pressed={value === optionValue}
+									onClick={() => onValueChange(optionValue)}
+								>
+									<Icon className="size-5" aria-hidden="true" />
+								</button>
+							),
+						)}
+					</div>
+				) : (
+					<p className="px-2 py-6 text-center text-muted-foreground text-sm">
+						No icons found.
+					</p>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+function WorkspaceColorDropdown({
+	open,
+	value,
+	onOpenChange,
+	onValueChange,
+}: {
+	open: boolean;
+	value: WorkspaceColor;
+	onOpenChange: (open: boolean) => void;
+	onValueChange: (value: WorkspaceColor) => void;
+}) {
+	const selectedColor = workspaceColors[value];
+
+	return (
+		<DropdownMenu open={open} onOpenChange={onOpenChange}>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full justify-between"
+					>
+						<span className="flex min-w-0 items-center gap-2">
+							<span
+								className={cn(
+									"size-4 rounded-[4px]",
+									selectedColor?.swatchClassName ?? "bg-sky-500",
+								)}
+								aria-hidden="true"
+							/>
+							<span className="truncate">
+								{selectedColor?.label ?? "Color"}
+							</span>
+						</span>
+						<ChevronDown className="size-4 text-muted-foreground" />
+					</Button>
+				}
+			/>
+			<DropdownMenuContent
+				align="end"
+				className="max-w-[calc(100vw-2rem)] w-fit overflow-x-auto p-2"
+			>
+				<ColorSwatchPicker
+					aria-label="Workspace color"
+					value={value}
+					options={workspaceColorOptions.map((option) => ({
+						value: option.value,
+						label: option.label,
+						swatchClassName: option.swatchClassName,
+						checkClassName:
+							"checkClassName" in option ? option.checkClassName : undefined,
+					}))}
+					onValueChange={onValueChange}
+					showLabels={false}
+					className="grid-flow-col grid-rows-4 gap-1.5"
+				/>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 

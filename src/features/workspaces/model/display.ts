@@ -1,39 +1,14 @@
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import {
-	BookMarked,
-	Compass,
-	FlaskConical,
-	type LucideIcon,
-	Zap,
-} from "lucide-react";
+	workspaceColorOptions,
+	workspaceColors,
+} from "#/features/workspaces/model/workspace-colors";
+import {
+	filterWorkspaceIconOptions,
+	workspaceIconOptions,
+	workspaceIcons,
+} from "#/features/workspaces/model/workspace-icons";
 
-import type {
-	WorkspaceColor,
-	WorkspaceIcon,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
-
-const workspaceIcons: Record<WorkspaceIcon, LucideIcon> = {
-	compass: Compass,
-	"flask-conical": FlaskConical,
-	zap: Zap,
-	"book-marked": BookMarked,
-};
-
-const workspaceColors: Record<WorkspaceColor, { bg: string; text: string }> = {
-	sky: { bg: "bg-sky-500/20", text: "text-sky-600 dark:text-sky-400" },
-	violet: {
-		bg: "bg-violet-500/20",
-		text: "text-violet-600 dark:text-violet-400",
-	},
-	amber: {
-		bg: "bg-amber-500/20",
-		text: "text-amber-600 dark:text-amber-400",
-	},
-	emerald: {
-		bg: "bg-emerald-500/20",
-		text: "text-emerald-600 dark:text-emerald-400",
-	},
-};
 const workspaceRecencyTimeFormatter = new Intl.DateTimeFormat(undefined, {
 	hour: "numeric",
 	minute: "2-digit",
@@ -51,36 +26,24 @@ const workspaceRecencyDateWithYearFormatter = new Intl.DateTimeFormat(
 	},
 );
 
-export const workspaceIconOptions = [
-	{ value: "compass", label: "Compass", Icon: Compass },
-	{ value: "flask-conical", label: "Lab", Icon: FlaskConical },
-	{ value: "zap", label: "Energy", Icon: Zap },
-	{ value: "book-marked", label: "Study", Icon: BookMarked },
-] as const satisfies ReadonlyArray<{
-	value: WorkspaceIcon;
-	label: string;
-	Icon: LucideIcon;
-}>;
-
-export const workspaceColorOptions = [
-	{ value: "sky", label: "Sky", ...workspaceColors.sky },
-	{ value: "violet", label: "Violet", ...workspaceColors.violet },
-	{ value: "amber", label: "Amber", ...workspaceColors.amber },
-	{ value: "emerald", label: "Emerald", ...workspaceColors.emerald },
-] as const satisfies ReadonlyArray<{
-	value: WorkspaceColor;
-	label: string;
-	bg: string;
-	text: string;
-}>;
+export {
+	filterWorkspaceIconOptions,
+	workspaceColorOptions,
+	workspaceColors,
+	workspaceIconOptions,
+};
 
 export function getWorkspaceDisplay(workspace: WorkspaceSummary) {
 	const icon = workspace.icon ?? "compass";
 	const color = workspace.color ?? "sky";
+	const colorDefinition = workspaceColors[color];
 
 	return {
 		Icon: workspaceIcons[icon],
-		color: workspaceColors[color],
+		color: {
+			bg: colorDefinition.chromeClassName,
+			text: colorDefinition.iconClassName,
+		},
 	};
 }
 

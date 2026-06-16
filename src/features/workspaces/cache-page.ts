@@ -3,6 +3,7 @@ import { workspacePageQueryKey } from "#/features/workspaces/cache-keys";
 import type {
 	CreateWorkspaceItemInput,
 	MoveWorkspaceItemInput,
+	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
 } from "#/features/workspaces/contracts";
@@ -11,6 +12,7 @@ import {
 	createWorkspaceItemInPage,
 	moveWorkspaceItemInPage,
 	removeWorkspaceItemsFromPage,
+	updateWorkspaceItemColorInPage,
 	upsertWorkspaceItemInPage,
 } from "#/features/workspaces/model/workspace-page";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
@@ -63,6 +65,39 @@ export function removeWorkspaceItemsFromPageCache(
 		(current) =>
 			current ? removeWorkspaceItemsFromPage(current, itemIds) : current,
 	);
+}
+
+export function updateWorkspaceItemColorInPageCache(
+	queryClient: QueryClient,
+	input: UpdateWorkspaceItemColorInput,
+) {
+	queryClient.setQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+		(current) => {
+			if (!current) {
+				return current;
+			}
+
+			const updateResult = updateWorkspaceItemColorInPage(current, input);
+
+			if (!updateResult) {
+				return current;
+			}
+
+			return updateResult;
+		},
+	);
+}
+
+export function getWorkspaceItemColorInPageCache(
+	queryClient: QueryClient,
+	input: Pick<UpdateWorkspaceItemColorInput, "itemId" | "workspaceId">,
+) {
+	const page = queryClient.getQueryData<WorkspacePage>(
+		workspacePageQueryKey(input.workspaceId),
+	);
+
+	return page?.items.find((item) => item.id === input.itemId)?.color ?? null;
 }
 
 export function restoreWorkspaceItemInPageCache(

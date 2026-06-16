@@ -1,6 +1,7 @@
 import type {
 	CreateWorkspaceItemInput,
 	MoveWorkspaceItemInput,
+	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
 } from "#/features/workspaces/contracts";
@@ -19,6 +20,7 @@ export function applyWorkspaceEventToPage(
 		case "workspace.item.created":
 		case "workspace.item.renamed":
 		case "workspace.item.moved":
+		case "workspace.item.color.updated":
 		case "workspace.item.content.updated":
 			return upsertWorkspaceItemInPage(
 				page,
@@ -55,7 +57,7 @@ export function createWorkspaceItemInPage(
 		title: name,
 		name,
 		meta: getWorkspaceItemTypeMeta(input.type),
-		color: null,
+		color: input.color ?? null,
 		metadataJson: {},
 		sortOrder: getNextWorkspaceItemSortOrder(page.items, parentId),
 		createdAt: now,
@@ -99,6 +101,23 @@ export function moveWorkspaceItemInPage(
 			updatedAt: new Date().toISOString(),
 		}),
 	};
+}
+
+export function updateWorkspaceItemColorInPage(
+	page: WorkspacePage,
+	input: UpdateWorkspaceItemColorInput,
+): WorkspacePage | null {
+	const previousItem = page.items.find((item) => item.id === input.itemId);
+
+	if (!previousItem) {
+		return null;
+	}
+
+	return upsertWorkspaceItemInPage(page, {
+		...previousItem,
+		color: input.color,
+		updatedAt: new Date().toISOString(),
+	});
 }
 
 export function upsertWorkspaceItemInPage(
