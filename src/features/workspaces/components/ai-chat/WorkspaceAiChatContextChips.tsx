@@ -1,10 +1,4 @@
-import {
-	Eye,
-	FileText,
-	MessageSquareQuote,
-	TextCursorInput,
-	X,
-} from "lucide-react";
+import { Eye, MessageSquare, X } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Button } from "#/components/ui/button";
@@ -36,6 +30,8 @@ export default function WorkspaceAiChatContextChips({
 		(state) => state.removeSelectedMention,
 	);
 	const chips = getWorkspaceAiContextChips(context);
+	const activeChips = chips.filter((chip) => chip.isActiveVisible);
+	const inactiveChips = chips.filter((chip) => !chip.isActiveVisible);
 	const mentionChips = context.selectedMentions;
 
 	if (chips.length === 0 && mentionChips.length === 0) {
@@ -44,7 +40,7 @@ export default function WorkspaceAiChatContextChips({
 
 	return (
 		<div className="flex w-full min-w-0 flex-wrap items-center gap-1 pt-2">
-			{chips.map((chip) => (
+			{activeChips.map((chip) => (
 				<WorkspaceAiChatContextChipRenderer
 					key={chip.id}
 					chip={chip}
@@ -58,6 +54,13 @@ export default function WorkspaceAiChatContextChips({
 					onRemove={() =>
 						removeSelectedMention(context.workspaceId, mention.id)
 					}
+				/>
+			))}
+			{inactiveChips.map((chip) => (
+				<WorkspaceAiChatContextChipRenderer
+					key={chip.id}
+					chip={chip}
+					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
 				/>
 			))}
 		</div>
@@ -177,7 +180,7 @@ function WorkspaceAiChatSelectedMentionChip({
 				"border border-blue-200/80 bg-blue-50 text-blue-950 dark:border-blue-500/25 dark:bg-blue-500/15 dark:text-blue-50",
 			)}
 		>
-			<WorkspaceAiChatSelectedMentionIcon mention={mention} />
+			<WorkspaceAiChatSelectedMentionIcon />
 			<span className="min-w-0 truncate font-medium">{preview}</span>
 			<Button
 				type="button"
@@ -202,22 +205,10 @@ function WorkspaceAiChatSelectedMentionChip({
 	);
 }
 
-function WorkspaceAiChatSelectedMentionIcon({
-	mention,
-}: {
-	mention: WorkspaceSelectedMention;
-}) {
-	const className = "size-3 shrink-0 text-blue-600 dark:text-blue-300";
-
-	if (mention.source.kind === "assistant-response") {
-		return <MessageSquareQuote className={className} />;
-	}
-
-	if (mention.source.kind === "pdf-selection") {
-		return <FileText className={className} />;
-	}
-
-	return <TextCursorInput className={className} />;
+function WorkspaceAiChatSelectedMentionIcon() {
+	return (
+		<MessageSquare className="size-3 shrink-0 text-blue-600 dark:text-blue-300" />
+	);
 }
 
 function getWorkspaceAiChatSelectedMentionPreview(

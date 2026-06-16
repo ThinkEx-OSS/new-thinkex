@@ -18,6 +18,9 @@ import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { createAIThreadWorkspaceTools } from "#/features/workspaces/ai/workspace-tools";
 import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/workspace-ai-context";
 
+const thinkPromptSectionDivider =
+	"══════════════════════════════════════════════";
+
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
 		.number()
@@ -208,6 +211,7 @@ export function getAIThreadSoulPrompt() {
 		"Use actual workspace tools to inspect workspace contents; change the workspace only through actual workspace mutation tools.",
 		"Never use private sandbox files as user-visible workspace items.",
 		"Do not claim to have read actual workspace content unless an actual workspace tool returned it.",
+		"Resolve this/it/that/here/above/the page/this file from current-turn context: selected mentions, then active view, then active/open items. Ask briefly before changes if ambiguous.",
 		"Web tools read public web content only.",
 		"Use time_get_current for exact UTC now and time_calculate_relative for UTC date filters; the current turn includes user-local date/time context.",
 		"Use memory only for durable preferences, workspace goals, thread goals, and decisions. Do not store transient requests, secrets, full documents, item bodies, or actual workspace state.",
@@ -256,7 +260,9 @@ function getThinkExRuntimeScopePrompt(
 	);
 
 	return [
-		"Current turn:",
+		thinkPromptSectionDivider,
+		"CURRENT TURN [readonly]",
+		thinkPromptSectionDivider,
 		`- Workspace: ${promptScope.workspaceName}`,
 		`- Date/time: ${formatPromptDateTime(options.now ?? new Date(), timeZone)}`,
 		"- Actual workspace paths are absolute, such as /.",

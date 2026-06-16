@@ -1,4 +1,4 @@
-import { MessageSquareQuote } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/utils";
@@ -22,7 +22,7 @@ export function WorkspaceAskSelectionButton({
 			onClick={onClick}
 			onMouseDown={(event) => event.preventDefault()}
 		>
-			<MessageSquareQuote className="size-4" />
+			<MessageSquare className="size-4" />
 			Ask
 		</Button>
 	);
