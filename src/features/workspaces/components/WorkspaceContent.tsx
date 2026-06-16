@@ -14,6 +14,7 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { ScrollArea } from "#/components/ui/scroll-area";
+import { Spinner } from "#/components/ui/spinner";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
 import {
 	useWorkspaceMarqueeSelection,
@@ -469,8 +470,9 @@ function WorkspaceItemView({
 
 function WorkspacePdfViewerSkeleton() {
 	return (
-		<div className="grid h-full min-h-0 place-items-center overflow-hidden bg-muted/20 text-muted-foreground text-xs">
-			Loading PDF viewer...
+		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-hidden bg-muted/20 px-4 text-center text-muted-foreground text-sm">
+			<Spinner className="size-4" />
+			<p>Loading PDF viewer...</p>
 		</div>
 	);
 }

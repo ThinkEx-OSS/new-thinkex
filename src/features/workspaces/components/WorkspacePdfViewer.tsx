@@ -37,7 +37,8 @@ import {
 	ZoomMode,
 	ZoomPluginPackage,
 } from "@embedpdf/plugin-zoom/react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { Spinner } from "#/components/ui/spinner";
 import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -239,7 +240,9 @@ function WorkspacePdfDocumentContent({
 	}
 
 	if (!isLoaded) {
-		return null;
+		return (
+			<WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>
+		);
 	}
 
 	return (
@@ -312,10 +315,23 @@ function WorkspacePdfSelectionShortcuts({
 	return null;
 }
 
-function WorkspacePdfViewerStatus({ children }: { children: string }) {
+function WorkspacePdfViewerStatus({
+	action,
+	children,
+	loading = true,
+}: {
+	action?: ReactNode;
+	children: string;
+	loading?: boolean;
+}) {
 	return (
-		<div className="flex h-full items-center justify-center px-4 text-muted-foreground text-sm">
-			{children}
+		<div
+			className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground text-sm"
+			aria-live="polite"
+		>
+			{loading ? <Spinner className="size-4" /> : null}
+			<p>{children}</p>
+			{action}
 		</div>
 	);
 }
@@ -330,16 +346,20 @@ function WorkspacePdfLoadFailure({
 	fileUrl: string;
 }) {
 	return (
-		<div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-			<p className="text-muted-foreground text-sm">{children}</p>
-			<a
-				className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-3 font-medium text-foreground text-sm shadow-xs transition-colors hover:bg-muted"
-				download={fileName}
-				href={fileUrl}
-			>
-				Download original file
-			</a>
-		</div>
+		<WorkspacePdfViewerStatus
+			loading={false}
+			action={
+				<a
+					className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-3 font-medium text-foreground text-sm shadow-xs transition-colors hover:bg-muted"
+					download={fileName}
+					href={fileUrl}
+				>
+					Download original file
+				</a>
+			}
+		>
+			{children}
+		</WorkspacePdfViewerStatus>
 	);
 }
 
