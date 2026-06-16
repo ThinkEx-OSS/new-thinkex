@@ -1,7 +1,18 @@
-import { Eye, X } from "lucide-react";
+import {
+	Eye,
+	FileText,
+	MessageSquareQuote,
+	TextCursorInput,
+	X,
+} from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Button } from "#/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "#/components/ui/tooltip";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
@@ -9,6 +20,7 @@ import {
 	type WorkspaceAiContextChip,
 	type WorkspaceAiContextScope,
 } from "#/features/workspaces/model/workspace-ai-context";
+import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
@@ -20,9 +32,13 @@ export default function WorkspaceAiChatContextChips({
 	const removeAiContextItem = useWorkspaceUiStore(
 		(state) => state.removeAiContextItem,
 	);
+	const removeSelectedMention = useWorkspaceUiStore(
+		(state) => state.removeSelectedMention,
+	);
 	const chips = getWorkspaceAiContextChips(context);
+	const mentionChips = context.selectedMentions;
 
-	if (chips.length === 0) {
+	if (chips.length === 0 && mentionChips.length === 0) {
 		return null;
 	}
 
@@ -33,6 +49,15 @@ export default function WorkspaceAiChatContextChips({
 					key={chip.id}
 					chip={chip}
 					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
+				/>
+			))}
+			{mentionChips.map((mention) => (
+				<WorkspaceAiChatSelectedMentionChip
+					key={mention.id}
+					mention={mention}
+					onRemove={() =>
+						removeSelectedMention(context.workspaceId, mention.id)
+					}
 				/>
 			))}
 		</div>
@@ -48,26 +73,32 @@ function WorkspaceAiChatContextChipRenderer({
 }) {
 	return (
 		<WorkspaceAiChatContextChip
+			canRemove={chip.isMarkedForAiContext}
 			isActiveVisible={chip.isActiveVisible}
 			item={chip.item}
 			label={chip.label}
 			path={chip.path}
+			viewStateLabel={chip.viewStateLabel}
 			onRemove={onRemove}
 		/>
 	);
 }
 
 function WorkspaceAiChatContextChip({
+	canRemove,
 	isActiveVisible,
 	item,
 	label,
 	path,
+	viewStateLabel,
 	onRemove,
 }: {
+	canRemove: boolean;
 	isActiveVisible: boolean;
 	item: WorkspaceItem;
 	label: string;
 	path: string;
+	viewStateLabel?: string;
 	onRemove: () => void;
 }) {
 	const { Icon, iconClassName } = getWorkspaceAiChatContextChipIcon(item);
@@ -79,17 +110,20 @@ function WorkspaceAiChatContextChip({
 				isActiveVisible={isActiveVisible}
 				iconClassName={iconClassName}
 				label={label}
+				viewStateLabel={viewStateLabel}
 			/>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-xs"
-				className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
-				aria-label={`Remove ${label} from AI context`}
-				onClick={onRemove}
-			>
-				<X className="size-3" />
-			</Button>
+			{canRemove ? (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon-xs"
+					className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
+					aria-label={`Remove ${label} from AI context`}
+					onClick={onRemove}
+				>
+					<X className="size-3" />
+				</Button>
+			) : null}
 		</div>
 	);
 }
@@ -99,26 +133,97 @@ function WorkspaceAiChatContextChipContent({
 	isActiveVisible,
 	iconClassName,
 	label,
+	viewStateLabel,
 }: {
 	Icon: ComponentType<{ className?: string }>;
 	isActiveVisible: boolean;
 	iconClassName?: string;
 	label: string;
+	viewStateLabel?: string;
 }) {
+	const LeadingIcon = isActiveVisible ? Eye : Icon;
+	const leadingIconClassName = isActiveVisible ? "text-primary" : iconClassName;
+
 	return (
 		<>
-			<Icon
-				className={cn("size-3 shrink-0 text-muted-foreground", iconClassName)}
+			<LeadingIcon
+				className={cn(
+					"size-3 shrink-0 text-muted-foreground",
+					leadingIconClassName,
+				)}
+				aria-label={isActiveVisible ? "active item" : undefined}
 			/>
 			<span className="min-w-0 truncate font-medium">{label}</span>
-			{isActiveVisible ? (
-				<Eye
-					className="size-3 shrink-0 text-primary"
-					aria-label="Active item"
-				/>
+			{viewStateLabel ? (
+				<span className="shrink-0 tabular-nums text-muted-foreground">
+					{viewStateLabel}
+				</span>
 			) : null}
 		</>
 	);
+}
+
+function WorkspaceAiChatSelectedMentionChip({
+	mention,
+	onRemove,
+}: {
+	mention: WorkspaceSelectedMention;
+	onRemove: () => void;
+}) {
+	const preview = getWorkspaceAiChatSelectedMentionPreview(mention);
+	const chip = (
+		<div
+			className={getWorkspaceAiChatContextChipClassName(
+				"border border-blue-200/80 bg-blue-50 text-blue-950 dark:border-blue-500/25 dark:bg-blue-500/15 dark:text-blue-50",
+			)}
+		>
+			<WorkspaceAiChatSelectedMentionIcon mention={mention} />
+			<span className="min-w-0 truncate font-medium">{preview}</span>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-xs"
+				className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
+				aria-label={`Remove ${mention.label} from AI context`}
+				onClick={onRemove}
+			>
+				<X className="size-3" />
+			</Button>
+		</div>
+	);
+
+	return (
+		<Tooltip>
+			<TooltipTrigger render={chip} />
+			<TooltipContent className="block max-w-md whitespace-pre-wrap break-words text-left leading-relaxed">
+				{mention.text}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
+function WorkspaceAiChatSelectedMentionIcon({
+	mention,
+}: {
+	mention: WorkspaceSelectedMention;
+}) {
+	const className = "size-3 shrink-0 text-blue-600 dark:text-blue-300";
+
+	if (mention.source.kind === "assistant-response") {
+		return <MessageSquareQuote className={className} />;
+	}
+
+	if (mention.source.kind === "pdf-selection") {
+		return <FileText className={className} />;
+	}
+
+	return <TextCursorInput className={className} />;
+}
+
+function getWorkspaceAiChatSelectedMentionPreview(
+	mention: WorkspaceSelectedMention,
+) {
+	return mention.text.replace(/\s+/g, " ").trim();
 }
 
 function getWorkspaceAiChatContextChipIcon(item: WorkspaceItem): {
@@ -132,7 +237,7 @@ function getWorkspaceAiChatContextChipIcon(item: WorkspaceItem): {
 
 function getWorkspaceAiChatContextChipClassName(className?: string) {
 	return cn(
-		"flex min-h-7 min-w-0 max-w-48 items-center gap-1 rounded-md bg-muted px-1.5 py-1 text-xs dark:bg-input/30",
+		"flex min-h-6 min-w-0 max-w-48 items-center gap-1 rounded-md bg-muted px-1 py-0.5 text-xs dark:bg-input/30",
 		"outline-none focus-visible:ring-2 focus-visible:ring-ring",
 		className,
 	);

@@ -49,22 +49,28 @@ export default function AiChatMessageRow({
 			)}
 		>
 			<div className="min-w-0 max-w-full">
-				<MessageContent>
-					{visibleParts.length > 0 ? (
-						visibleParts.map((part, index) => (
-							<AiChatMessagePartView
-								key={getMessagePartKey(message.id, part, index)}
-								onToolApprovalResponse={onToolApprovalResponse}
-								part={part}
+				<div
+					data-ai-assistant-message-id={
+						isAssistant && !isStreaming ? message.id : undefined
+					}
+				>
+					<MessageContent>
+						{visibleParts.length > 0 ? (
+							visibleParts.map((part, index) => (
+								<AiChatMessagePartView
+									key={getMessagePartKey(message.id, part, index)}
+									onToolApprovalResponse={onToolApprovalResponse}
+									part={part}
+								/>
+							))
+						) : isAssistant ? (
+							<EmptyAssistantResponse
+								canRegenerate={isRegenerable && Boolean(onRegenerate)}
+								onRegenerate={onRegenerate}
 							/>
-						))
-					) : isAssistant ? (
-						<EmptyAssistantResponse
-							canRegenerate={isRegenerable && Boolean(onRegenerate)}
-							onRegenerate={onRegenerate}
-						/>
-					) : null}
-				</MessageContent>
+						) : null}
+					</MessageContent>
+				</div>
 				{isAssistant && visibleParts.length > 0 && !isStreaming ? (
 					<MessageToolbar className="mt-2 justify-start">
 						<MessageActions className="-ms-2.5">

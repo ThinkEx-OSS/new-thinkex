@@ -38,6 +38,7 @@ import {
 	useWorkspaceSelectionStore,
 } from "#/features/workspaces/state/workspace-selection-store";
 import {
+	selectWorkspaceItemViewStates,
 	selectWorkspaceUiSession,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
@@ -74,6 +75,9 @@ export function WorkspaceShell({
 	);
 	const addAiContextItems = useWorkspaceUiStore(
 		(state) => state.addAiContextItems,
+	);
+	const itemViewStatesByItemId = useWorkspaceUiStore(
+		selectWorkspaceItemViewStates(workspace.id),
 	);
 	const clearSelection = useWorkspaceSelectionStore(
 		(state) => state.clearSelection,
@@ -187,9 +191,11 @@ export function WorkspaceShell({
 	const aiContextScope = {
 		activeItem: isWorkspaceItemView(activeItem) ? activeItem : undefined,
 		activeTabId: activeTab.id,
+		itemViewStatesByItemId: itemViewStatesByItemId ?? {},
 		aiContextItemIds: normalizedUiSession.aiContextItemIds,
 		itemsById,
 		presentation,
+		selectedMentions: normalizedUiSession.selectedMentions,
 		tabs: session.tabs,
 		workspaceId: workspace.id,
 		workspaceName: workspace.name,

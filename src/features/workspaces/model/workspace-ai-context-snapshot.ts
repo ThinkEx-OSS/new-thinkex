@@ -7,19 +7,30 @@ import type {
 import {
 	getOpenTabItemIds,
 	getWorkspaceAiContextItemReference,
+	getWorkspaceAiContextVisibleItemIds,
 } from "./workspace-ai-context-reference";
 import type {
 	WorkspaceAiContextPaneReference,
 	WorkspaceAiContextPresentationReference,
 	WorkspaceAiContextScope,
 	WorkspaceAiContextSnapshot,
+	WorkspaceAiContextSnapshotSelectedMention,
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
+import type { WorkspaceSelectedMention } from "./workspace-selected-mentions";
+
+type WorkspaceAiContextSnapshotBuildContext = {
+	context: WorkspaceAiContextScope;
+	openTabItemIds: ReadonlyMap<string, string[]>;
+	visibleItemIds: ReadonlySet<string>;
+};
 
 export function buildWorkspaceAiContextSnapshot(
 	context: WorkspaceAiContextScope,
 ): WorkspaceAiContextSnapshot {
 	const openTabItemIds = getOpenTabItemIds(context.tabs);
+	const visibleItemIds = getWorkspaceAiContextVisibleItemIds(context);
+	const buildContext = { context, openTabItemIds, visibleItemIds };
 	const activeItem =
 		context.activeItem && context.itemsById.has(context.activeItem.id)
 			? context.activeItem
@@ -32,20 +43,17 @@ export function buildWorkspaceAiContextSnapshot(
 		view: {
 			activeItem: activeItem
 				? getWorkspaceAiContextItemReference({
+						...buildContext,
 						item: activeItem,
-						context,
-						openTabItemIds,
 					})
 				: undefined,
 			activeTab: getOptionalWorkspaceAiContextTabReference(
 				context.tabs.find((tab) => tab.id === context.activeTabId),
-				context,
-				openTabItemIds,
+				buildContext,
 			),
 			presentation: getWorkspaceAiContextPresentationReference(
 				context.presentation,
-				context,
-				openTabItemIds,
+				buildContext,
 			),
 		},
 		markedItems: context.aiContextItemIds.flatMap((itemId, index) => {
@@ -58,9 +66,8 @@ export function buildWorkspaceAiContextSnapshot(
 			return [
 				{
 					...getWorkspaceAiContextItemReference({
+						...buildContext,
 						item,
-						context,
-						openTabItemIds,
 					}),
 					availableToAi: true as const,
 					markedForAiContext: true as const,
@@ -69,41 +76,106 @@ export function buildWorkspaceAiContextSnapshot(
 			];
 		}),
 		openTabs: context.tabs.map((tab) =>
-			getWorkspaceAiContextTabReference(tab, context, openTabItemIds),
+			getWorkspaceAiContextTabReference(tab, buildContext),
+		),
+		selectedMentions: context.selectedMentions.map((mention, index) =>
+			getWorkspaceAiContextSelectedMentionReference({
+				buildContext,
+				mention,
+				order: index + 1,
+			}),
 		),
 		contentIncluded: false,
 	};
 }
 
+function getWorkspaceAiContextSelectedMentionReference(input: {
+	buildContext: WorkspaceAiContextSnapshotBuildContext;
+	mention: WorkspaceSelectedMention;
+	order: number;
+}): WorkspaceAiContextSnapshotSelectedMention {
+	const { buildContext, mention, order } = input;
+	const { context } = buildContext;
+
+	if (mention.source.kind === "assistant-response") {
+		return {
+			label: mention.label,
+			order,
+			source: {
+				kind: "assistant-response",
+			},
+			text: mention.text,
+		};
+	}
+
+	if (mention.source.kind === "document-selection") {
+		const item = context.itemsById.get(mention.source.itemId);
+
+		return {
+			label: mention.label,
+			order,
+			source: {
+				kind: "document-selection",
+				item: item
+					? getWorkspaceAiContextItemReference({
+							...buildContext,
+							item,
+						})
+					: undefined,
+			},
+			text: mention.text,
+		};
+	}
+
+	const item = context.itemsById.get(mention.source.itemId);
+
+	return {
+		label: mention.label,
+		order,
+		source: {
+			kind: "pdf-selection",
+			item: item
+				? getWorkspaceAiContextItemReference({
+						...buildContext,
+						item,
+					})
+				: undefined,
+			pageNumbers: mention.source.pageNumbers,
+		},
+		text: mention.text,
+	};
+}
+
 function getOptionalWorkspaceAiContextTabReference(
 	tab: WorkspaceTab | undefined,
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ) {
 	if (!tab) {
 		return undefined;
 	}
 
-	return getWorkspaceAiContextTabReference(tab, context, openTabItemIds);
+	return getWorkspaceAiContextTabReference(tab, buildContext);
 }
 
 function getWorkspaceAiContextTabReference(
 	tab: WorkspaceTab,
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ): WorkspaceAiContextTabReference {
+	const { context } = buildContext;
+
 	return {
 		title: tab.title,
 		active: tab.id === context.activeTabId,
-		view: getWorkspaceAiContextTabView(tab, context, openTabItemIds),
+		view: getWorkspaceAiContextTabView(tab, buildContext),
 	};
 }
 
 function getWorkspaceAiContextTabView(
 	tab: WorkspaceTab,
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ): WorkspaceAiContextTabReference["view"] {
+	const { context } = buildContext;
+
 	if (!tab.viewItemId) {
 		return { kind: "workspace-root" };
 	}
@@ -117,22 +189,20 @@ function getWorkspaceAiContextTabView(
 	return {
 		kind: "workspace-item",
 		item: getWorkspaceAiContextItemReference({
+			...buildContext,
 			item,
-			context,
-			openTabItemIds,
 		}),
 	};
 }
 
 function getWorkspaceAiContextPresentationReference(
 	presentation: WorkspacePresentation,
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ): WorkspaceAiContextPresentationReference {
 	if (presentation.mode === "standard") {
 		return {
 			mode: "standard",
-			activePane: getCurrentWorkspacePaneReference(context, openTabItemIds),
+			activePane: getCurrentWorkspacePaneReference(buildContext),
 		};
 	}
 
@@ -141,15 +211,14 @@ function getWorkspaceAiContextPresentationReference(
 			mode: "maximized",
 			activePane: getWorkspaceAiContextPaneReference(
 				presentation.pane,
-				context,
-				openTabItemIds,
+				buildContext,
 			),
 			restoreMode: presentation.restorePresentation.mode,
 		};
 	}
 
 	const panes = presentation.panes.map((pane) =>
-		getWorkspaceAiContextPaneReference(pane, context, openTabItemIds),
+		getWorkspaceAiContextPaneReference(pane, buildContext),
 	);
 	const activePaneIndex = presentation.panes.findIndex(
 		(pane) => pane.id === presentation.activePaneId,
@@ -164,9 +233,10 @@ function getWorkspaceAiContextPresentationReference(
 }
 
 function getCurrentWorkspacePaneReference(
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ): WorkspaceAiContextPaneReference {
+	const { context } = buildContext;
+
 	if (!context.activeItem) {
 		return { kind: "workspace-root" };
 	}
@@ -174,18 +244,18 @@ function getCurrentWorkspacePaneReference(
 	return {
 		kind: "workspace-item",
 		item: getWorkspaceAiContextItemReference({
-			context,
+			...buildContext,
 			item: context.activeItem,
-			openTabItemIds,
 		}),
 	};
 }
 
 function getWorkspaceAiContextPaneReference(
 	pane: WorkspacePane,
-	context: WorkspaceAiContextScope,
-	openTabItemIds: ReadonlyMap<string, string[]>,
+	buildContext: WorkspaceAiContextSnapshotBuildContext,
 ): WorkspaceAiContextPaneReference {
+	const { context } = buildContext;
+
 	if (pane.kind === "chat") {
 		return { kind: "ai-chat" };
 	}
@@ -202,6 +272,9 @@ function getWorkspaceAiContextPaneReference(
 
 	return {
 		kind: "workspace-item",
-		item: getWorkspaceAiContextItemReference({ context, item, openTabItemIds }),
+		item: getWorkspaceAiContextItemReference({
+			...buildContext,
+			item,
+		}),
 	};
 }

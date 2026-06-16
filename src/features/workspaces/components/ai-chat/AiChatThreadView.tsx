@@ -19,6 +19,7 @@ import type {
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import { buildWorkspaceAiContextSnapshot } from "#/features/workspaces/model/workspace-ai-context";
+import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 type AiChatPromptMessage = Parameters<
 	NonNullable<ComponentProps<typeof AiChatPromptInput>["onSubmit"]>
@@ -52,6 +53,9 @@ export default function AiChatThreadView({
 		status,
 		stop,
 	} = chat;
+	const clearSelectedMentions = useWorkspaceUiStore(
+		(state) => state.clearSelectedMentions,
+	);
 	const sendMessage = (message: AiChatPromptMessage) => {
 		const chatMessage = getChatMessageFromPrompt(message);
 
@@ -66,6 +70,7 @@ export default function AiChatThreadView({
 		});
 
 		if (didSend) {
+			clearSelectedMentions(context.workspaceId);
 			onThreadActivated?.();
 		}
 
@@ -140,6 +145,7 @@ function AiChatPanelBody({
 						isRecovering={isRecovering}
 						messages={messages}
 						status={status}
+						workspaceId={context.workspaceId}
 						onRegenerateLastResponse={onRegenerateLastResponse}
 						onToolApprovalResponse={onToolApprovalResponse}
 					/>

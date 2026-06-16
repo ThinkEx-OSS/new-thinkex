@@ -4,6 +4,7 @@ import type {
 	WorkspaceAiContextPaneReference,
 	WorkspaceAiContextPresentationReference,
 	WorkspaceAiContextSnapshot,
+	WorkspaceAiContextSnapshotSelectedMention,
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
 
@@ -19,6 +20,7 @@ export function isWorkspaceAiContextSnapshot(
 		typeof value.workspace.name === "string" &&
 		Array.isArray(value.markedItems) &&
 		Array.isArray(value.openTabs) &&
+		Array.isArray(value.selectedMentions) &&
 		value.contentIncluded === false &&
 		isRecord(value.view) &&
 		isWorkspaceAiContextPresentationReference(value.view.presentation)
@@ -67,6 +69,47 @@ export function isWorkspaceAiContextTabReference(
 	);
 }
 
+export function isWorkspaceAiContextSelectedMention(
+	value: unknown,
+): value is WorkspaceAiContextSnapshotSelectedMention {
+	if (!isRecord(value) || !isRecord(value.source)) {
+		return false;
+	}
+
+	if (
+		typeof value.label !== "string" ||
+		typeof value.text !== "string" ||
+		typeof value.order !== "number" ||
+		!Number.isInteger(value.order)
+	) {
+		return false;
+	}
+
+	if (value.source.kind === "assistant-response") {
+		return true;
+	}
+
+	if (value.source.kind === "document-selection") {
+		return (
+			value.source.item === undefined ||
+			isWorkspaceAiContextItemReference(value.source.item)
+		);
+	}
+
+	return (
+		value.source.kind === "pdf-selection" &&
+		Array.isArray(value.source.pageNumbers) &&
+		value.source.pageNumbers.every(
+			(pageNumber) =>
+				typeof pageNumber === "number" &&
+				Number.isInteger(pageNumber) &&
+				pageNumber > 0,
+		) &&
+		(value.source.item === undefined ||
+			isWorkspaceAiContextItemReference(value.source.item))
+	);
+}
+
 export function isWorkspaceAiContextPresentationReference(
 	value: unknown,
 ): value is WorkspaceAiContextPresentationReference {
@@ -110,8 +153,19 @@ function isWorkspaceAiContextItemReference(
 		typeof value.path === "string" &&
 		typeof value.type === "string" &&
 		typeof value.state.activeVisible === "boolean" &&
+		(value.state.viewState === undefined ||
+			isWorkspaceAiContextItemViewState(value.state.viewState)) &&
 		Array.isArray(value.state.openInTabs) &&
 		value.state.openInTabs.every((tabTitle) => typeof tabTitle === "string")
+	);
+}
+
+function isWorkspaceAiContextItemViewState(value: unknown) {
+	return (
+		isRecord(value) &&
+		value.kind === "pdf-page" &&
+		typeof value.pageNumber === "number" &&
+		Number.isInteger(value.pageNumber)
 	);
 }
 

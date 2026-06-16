@@ -1,8 +1,14 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-
+import {
+	normalizeWorkspaceItemViewState,
+	type WorkspaceItemViewState,
+} from "#/features/workspaces/model/workspace-item-view-state";
+import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import {
 	addWorkspaceAiContextItemsSession,
+	addWorkspaceSelectedMentionSession,
+	clearWorkspaceSelectedMentionsSession,
 	closeChatPanelSession,
 	defaultWorkspaceUiSession,
 	getUpdatedWorkspaceUiSession,
@@ -12,6 +18,7 @@ import {
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
 	removeWorkspaceAiContextItemSession,
+	removeWorkspaceSelectedMentionSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
 	splitWorkspacePresentationSession,
@@ -48,6 +55,7 @@ export type WorkspaceUiSession = {
 	aiContextItemIds: string[];
 	chatPanelCollapsed: boolean;
 	presentation: WorkspacePresentation;
+	selectedMentions: WorkspaceSelectedMention[];
 };
 
 type EnsureWorkspaceUiSessionInput = {
@@ -56,17 +64,32 @@ type EnsureWorkspaceUiSessionInput = {
 };
 
 type WorkspaceUiState = {
+	itemViewStatesByWorkspaceId: Record<
+		string,
+		Record<string, WorkspaceItemViewState | undefined> | undefined
+	>;
 	sessionsByWorkspaceId: Record<string, WorkspaceUiSession>;
 	ensureWorkspaceSession: (
 		input: EnsureWorkspaceUiSessionInput,
 	) => WorkspaceUiSession;
 	addAiContextItems: (workspaceId: string, itemIds: string[]) => void;
+	addSelectedMention: (
+		workspaceId: string,
+		mention: WorkspaceSelectedMention,
+	) => void;
+	clearSelectedMentions: (workspaceId: string) => void;
+	clearItemViewState: (workspaceId: string, itemId?: string) => void;
 	closeChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
 	removeAiContextItem: (workspaceId: string, itemId: string) => void;
+	removeSelectedMention: (workspaceId: string, mentionId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
+	) => void;
+	setItemViewState: (
+		workspaceId: string,
+		viewState: WorkspaceItemViewState,
 	) => void;
 	toggleChatPanelCollapsed: (workspaceId: string) => void;
 	maximizeChat: (workspaceId: string) => void;
@@ -100,6 +123,14 @@ export const selectWorkspaceActiveAiChatThreadId =
 export const selectWorkspaceAiContextItemIds =
 	(workspaceId: string) => (state: WorkspaceUiState) =>
 		selectWorkspaceUiSession(workspaceId)(state).aiContextItemIds;
+
+export const selectWorkspaceSelectedMentions =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		selectWorkspaceUiSession(workspaceId)(state).selectedMentions;
+
+export const selectWorkspaceItemViewStates =
+	(workspaceId: string) => (state: WorkspaceUiState) =>
+		state.itemViewStatesByWorkspaceId[workspaceId];
 
 function updateWorkspaceUiSession(
 	state: WorkspaceUiState,
@@ -137,6 +168,7 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 	devtools(
 		persist(
 			(set, get) => ({
+				itemViewStatesByWorkspaceId: {},
 				sessionsByWorkspaceId: {},
 				ensureWorkspaceSession: ({ workspaceId, validItemIds }) => {
 					const currentSession = get().sessionsByWorkspaceId[workspaceId];
@@ -159,6 +191,51 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							addWorkspaceAiContextItemsSession(session, itemIds),
 						),
 					),
+				addSelectedMention: (workspaceId, mention) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, (session) =>
+							addWorkspaceSelectedMentionSession(session, mention),
+						),
+					),
+				clearSelectedMentions: (workspaceId) =>
+					set((state) =>
+						updateWorkspaceUiSession(
+							state,
+							workspaceId,
+							clearWorkspaceSelectedMentionsSession,
+						),
+					),
+				clearItemViewState: (workspaceId, itemId) =>
+					set((state) => {
+						const currentDetails =
+							state.itemViewStatesByWorkspaceId[workspaceId];
+						const currentViewState = itemId
+							? currentDetails?.[itemId]
+							: currentDetails;
+
+						if (!currentViewState) {
+							return state;
+						}
+
+						if (!itemId) {
+							return {
+								itemViewStatesByWorkspaceId: {
+									...state.itemViewStatesByWorkspaceId,
+									[workspaceId]: undefined,
+								},
+							};
+						}
+
+						return {
+							itemViewStatesByWorkspaceId: {
+								...state.itemViewStatesByWorkspaceId,
+								[workspaceId]: {
+									...currentDetails,
+									[itemId]: undefined,
+								},
+							},
+						};
+					}),
 				closeChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, closeChatPanelSession),
@@ -173,12 +250,28 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							removeWorkspaceAiContextItemSession(session, itemId),
 						),
 					),
+				removeSelectedMention: (workspaceId, mentionId) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, (session) =>
+							removeWorkspaceSelectedMentionSession(session, mentionId),
+						),
+					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, () =>
 							setActiveAiChatThreadSession(threadId),
 						),
 					),
+				setItemViewState: (workspaceId, viewState) =>
+					set((state) => ({
+						itemViewStatesByWorkspaceId: {
+							...state.itemViewStatesByWorkspaceId,
+							[workspaceId]: {
+								...state.itemViewStatesByWorkspaceId[workspaceId],
+								[viewState.itemId]: normalizeWorkspaceItemViewState(viewState),
+							},
+						},
+					})),
 				toggleChatPanelCollapsed: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(

@@ -23,6 +23,7 @@ import {
 	Scroller,
 	ScrollPluginPackage,
 	ScrollStrategy,
+	useScroll,
 } from "@embedpdf/plugin-scroll/react";
 import {
 	SelectionLayer,
@@ -46,7 +47,9 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Spinner } from "#/components/ui/spinner";
 import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
+import { WorkspacePdfAskSelectionMenu } from "#/features/workspaces/components/WorkspacePdfAskSelectionMenu";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const pdfPlugins: PluginBatchRegistrations = [
 	createPluginRegistration(DocumentManagerPluginPackage, {
@@ -115,6 +118,8 @@ export default function WorkspacePdfViewer({
 								documentId={item.id}
 								fileName={item.name}
 								fileUrl={fileUrl}
+								itemId={item.id}
+								workspaceId={workspaceId}
 							/>
 						) : (
 							<WorkspacePdfViewerStatus>
@@ -133,11 +138,15 @@ function WorkspacePdfDocumentLoader({
 	documentId,
 	fileName,
 	fileUrl,
+	itemId,
+	workspaceId,
 }: {
 	activeDocumentId: string | null;
 	documentId: string;
 	fileName: string;
 	fileUrl: string;
+	itemId: string;
+	workspaceId: string;
 }) {
 	const { provides: documentManager } = useDocumentManagerCapability();
 	const [openError, setOpenError] = useState<{
@@ -211,6 +220,8 @@ function WorkspacePdfDocumentLoader({
 					documentId={activeDocumentId}
 					fileName={fileName}
 					fileUrl={fileUrl}
+					itemId={itemId}
+					workspaceId={workspaceId}
 					{...props}
 				/>
 			)}
@@ -225,6 +236,8 @@ function WorkspacePdfDocumentContent({
 	isError,
 	isLoaded,
 	isLoading,
+	itemId,
+	workspaceId,
 }: {
 	documentId: string;
 	fileName: string;
@@ -232,6 +245,8 @@ function WorkspacePdfDocumentContent({
 	isError: boolean;
 	isLoaded: boolean;
 	isLoading: boolean;
+	itemId: string;
+	workspaceId: string;
 }) {
 	if (isLoading) {
 		return (
@@ -255,6 +270,11 @@ function WorkspacePdfDocumentContent({
 
 	return (
 		<Viewport className="h-full w-full" documentId={documentId}>
+			<WorkspacePdfItemViewStateReporter
+				documentId={documentId}
+				itemId={itemId}
+				workspaceId={workspaceId}
+			/>
 			<WorkspacePdfSelectionShortcuts documentId={documentId} />
 			<ZoomGestureWrapper
 				className="min-h-full"
@@ -285,6 +305,14 @@ function WorkspacePdfDocumentContent({
 								<SelectionLayer
 									documentId={documentId}
 									pageIndex={pageIndex}
+									selectionMenu={(props) => (
+										<WorkspacePdfAskSelectionMenu
+											{...props}
+											documentId={documentId}
+											itemId={itemId}
+											workspaceId={workspaceId}
+										/>
+									)}
 									textStyle={{ background: "rgb(147 197 253 / 0.24)" }}
 								/>
 								<AnnotationLayer
@@ -299,6 +327,42 @@ function WorkspacePdfDocumentContent({
 			</ZoomGestureWrapper>
 		</Viewport>
 	);
+}
+
+function WorkspacePdfItemViewStateReporter({
+	documentId,
+	itemId,
+	workspaceId,
+}: {
+	documentId: string;
+	itemId: string;
+	workspaceId: string;
+}) {
+	const {
+		state: { currentPage },
+	} = useScroll(documentId);
+	const clearItemViewState = useWorkspaceUiStore(
+		(state) => state.clearItemViewState,
+	);
+	const setItemViewState = useWorkspaceUiStore(
+		(state) => state.setItemViewState,
+	);
+
+	useEffect(() => {
+		setItemViewState(workspaceId, {
+			kind: "pdf-page",
+			itemId,
+			pageNumber: currentPage,
+		});
+	}, [currentPage, itemId, setItemViewState, workspaceId]);
+
+	useEffect(() => {
+		return () => {
+			clearItemViewState(workspaceId, itemId);
+		};
+	}, [clearItemViewState, itemId, workspaceId]);
+
+	return null;
 }
 
 function WorkspacePdfSelectionShortcuts({

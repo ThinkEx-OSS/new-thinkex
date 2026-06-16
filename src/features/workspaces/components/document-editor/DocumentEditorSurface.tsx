@@ -1,8 +1,10 @@
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { useState } from "react";
 
 import { Skeleton } from "#/components/ui/skeleton";
+import { DocumentAskSelectionMenu } from "#/features/workspaces/components/document-editor/DocumentAskSelectionMenu";
 import { DocumentWordCount } from "#/features/workspaces/components/document-editor/DocumentWordCount";
 import { useDocumentEditorToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import {
@@ -46,6 +48,7 @@ export function DocumentEditorSurface({
 			collaborationSession={collaborationSession}
 			item={item}
 			toolbarSlotId={toolbarSlotId}
+			workspaceId={workspaceId}
 		/>
 	);
 }
@@ -54,11 +57,14 @@ function DocumentEditorInstance({
 	collaborationSession,
 	item,
 	toolbarSlotId,
+	workspaceId,
 }: {
 	collaborationSession: DocumentCollaborationSession;
 	item: WorkspaceItem;
 	toolbarSlotId?: string;
+	workspaceId: string;
 }) {
+	const [scrollTarget, setScrollTarget] = useState<HTMLDivElement | null>(null);
 	const editor = useEditor({
 		immediatelyRender: false,
 		autofocus: "start",
@@ -80,8 +86,14 @@ function DocumentEditorInstance({
 
 	return (
 		<section className="relative flex h-[calc(100vh-5.75rem)] min-h-0 flex-col bg-background">
-			<div className="min-h-0 flex-1 overflow-y-auto">
+			<div ref={setScrollTarget} className="min-h-0 flex-1 overflow-y-auto">
 				<div className="w-full pb-8">
+					<DocumentAskSelectionMenu
+						editor={editor}
+						itemId={item.id}
+						scrollTarget={scrollTarget}
+						workspaceId={workspaceId}
+					/>
 					<EditorContent editor={editor} />
 				</div>
 			</div>

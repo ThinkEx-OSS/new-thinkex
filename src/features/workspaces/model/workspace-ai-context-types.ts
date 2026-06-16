@@ -1,13 +1,22 @@
 import type { WorkspaceTab } from "#/features/workspaces/model/tab-types";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import type {
+	WorkspaceAiContextItemViewState,
+	WorkspaceItemViewState,
+} from "#/features/workspaces/model/workspace-item-view-state";
+import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import type { WorkspacePresentation } from "#/features/workspaces/state/workspace-ui-store";
 
 export type WorkspaceAiContextScope = {
 	activeItem?: WorkspaceItem;
 	activeTabId?: string;
+	itemViewStatesByItemId: Readonly<
+		Record<string, WorkspaceItemViewState | undefined>
+	>;
 	aiContextItemIds: string[];
 	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	presentation: WorkspacePresentation;
+	selectedMentions: WorkspaceSelectedMention[];
 	tabs: WorkspaceTab[];
 	workspaceId: string;
 	workspaceName: string;
@@ -24,7 +33,27 @@ export type WorkspaceAiContextSnapshot = {
 	};
 	markedItems: WorkspaceAiContextMarkedItem[];
 	openTabs: WorkspaceAiContextTabReference[];
+	selectedMentions: WorkspaceAiContextSnapshotSelectedMention[];
 	contentIncluded: false;
+};
+
+export type WorkspaceAiContextSnapshotSelectedMention = {
+	label: string;
+	order: number;
+	source:
+		| {
+				kind: "assistant-response";
+		  }
+		| {
+				kind: "document-selection";
+				item?: WorkspaceAiContextItemReference;
+		  }
+		| {
+				kind: "pdf-selection";
+				item?: WorkspaceAiContextItemReference;
+				pageNumbers: number[];
+		  };
+	text: string;
 };
 
 export type WorkspaceAiContextMarkedItem = WorkspaceAiContextItemReference & {
@@ -39,6 +68,7 @@ export type WorkspaceAiContextItemReference = {
 	type: string;
 	state: {
 		activeVisible: boolean;
+		viewState?: WorkspaceAiContextItemViewState;
 		openInTabs: string[];
 	};
 };
@@ -82,6 +112,8 @@ export type WorkspaceAiContextChip = {
 	id: string;
 	item: WorkspaceItem;
 	isActiveVisible: boolean;
+	isMarkedForAiContext: boolean;
 	label: string;
 	path: string;
+	viewStateLabel?: string;
 };
