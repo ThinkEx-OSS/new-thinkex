@@ -64,6 +64,10 @@ interface WorkspaceContentProps {
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 
+type WorkspaceItemActionDialogsState = ReturnType<
+	typeof useWorkspaceItemActionDialogState
+>;
+
 const WorkspacePdfViewer = lazy(
 	() => import("#/features/workspaces/components/WorkspacePdfViewer"),
 );
@@ -78,28 +82,59 @@ export default function WorkspaceContent({
 	onOpenItem,
 }: WorkspaceContentProps) {
 	const workspaceId = workspace.id;
-	const {
-		clearDeletingItem,
-		deleteAlertOpen,
-		deletingItem,
-		clearMovingItem,
-		moveDialogOpen,
-		movingItem,
-		openDeleteAlert,
-		openMoveDialog,
-		renamingItem,
-		setDeleteAlertOpen,
-		setMoveDialogOpen,
-		setRenamingItem,
-	} = useWorkspaceItemActionDialogState();
+	const actionDialogs = useWorkspaceItemActionDialogState();
+
+	if (isWorkspaceItemView(activeItem)) {
+		return (
+			<>
+				<WorkspaceItemView
+					item={activeItem}
+					viewInstanceId={instanceId ?? activeItem.id}
+					workspaceId={workspaceId}
+					onMoveItem={actionDialogs.openMoveDialog}
+					onRenameItem={actionDialogs.setRenamingItem}
+					onDeleteItem={actionDialogs.openDeleteAlert}
+				/>
+				<WorkspaceContentActionDialogs
+					actionDialogs={actionDialogs}
+					workspace={workspace}
+					items={items}
+				/>
+			</>
+		);
+	}
+
+	return (
+		<WorkspaceBrowseContent
+			actionDialogs={actionDialogs}
+			activeItem={activeItem}
+			items={items}
+			workspace={workspace}
+			onAddItemsToAiContext={onAddItemsToAiContext}
+			onCreateItem={onCreateItem}
+			onOpenItem={onOpenItem}
+		/>
+	);
+}
+
+function WorkspaceBrowseContent({
+	actionDialogs,
+	activeItem,
+	items,
+	workspace,
+	onAddItemsToAiContext,
+	onCreateItem,
+	onOpenItem,
+}: WorkspaceContentProps & {
+	actionDialogs: WorkspaceItemActionDialogsState;
+}) {
+	const workspaceId = workspace.id;
 	const [deleteSelectedAlertOpen, setDeleteSelectedAlertOpen] = useState(false);
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
 	const { uploadFiles } = useWorkspaceFileUpload();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
-	const children = isWorkspaceItemView(activeItem)
-		? []
-		: getWorkspaceChildren(items, parentId);
+	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
 	const {
 		clearSelection,
@@ -170,35 +205,6 @@ export default function WorkspaceContent({
 		setMoveSelectedDialogOpen(true);
 	};
 
-	if (isWorkspaceItemView(activeItem)) {
-		return (
-			<>
-				<WorkspaceItemView
-					item={activeItem}
-					viewInstanceId={instanceId ?? activeItem.id}
-					workspaceId={workspaceId}
-					onMoveItem={openMoveDialog}
-					onRenameItem={setRenamingItem}
-					onDeleteItem={openDeleteAlert}
-				/>
-				<WorkspaceContentActionDialogs
-					renamingItem={renamingItem}
-					deletingItem={deletingItem}
-					deleteAlertOpen={deleteAlertOpen}
-					movingItem={movingItem}
-					moveDialogOpen={moveDialogOpen}
-					workspace={workspace}
-					items={items}
-					onRenamingItemChange={setRenamingItem}
-					onDeleteAlertOpenChange={setDeleteAlertOpen}
-					onDeletingItemClear={clearDeletingItem}
-					onMoveDialogOpenChange={setMoveDialogOpen}
-					onMovingItemClear={clearMovingItem}
-				/>
-			</>
-		);
-	}
-
 	return (
 		<>
 			<div className="relative h-[calc(100vh-5.75rem)]">
@@ -224,9 +230,9 @@ export default function WorkspaceContent({
 								allItems={items}
 								selectedItemIds={selectedItemIds}
 								onOpenItem={onOpenItem}
-								onMoveItem={openMoveDialog}
-								onRenameItem={setRenamingItem}
-								onDeleteItem={openDeleteAlert}
+								onMoveItem={actionDialogs.openMoveDialog}
+								onRenameItem={actionDialogs.setRenamingItem}
+								onDeleteItem={actionDialogs.openDeleteAlert}
 								onSelectionChange={setItemSelected}
 								onItemElementChange={registerItemElement}
 							/>
@@ -237,9 +243,9 @@ export default function WorkspaceContent({
 								allItems={items}
 								selectedItemIds={selectedItemIds}
 								onOpenItem={onOpenItem}
-								onMoveItem={openMoveDialog}
-								onRenameItem={setRenamingItem}
-								onDeleteItem={openDeleteAlert}
+								onMoveItem={actionDialogs.openMoveDialog}
+								onRenameItem={actionDialogs.setRenamingItem}
+								onDeleteItem={actionDialogs.openDeleteAlert}
 								onSelectionChange={setItemSelected}
 								onItemElementChange={registerItemElement}
 							/>
@@ -276,18 +282,9 @@ export default function WorkspaceContent({
 				{isNativeFileDropTarget ? <WorkspaceNativeFileDropOverlay /> : null}
 			</div>
 			<WorkspaceContentActionDialogs
-				renamingItem={renamingItem}
-				deletingItem={deletingItem}
-				deleteAlertOpen={deleteAlertOpen}
-				movingItem={movingItem}
-				moveDialogOpen={moveDialogOpen}
+				actionDialogs={actionDialogs}
 				workspace={workspace}
 				items={items}
-				onRenamingItemChange={setRenamingItem}
-				onDeleteAlertOpenChange={setDeleteAlertOpen}
-				onDeletingItemClear={clearDeletingItem}
-				onMoveDialogOpenChange={setMoveDialogOpen}
-				onMovingItemClear={clearMovingItem}
 			/>
 			<MoveWorkspaceItemsDialog
 				open={moveSelectedDialogOpen}
@@ -403,59 +400,41 @@ function hasNativeFiles(dataTransfer: DataTransfer) {
 }
 
 function WorkspaceContentActionDialogs({
-	renamingItem,
-	deletingItem,
-	deleteAlertOpen,
-	movingItem,
-	moveDialogOpen,
+	actionDialogs,
 	workspace,
 	items,
-	onRenamingItemChange,
-	onDeleteAlertOpenChange,
-	onDeletingItemClear,
-	onMoveDialogOpenChange,
-	onMovingItemClear,
 }: {
-	renamingItem: WorkspaceItem | null;
-	deletingItem: WorkspaceItem | null;
-	deleteAlertOpen: boolean;
-	movingItem: WorkspaceItem | null;
-	moveDialogOpen: boolean;
+	actionDialogs: WorkspaceItemActionDialogsState;
 	workspace: WorkspaceSummary;
 	items: WorkspaceItem[];
-	onRenamingItemChange: (item: WorkspaceItem | null) => void;
-	onDeleteAlertOpenChange: (open: boolean) => void;
-	onDeletingItemClear: () => void;
-	onMoveDialogOpenChange: (open: boolean) => void;
-	onMovingItemClear: () => void;
 }) {
 	return (
 		<>
 			<RenameWorkspaceItemDialog
-				item={renamingItem}
+				item={actionDialogs.renamingItem}
 				onOpenChange={(open) => {
 					if (!open) {
-						onRenamingItemChange(null);
+						actionDialogs.setRenamingItem(null);
 					}
 				}}
 			/>
-			{deletingItem ? (
+			{actionDialogs.deletingItem ? (
 				<DeleteWorkspaceItemAlert
-					open={deleteAlertOpen}
-					item={deletingItem}
+					open={actionDialogs.deleteAlertOpen}
+					item={actionDialogs.deletingItem}
 					items={items}
-					onOpenChange={onDeleteAlertOpenChange}
-					onClosed={onDeletingItemClear}
+					onOpenChange={actionDialogs.setDeleteAlertOpen}
+					onClosed={actionDialogs.clearDeletingItem}
 				/>
 			) : null}
-			{movingItem ? (
+			{actionDialogs.movingItem ? (
 				<MoveWorkspaceItemsDialog
-					open={moveDialogOpen}
+					open={actionDialogs.moveDialogOpen}
 					workspace={workspace}
 					items={items}
-					itemIds={[movingItem.id]}
-					onOpenChange={onMoveDialogOpenChange}
-					onMoved={onMovingItemClear}
+					itemIds={[actionDialogs.movingItem.id]}
+					onOpenChange={actionDialogs.setMoveDialogOpen}
+					onMoved={actionDialogs.clearMovingItem}
 				/>
 			) : null}
 		</>
