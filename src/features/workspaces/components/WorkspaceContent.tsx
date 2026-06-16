@@ -13,7 +13,6 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "#/components/ui/empty";
-import { ScrollArea } from "#/components/ui/scroll-area";
 import { Spinner } from "#/components/ui/spinner";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
 import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
@@ -184,7 +183,7 @@ export default function WorkspaceContent({
 					<ContextMenuTrigger
 						render={
 							<section
-								className="h-full outline-none"
+								className="flex h-full flex-col gap-5 overflow-y-auto px-4 py-3 outline-none"
 								aria-label="Workspace content"
 								data-prompt-type-to-focus-surface
 								tabIndex={-1}
@@ -196,47 +195,43 @@ export default function WorkspaceContent({
 							/>
 						}
 					>
-						<ScrollArea className="h-full">
-							<section className="min-h-full space-y-5 px-4 py-3 outline-none">
-								{folders.length > 0 ? (
-									<WorkspaceItemGrid
-										items={folders}
-										allItems={items}
-										selectedItemIds={selectedItemIds}
-										onOpenItem={onOpenItem}
-										onRenameItem={setRenamingItem}
-										onDeleteItem={openDeleteAlert}
-										onSelectionChange={setItemSelected}
-										onItemElementChange={registerItemElement}
-									/>
-								) : null}
-								{nonFolderItems.length > 0 ? (
-									<WorkspaceItemGrid
-										items={nonFolderItems}
-										allItems={items}
-										selectedItemIds={selectedItemIds}
-										onOpenItem={onOpenItem}
-										onRenameItem={setRenamingItem}
-										onDeleteItem={openDeleteAlert}
-										onSelectionChange={setItemSelected}
-										onItemElementChange={registerItemElement}
-									/>
-								) : null}
-								{children.length === 0 ? (
-									<Empty className="border border-dashed bg-muted/20">
-										<EmptyHeader>
-											<EmptyMedia variant="icon">
-												<FolderOpen />
-											</EmptyMedia>
-											<EmptyTitle>No items in this folder</EmptyTitle>
-											<EmptyDescription>
-												Items you add here will appear in this workspace view.
-											</EmptyDescription>
-										</EmptyHeader>
-									</Empty>
-								) : null}
-							</section>
-						</ScrollArea>
+						{folders.length > 0 ? (
+							<WorkspaceItemGrid
+								items={folders}
+								allItems={items}
+								selectedItemIds={selectedItemIds}
+								onOpenItem={onOpenItem}
+								onRenameItem={setRenamingItem}
+								onDeleteItem={openDeleteAlert}
+								onSelectionChange={setItemSelected}
+								onItemElementChange={registerItemElement}
+							/>
+						) : null}
+						{nonFolderItems.length > 0 ? (
+							<WorkspaceItemGrid
+								items={nonFolderItems}
+								allItems={items}
+								selectedItemIds={selectedItemIds}
+								onOpenItem={onOpenItem}
+								onRenameItem={setRenamingItem}
+								onDeleteItem={openDeleteAlert}
+								onSelectionChange={setItemSelected}
+								onItemElementChange={registerItemElement}
+							/>
+						) : null}
+						{children.length === 0 ? (
+							<Empty className="border border-dashed bg-muted/20">
+								<EmptyHeader>
+									<EmptyMedia variant="icon">
+										<FolderOpen />
+									</EmptyMedia>
+									<EmptyTitle>No items in this folder</EmptyTitle>
+									<EmptyDescription>
+										Items you add here will appear in this workspace view.
+									</EmptyDescription>
+								</EmptyHeader>
+							</Empty>
+						) : null}
 					</ContextMenuTrigger>
 					<ContextMenuContent className="w-56">
 						<WorkspaceCreateContextMenuContent
