@@ -35,13 +35,17 @@ export interface RenameWorkspaceKernelItemArgs {
 	clientMutationId?: string | null;
 }
 
-export interface MoveWorkspaceKernelItemArgs {
-	itemId: string;
+export interface MoveWorkspaceKernelItemsArgs {
+	items: Array<{
+		itemId: string;
+		sortOrder?: number;
+	}>;
 	parentId?: string | null;
-	sortOrder?: number;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }
+
+export type MoveWorkspaceKernelItemsResult = WorkspaceItemSummary[];
 
 export interface UpdateWorkspaceKernelItemColorArgs {
 	itemId: string;

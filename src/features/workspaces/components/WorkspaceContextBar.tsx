@@ -17,6 +17,7 @@ import {
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
+import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
 import type {
 	WorkspaceItemType,
@@ -69,11 +70,16 @@ export default function WorkspaceContextBar({
 	const createParentId = getWorkspaceBrowseParentId(activeItem);
 	const {
 		clearDeletingItem,
+		clearMovingItem,
 		deleteAlertOpen,
 		deletingItem,
+		moveDialogOpen,
+		movingItem,
 		openDeleteAlert,
+		openMoveDialog,
 		renamingItem,
 		setDeleteAlertOpen,
+		setMoveDialogOpen,
 		setRenamingItem,
 	} = useWorkspaceItemActionDialogState();
 	const workspaceItems = Array.from(itemsById.values());
@@ -127,6 +133,7 @@ export default function WorkspaceContextBar({
 								isCurrent={item.id === activeItem?.id}
 								onClick={() => onNavigateToItem(item)}
 								onRenameItem={setRenamingItem}
+								onMoveItem={openMoveDialog}
 								onDeleteItem={openDeleteAlert}
 							/>
 						))}
@@ -164,6 +171,16 @@ export default function WorkspaceContextBar({
 					onClosed={clearDeletingItem}
 				/>
 			) : null}
+			{movingItem ? (
+				<MoveWorkspaceItemsDialog
+					open={moveDialogOpen}
+					workspace={workspace}
+					items={workspaceItems}
+					itemIds={[movingItem.id]}
+					onOpenChange={setMoveDialogOpen}
+					onMoved={clearMovingItem}
+				/>
+			) : null}
 		</>
 	);
 }
@@ -173,12 +190,14 @@ function WorkspaceBreadcrumbItem({
 	isCurrent,
 	onClick,
 	onRenameItem,
+	onMoveItem,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
 	isCurrent: boolean;
 	onClick: () => void;
 	onRenameItem: (item: WorkspaceItem) => void;
+	onMoveItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
 	const { Icon, iconClassName } = getWorkspaceItemDisplay(item);
@@ -207,6 +226,7 @@ function WorkspaceBreadcrumbItem({
 								showDisclosure={true}
 							/>
 						}
+						onMoveItem={onMoveItem}
 						onRenameItem={onRenameItem}
 						onDeleteItem={onDeleteItem}
 					/>

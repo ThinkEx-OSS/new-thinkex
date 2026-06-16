@@ -1,7 +1,7 @@
 import { move } from "@dnd-kit/helpers";
 import type { DragDropEventHandlers } from "@dnd-kit/react";
 
-import type { MoveWorkspaceItemInput } from "#/features/workspaces/contracts";
+import type { MoveWorkspaceItemsInput } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 import {
@@ -31,7 +31,7 @@ export type WorkspaceDropIntent =
 				insertIndex: number;
 			};
 	  }
-	| { kind: "move-item"; input: MoveWorkspaceItemInput };
+	| { kind: "move-items"; input: MoveWorkspaceItemsInput };
 
 export function getWorkspaceDropIntent(input: {
 	event: DndDragEndEvent;
@@ -67,7 +67,7 @@ export function getWorkspaceDropIntent(input: {
 
 	if (moveInput) {
 		return {
-			kind: "move-item",
+			kind: "move-items",
 			input: moveInput,
 		};
 	}
@@ -150,7 +150,7 @@ export function getWorkspaceItemMoveInput(input: {
 	event: DndDragEndEvent;
 	items: WorkspaceItem[];
 	workspaceId: string;
-}): MoveWorkspaceItemInput | undefined {
+}): MoveWorkspaceItemsInput | undefined {
 	const { event, items, workspaceId } = input;
 	const { source, target } = event.operation;
 	const canceled = event.canceled ?? event.operation.canceled;
@@ -181,7 +181,7 @@ export function getWorkspaceItemMoveInput(input: {
 
 		return {
 			workspaceId,
-			itemId: movedItem.id,
+			items: [{ itemId: movedItem.id }],
 			parentId: dropTarget.folderId,
 		};
 	}
@@ -228,9 +228,8 @@ export function getWorkspaceItemMoveInput(input: {
 
 	return {
 		workspaceId,
-		itemId: movedItem.id,
+		items: [{ itemId: movedItem.id, sortOrder }],
 		parentId: movedItem.parentId,
-		sortOrder,
 	};
 }
 

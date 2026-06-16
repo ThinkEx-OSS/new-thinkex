@@ -46,6 +46,7 @@ interface WorkspaceItemCardProps {
 	items: WorkspaceItem[];
 	isSelected: boolean;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
+	onMoveItem: (item: WorkspaceItem) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 	onSelectionChange: (item: WorkspaceItem, selected: boolean) => void;
@@ -58,6 +59,7 @@ export default function WorkspaceItemCard({
 	items,
 	isSelected,
 	onOpenItem,
+	onMoveItem,
 	onRenameItem,
 	onDeleteItem,
 	onSelectionChange,
@@ -256,6 +258,7 @@ export default function WorkspaceItemCard({
 								onClick={(event) => event.stopPropagation()}
 							/>
 						}
+						onMoveItem={onMoveItem}
 						onRenameItem={onRenameItem}
 						onDeleteItem={onDeleteItem}
 					/>
@@ -304,6 +307,7 @@ export default function WorkspaceItemCard({
 			<ContextMenuTrigger render={card} />
 			<WorkspaceItemActionsContextMenuContent
 				item={item}
+				onMoveItem={onMoveItem}
 				onRenameItem={onRenameItem}
 				onDeleteItem={onDeleteItem}
 			/>

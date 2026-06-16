@@ -1,6 +1,9 @@
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import { WorkspacePaneRuntimeProvider } from "#/features/workspaces/components/WorkspacePaneRuntime";
-import type { WorkspaceItemType } from "#/features/workspaces/contracts";
+import type {
+	WorkspaceItemType,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
 import type { WorkspaceTab } from "#/features/workspaces/model/tab-types";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
@@ -10,7 +13,7 @@ export default function WorkspaceStandardTabPanes({
 	itemsById,
 	scopedItems,
 	tabs,
-	workspaceId,
+	workspace,
 	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
@@ -19,7 +22,7 @@ export default function WorkspaceStandardTabPanes({
 	itemsById: Map<string, WorkspaceItem>;
 	scopedItems: WorkspaceItem[];
 	tabs: WorkspaceTab[];
-	workspaceId: string;
+	workspace: WorkspaceSummary;
 	onAddItemsToAiContext: (items: WorkspaceItem[]) => void;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
@@ -51,7 +54,7 @@ export default function WorkspaceStandardTabPanes({
 								activeItem={
 									tab.viewItemId ? itemsById.get(tab.viewItemId) : undefined
 								}
-								workspaceId={workspaceId}
+								workspace={workspace}
 								onAddItemsToAiContext={onAddItemsToAiContext}
 								onCreateItem={onCreateItem}
 								onOpenItem={onOpenItem}

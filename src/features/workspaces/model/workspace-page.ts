@@ -1,6 +1,6 @@
 import type {
 	CreateWorkspaceItemInput,
-	MoveWorkspaceItemInput,
+	MoveWorkspaceItemsInput,
 	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
@@ -10,6 +10,7 @@ import {
 	getWorkspaceItemTypeMeta,
 	WORKSPACE_ITEM_SORT_STEP,
 } from "#/features/workspaces/defaults";
+import { getWorkspaceRootItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
 export function applyWorkspaceEventToPage(
@@ -25,6 +26,12 @@ export function applyWorkspaceEventToPage(
 			return upsertWorkspaceItemInPage(
 				page,
 				event.payload.item,
+				event.revision,
+			);
+		case "workspace.items.moved":
+			return upsertWorkspaceItemsInPage(
+				page,
+				event.payload.items,
 				event.revision,
 			);
 		case "workspace.item.deleted":
@@ -66,10 +73,14 @@ export function createWorkspaceItemInPage(
 	});
 }
 
-export function moveWorkspaceItemInPage(
+function moveWorkspaceItemInPage(
 	page: WorkspacePage,
-	input: MoveWorkspaceItemInput,
-): { page: WorkspacePage; previousItem: WorkspaceItemSummary } | null {
+	input: {
+		itemId: string;
+		parentId?: string | null;
+		sortOrder?: number;
+	},
+): WorkspacePage | null {
 	const previousItem = page.items.find((item) => item.id === input.itemId);
 
 	if (!previousItem) {
@@ -85,22 +96,54 @@ export function moveWorkspaceItemInPage(
 		excludeItemId: previousItem.id,
 	});
 
-	return {
-		previousItem,
-		page: upsertWorkspaceItemInPage(page, {
-			...previousItem,
-			parentId: nextParentId,
-			name,
-			title: name,
-			sortOrder:
-				input.sortOrder ??
-				getNextWorkspaceItemSortOrder(
-					page.items.filter((candidate) => candidate.id !== input.itemId),
-					nextParentId,
-				),
-			updatedAt: new Date().toISOString(),
-		}),
-	};
+	return upsertWorkspaceItemInPage(page, {
+		...previousItem,
+		parentId: nextParentId,
+		name,
+		title: name,
+		sortOrder:
+			input.sortOrder ??
+			getNextWorkspaceItemSortOrder(
+				page.items.filter((candidate) => candidate.id !== input.itemId),
+				nextParentId,
+			),
+		updatedAt: new Date().toISOString(),
+	});
+}
+
+export function moveWorkspaceItemsInPage(
+	page: WorkspacePage,
+	input: MoveWorkspaceItemsInput,
+): {
+	page: WorkspacePage;
+	previousItems: WorkspaceItemSummary[];
+} | null {
+	const movesByItemId = new Map(input.items.map((item) => [item.itemId, item]));
+	const previousItems = getWorkspaceRootItems(
+		page.items,
+		input.items.map((item) => item.itemId),
+	);
+
+	if (previousItems.length === 0) {
+		return null;
+	}
+
+	let nextPage = page;
+	const parentId = input.parentId ?? null;
+
+	for (const item of previousItems) {
+		const movedPage = moveWorkspaceItemInPage(nextPage, {
+			itemId: item.id,
+			parentId,
+			sortOrder: movesByItemId.get(item.id)?.sortOrder,
+		});
+
+		if (movedPage) {
+			nextPage = movedPage;
+		}
+	}
+
+	return { page: nextPage, previousItems };
 }
 
 export function updateWorkspaceItemColorInPage(
@@ -125,11 +168,22 @@ export function upsertWorkspaceItemInPage(
 	item: WorkspaceItemSummary,
 	revision = page.revision,
 ): WorkspacePage {
-	const items = page.items.some((candidate) => candidate.id === item.id)
-		? page.items.map((candidate) =>
-				candidate.id === item.id ? item : candidate,
-			)
-		: [...page.items, item];
+	return upsertWorkspaceItemsInPage(page, [item], revision);
+}
+
+export function upsertWorkspaceItemsInPage(
+	page: WorkspacePage,
+	nextItems: readonly WorkspaceItemSummary[],
+	revision = page.revision,
+): WorkspacePage {
+	const nextItemsById = new Map(nextItems.map((item) => [item.id, item]));
+	const currentItemIds = new Set(page.items.map((item) => item.id));
+	const items = [
+		...page.items.map(
+			(candidate) => nextItemsById.get(candidate.id) ?? candidate,
+		),
+		...nextItems.filter((item) => !currentItemIds.has(item.id)),
+	];
 
 	return {
 		...page,

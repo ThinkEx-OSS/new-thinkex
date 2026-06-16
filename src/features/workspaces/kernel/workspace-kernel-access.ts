@@ -2,7 +2,7 @@ import { createDbContext } from "#/db/server";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemsInput,
-	MoveWorkspaceItemInput,
+	MoveWorkspaceItemsInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
@@ -14,6 +14,7 @@ import {
 } from "#/features/workspaces/kernel/workspace-kernel-list";
 import type {
 	DeleteWorkspaceKernelItemsResult,
+	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileProjectionResult,
 	UpsertWorkspaceKernelFileProjectionArgs,
@@ -68,13 +69,15 @@ export interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
-	moveItem(input: {
-		itemId: string;
+	moveItems(input: {
+		items: Array<{
+			itemId: string;
+			sortOrder?: number;
+		}>;
 		parentId?: string | null;
-		sortOrder?: number;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
-	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	}): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>>;
 	updateItemColor(input: {
 		itemId: string;
 		color: UpdateWorkspaceItemColorInput["color"];
@@ -246,19 +249,18 @@ export async function renameWorkspaceKernelItem(
 	}
 }
 
-export async function moveWorkspaceKernelItem(
-	input: MoveWorkspaceItemInput & { userId: string },
-): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+export async function moveWorkspaceKernelItems(
+	input: MoveWorkspaceItemsInput & { userId: string },
+): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>> {
 	const dbContext = await createDbContext();
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, input);
 		const kernel = await getWorkspaceKernel(input.workspaceId);
 
-		return await kernel.moveItem({
-			itemId: input.itemId,
+		return await kernel.moveItems({
+			items: input.items,
 			parentId: input.parentId ?? null,
-			sortOrder: input.sortOrder,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

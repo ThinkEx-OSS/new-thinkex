@@ -7,16 +7,16 @@ import {
 	applyWorkspaceEventToCache,
 	createWorkspaceItemInPageCache,
 	getWorkspaceItemColorInPageCache,
-	moveWorkspaceItemInPageCache,
+	moveWorkspaceItemsInPageCache,
 	removeWorkspaceItemsFromPageCache,
-	restoreWorkspaceItemInPageCache,
+	restoreWorkspaceItemsInPageCache,
 	updateWorkspaceItemColorInPageCache,
 	workspacePageQueryKey,
 } from "#/features/workspaces/cache";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemsInput,
-	MoveWorkspaceItemInput,
+	MoveWorkspaceItemsInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
@@ -25,7 +25,7 @@ import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/mess
 import {
 	createWorkspaceItemFn,
 	deleteWorkspaceItemsFn,
-	moveWorkspaceItemFn,
+	moveWorkspaceItemsFn,
 	renameWorkspaceItemFn,
 	updateWorkspaceItemColorFn,
 } from "#/features/workspaces/server/functions";
@@ -147,15 +147,39 @@ export function useUploadWorkspaceFileMutation() {
 	});
 }
 
-export function useMoveWorkspaceItemMutation() {
-	const moveWorkspaceItem = useServerFn(moveWorkspaceItemFn);
+export function useMoveWorkspaceItemsMutation() {
+	const moveWorkspaceItems = useServerFn(moveWorkspaceItemsFn);
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: MoveWorkspaceItemInput) => {
+		mutationFn: (input: MoveWorkspaceItemsInput) => {
 			const inputWithClientMutation =
 				prepareWorkspaceClientMutationInput(input);
-			return moveWorkspaceItem({ data: inputWithClientMutation });
+			const movePromise = moveWorkspaceItems({ data: inputWithClientMutation });
+
+			void toast.promise(movePromise, {
+				loading: getMoveWorkspaceItemsToastMessage(
+					"Moving",
+					input.items.length,
+					"...",
+				),
+				success: getMoveWorkspaceItemsToastMessage(
+					"Moved",
+					input.items.length,
+					".",
+				),
+				error: (error) =>
+					getErrorMessage(
+						error,
+						getMoveWorkspaceItemsToastMessage(
+							"Unable to move",
+							input.items.length,
+							" right now.",
+						),
+					),
+			});
+
+			return movePromise;
 		},
 		onMutate: async (input) => {
 			await queryClient.cancelQueries({
@@ -163,17 +187,14 @@ export function useMoveWorkspaceItemMutation() {
 			});
 
 			return {
-				previousItem: moveWorkspaceItemInPageCache(queryClient, input),
+				previousItems: moveWorkspaceItemsInPageCache(queryClient, input),
 			};
 		},
 		onSuccess: (command) => {
 			applyWorkspaceEventToCache(queryClient, command.event);
 		},
-		onError: (error, _input, context) => {
-			restoreWorkspaceItemInPageCache(queryClient, context?.previousItem);
-			toast.error(
-				getErrorMessage(error, "Unable to move workspace item right now."),
-			);
+		onError: (_error, _input, context) => {
+			restoreWorkspaceItemsInPageCache(queryClient, context?.previousItems);
 		},
 	});
 }
@@ -271,6 +292,14 @@ export function useDeleteWorkspaceItemsMutation() {
 
 function getDeleteWorkspaceItemsToastMessage(
 	action: "Deleting" | "Deleted" | "Unable to delete",
+	itemCount: number,
+	suffix: string,
+) {
+	return `${action} ${itemCount === 1 ? "item" : `${itemCount} items`}${suffix}`;
+}
+
+function getMoveWorkspaceItemsToastMessage(
+	action: "Moving" | "Moved" | "Unable to move",
 	itemCount: number,
 	suffix: string,
 ) {

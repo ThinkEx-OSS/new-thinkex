@@ -27,6 +27,10 @@ export type WorkspaceRealtimeEvent =
 			payload: { item: WorkspaceItemSummary };
 	  })
 	| (WorkspaceRealtimeEventBase & {
+			type: "workspace.items.moved";
+			payload: { items: WorkspaceItemSummary[] };
+	  })
+	| (WorkspaceRealtimeEventBase & {
 			type: "workspace.item.deleted";
 			payload: { itemIds: string[]; deletedItemIds: string[] };
 	  });

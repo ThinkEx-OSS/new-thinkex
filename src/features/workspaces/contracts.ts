@@ -222,11 +222,15 @@ export const renameWorkspaceItemInputSchema = z.object({
 	clientMutationId: z.uuid().optional(),
 });
 
-export const moveWorkspaceItemInputSchema = z.object({
-	workspaceId: z.string().min(1),
+const moveWorkspaceItemOperationSchema = z.object({
 	itemId: z.string().min(1),
-	parentId: z.string().min(1).nullable().optional(),
 	sortOrder: z.number().int().optional(),
+});
+
+export const moveWorkspaceItemsInputSchema = z.object({
+	workspaceId: z.string().min(1),
+	items: z.array(moveWorkspaceItemOperationSchema).min(1),
+	parentId: z.string().min(1).nullable().optional(),
 	clientMutationId: z.uuid().optional(),
 });
 
@@ -280,8 +284,8 @@ export type CreateWorkspaceItemInput = z.infer<
 export type RenameWorkspaceItemInput = z.infer<
 	typeof renameWorkspaceItemInputSchema
 >;
-export type MoveWorkspaceItemInput = z.infer<
-	typeof moveWorkspaceItemInputSchema
+export type MoveWorkspaceItemsInput = z.infer<
+	typeof moveWorkspaceItemsInputSchema
 >;
 export type DeleteWorkspaceItemsInput = z.infer<
 	typeof deleteWorkspaceItemsInputSchema

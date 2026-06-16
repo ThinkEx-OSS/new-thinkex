@@ -48,6 +48,7 @@ interface WorkspaceItemActionsMenuProps {
 	trigger?: ReactElement;
 	triggerChildren?: ReactNode;
 	align?: "start" | "center" | "end";
+	onMoveItem: (item: WorkspaceItem) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }
@@ -57,6 +58,7 @@ export default function WorkspaceItemActionsMenu({
 	trigger,
 	triggerChildren,
 	align = "end",
+	onMoveItem,
 	onRenameItem,
 	onDeleteItem,
 }: WorkspaceItemActionsMenuProps) {
@@ -79,6 +81,7 @@ export default function WorkspaceItemActionsMenu({
 			<DropdownMenuContent align={align} className="w-52">
 				<WorkspaceItemActionsMenuContent
 					item={item}
+					onMoveItem={onMoveItem}
 					onRenameItem={onRenameItem}
 					onDeleteItem={onDeleteItem}
 				/>
@@ -89,12 +92,14 @@ export default function WorkspaceItemActionsMenu({
 
 export function WorkspaceItemActionsMenuContent({
 	item,
+	onMoveItem,
 	onRenameItem,
 	onDeleteItem,
 	renderer = workspaceDropdownMenuRenderer,
 	menuKind = "dropdown",
 }: {
 	item: WorkspaceItem;
+	onMoveItem: (item: WorkspaceItem) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 	renderer?: WorkspaceMenuRenderer;
@@ -121,7 +126,11 @@ export function WorkspaceItemActionsMenuContent({
 					})
 				}
 			/>
-			<WorkspaceItemMoveToFolderMenuItem renderer={renderer} />
+			<WorkspaceItemMoveMenuItem
+				item={item}
+				renderer={renderer}
+				onMoveItem={onMoveItem}
+			/>
 			{renderer.separator("danger-separator")}
 			<WorkspaceItemDeleteMenuItem
 				item={item}
@@ -134,10 +143,12 @@ export function WorkspaceItemActionsMenuContent({
 
 export function WorkspaceItemActionsContextMenuContent({
 	item,
+	onMoveItem,
 	onRenameItem,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
+	onMoveItem: (item: WorkspaceItem) => void;
 	onRenameItem: (item: WorkspaceItem) => void;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
@@ -145,6 +156,7 @@ export function WorkspaceItemActionsContextMenuContent({
 		<ContextMenuContent className="w-52">
 			<WorkspaceItemActionsMenuContent
 				item={item}
+				onMoveItem={onMoveItem}
 				onRenameItem={onRenameItem}
 				onDeleteItem={onDeleteItem}
 				renderer={workspaceContextMenuRenderer}
@@ -221,18 +233,22 @@ function WorkspaceItemColorSubmenu({
 	);
 }
 
-function WorkspaceItemMoveToFolderMenuItem({
+function WorkspaceItemMoveMenuItem({
+	item,
 	renderer,
+	onMoveItem,
 }: {
+	item: WorkspaceItem;
 	renderer: WorkspaceMenuRenderer;
+	onMoveItem: (item: WorkspaceItem) => void;
 }) {
 	return renderer.item({
-		id: "move-to-folder",
-		disabled: true,
+		id: "move",
+		onClick: () => onMoveItem(item),
 		children: (
 			<>
 				<FolderInput className="size-4" />
-				<span>Move to folder</span>
+				<span>Move</span>
 			</>
 		),
 	});

@@ -22,7 +22,8 @@ import type {
 	DeleteWorkspaceKernelItemsResult,
 	ListWorkspaceKernelEventsArgs,
 	ListWorkspaceKernelItemsArgs,
-	MoveWorkspaceKernelItemArgs,
+	MoveWorkspaceKernelItemsArgs,
+	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelFileContentArgs,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelItemArgs,
@@ -145,10 +146,10 @@ export class WorkspaceKernel extends Agent<Env> {
 		return await this.itemCommands.renameItem(input);
 	}
 
-	async moveItem(
-		input: MoveWorkspaceKernelItemArgs,
-	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
-		return await this.itemCommands.moveItem(input);
+	async moveItems(
+		input: MoveWorkspaceKernelItemsArgs,
+	): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>> {
+		return await this.itemCommands.moveItems(input);
 	}
 
 	async updateItemColor(

@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { workspacePageQueryKey } from "#/features/workspaces/cache-keys";
 import type {
 	CreateWorkspaceItemInput,
-	MoveWorkspaceItemInput,
+	MoveWorkspaceItemsInput,
 	UpdateWorkspaceItemColorInput,
 	WorkspaceItemSummary,
 	WorkspacePage,
@@ -10,10 +10,10 @@ import type {
 import {
 	applyWorkspaceEventToPage,
 	createWorkspaceItemInPage,
-	moveWorkspaceItemInPage,
+	moveWorkspaceItemsInPage,
 	removeWorkspaceItemsFromPage,
 	updateWorkspaceItemColorInPage,
-	upsertWorkspaceItemInPage,
+	upsertWorkspaceItemsInPage,
 } from "#/features/workspaces/model/workspace-page";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
@@ -28,11 +28,11 @@ export function createWorkspaceItemInPageCache(
 	);
 }
 
-export function moveWorkspaceItemInPageCache(
+export function moveWorkspaceItemsInPageCache(
 	queryClient: QueryClient,
-	input: MoveWorkspaceItemInput,
+	input: MoveWorkspaceItemsInput,
 ) {
-	let previousItem: WorkspaceItemSummary | undefined;
+	let previousItems: WorkspaceItemSummary[] | undefined;
 
 	queryClient.setQueryData<WorkspacePage>(
 		workspacePageQueryKey(input.workspaceId),
@@ -41,18 +41,18 @@ export function moveWorkspaceItemInPageCache(
 				return current;
 			}
 
-			const moveResult = moveWorkspaceItemInPage(current, input);
+			const moveResult = moveWorkspaceItemsInPage(current, input);
 
 			if (!moveResult) {
 				return current;
 			}
 
-			previousItem = moveResult.previousItem;
+			previousItems = moveResult.previousItems;
 			return moveResult.page;
 		},
 	);
 
-	return previousItem;
+	return previousItems;
 }
 
 export function removeWorkspaceItemsFromPageCache(
@@ -100,17 +100,23 @@ export function getWorkspaceItemColorInPageCache(
 	return page?.items.find((item) => item.id === input.itemId)?.color ?? null;
 }
 
-export function restoreWorkspaceItemInPageCache(
+export function restoreWorkspaceItemsInPageCache(
 	queryClient: QueryClient,
-	item: WorkspaceItemSummary | undefined,
+	items: readonly WorkspaceItemSummary[] | undefined,
 ) {
-	if (!item) {
+	if (!items || items.length === 0) {
 		return;
 	}
 
 	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(item.workspaceId),
-		(current) => (current ? upsertWorkspaceItemInPage(current, item) : current),
+		workspacePageQueryKey(items[0].workspaceId),
+		(current) => {
+			if (!current) {
+				return current;
+			}
+
+			return upsertWorkspaceItemsInPage(current, items);
+		},
 	);
 }
 

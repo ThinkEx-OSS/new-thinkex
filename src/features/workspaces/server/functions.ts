@@ -6,7 +6,7 @@ import {
 	createWorkspaceItemInputSchema,
 	deleteWorkspaceInputSchema,
 	deleteWorkspaceItemsInputSchema,
-	moveWorkspaceItemInputSchema,
+	moveWorkspaceItemsInputSchema,
 	renameWorkspaceItemInputSchema,
 	updateWorkspaceInputSchema,
 	updateWorkspaceItemColorInputSchema,
@@ -14,7 +14,7 @@ import {
 import {
 	createWorkspaceKernelItem,
 	deleteWorkspaceKernelItems,
-	moveWorkspaceKernelItem,
+	moveWorkspaceKernelItems,
 	renameWorkspaceKernelItem,
 	updateWorkspaceKernelItemColor,
 } from "#/features/workspaces/kernel/workspace-kernel-access";
@@ -80,10 +80,10 @@ export const renameWorkspaceItemFn = createServerFn({ method: "POST" })
 		}),
 	);
 
-export const moveWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(moveWorkspaceItemInputSchema)
+export const moveWorkspaceItemsFn = createServerFn({ method: "POST" })
+	.inputValidator(moveWorkspaceItemsInputSchema)
 	.handler(async ({ data }) =>
-		moveWorkspaceKernelItem({
+		moveWorkspaceKernelItems({
 			...data,
 			userId: await getCurrentUserId(),
 		}),

@@ -1,4 +1,7 @@
-import type { WorkspaceItemType } from "#/features/workspaces/contracts";
+import type {
+	WorkspaceItemType,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import type {
@@ -9,6 +12,7 @@ import type {
 export interface WorkspacePresentationProps {
 	aiContextScope: WorkspaceAiContextScope;
 	scopedItems: WorkspaceItem[];
+	workspace: WorkspaceSummary;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;

@@ -18,7 +18,8 @@ import type {
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
 	DeleteWorkspaceKernelItemsResult,
-	MoveWorkspaceKernelItemArgs,
+	MoveWorkspaceKernelItemsArgs,
+	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelItemArgs,
 	RenameWorkspaceKernelItemArgs,
 	UpdateWorkspaceKernelItemColorArgs,
@@ -146,39 +147,42 @@ export class WorkspaceKernelItemCommands {
 		});
 	}
 
-	async moveItem(
-		input: MoveWorkspaceKernelItemArgs,
-	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
+	async moveItems(
+		input: MoveWorkspaceKernelItemsArgs,
+	): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>> {
 		const parentId = input.parentId ?? null;
-		const existingItem = this.store.assertActiveItem(input.itemId);
+		const movesByItemId = new Map(
+			input.items.map((item) => [item.itemId, item]),
+		);
+		const roots = this.getUniqueRootRows(
+			input.items.map((item) => item.itemId),
+		);
+		const movedItems: WorkspaceItemSummary[] = [];
 
 		this.store.assertParentIsValid(parentId);
-		this.store.assertNotMovingIntoDescendant(input.itemId, parentId);
 
-		const type = workspaceItemTypeSchema.parse(existingItem.type);
-		const name = this.store.getAvailableItemName({
-			type,
-			parentId,
-			requestedName: existingItem.name,
-			excludeItemId: existingItem.id,
+		for (const row of roots) {
+			this.store.assertNotMovingIntoDescendant(row.id, parentId);
+		}
+
+		for (const row of roots) {
+			movedItems.push(
+				this.moveItemRow({
+					row,
+					parentId,
+					sortOrder: movesByItemId.get(row.id)?.sortOrder,
+				}),
+			);
+		}
+
+		const event = this.events.commit({
+			type: "workspace.items.moved",
+			actorUserId: input.actorUserId ?? null,
+			clientMutationId: input.clientMutationId ?? null,
+			payload: { items: movedItems },
 		});
 
-		this.sql`
-			UPDATE kernel_items
-			SET
-				parent_id = ${parentId},
-				name = ${name},
-				sort_order = ${input.sortOrder ?? this.store.getNextSortOrder(parentId)},
-				updated_at = ${Date.now()}
-			WHERE id = ${input.itemId} AND deleted_at IS NULL
-		`;
-
-		return this.commitItemEvent({
-			type: "workspace.item.moved",
-			itemId: input.itemId,
-			actorUserId: input.actorUserId,
-			clientMutationId: input.clientMutationId,
-		});
+		return { result: movedItems, event };
 	}
 
 	async updateItemColor(
@@ -203,7 +207,7 @@ export class WorkspaceKernelItemCommands {
 	async deleteItems(
 		input: DeleteWorkspaceKernelItemsArgs,
 	): Promise<WorkspaceCommandResult<DeleteWorkspaceKernelItemsResult>> {
-		const roots = this.getDeleteRootRows(input.itemIds);
+		const roots = this.getUniqueRootRows(input.itemIds);
 		const rootIds = roots.map((root) => root.id);
 		const deleteIds = this.getDeleteItemIds(roots);
 		const rowsToRemove = deleteIds
@@ -296,7 +300,6 @@ export class WorkspaceKernelItemCommands {
 	private commitItemEvent(input: {
 		type:
 			| "workspace.item.renamed"
-			| "workspace.item.moved"
 			| "workspace.item.color.updated"
 			| "workspace.item.content.updated";
 		itemId: string;
@@ -314,7 +317,33 @@ export class WorkspaceKernelItemCommands {
 		return { result: item, event };
 	}
 
-	private getDeleteRootRows(itemIds: string[]) {
+	private moveItemRow(input: {
+		row: KernelItemRow;
+		parentId: string | null;
+		sortOrder?: number;
+	}) {
+		const type = workspaceItemTypeSchema.parse(input.row.type);
+		const name = this.store.getAvailableItemName({
+			type,
+			parentId: input.parentId,
+			requestedName: input.row.name,
+			excludeItemId: input.row.id,
+		});
+
+		this.sql`
+			UPDATE kernel_items
+			SET
+				parent_id = ${input.parentId},
+				name = ${name},
+				sort_order = ${input.sortOrder ?? this.store.getNextSortOrder(input.parentId)},
+				updated_at = ${Date.now()}
+			WHERE id = ${input.row.id} AND deleted_at IS NULL
+		`;
+
+		return this.store.requireItem(input.row.id);
+	}
+
+	private getUniqueRootRows(itemIds: string[]) {
 		const uniqueItemIds = Array.from(new Set(itemIds));
 
 		if (uniqueItemIds.length === 0) {

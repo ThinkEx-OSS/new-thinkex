@@ -6,6 +6,7 @@ export default function WorkspacePaneRenderer({
 	aiContextScope,
 	pane,
 	scopedItems,
+	workspace,
 	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
@@ -18,7 +19,7 @@ export default function WorkspacePaneRenderer({
 
 			return (
 				<WorkspaceContent
-					workspaceId={aiContextScope.workspaceId}
+					workspace={workspace}
 					items={scopedItems}
 					activeItem={item}
 					onAddItemsToAiContext={onAddItemsToAiContext}
@@ -30,7 +31,7 @@ export default function WorkspacePaneRenderer({
 		case "root":
 			return (
 				<WorkspaceContent
-					workspaceId={aiContextScope.workspaceId}
+					workspace={workspace}
 					items={scopedItems}
 					activeItem={undefined}
 					onAddItemsToAiContext={onAddItemsToAiContext}

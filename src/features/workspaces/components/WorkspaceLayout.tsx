@@ -45,7 +45,7 @@ import {
 import { shouldIgnoreWorkspaceClientMutationEcho } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import {
 	useCreateWorkspaceItemMutation,
-	useMoveWorkspaceItemMutation,
+	useMoveWorkspaceItemsMutation,
 } from "#/features/workspaces/use-workspace-kernel-items";
 import { useAppHotkey } from "#/lib/hotkeys-core";
 
@@ -68,7 +68,7 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
 	const queryClient = useQueryClient();
 	const createWorkspaceItemMutation = useCreateWorkspaceItemMutation();
-	const moveWorkspaceItemMutation = useMoveWorkspaceItemMutation();
+	const moveWorkspaceItemsMutation = useMoveWorkspaceItemsMutation();
 	const persistedStoresHydrated = useWorkspacePersistedStoresHydrated();
 	const ensureWorkspaceUiSession = useWorkspaceUiStore(
 		(state) => state.ensureWorkspaceSession,
@@ -208,6 +208,7 @@ export function WorkspaceShell({
 					aiContextScope={aiContextScope}
 					pane={presentation.pane}
 					scopedItems={scopedItems}
+					workspace={workspace}
 					onAddItemsToAiContext={addItemsToAiContext}
 					onCreateItem={createWorkspaceItem}
 					onOpenItem={openItem}
@@ -253,6 +254,7 @@ export function WorkspaceShell({
 								panes={presentation.panes}
 								direction={presentation.direction}
 								scopedItems={scopedItems}
+								workspace={workspace}
 								onAddItemsToAiContext={addItemsToAiContext}
 								onCreateItem={createWorkspaceItem}
 								onOpenItem={openItem}
@@ -263,7 +265,7 @@ export function WorkspaceShell({
 								itemsById={itemsById}
 								scopedItems={scopedItems}
 								tabs={session.tabs}
-								workspaceId={workspace.id}
+								workspace={workspace}
 								onAddItemsToAiContext={addItemsToAiContext}
 								onCreateItem={createWorkspaceItem}
 								onOpenItem={openItem}
@@ -286,7 +288,7 @@ export function WorkspaceShell({
 				selectedItemIds={new Set(selectedItemIds)}
 				workspaceId={workspace.id}
 				onAddItemsToAiContext={addItemIdsToAiContext}
-				onMoveItem={moveWorkspaceItemMutation.mutate}
+				onMoveItems={moveWorkspaceItemsMutation.mutate}
 				onOpenItemInNewTab={openItemInNewTab}
 				onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
 			>
