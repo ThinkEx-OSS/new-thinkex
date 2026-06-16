@@ -122,6 +122,7 @@ export type ReasoningContentProps = ComponentProps<"div"> & {
 
 const streamdownPlugins = { cjk, math };
 const streamdownComponents = { code: MarkdownCodeBlock };
+const streamdownLinkSafety = { enabled: false };
 
 export function ReasoningContent({
 	className,
@@ -133,7 +134,11 @@ export function ReasoningContent({
 			className={cn("mt-4 text-muted-foreground text-sm", className)}
 			{...props}
 		>
-			<Streamdown components={streamdownComponents} plugins={streamdownPlugins}>
+			<Streamdown
+				components={streamdownComponents}
+				linkSafety={streamdownLinkSafety}
+				plugins={streamdownPlugins}
+			>
 				{children}
 			</Streamdown>
 		</div>

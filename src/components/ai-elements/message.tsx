@@ -98,6 +98,7 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 const streamdownPlugins = { cjk, math };
 const streamdownComponents = { code: MarkdownCodeBlock };
+const streamdownLinkSafety = { enabled: false };
 
 export const MessageResponse = ({
 	className,
@@ -110,6 +111,7 @@ export const MessageResponse = ({
 			className,
 		)}
 		components={{ ...streamdownComponents, ...components }}
+		linkSafety={streamdownLinkSafety}
 		plugins={streamdownPlugins}
 		{...props}
 	/>
