@@ -111,33 +111,31 @@ export function useUploadWorkspaceFileMutation() {
 				formData.set("parentId", inputWithClientMutation.parentId);
 			}
 
-			const uploadResponse = await fetch(
+			const uploadPromise = fetch(
 				`/api/v1/workspaces/${inputWithClientMutation.workspaceId}/file-upload`,
 				{
 					method: "POST",
 					body: formData,
 				},
-			);
+			).then(async (uploadResponse) => {
+				if (!uploadResponse.ok) {
+					throw new Error(await getUploadErrorMessage(uploadResponse));
+				}
 
-			if (!uploadResponse.ok) {
-				throw new Error(await getUploadErrorMessage(uploadResponse));
-			}
+				return (await uploadResponse.json()) as WorkspaceCommandResult<WorkspaceItemSummary>;
+			});
 
-			return (await uploadResponse.json()) as WorkspaceCommandResult<WorkspaceItemSummary>;
+			void toast.promise(uploadPromise, {
+				loading: `Uploading ${input.file.name}...`,
+				success: `Uploaded ${input.file.name}.`,
+				error: (error) =>
+					getErrorMessage(error, "Unable to upload file right now."),
+			});
+
+			return uploadPromise;
 		},
-		onMutate: (input) => ({
-			toastId: toast.loading(`Uploading ${input.file.name}...`),
-		}),
-		onSuccess: (command, input, context) => {
+		onSuccess: (command) => {
 			applyWorkspaceEventToCache(queryClient, command.event);
-			toast.success(`Uploaded ${input.file.name}.`, {
-				id: context.toastId,
-			});
-		},
-		onError: (error, _input, context) => {
-			toast.error(getErrorMessage(error, "Unable to upload file right now."), {
-				id: context?.toastId,
-			});
 		},
 	});
 }

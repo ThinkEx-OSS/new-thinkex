@@ -4,6 +4,7 @@ import {
 	Loader2Icon,
 	OctagonXIcon,
 	TriangleAlertIcon,
+	XIcon,
 } from "lucide-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
@@ -13,6 +14,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
 			{...props}
 			theme="system"
 			position="top-right"
+			closeButton
+			duration={6000}
+			visibleToasts={4}
 			className="toaster group"
 			icons={{
 				success: <CircleCheckIcon className="size-4" />,
@@ -20,6 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 				warning: <TriangleAlertIcon className="size-4" />,
 				error: <OctagonXIcon className="size-4" />,
 				loading: <Loader2Icon className="size-4 animate-spin" />,
+				close: <XIcon className="size-3" />,
 			}}
 			style={
 				{
@@ -30,6 +35,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 				} as React.CSSProperties
 			}
 			toastOptions={{
+				closeButtonAriaLabel: "Dismiss notification",
 				classNames: {
 					toast: "cn-toast",
 				},
