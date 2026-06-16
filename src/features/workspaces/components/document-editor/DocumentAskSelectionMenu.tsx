@@ -1,8 +1,13 @@
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { useEffect, useState } from "react";
 
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
 import { createDocumentSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import {
+	type ClientPoint,
+	getPointerClientPoint,
+} from "#/features/workspaces/model/workspace-selection-geometry";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const DOCUMENT_ASK_BUBBLE_MENU_PLUGIN_KEY = "documentAskSelectionBubbleMenu";
@@ -21,6 +26,41 @@ export function DocumentAskSelectionMenu({
 	const addSelectedMention = useWorkspaceUiStore(
 		(state) => state.addSelectedMention,
 	);
+	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
+		null,
+	);
+
+	useEffect(() => {
+		const element = editor?.view.dom;
+
+		if (!element) {
+			return;
+		}
+
+		const handlePointerUp = (event: PointerEvent) => {
+			setSelectionPoint(getPointerClientPoint(event));
+		};
+		const clearSelectionPoint = () => {
+			setSelectionPoint(null);
+		};
+		const selectionScrollTarget = scrollTarget ?? window;
+
+		element.addEventListener("pointerup", handlePointerUp, true);
+		element.addEventListener("keydown", clearSelectionPoint);
+		selectionScrollTarget.addEventListener("scroll", clearSelectionPoint, true);
+		window.addEventListener("resize", clearSelectionPoint);
+
+		return () => {
+			element.removeEventListener("pointerup", handlePointerUp, true);
+			element.removeEventListener("keydown", clearSelectionPoint);
+			selectionScrollTarget.removeEventListener(
+				"scroll",
+				clearSelectionPoint,
+				true,
+			);
+			window.removeEventListener("resize", clearSelectionPoint);
+		};
+	}, [editor, scrollTarget]);
 
 	if (!editor) {
 		return null;
@@ -34,10 +74,11 @@ export function DocumentAskSelectionMenu({
 			resizeDelay={0}
 			updateDelay={0}
 			options={{
-				flip: true,
-				inline: true,
+				flip: { fallbackPlacements: ["top"] },
+				hide: true,
+				inline: selectionPoint ?? true,
 				offset: 10,
-				placement: "top",
+				placement: "bottom",
 				scrollTarget: scrollTarget ?? undefined,
 				shift: true,
 				strategy: "fixed",

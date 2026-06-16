@@ -2,10 +2,19 @@ import {
 	type SelectionSelectionMenuProps,
 	useSelectionCapability,
 } from "@embedpdf/plugin-selection/react";
+import { useState } from "react";
 
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
 import { createPdfSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import {
+	type ClientPoint,
+	clamp,
+} from "#/features/workspaces/model/workspace-selection-geometry";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+
+const PDF_ASK_SELECTION_MENU_HEIGHT = 40;
+const PDF_ASK_SELECTION_MENU_WIDTH = 78;
+const PDF_ASK_SELECTION_MENU_GAP = 2;
 
 export function WorkspacePdfAskSelectionMenu({
 	documentId,
@@ -13,24 +22,58 @@ export function WorkspacePdfAskSelectionMenu({
 	menuWrapperProps,
 	placement,
 	rect,
+	selectionPoint,
 	workspaceId,
 }: SelectionSelectionMenuProps & {
 	documentId: string;
 	itemId: string;
+	selectionPoint: ClientPoint | null;
 	workspaceId: string;
 }) {
+	const [menuWrapperElement, setMenuWrapperElement] =
+		useState<HTMLDivElement | null>(null);
 	const { provides: selectionCapability } = useSelectionCapability();
 	const addSelectedMention = useWorkspaceUiStore(
 		(state) => state.addSelectedMention,
 	);
-	const top = placement.suggestTop ? -42 : rect.size.height + 10;
+	const setMenuWrapperRef = (element: HTMLDivElement | null) => {
+		menuWrapperProps.ref(element);
+		setMenuWrapperElement((current) =>
+			current === element ? current : element,
+		);
+	};
+	const isTopPlacement = placement.suggestTop;
+	const sideSpace = isTopPlacement
+		? placement.spaceAbove
+		: placement.spaceBelow;
+	const wrapperRect = menuWrapperElement?.getBoundingClientRect();
+	const localSelectionX =
+		selectionPoint && wrapperRect
+			? selectionPoint.x - wrapperRect.left
+			: rect.size.width / 2;
+	const left = clamp(
+		localSelectionX,
+		PDF_ASK_SELECTION_MENU_WIDTH / 2,
+		rect.size.width - PDF_ASK_SELECTION_MENU_WIDTH / 2,
+	);
+	const top = isTopPlacement
+		? -(PDF_ASK_SELECTION_MENU_HEIGHT + PDF_ASK_SELECTION_MENU_GAP)
+		: rect.size.height + PDF_ASK_SELECTION_MENU_GAP;
+
+	if (
+		sideSpace !== undefined &&
+		sideSpace < PDF_ASK_SELECTION_MENU_HEIGHT + PDF_ASK_SELECTION_MENU_GAP
+	) {
+		return null;
+	}
 
 	return (
-		<div {...menuWrapperProps}>
+		<div {...menuWrapperProps} ref={setMenuWrapperRef}>
 			<div
-				className="absolute left-1/2 z-[49] -translate-x-1/2"
+				className="absolute z-[49] -translate-x-1/2"
 				style={{
 					cursor: "default",
+					left,
 					pointerEvents: "auto",
 					top,
 				}}

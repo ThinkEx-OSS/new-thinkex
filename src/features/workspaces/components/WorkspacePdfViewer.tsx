@@ -49,6 +49,10 @@ import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceIte
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import { WorkspacePdfAskSelectionMenu } from "#/features/workspaces/components/WorkspacePdfAskSelectionMenu";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import {
+	type ClientPoint,
+	getPointerClientPoint,
+} from "#/features/workspaces/model/workspace-selection-geometry";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const pdfPlugins: PluginBatchRegistrations = [
@@ -248,6 +252,10 @@ function WorkspacePdfDocumentContent({
 	itemId: string;
 	workspaceId: string;
 }) {
+	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
+		null,
+	);
+
 	if (isLoading) {
 		return (
 			<WorkspacePdfViewerStatus>Loading document...</WorkspacePdfViewerStatus>
@@ -281,6 +289,9 @@ function WorkspacePdfDocumentContent({
 				documentId={documentId}
 				enablePinch
 				enableWheel
+				onPointerUpCapture={(event) => {
+					setSelectionPoint(getPointerClientPoint(event));
+				}}
 			>
 				<Scroller
 					documentId={documentId}
@@ -310,10 +321,13 @@ function WorkspacePdfDocumentContent({
 											{...props}
 											documentId={documentId}
 											itemId={itemId}
+											selectionPoint={selectionPoint}
 											workspaceId={workspaceId}
 										/>
 									)}
-									textStyle={{ background: "rgb(147 197 253 / 0.24)" }}
+									textStyle={{
+										background: "var(--workspace-ask-selection-background)",
+									}}
 								/>
 								<AnnotationLayer
 									className="absolute inset-0"

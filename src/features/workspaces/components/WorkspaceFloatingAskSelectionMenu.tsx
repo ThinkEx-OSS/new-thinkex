@@ -1,9 +1,12 @@
 import { createPortal } from "react-dom";
 
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
+import {
+	type ClientPoint,
+	getBottomPreferredSelectionMenuPlacement,
+	type SelectionRect,
+} from "#/features/workspaces/model/workspace-selection-geometry";
 import { cn } from "#/lib/utils";
-
-type SelectionRect = Pick<DOMRect, "height" | "left" | "top" | "width">;
 
 const ASK_SELECTION_MENU_HEIGHT = 32;
 const ASK_SELECTION_MENU_WIDTH = 78;
@@ -14,19 +17,31 @@ const ASK_SELECTION_MENU_LAYER_CLASSNAME = "z-[49]";
 export function WorkspaceFloatingAskSelectionMenu({
 	className,
 	onAsk,
+	point,
 	rect,
 }: {
 	className?: string;
 	onAsk: () => void;
+	point?: ClientPoint | null;
 	rect: SelectionRect;
 }) {
 	if (typeof document === "undefined" || typeof window === "undefined") {
 		return null;
 	}
 
-	const placement = getAskSelectionMenuPlacement(rect, {
-		viewportHeight: window.innerHeight,
-		viewportWidth: window.innerWidth,
+	const placement = getBottomPreferredSelectionMenuPlacement({
+		menu: {
+			height: ASK_SELECTION_MENU_HEIGHT,
+			offset: ASK_SELECTION_MENU_OFFSET,
+			viewportMargin: ASK_SELECTION_MENU_VIEWPORT_MARGIN,
+			width: ASK_SELECTION_MENU_WIDTH,
+		},
+		point,
+		rect,
+		viewport: {
+			height: window.innerHeight,
+			width: window.innerWidth,
+		},
 	});
 
 	return createPortal(
@@ -42,47 +57,4 @@ export function WorkspaceFloatingAskSelectionMenu({
 		</div>,
 		document.body,
 	);
-}
-
-function getAskSelectionMenuPlacement(
-	rect: SelectionRect,
-	viewport: {
-		viewportHeight: number;
-		viewportWidth: number;
-	},
-) {
-	const minCenterX =
-		ASK_SELECTION_MENU_VIEWPORT_MARGIN + ASK_SELECTION_MENU_WIDTH / 2;
-	const maxCenterX =
-		viewport.viewportWidth -
-		ASK_SELECTION_MENU_VIEWPORT_MARGIN -
-		ASK_SELECTION_MENU_WIDTH / 2;
-	const selectionCenterX = rect.left + rect.width / 2;
-	const aboveTop =
-		rect.top - ASK_SELECTION_MENU_OFFSET - ASK_SELECTION_MENU_HEIGHT;
-	const belowTop = rect.top + rect.height + ASK_SELECTION_MENU_OFFSET;
-	const canPlaceAbove = aboveTop >= ASK_SELECTION_MENU_VIEWPORT_MARGIN;
-	const canPlaceBelow =
-		belowTop + ASK_SELECTION_MENU_HEIGHT <=
-		viewport.viewportHeight - ASK_SELECTION_MENU_VIEWPORT_MARGIN;
-	const preferredTop = canPlaceAbove || !canPlaceBelow ? aboveTop : belowTop;
-
-	return {
-		left: clamp(selectionCenterX, minCenterX, maxCenterX),
-		top: clamp(
-			preferredTop,
-			ASK_SELECTION_MENU_VIEWPORT_MARGIN,
-			viewport.viewportHeight -
-				ASK_SELECTION_MENU_VIEWPORT_MARGIN -
-				ASK_SELECTION_MENU_HEIGHT,
-		),
-	};
-}
-
-function clamp(value: number, min: number, max: number) {
-	if (max < min) {
-		return min;
-	}
-
-	return Math.min(Math.max(value, min), max);
 }

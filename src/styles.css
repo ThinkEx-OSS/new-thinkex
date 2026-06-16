@@ -82,6 +82,7 @@
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
 	--workspace-chrome-active: oklch(0.96 0 0);
+	--workspace-ask-selection-background: rgb(37 99 235 / 16%);
 }
 
 .dark {
@@ -117,6 +118,7 @@
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
 	--workspace-chrome-active: oklch(0.2 0 0);
+	--workspace-ask-selection-background: rgb(37 99 235 / 22%);
 }
 
 @layer base {
@@ -138,6 +140,11 @@
 	button:not(:disabled),
 	[role="button"]:not(:disabled) {
 		cursor: pointer;
+	}
+
+	::selection {
+		background: var(--workspace-ask-selection-background);
+		color: inherit;
 	}
 }
 

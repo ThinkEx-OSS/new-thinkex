@@ -13,11 +13,17 @@ import type {
 } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { createAssistantResponseSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import {
+	type ClientPoint,
+	getPointerClientPoint,
+	getRangeClientRect,
+} from "#/features/workspaces/model/workspace-selection-geometry";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const ASSISTANT_MESSAGE_SELECTION_ATTRIBUTE = "data-ai-assistant-message-id";
 
 type AssistantSelectionState = {
+	point: ClientPoint | null;
 	rect: DOMRect;
 	text: string;
 };
@@ -55,6 +61,7 @@ export default function AiChatMessageList({
 			? lastMessage.id
 			: undefined;
 	const listRef = useRef<HTMLDivElement>(null);
+	const lastSelectionPointRef = useRef<ClientPoint | null>(null);
 	const [selection, setSelection] = useState<AssistantSelectionState | null>(
 		null,
 	);
@@ -66,20 +73,43 @@ export default function AiChatMessageList({
 		const updateSelection = () => {
 			setSelection(
 				getAssistantSelectionState({
+					point: lastSelectionPointRef.current,
 					root: listRef.current,
 					streamingAssistantMessageId,
 				}),
 			);
 		};
+		const clearPointAndUpdateSelection = () => {
+			lastSelectionPointRef.current = null;
+			updateSelection();
+		};
+		const handlePointerUp = (event: PointerEvent) => {
+			const target = event.target;
+
+			if (!(target instanceof Node) || !listRef.current?.contains(target)) {
+				return;
+			}
+
+			lastSelectionPointRef.current = getPointerClientPoint(event);
+			queueMicrotask(updateSelection);
+		};
 
 		document.addEventListener("selectionchange", updateSelection);
-		document.addEventListener("scroll", updateSelection, true);
-		window.addEventListener("resize", updateSelection);
+		document.addEventListener("pointerup", handlePointerUp, true);
+		document.addEventListener("keydown", clearPointAndUpdateSelection);
+		document.addEventListener("scroll", clearPointAndUpdateSelection, true);
+		window.addEventListener("resize", clearPointAndUpdateSelection);
 
 		return () => {
 			document.removeEventListener("selectionchange", updateSelection);
-			document.removeEventListener("scroll", updateSelection, true);
-			window.removeEventListener("resize", updateSelection);
+			document.removeEventListener("pointerup", handlePointerUp, true);
+			document.removeEventListener("keydown", clearPointAndUpdateSelection);
+			document.removeEventListener(
+				"scroll",
+				clearPointAndUpdateSelection,
+				true,
+			);
+			window.removeEventListener("resize", clearPointAndUpdateSelection);
 		};
 	}, [streamingAssistantMessageId]);
 
@@ -122,6 +152,7 @@ export default function AiChatMessageList({
 			{status === "submitted" ? <SubmittedAssistantMessage /> : null}
 			{selection ? (
 				<WorkspaceFloatingAskSelectionMenu
+					point={selection.point}
 					rect={selection.rect}
 					onAsk={() => {
 						addSelectedMention(
@@ -140,9 +171,11 @@ export default function AiChatMessageList({
 }
 
 function getAssistantSelectionState({
+	point,
 	root,
 	streamingAssistantMessageId,
 }: {
+	point: ClientPoint | null;
 	root: HTMLElement | null;
 	streamingAssistantMessageId?: string;
 }): AssistantSelectionState | null {
@@ -168,13 +201,13 @@ function getAssistantSelectionState({
 		return null;
 	}
 
-	const rect = getSelectionRangeRect(selection.getRangeAt(0));
+	const rect = getRangeClientRect(selection.getRangeAt(0), point);
 
 	if (!rect) {
 		return null;
 	}
 
-	return { rect, text };
+	return { point, rect, text };
 }
 
 function getAssistantSelectionRoot(node: Node | null, root: HTMLElement) {
@@ -184,20 +217,6 @@ function getAssistantSelectionRoot(node: Node | null, root: HTMLElement) {
 	);
 
 	return assistantRoot && root.contains(assistantRoot) ? assistantRoot : null;
-}
-
-function getSelectionRangeRect(range: Range) {
-	const rect = range.getBoundingClientRect();
-
-	if (rect.width > 0 || rect.height > 0) {
-		return rect;
-	}
-
-	const firstRect = Array.from(range.getClientRects()).find(
-		(rect) => rect.width > 0 || rect.height > 0,
-	);
-
-	return firstRect ?? null;
 }
 
 function SubmittedAssistantMessage() {
