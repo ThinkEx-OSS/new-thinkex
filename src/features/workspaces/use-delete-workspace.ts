@@ -40,6 +40,7 @@ export function useDeleteWorkspaceMutation() {
 		},
 		onSuccess: async (_deletedWorkspace, input) => {
 			removeWorkspaceCaches(queryClient, input.workspaceId);
+			toast.success("Workspace deleted.");
 			await navigate({ to: "/home" });
 		},
 		onError: (error, _input, context) => {

@@ -53,6 +53,7 @@ export function useUpdateWorkspaceMutation() {
 		},
 		onSuccess: (workspace) => {
 			updateWorkspaceInCaches(queryClient, workspace);
+			toast.success("Workspace updated.");
 		},
 		onError: (error, input, context) => {
 			if (context?.previousWorkspaces) {
