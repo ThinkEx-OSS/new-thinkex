@@ -7,6 +7,7 @@ import type {
 } from "#/features/workspaces/extraction/types";
 
 const defaultFirecrawlApiUrl = "https://api.firecrawl.dev";
+const firecrawlParseTimeoutMs = 300_000;
 
 export function createFirecrawlPdfExtractionProvider(
 	env: Env,
@@ -21,6 +22,7 @@ export function createFirecrawlPdfExtractionProvider(
 				JSON.stringify({
 					formats: ["markdown"],
 					parsers: [{ type: "pdf", mode }],
+					timeout: firecrawlParseTimeoutMs,
 				}),
 			);
 			formData.set(
@@ -100,20 +102,44 @@ function getFirecrawlMarkdown(value: unknown): string | null {
 }
 
 function getFirecrawlMetadata(value: unknown) {
-	const usage = getRecordValue(value, "usage");
-	const metadata = getRecordValue(value, "metadata");
+	const data = getRecordValue(value, "data");
+	const usage = getRecordValue(value, "usage") ?? getRecordValue(data, "usage");
+	const metadata =
+		getRecordValue(data, "metadata") ?? getRecordValue(value, "metadata");
 	const creditsUsed =
-		getNumberValue(usage, "credits") ?? getNumberValue(value, "creditsUsed");
+		getNumberValue(metadata, "creditsUsed") ??
+		getNumberValue(usage, "credits") ??
+		getNumberValue(data, "creditsUsed") ??
+		getNumberValue(value, "creditsUsed");
+	const title =
+		getStringValue(metadata, "title") ?? getStringValue(data, "title");
+	const sourceFile =
+		getStringValue(metadata, "sourceFile") ??
+		getStringValue(data, "sourceFile");
 	const pageCount =
-		getNumberValue(metadata, "pageCount") ?? getNumberValue(value, "pageCount");
-	const result: Record<string, number> = {};
+		getNumberValue(metadata, "numPages") ??
+		getNumberValue(metadata, "pageCount") ??
+		getNumberValue(data, "numPages") ??
+		getNumberValue(data, "pageCount") ??
+		getNumberValue(value, "numPages") ??
+		getNumberValue(value, "pageCount");
+	const result: Record<string, string | number> = {};
 
 	if (creditsUsed !== null) {
 		result.creditsUsed = creditsUsed;
 	}
 
 	if (pageCount !== null) {
+		result.numPages = pageCount;
 		result.pageCount = pageCount;
+	}
+
+	if (title !== null) {
+		result.title = title;
+	}
+
+	if (sourceFile !== null) {
+		result.sourceFile = sourceFile;
 	}
 
 	return result;
@@ -150,4 +176,10 @@ function getNumberValue(value: unknown, key: string) {
 	const field = getRecordValue(value, key);
 
 	return typeof field === "number" ? field : null;
+}
+
+function getStringValue(value: unknown, key: string) {
+	const field = getRecordValue(value, key);
+
+	return typeof field === "string" && field.trim().length > 0 ? field : null;
 }
