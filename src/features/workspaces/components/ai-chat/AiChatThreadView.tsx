@@ -76,8 +76,8 @@ export default function AiChatThreadView({
 		<>
 			<Conversation className="min-h-0">
 				<ConversationContent
-					scrollClassName="min-h-0 overscroll-contain"
-					className="gap-5 px-4 pt-14 pb-5"
+					scrollClassName="min-h-0 overflow-hidden"
+					className="p-0"
 				>
 					<AiChatMessageList
 						isLoadingHistory={hasPersistedMessages && messages.length === 0}

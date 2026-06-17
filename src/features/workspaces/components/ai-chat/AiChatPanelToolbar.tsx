@@ -25,8 +25,8 @@ import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import { formatWorkspaceRecency } from "#/features/workspaces/model/display";
 import { cn } from "#/lib/utils";
 
-const floatingActionButtonClassName =
-	"size-8.5 text-muted-foreground hover:text-foreground";
+const toolbarIconButtonClassName =
+	"text-muted-foreground hover:text-foreground";
 
 interface AiChatPanelToolbarProps {
 	activeThreadId?: string;
@@ -71,94 +71,104 @@ export default function AiChatPanelToolbar({
 	};
 
 	return (
-		<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
-			<DropdownMenu open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className={floatingActionButtonClassName}
-							aria-label="Open chat history"
-						/>
-					}
+		<header className="shrink-0 bg-background/95">
+			<div className="flex h-12 items-center justify-end px-4">
+				<nav
+					className="flex shrink-0 items-center gap-1"
+					aria-label="AI chat actions"
 				>
-					<History className="size-4" aria-hidden="true" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-72">
-					<DropdownMenuGroup>
-						<DropdownMenuItem
-							disabled={isNewChatDisabled}
-							onClick={handleNewChat}
+					<DropdownMenu open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									className={toolbarIconButtonClassName}
+									aria-label="Open chat history"
+								/>
+							}
 						>
-							<Plus className="size-4" aria-hidden="true" />
-							New chat
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
-					{threads.length > 0 ? (
-						<>
-							<DropdownMenuSeparator />
+							<History className="size-3.5" aria-hidden="true" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-72">
 							<DropdownMenuGroup>
-								{threads.map((thread) => (
-									<div key={thread.id} className="group/thread-row relative">
-										<DropdownMenuItem
-											className={cn(
-												"min-w-0 items-start py-2 pr-9",
-												thread.id === activeThreadId && "bg-accent",
-											)}
-											onClick={() => handleSelectThread(thread.id)}
-										>
-											<span className="grid min-w-0 flex-1 gap-1">
-												<span className="truncate font-medium text-sm leading-none">
-													{thread.title}
-												</span>
-												<span className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs leading-none">
-													<span className="truncate">
-														{formatWorkspaceRecency(thread.lastActivityAt)}
-													</span>
-													<ThreadStatusBadge thread={thread} />
-												</span>
-											</span>
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											className="-translate-y-1/2 absolute top-1/2 right-1 size-7 justify-center p-0 text-muted-foreground opacity-0 hover:text-destructive hover:*:[svg]:text-destructive focus-visible:opacity-100 group-hover/thread-row:opacity-100"
-											onClick={() => handleDeleteThread(thread)}
-										>
-											<Trash2 className="size-3.5" aria-hidden="true" />
-											<span className="sr-only">Delete {thread.title}</span>
-										</DropdownMenuItem>
-									</div>
-								))}
+								<DropdownMenuItem
+									disabled={isNewChatDisabled}
+									onClick={handleNewChat}
+								>
+									<Plus className="size-4" aria-hidden="true" />
+									New chat
+								</DropdownMenuItem>
 							</DropdownMenuGroup>
-						</>
-					) : null}
-				</DropdownMenuContent>
-			</DropdownMenu>
+							{threads.length > 0 ? (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuGroup>
+										{threads.map((thread) => (
+											<div
+												key={thread.id}
+												className="group/thread-row relative"
+											>
+												<DropdownMenuItem
+													className={cn(
+														"min-w-0 items-start py-2 pr-9",
+														thread.id === activeThreadId && "bg-accent",
+													)}
+													onClick={() => handleSelectThread(thread.id)}
+												>
+													<span className="grid min-w-0 flex-1 gap-1">
+														<span className="truncate font-medium text-sm leading-none">
+															{thread.title}
+														</span>
+														<span className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs leading-none">
+															<span className="truncate">
+																{formatWorkspaceRecency(thread.lastActivityAt)}
+															</span>
+															<ThreadStatusBadge thread={thread} />
+														</span>
+													</span>
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													className="-translate-y-1/2 absolute top-1/2 right-1 size-7 justify-center p-0 text-muted-foreground opacity-0 hover:text-destructive hover:*:[svg]:text-destructive focus-visible:opacity-100 group-hover/thread-row:opacity-100"
+													onClick={() => handleDeleteThread(thread)}
+												>
+													<Trash2 className="size-3.5" aria-hidden="true" />
+													<span className="sr-only">Delete {thread.title}</span>
+												</DropdownMenuItem>
+											</div>
+										))}
+									</DropdownMenuGroup>
+								</>
+							) : null}
+						</DropdownMenuContent>
+					</DropdownMenu>
 
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				className={floatingActionButtonClassName}
-				aria-label={isMaximized ? "Restore AI chat" : "Maximize AI chat"}
-				onClick={isMaximized ? onRestore : onMaximize}
-			>
-				{isMaximized ? (
-					<Minimize2 className="size-4" />
-				) : (
-					<Maximize2 className="size-4" />
-				)}
-			</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className={toolbarIconButtonClassName}
+						aria-label={isMaximized ? "Restore AI chat" : "Maximize AI chat"}
+						onClick={isMaximized ? onRestore : onMaximize}
+					>
+						{isMaximized ? (
+							<Minimize2 className="size-3.5" />
+						) : (
+							<Maximize2 className="size-3.5" />
+						)}
+					</Button>
 
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				className={floatingActionButtonClassName}
-				aria-label="Close AI chat"
-				onClick={onClose}
-			>
-				<X className="size-4" />
-			</Button>
-		</div>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className={toolbarIconButtonClassName}
+						aria-label="Close AI chat"
+						onClick={onClose}
+					>
+						<X className="size-3.5" />
+					</Button>
+				</nav>
+			</div>
+		</header>
 	);
 }
 

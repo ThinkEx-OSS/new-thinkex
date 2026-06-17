@@ -137,7 +137,7 @@ function AiChatPanelLoading() {
 		<Conversation className="min-h-0">
 			<ConversationContent
 				scrollClassName="min-h-0 overscroll-contain"
-				className="gap-5 px-4 pt-14 pb-5"
+				className="gap-5 px-4 pt-5 pb-5"
 			>
 				<AiChatThreadSkeleton />
 			</ConversationContent>
