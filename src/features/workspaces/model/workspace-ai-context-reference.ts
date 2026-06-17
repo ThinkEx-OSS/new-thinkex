@@ -86,10 +86,7 @@ function getWorkspaceAiContextItemPath(
 	item: WorkspaceItem,
 	itemsById: ReadonlyMap<string, WorkspaceItem>,
 ) {
-	const breadcrumbItems = getWorkspaceBreadcrumbItems(
-		item,
-		itemsById instanceof Map ? itemsById : new Map(itemsById),
-	);
+	const breadcrumbItems = getWorkspaceBreadcrumbItems(item, itemsById);
 	const relativePath = breadcrumbItems.reduce(
 		(path, entry) => joinWorkspacePathSegment(path, entry.name),
 		"",

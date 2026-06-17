@@ -1,5 +1,5 @@
-import { Check, type LucideIcon, Search } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { Check, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "#/components/ui/button";
 import {
@@ -9,12 +9,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
-import {
-	filterWorkspaceItemTreePickerNodes,
-	type WorkspaceItemTreePickerNode,
-} from "#/features/workspaces/model/workspace-item-tree-picker";
+import type { WorkspaceItemTreePickerNode } from "#/features/workspaces/model/workspace-item-tree-picker";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceItemTreePickerDialogProps {
@@ -44,51 +40,24 @@ export function WorkspaceItemTreePickerDialog({
 	confirmLabel,
 	confirmDisabled = false,
 	confirming = false,
-	emptyMessage = "No matching folders.",
+	emptyMessage = "No folders.",
 	footerStart,
 	onOpenChange,
 	onSelectedValueChange,
 	onConfirm,
 }: WorkspaceItemTreePickerDialogProps) {
-	const [query, setQuery] = useState("");
-	const rows = getWorkspaceItemTreePickerRows(
-		filterWorkspaceItemTreePickerNodes(nodes, query),
-	);
+	const rows = getWorkspaceItemTreePickerRows(nodes);
 	const hasFooterStart = footerStart !== undefined && footerStart !== null;
-	const closePicker = (nextOpen: boolean) => {
-		if (!nextOpen) {
-			setQuery("");
-		}
-
-		onOpenChange(nextOpen);
-	};
 
 	return (
-		<Dialog open={open} onOpenChange={closePicker}>
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="gap-0 p-0 sm:max-w-lg">
 				<DialogHeader className="px-5 pt-5 pr-12 pb-4">
 					<DialogTitle>{title}</DialogTitle>
 				</DialogHeader>
 
-				<div className="px-5 pb-4">
-					<div className="relative">
-						<Search
-							className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<Input
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-							placeholder="Search folders"
-							className="h-8 pl-8"
-							aria-label="Search folders"
-							autoFocus
-						/>
-					</div>
-				</div>
-
 				<ul
-					className="flex max-h-80 flex-col gap-1 overflow-y-auto border-y px-5 py-3"
+					className="flex max-h-80 flex-col gap-1 overflow-y-auto px-5 pb-3"
 					aria-label={title}
 				>
 					{rows.length > 0 ? (
@@ -120,17 +89,14 @@ export function WorkspaceItemTreePickerDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => closePicker(false)}
+							onClick={() => onOpenChange(false)}
 						>
 							Cancel
 						</Button>
 						<Button
 							type="button"
 							disabled={confirmDisabled || confirming}
-							onClick={() => {
-								setQuery("");
-								onConfirm();
-							}}
+							onClick={onConfirm}
 						>
 							{confirmLabel}
 						</Button>
@@ -140,7 +106,6 @@ export function WorkspaceItemTreePickerDialog({
 		</Dialog>
 	);
 }
-
 function WorkspaceItemTreePickerRow({
 	node,
 	rootIcon,

@@ -35,14 +35,12 @@ export default function WorkspaceContextActions({
 
 	return (
 		<div className="flex shrink-0 items-center gap-1">
+			<WorkspaceSearchAction hotkey={searchHotkey} onSearch={onSearch} />
 			{showBrowseActions ? (
-				<>
-					<WorkspaceSearchAction hotkey={searchHotkey} onSearch={onSearch} />
-					<WorkspaceCreateMenu
-						parentId={createParentId}
-						onCreateItem={onCreateItem}
-					/>
-				</>
+				<WorkspaceCreateMenu
+					parentId={createParentId}
+					onCreateItem={onCreateItem}
+				/>
 			) : null}
 			{onCloseItemView ? (
 				<Button

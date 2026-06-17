@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import type { ComponentType } from "react";
+import { type ComponentType, useState } from "react";
 
 import {
 	Breadcrumb,
@@ -18,6 +18,7 @@ import {
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
+import { WorkspaceSearchDialog } from "#/features/workspaces/components/WorkspaceSearchDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
 import type {
 	WorkspaceItemType,
@@ -39,7 +40,6 @@ const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
 const breadcrumbCurrentClassName = `${breadcrumbContentClassName} text-foreground`;
 const breadcrumbLinkClassName = `${breadcrumbContentClassName} rounded-sm border-0 bg-transparent p-0 font-[inherit] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0`;
 const currentCrumbLabelClassName = "[text-shadow:0.025em_0_0_currentColor]";
-const openWorkspaceSearch = () => undefined;
 
 interface WorkspaceContextBarProps {
 	workspace: WorkspaceSummary;
@@ -66,6 +66,7 @@ export default function WorkspaceContextBar({
 	onNavigateToItem,
 }: WorkspaceContextBarProps) {
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
+	const [searchOpen, setSearchOpen] = useState(false);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
 	const createParentId = getWorkspaceBrowseParentId(activeItem);
 	const {
@@ -86,6 +87,7 @@ export default function WorkspaceContextBar({
 	const searchHotkey = formatAppHotkey(
 		getAppHotkey("workspace.search.open").hotkey,
 	);
+	const openWorkspaceSearch = () => setSearchOpen(true);
 
 	useAppHotkey("workspace.search.open", () => {
 		openWorkspaceSearch();
@@ -181,6 +183,13 @@ export default function WorkspaceContextBar({
 					onMoved={clearMovingItem}
 				/>
 			) : null}
+			<WorkspaceSearchDialog
+				open={searchOpen}
+				items={workspaceItems}
+				activeItem={activeItem}
+				onOpenChange={setSearchOpen}
+				onOpenItem={onNavigateToItem}
+			/>
 		</>
 	);
 }

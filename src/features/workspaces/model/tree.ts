@@ -106,7 +106,7 @@ function hasSelectedWorkspaceAncestor<TItem extends WorkspaceTreeItem>(
 
 export function getWorkspaceBreadcrumbItems(
 	item: WorkspaceItem | undefined,
-	itemsById: Map<string, WorkspaceItem>,
+	itemsById: ReadonlyMap<string, WorkspaceItem>,
 ) {
 	if (!item) {
 		return [];

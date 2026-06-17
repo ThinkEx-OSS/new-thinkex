@@ -39,21 +39,6 @@ export function createWorkspaceFolderTreePickerNodes(input: {
 	];
 }
 
-export function filterWorkspaceItemTreePickerNodes(
-	nodes: readonly WorkspaceItemTreePickerNode[],
-	query: string,
-) {
-	const normalizedQuery = normalizeWorkspaceItemTreePickerSearch(query);
-
-	if (!normalizedQuery) {
-		return [...nodes];
-	}
-
-	return nodes
-		.map((node) => filterWorkspaceItemTreePickerNode(node, normalizedQuery))
-		.filter((node): node is WorkspaceItemTreePickerNode => Boolean(node));
-}
-
 export function getWorkspaceMoveTargetExcludedFolderIds(input: {
 	items: readonly WorkspaceItem[];
 	itemIds: readonly string[];
@@ -117,26 +102,6 @@ function groupWorkspaceFoldersByParentId(items: readonly WorkspaceItem[]) {
 	return childrenByParentId;
 }
 
-function filterWorkspaceItemTreePickerNode(
-	node: WorkspaceItemTreePickerNode,
-	normalizedQuery: string,
-): WorkspaceItemTreePickerNode | null {
-	const children = node.children
-		.map((child) => filterWorkspaceItemTreePickerNode(child, normalizedQuery))
-		.filter((child): child is WorkspaceItemTreePickerNode => Boolean(child));
-	const selfMatches =
-		normalizeWorkspaceItemTreePickerSearch(node.label).includes(
-			normalizedQuery,
-		) ||
-		normalizeWorkspaceItemTreePickerSearch(node.path).includes(normalizedQuery);
-
-	if (!selfMatches && children.length === 0) {
-		return null;
-	}
-
-	return { ...node, children };
-}
-
 function getWorkspaceItemPickerPath(parentPath: string, itemName: string) {
 	return parentPath === "/" ? `/${itemName}` : `${parentPath}/${itemName}`;
 }
@@ -152,11 +117,4 @@ function compareWorkspaceTreePickerItems(
 	}
 
 	return first.name.localeCompare(second.name);
-}
-
-function normalizeWorkspaceItemTreePickerSearch(value: string) {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, " ")
-		.trim();
 }
