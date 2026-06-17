@@ -81,7 +81,7 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
-	--workspace-chrome-active: oklch(0.96 0 0);
+	--workspace-chrome-active: oklch(0.965 0 0);
 	--workspace-ask-selection-background: rgb(37 99 235 / 35%);
 }
 
@@ -117,7 +117,7 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
-	--workspace-chrome-active: oklch(0.2 0 0);
+	--workspace-chrome-active: oklch(0.19 0 0);
 	--workspace-ask-selection-background: rgb(37 99 235 / 42%);
 }
 
@@ -158,8 +158,8 @@
 		border-bottom-left-radius: 0;
 		border-top-left-radius: var(--radius-md);
 		border-top-right-radius: var(--radius-md);
-		background: var(--workspace-chrome-active);
-		box-shadow: 0 12px 0 0 var(--workspace-chrome-active);
+		background: var(--background);
+		box-shadow: 0 12px 0 0 var(--background);
 	}
 
 	.workspace-tab-active::before,
@@ -177,7 +177,7 @@
 		background: radial-gradient(
 			circle at top left,
 			transparent 18px,
-			var(--workspace-chrome-active) 18px
+			var(--background) 18px
 		);
 	}
 
@@ -186,7 +186,7 @@
 		background: radial-gradient(
 			circle at top right,
 			transparent 18px,
-			var(--workspace-chrome-active) 18px
+			var(--background) 18px
 		);
 	}
 

@@ -79,7 +79,7 @@ export default function WorkspaceTopBar({
 	);
 
 	return (
-		<header className="sticky top-0 z-40 bg-background/95">
+		<header className="sticky top-0 z-40 bg-workspace-chrome-active">
 			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
 				<div className="flex min-w-0 flex-1 items-stretch gap-4">
 					<Link

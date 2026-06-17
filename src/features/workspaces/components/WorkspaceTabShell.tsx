@@ -37,7 +37,7 @@ export function WorkspaceTabShell({
 				variant === "active-attached" &&
 					"workspace-tab-active h-8 text-foreground",
 				variant === "active" &&
-					"h-8 rounded-md border-transparent bg-workspace-chrome-active text-foreground",
+					"h-8 rounded-md border-transparent bg-background text-foreground",
 				variant === "idle" &&
 					"h-8 rounded-md border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
 				isProjected &&

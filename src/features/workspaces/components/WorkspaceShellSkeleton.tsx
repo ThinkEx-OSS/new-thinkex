@@ -28,7 +28,7 @@ export default function WorkspaceShellSkeleton() {
 
 export function WorkspaceSkeletonChrome() {
 	return (
-		<header className="sticky top-0 z-40 bg-background/95">
+		<header className="sticky top-0 z-40 bg-workspace-chrome-active">
 			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
 				<div className="flex min-w-0 flex-1 items-stretch gap-4">
 					<Link
@@ -59,7 +59,7 @@ export function WorkspaceSkeletonChrome() {
 
 function WorkspaceContextBarSkeleton() {
 	return (
-		<div className="flex h-11 items-center justify-between gap-3 bg-workspace-chrome-active px-4 text-sm">
+		<div className="flex h-11 items-center justify-between gap-3 bg-background px-4 text-sm">
 			<div className="flex min-w-0 items-center gap-1.5">
 				<Skeleton className="size-3.5 rounded-sm" />
 				<Skeleton className="h-4 w-36 rounded-sm" />
