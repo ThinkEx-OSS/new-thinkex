@@ -1,35 +1,36 @@
 # Local reference clones
 
-ThinkEx keeps upstream/reference repositories outside the app git repo so:
+ThinkEx keeps upstream/reference repositories in a sibling `references/` folder so:
 
-- `git status` stays clean
+- `git status` in `web/` stays clean
 - Cursor and agents can search real clone directories
 - Typecheck, lint, and React Doctor stay scoped to app code
 
 ## Layout
 
 ```text
-~/Downloads/
-  new-thinkex/                 ← this repo (open via workspace file)
-  new-thinkex-references/      ← local clones (embed-pdf-viewer, tiptap, etc.)
+~/Desktop/new-thinkex/
+  web/          ← this git repo
+  references/   ← local clones (embed-pdf-viewer, tiptap, etc.)
+  new-thinkex.code-workspace
 ```
 
 Do not use symlinks for reference clones. Cursor indexes real directories reliably; symlinked folders are often skipped.
 
 ## Setup
 
+From `web/`:
+
 ```bash
 pnpm references:setup
 ```
 
-Then open **`new-thinkex.code-workspace`** in Cursor (File → Open Workspace from File), not just the repo folder.
-
-The workspace file adds `../new-thinkex-references` as a second root named `references`.
+Then open **`../new-thinkex.code-workspace`** in Cursor (File → Open Workspace from File), not just the `web/` folder.
 
 ## Add a new reference clone
 
 ```bash
-git clone <repo-url> ../new-thinkex-references/<name>
+git clone <repo-url> ../references/<name>
 ```
 
 Examples already used in this project:
@@ -40,10 +41,10 @@ Examples already used in this project:
 
 ## Git and tooling notes
 
-- Reference clones keep their own `.git` history; the ThinkEx repo does not track them.
-- Workspace git settings only scan the app repo by default (`git.scanRepositories: ["."]`).
+- Reference clones keep their own `.git` history; the `web/` repo does not track them.
+- Workspace git settings only scan `web/` by default (`git.scanRepositories: ["web"]`).
 - Search/file watchers exclude heavy paths inside reference clones (`node_modules`, `.git`, `dist`).
-- App tooling (`tsconfig`, Biome, ESLint, React Doctor) excludes the sibling references directory.
+- App tooling (`tsconfig`, Biome, ESLint, React Doctor) excludes `../references`.
 
 ## Custom location
 
@@ -53,4 +54,4 @@ Override the target directory when running setup:
 REFERENCES_DIR="$HOME/dev/thinkex-references" pnpm references:setup
 ```
 
-Update `new-thinkex.code-workspace` if you change the default sibling path.
+Update `new-thinkex.code-workspace` if you change the default layout.

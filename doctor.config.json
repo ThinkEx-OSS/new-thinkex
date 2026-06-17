@@ -8,7 +8,7 @@
 			".wrangler/**",
 			"dist/**",
 			"node_modules/**",
-			"../new-thinkex-references/**",
+			"../references/**",
 			"tmp/**"
 		]
 	}

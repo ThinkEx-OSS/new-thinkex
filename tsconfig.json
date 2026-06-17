@@ -1,6 +1,6 @@
 {
 	"include": ["**/*.ts", "**/*.tsx"],
-	"exclude": ["../new-thinkex-references/**/*", ".reference/**/*"],
+	"exclude": ["../references/**/*", ".reference/**/*"],
 	"compilerOptions": {
 		"target": "ES2022",
 		"jsx": "react-jsx",
