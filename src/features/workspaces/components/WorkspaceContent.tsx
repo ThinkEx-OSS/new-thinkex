@@ -505,7 +505,7 @@ function WorkspaceItemView({
 					render={
 						<section
 							className={cn(
-								"flex h-full min-h-0 items-center justify-center bg-muted/20",
+								"flex h-full min-h-0 items-center justify-center bg-background",
 								surfaceClassName,
 							)}
 						/>
@@ -537,7 +537,7 @@ function WorkspaceItemView({
 
 function WorkspacePdfViewerSkeleton() {
 	return (
-		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-hidden bg-muted/20 px-4 text-center text-muted-foreground text-sm">
+		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-hidden bg-background px-4 text-center text-muted-foreground text-sm">
 			<Spinner className="size-4" />
 			<p>Loading PDF viewer...</p>
 		</div>
