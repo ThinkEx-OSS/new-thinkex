@@ -26,10 +26,6 @@ export default class ClientErrorBoundary extends Component<
 		console.error("Client render failed", error, errorInfo);
 	}
 
-	reset = () => {
-		this.setState({ error: null });
-	};
-
 	render() {
 		const { error } = this.state;
 
@@ -42,7 +38,7 @@ export default class ClientErrorBoundary extends Component<
 				message={
 					error.message || "Something went wrong while loading this page."
 				}
-				onReset={this.reset}
+				showRetry
 				homeLink={<a href="/">Back to home</a>}
 				stack={error.stack}
 			/>

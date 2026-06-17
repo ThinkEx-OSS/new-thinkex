@@ -12,7 +12,7 @@ interface ErrorFallbackScreenProps {
 	eyebrow?: string;
 	title?: string;
 	message: string;
-	onReset?: () => void;
+	showRetry?: boolean;
 	homeLink: ReactElement;
 	stack?: string;
 }
@@ -21,7 +21,7 @@ export default function ErrorFallbackScreen({
 	eyebrow = "Unexpected error",
 	title = "This page couldn't load",
 	message,
-	onReset,
+	showRetry = false,
 	homeLink,
 	stack,
 }: ErrorFallbackScreenProps) {
@@ -39,16 +39,16 @@ export default function ErrorFallbackScreen({
 					</div>
 
 					<div className="flex w-full max-w-xs flex-col gap-3">
-						{onReset ? (
-							<Button type="button" onClick={onReset}>
+						{showRetry ? (
+							<Button type="button" onClick={() => window.location.reload()}>
 								Try again
 							</Button>
 						) : null}
 						<Button
 							render={homeLink}
-							variant={onReset ? "ghost" : "default"}
+							variant={showRetry ? "ghost" : "default"}
 							className={
-								onReset
+								showRetry
 									? "text-muted-foreground hover:text-foreground"
 									: undefined
 							}

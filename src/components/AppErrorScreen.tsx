@@ -11,13 +11,13 @@ function getErrorMessage(error: ErrorComponentProps["error"]) {
 	return "Something went wrong while loading this page.";
 }
 
-export default function AppErrorScreen({ error, reset }: ErrorComponentProps) {
+export default function AppErrorScreen({ error }: ErrorComponentProps) {
 	const message = getErrorMessage(error);
 
 	return (
 		<ErrorFallbackScreen
 			message={message}
-			onReset={() => reset()}
+			showRetry
 			homeLink={<Link to="/">Back to home</Link>}
 			stack={error instanceof Error ? error.stack : undefined}
 		/>
