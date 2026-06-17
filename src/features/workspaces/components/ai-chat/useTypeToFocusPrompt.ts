@@ -3,13 +3,17 @@ import { useEffect, useRef } from "react";
 
 const ACTIVE_LAYER_SELECTOR = [
 	'[data-slot="alert-dialog-content"][data-open]',
+	'[data-slot="combobox-content"][data-open]',
 	'[data-slot="context-menu-content"][data-open]',
 	'[data-slot="dialog-content"][data-open]',
+	'[data-slot="drawer-content"][data-open]',
 	'[data-slot="dropdown-menu-content"][data-open]',
+	'[data-slot="popover-content"][data-open]',
 	'[data-slot="select-content"][data-open]',
+	'[data-slot="sheet-content"][data-open]',
 ].join(",");
-const PROMPT_TYPE_TO_FOCUS_SURFACE_SELECTOR =
-	"[data-prompt-type-to-focus-surface]";
+const EDITABLE_TARGET_SELECTOR =
+	"input, textarea, select, [contenteditable=''], [contenteditable='true']";
 
 export function useTypeToFocusPrompt({
 	enabled,
@@ -82,11 +86,17 @@ function shouldRouteTypingToPrompt(event: KeyboardEvent) {
 		return false;
 	}
 
-	const activeElement = document.activeElement;
-	return (
-		!activeElement ||
-		activeElement === document.body ||
-		activeElement === document.documentElement ||
-		activeElement.matches(PROMPT_TYPE_TO_FOCUS_SURFACE_SELECTOR)
-	);
+	if (isEditableEventTarget(document.activeElement)) {
+		return false;
+	}
+
+	return true;
+}
+
+function isEditableEventTarget(target: EventTarget | null) {
+	if (!(target instanceof Element)) {
+		return false;
+	}
+
+	return Boolean(target.closest(EDITABLE_TARGET_SELECTOR));
 }

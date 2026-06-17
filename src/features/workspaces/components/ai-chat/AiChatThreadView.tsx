@@ -25,7 +25,6 @@ export default function AiChatThreadView({
 	hasPersistedMessages,
 	modelId,
 	onModelChange,
-	onThreadActivated,
 	threadId,
 }: {
 	context: WorkspaceAiContextScope;
@@ -33,7 +32,6 @@ export default function AiChatThreadView({
 	hasPersistedMessages: boolean;
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
-	onThreadActivated?: () => void;
 	threadId: string;
 }) {
 	const chat = useWorkspaceAiChat({ modelId, threadId });
@@ -64,7 +62,6 @@ export default function AiChatThreadView({
 
 		if (didSend) {
 			clearDraftArtifacts(context.workspaceId);
-			onThreadActivated?.();
 		}
 
 		return didSend;

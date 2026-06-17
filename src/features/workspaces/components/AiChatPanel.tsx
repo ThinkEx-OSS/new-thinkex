@@ -13,6 +13,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
+import { Button } from "#/components/ui/button";
 import { scheduleAiChatThinkingLoaderPrewarm } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import {
 	AiChatAttachmentDropProvider,
@@ -61,7 +62,8 @@ function AiChatPanelLayout({
 		areThreadsReady,
 		deleteThreadDialog,
 		getThreadInspectorSnapshot,
-		isEnsuringDraftThread,
+		activeThread,
+		isCreatingThread,
 		isMaximized,
 		modelId,
 		onClose,
@@ -71,9 +73,7 @@ function AiChatPanelLayout({
 		onNewChat,
 		onRestore,
 		onSelectThread,
-		onThreadActivated,
-		selectedThread,
-		visibleThreadList,
+		threads,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
 	const setPanelRef = useCallback(
@@ -101,25 +101,29 @@ function AiChatPanelLayout({
 				isMaximized={isMaximized}
 				onClose={onClose}
 				onDeleteThread={onDeleteThread}
-				isNewChatDisabled={isEnsuringDraftThread}
+				isNewChatDisabled={isCreatingThread}
 				onNewChat={onNewChat}
 				onMaximize={onMaximize}
 				onRestore={onRestore}
 				onSelectThread={onSelectThread}
-				threads={visibleThreadList}
+				threads={threads}
 			/>
 
-			{!areThreadsReady || !activeThreadId ? (
+			{!areThreadsReady ? (
 				<AiChatPanelLoading />
+			) : !activeThreadId ? (
+				<AiChatPanelEmpty
+					isCreatingThread={isCreatingThread}
+					onNewChat={onNewChat}
+				/>
 			) : (
 				<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
 					<AiChatThreadView
 						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
-						hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
+						hasPersistedMessages={Boolean(activeThread?.lastUserMessageAt)}
 						modelId={modelId}
 						onModelChange={onModelChange}
-						onThreadActivated={onThreadActivated}
 						threadId={activeThreadId}
 					/>
 				</Suspense>
@@ -169,6 +173,35 @@ function AiChatPanelLayout({
 				</AlertDialogContent>
 			</AlertDialog>
 		</aside>
+	);
+}
+
+function AiChatPanelEmpty({
+	isCreatingThread,
+	onNewChat,
+}: {
+	isCreatingThread: boolean;
+	onNewChat: () => void;
+}) {
+	return (
+		<Conversation className="min-h-0">
+			<ConversationContent
+				scrollClassName="min-h-0 overscroll-contain"
+				className="items-center justify-center gap-3 px-4 py-8 text-center"
+			>
+				<p className="text-muted-foreground text-sm">
+					No chats yet. Start a new conversation.
+				</p>
+				<Button
+					type="button"
+					size="sm"
+					disabled={isCreatingThread}
+					onClick={onNewChat}
+				>
+					New chat
+				</Button>
+			</ConversationContent>
+		</Conversation>
 	);
 }
 

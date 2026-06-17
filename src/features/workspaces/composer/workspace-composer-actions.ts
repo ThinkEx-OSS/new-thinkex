@@ -5,7 +5,7 @@ import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-st
 
 type StageComposerFilesOptions = {
 	onError?: (error: {
-		code: "accept" | "max_file_size" | "max_files";
+		code: "accept" | "max_file_size" | "max_files" | "read";
 		message: string;
 	}) => void;
 	revealChat?: boolean;

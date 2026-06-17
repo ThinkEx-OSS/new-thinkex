@@ -53,7 +53,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		override chatStreamStallTimeoutMs = 90_000;
 		override sendReasoning = false;
 		private shouldRefreshSessionPrompt = false;
-		private readonly directoryRunStarts: number[] = [];
+		private activeRunStartedAt: number | undefined;
 		private readonly inspector = new AIThreadInspectorRecorder(this);
 
 		getModel(): LanguageModel {
@@ -101,11 +101,16 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				throw new Error("Chat thread not found");
 			}
 
-			this.directoryRunStarts.push(
-				await directory.recordThreadRunStarted(this.name, {
-					isUserMessage: !ctx.continuation,
-				}),
-			);
+			if (!ctx.continuation) {
+				this.activeRunStartedAt = await directory.recordThreadRunStarted(
+					this.name,
+					{
+						isUserMessage: true,
+					},
+				);
+
+				void this.keepAliveWhile(() => this._maybeGenerateThreadTitle());
+			}
 
 			const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
 			const system = getAIThreadSystemPromptForWorkspace(
@@ -145,31 +150,25 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		override async onChatResponse(result: ChatResponseResult) {
 			this.inspector.recordTurnFinished(result);
-			const startedAt = this.directoryRunStarts.shift();
 			const hasActiveConnections = Array.from(this.getConnections()).length > 0;
+			const startedAt = this.activeRunStartedAt;
+			const isTerminalTurn = !result.continuation;
+			const shouldCloseRun =
+				startedAt !== undefined &&
+				(isTerminalTurn ||
+					result.status === "error" ||
+					result.status === "aborted");
 
 			try {
 				const directory = await this.parentAgent(getUserAIStore());
-				if (startedAt !== undefined) {
+
+				if (shouldCloseRun) {
 					await directory.recordThreadRunFinished(this.name, result, {
 						startedAt,
 						viewed: hasActiveConnections,
+						errorMessage: result.error,
 					});
-				}
-
-				const shouldGenerateTitle =
-					result.status === "completed" &&
-					(await directory.shouldGenerateThreadTitle(this.name));
-
-				if (shouldGenerateTitle) {
-					try {
-						await directory.recordGeneratedThreadTitle(
-							this.name,
-							await this._generateTitleFromFirstUserMessage(),
-						);
-					} catch (error) {
-						console.warn("[AIThread] Failed to generate title", error);
-					}
+					this.activeRunStartedAt = undefined;
 				}
 			} catch (error) {
 				console.warn("[AIThread] Failed to update directory", error);
@@ -180,15 +179,19 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		override onChatError(error: unknown, ctx?: ChatErrorContext) {
 			this.inspector.recordTurnError(error);
-			const startedAt = ctx?.messagesPersisted
-				? this.directoryRunStarts.shift()
-				: undefined;
+			const startedAt =
+				ctx?.messagesPersisted && this.activeRunStartedAt !== undefined
+					? this.activeRunStartedAt
+					: undefined;
 			void this.keepAliveWhile(async () => {
 				try {
-					const directory = await this.parentAgent(getUserAIStore());
-					await directory.recordThreadRunFailed(this.name, error, {
-						startedAt,
-					});
+					if (startedAt !== undefined) {
+						const directory = await this.parentAgent(getUserAIStore());
+						await directory.recordThreadRunFailed(this.name, error, {
+							startedAt,
+						});
+						this.activeRunStartedAt = undefined;
+					}
 				} catch (metadataError) {
 					console.warn(
 						"[AIThread] Failed to clear directory run status",
@@ -227,6 +230,27 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			return directory.getThreadContext(this.name);
 		}
 
+		private async _maybeGenerateThreadTitle() {
+			const directory = await this.parentAgent(getUserAIStore());
+
+			if (!(await directory.shouldGenerateThreadTitle(this.name))) {
+				return;
+			}
+
+			try {
+				await directory.recordGeneratedThreadTitle(
+					this.name,
+					await generateAIThreadTitle({
+						env: this.env,
+						messages: await this.getMessages(),
+						sessionAffinity: this.sessionAffinity,
+					}),
+				);
+			} catch (error) {
+				console.warn("[AIThread] Failed to generate title", error);
+			}
+		}
+
 		private async _refreshSessionPromptIfNeeded() {
 			if (!this.shouldRefreshSessionPrompt) {
 				return;
@@ -239,14 +263,6 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			} catch (error) {
 				console.warn("[AIThread] Failed to refresh session prompt", error);
 			}
-		}
-
-		private async _generateTitleFromFirstUserMessage() {
-			return await generateAIThreadTitle({
-				env: this.env,
-				messages: await this.getMessages(),
-				sessionAffinity: this.sessionAffinity,
-			});
 		}
 	};
 }

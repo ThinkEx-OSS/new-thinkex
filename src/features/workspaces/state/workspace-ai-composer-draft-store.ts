@@ -1,15 +1,15 @@
-import type { FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import { useMemo } from "react";
 import { create } from "zustand";
-
+import type { FileAttachmentData } from "#/components/ai-elements/attachments";
 import {
 	normalizeWorkspaceSelectedQuote,
 	type WorkspaceSelectedQuote,
 } from "#/features/workspaces/model/workspace-selected-quotes";
 import { acceptIncomingFiles } from "#/lib/accept-files";
+import { readFileAsDataUrl } from "#/lib/read-file-as-data-url";
 
-export type WorkspaceAiComposerDraftFile = FileUIPart & { id: string };
+export type WorkspaceAiComposerDraftFile = FileAttachmentData;
 
 type AddWorkspaceAiComposerDraftFilesOptions = {
 	accept?: string;
@@ -19,7 +19,7 @@ type AddWorkspaceAiComposerDraftFilesOptions = {
 };
 
 type WorkspaceAiComposerDraftFileError = {
-	code: "accept" | "max_file_size" | "max_files";
+	code: "accept" | "max_file_size" | "max_files" | "read";
 	message: string;
 };
 
@@ -46,30 +46,51 @@ const EMPTY_DRAFT_FILES: WorkspaceAiComposerDraftFile[] = [];
 const EMPTY_DRAFT_QUOTES: WorkspaceSelectedQuote[] = [];
 
 export const useWorkspaceAiComposerDraftStore =
-	create<WorkspaceAiComposerDraftState>()((set) => ({
+	create<WorkspaceAiComposerDraftState>()((set, get) => ({
 		addFiles: (workspaceId, fileList, options) => {
-			set((state) => {
-				const current =
-					state.filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
-				const capped = acceptIncomingFiles([...fileList], {
-					accept: options?.accept,
-					currentCount: current.length,
-					maxFileSize: options?.maxFileSize,
-					maxFiles: options?.maxFiles,
-					onError: options?.onError,
-				});
+			const current =
+				get().filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
+			const capped = acceptIncomingFiles([...fileList], {
+				accept: options?.accept,
+				currentCount: current.length,
+				maxFileSize: options?.maxFileSize,
+				maxFiles: options?.maxFiles,
+				onError: options?.onError,
+			});
 
-				if (capped.length === 0) {
-					return state;
+			if (capped.length === 0) {
+				return;
+			}
+
+			const placeholders = capped.map(createLoadingDraftFile);
+
+			set((state) => ({
+				filesByWorkspaceId: {
+					...state.filesByWorkspaceId,
+					[workspaceId]: [...current, ...placeholders],
+				},
+			}));
+
+			for (const [index, file] of capped.entries()) {
+				const placeholder = placeholders[index];
+				if (!placeholder) {
+					continue;
 				}
 
-				return {
-					filesByWorkspaceId: {
-						...state.filesByWorkspaceId,
-						[workspaceId]: [...current, ...capped.map(createDraftFile)],
-					},
-				};
-			});
+				void readFileAsDataUrl(file)
+					.then((dataUrl) => {
+						set((state) =>
+							markDraftFileReady(state, workspaceId, placeholder.id, dataUrl),
+						);
+					})
+					.catch(() => {
+						set((state) => removeDraftFile(state, workspaceId, placeholder.id));
+						options?.onError?.({
+							code: "read",
+							message: `Could not read "${file.name}".`,
+						});
+					});
+			}
 		},
 		addQuote: (workspaceId, quote) =>
 			set((state) => {
@@ -113,24 +134,7 @@ export const useWorkspaceAiComposerDraftStore =
 		filesByWorkspaceId: {},
 		quotesByWorkspaceId: {},
 		removeFile: (workspaceId, fileId) =>
-			set((state) => {
-				const current =
-					state.filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
-				const removed = current.find((file) => file.id === fileId);
-				if (!removed) {
-					return state;
-				}
-
-				revokeDraftFileUrl(removed);
-
-				const next = current.filter((file) => file.id !== fileId);
-				return {
-					filesByWorkspaceId: {
-						...state.filesByWorkspaceId,
-						[workspaceId]: next.length > 0 ? next : undefined,
-					},
-				};
-			}),
+			set((state) => removeDraftFile(state, workspaceId, fileId)),
 		removeQuote: (workspaceId, quoteId) =>
 			set((state) => {
 				const current =
@@ -188,10 +192,6 @@ function clearFilesForWorkspace(
 		return state;
 	}
 
-	for (const file of current) {
-		revokeDraftFileUrl(file);
-	}
-
 	return {
 		...state,
 		filesByWorkspaceId: {
@@ -219,18 +219,64 @@ function clearQuotesForWorkspace(
 	};
 }
 
-function createDraftFile(file: File): WorkspaceAiComposerDraftFile {
+function createLoadingDraftFile(file: File): WorkspaceAiComposerDraftFile {
 	return {
 		filename: file.name,
 		id: nanoid(),
-		mediaType: file.type,
+		mediaType: file.type || "application/octet-stream",
+		status: "loading",
 		type: "file",
-		url: URL.createObjectURL(file),
 	};
 }
 
-function revokeDraftFileUrl(file: WorkspaceAiComposerDraftFile) {
-	if (file.url?.startsWith("blob:")) {
-		URL.revokeObjectURL(file.url);
+function markDraftFileReady(
+	state: WorkspaceAiComposerDraftState,
+	workspaceId: string,
+	fileId: string,
+	url: string,
+) {
+	const files = state.filesByWorkspaceId[workspaceId];
+	if (!files) {
+		return state;
 	}
+
+	const index = files.findIndex((file) => file.id === fileId);
+	if (index === -1) {
+		return state;
+	}
+
+	const nextFiles = [...files];
+	nextFiles[index] = {
+		...nextFiles[index],
+		status: "ready",
+		url,
+	};
+
+	return {
+		...state,
+		filesByWorkspaceId: {
+			...state.filesByWorkspaceId,
+			[workspaceId]: nextFiles,
+		},
+	};
+}
+
+function removeDraftFile(
+	state: WorkspaceAiComposerDraftState,
+	workspaceId: string,
+	fileId: string,
+) {
+	const current = state.filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
+	if (!current.some((file) => file.id === fileId)) {
+		return state;
+	}
+
+	const next = current.filter((file) => file.id !== fileId);
+	return {
+		...state,
+		filesByWorkspaceId: {
+			...state.filesByWorkspaceId,
+			[workspaceId]: next.length > 0 ? next : undefined,
+		},
+	};
 }

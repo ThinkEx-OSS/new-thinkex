@@ -1,5 +1,5 @@
 import { useAgent } from "agents/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
 	userAIAgentName,
@@ -18,7 +18,7 @@ interface UseWorkspaceAiChatThreadsOptions {
 export function useWorkspaceAiChatThreads({
 	workspaceId,
 }: UseWorkspaceAiChatThreadsOptions) {
-	const [isEnsuringDraftThread, setIsEnsuringDraftThread] = useState(false);
+	const [isCreatingThread, setIsCreatingThread] = useState(false);
 	const directory = useAgent<UserAIStoreState>({
 		agent: userAIAgentName,
 		basePath: userAIBasePath,
@@ -28,21 +28,20 @@ export function useWorkspaceAiChatThreads({
 		(thread) => thread.workspaceId === workspaceId,
 	);
 
-	const ensureDraftThread = async () => {
-		setIsEnsuringDraftThread(true);
+	const createThread = useCallback(async () => {
+		setIsCreatingThread(true);
 
 		try {
-			const thread = await directory.call<AIThreadSummary>(
-				"ensureDraftThread",
-				[{ workspaceId }],
-			);
-			setIsEnsuringDraftThread(false);
+			const thread = await directory.call<AIThreadSummary>("createThread", [
+				{ workspaceId },
+			]);
+			setIsCreatingThread(false);
 			return thread;
 		} catch (error) {
-			setIsEnsuringDraftThread(false);
+			setIsCreatingThread(false);
 			throw error;
 		}
-	};
+	}, [directory, workspaceId]);
 
 	const deleteThread = async (threadId: string) => {
 		await directory.call("deleteThread", [threadId]);
@@ -62,67 +61,15 @@ export function useWorkspaceAiChatThreads({
 	};
 
 	return {
+		createThread,
 		deleteThread,
 		directory,
 		getThreadInspectorSnapshot: import.meta.env.DEV
 			? getThreadInspectorSnapshot
 			: undefined,
-		isEnsuringDraftThread,
+		isCreatingThread,
 		isReady: directory.state?.isLoaded === true,
-		ensureDraftThread,
 		markThreadViewed,
 		threads,
 	};
-}
-
-export function findWorkspaceAiChatThread(
-	threads: AIThreadSummary[],
-	threadId: string | undefined,
-) {
-	if (!threadId) {
-		return undefined;
-	}
-
-	return threads.find((thread) => thread.id === threadId);
-}
-
-export function getWorkspaceAiChatThreadSelection(input: {
-	activeThreadId?: string;
-	isReady: boolean;
-	selectedDraftThreadId?: string;
-	threads: AIThreadSummary[];
-}) {
-	const draftThread = getDraftThread(input.threads);
-	const realThreads = getRealThreads(input.threads);
-	const activeThread = findWorkspaceAiChatThread(
-		input.threads,
-		input.activeThreadId,
-	);
-	const selectedDraftThread = findWorkspaceAiChatThread(
-		input.threads,
-		input.selectedDraftThreadId,
-	);
-	const activeRealThread =
-		activeThread && !isDraftThread(activeThread) ? activeThread : undefined;
-	const selectedThread = input.isReady
-		? (selectedDraftThread ?? activeRealThread ?? realThreads[0] ?? draftThread)
-		: undefined;
-
-	return {
-		draftThread,
-		realThreads,
-		selectedThread,
-	};
-}
-
-export function isDraftThread(thread: AIThreadSummary) {
-	return thread.lastUserMessageAt === null;
-}
-
-export function getDraftThread(threads: AIThreadSummary[]) {
-	return threads.find(isDraftThread);
-}
-
-export function getRealThreads(threads: AIThreadSummary[]) {
-	return threads.filter((thread) => !isDraftThread(thread));
 }

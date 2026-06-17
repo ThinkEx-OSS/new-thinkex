@@ -15,7 +15,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 			theme="system"
 			position="top-right"
 			closeButton
-			duration={6000}
+			duration={3000}
 			visibleToasts={4}
 			className="toaster group"
 			icons={{

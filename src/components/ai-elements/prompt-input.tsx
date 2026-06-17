@@ -6,7 +6,6 @@ import {
 	SquareIcon,
 	XIcon,
 } from "lucide-react";
-import { nanoid } from "nanoid";
 import type {
 	ChangeEventHandler,
 	ClipboardEventHandler,
@@ -18,14 +17,11 @@ import type {
 	KeyboardEventHandler,
 	ReactNode,
 } from "react";
+import { Children, createContext, use, useRef } from "react";
 import {
-	Children,
-	createContext,
-	use,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+	type FileAttachmentData,
+	toSendableFileParts,
+} from "#/components/ai-elements/attachments";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -52,32 +48,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip.tsx";
-import { acceptIncomingFiles } from "#/lib/accept-files";
 import { hasNativeFiles } from "#/lib/native-file-drag";
 import { cn } from "#/lib/utils.ts";
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
-	try {
-		const response = await fetch(url);
-		const blob = await response.blob();
-		// FileReader uses callback-based API, wrapping in Promise is necessary
-		// oxlint-disable-next-line eslint-plugin-promise(avoid-new)
-		return new Promise((resolve) => {
-			const reader = new FileReader();
-			// oxlint-disable-next-line eslint-plugin-unicorn(prefer-add-event-listener)
-			reader.onloadend = () => resolve(reader.result as string);
-			// oxlint-disable-next-line eslint-plugin-unicorn(prefer-add-event-listener)
-			reader.onerror = () => resolve(null);
-			reader.readAsDataURL(blob);
-		});
-	} catch {
-		return null;
-	}
-};
 
 function handlePromptInputDragOver(event: DragEvent<HTMLFormElement>) {
 	if (hasNativeFiles(event.dataTransfer)) {
@@ -89,8 +61,11 @@ function handlePromptInputDragOver(event: DragEvent<HTMLFormElement>) {
 // Attachment Context & Types
 // ============================================================================
 
+export type PromptInputAttachmentFile = FileAttachmentData;
+
 export interface AttachmentsContext {
-	files: (FileUIPart & { id: string })[];
+	files: PromptInputAttachmentFile[];
+	composerReady?: boolean;
 	add: (files: File[] | FileList) => void;
 	remove: (id: string) => void;
 	clear: () => void;
@@ -147,130 +122,41 @@ export type PromptInputProps = Omit<
 	HTMLAttributes<HTMLFormElement>,
 	"onSubmit" | "onError"
 > & {
-	// e.g., "image/*" or leave undefined for any
 	accept?: string;
+	attachments: Omit<AttachmentsContext, "openFileDialog">;
+	inputGroupClassName?: string;
 	multiple?: boolean;
-	// Minimal constraints
-	maxFiles?: number;
-	// bytes
-	maxFileSize?: number;
-	onError?: (err: {
-		code: "max_files" | "max_file_size" | "accept";
-		message: string;
-	}) => void;
 	onSubmit: (
 		message: PromptInputMessage,
 		event: FormEvent<HTMLFormElement>,
 	) => boolean | undefined | Promise<boolean | undefined>;
-	inputGroupClassName?: string;
-	attachments?: Omit<AttachmentsContext, "openFileDialog">;
 };
 
 export const PromptInput = ({
-	className,
-	inputGroupClassName,
 	accept,
-	attachments: externalAttachments,
-	multiple,
-	maxFiles,
-	maxFileSize,
-	onError,
-	onSubmit,
+	attachments,
+	className,
 	children,
+	inputGroupClassName,
+	multiple,
+	onSubmit,
 	...props
 }: PromptInputProps) => {
 	const inputRef = useRef<HTMLInputElement | null>(null);
-	const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
-	const filesRef = useRef(items);
-
-	useEffect(() => {
-		filesRef.current = items;
-	}, [items]);
 
 	const openFileDialog = () => {
 		inputRef.current?.click();
 	};
 
-	const add = (fileList: File[] | FileList) => {
-		setItems((prev) => {
-			const capped = acceptIncomingFiles([...fileList], {
-				accept,
-				currentCount: prev.length,
-				maxFileSize,
-				maxFiles,
-				onError,
-			});
-
-			if (capped.length === 0) {
-				return prev;
-			}
-
-			const next: (FileUIPart & { id: string })[] = [];
-			for (const file of capped) {
-				next.push({
-					filename: file.name,
-					id: nanoid(),
-					mediaType: file.type,
-					type: "file",
-					url: URL.createObjectURL(file),
-				});
-			}
-
-			return [...prev, ...next];
-		});
-	};
-
-	const remove = (id: string) => {
-		setItems((prev) => {
-			const found = prev.find((file) => file.id === id);
-			if (found?.url) {
-				URL.revokeObjectURL(found.url);
-			}
-			return prev.filter((file) => file.id !== id);
-		});
-	};
-
-	const clear = () => {
-		setItems((prev) => {
-			for (const file of prev) {
-				if (file.url) {
-					URL.revokeObjectURL(file.url);
-				}
-			}
-			return [];
-		});
-	};
-
-	useEffect(
-		() => () => {
-			for (const f of filesRef.current) {
-				if (f.url) {
-					URL.revokeObjectURL(f.url);
-				}
-			}
-		},
-		[],
-	);
-
 	const attachmentsCtx: AttachmentsContext = {
-		add,
-		clear,
-		files: items,
+		...attachments,
 		openFileDialog,
-		remove,
 	};
-	const activeAttachmentsCtx: AttachmentsContext = externalAttachments
-		? {
-				...externalAttachments,
-				openFileDialog,
-			}
-		: attachmentsCtx;
 
 	const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
 		if (event.currentTarget.files) {
-			activeAttachmentsCtx.add(event.currentTarget.files);
+			attachmentsCtx.add(event.currentTarget.files);
 		}
-		// Reset input value to allow selecting files that were previously removed
 		event.currentTarget.value = "";
 	};
 
@@ -280,7 +166,7 @@ export const PromptInput = ({
 			event.stopPropagation();
 		}
 		if (event.dataTransfer.files.length > 0) {
-			activeAttachmentsCtx.add(event.dataTransfer.files);
+			attachmentsCtx.add(event.dataTransfer.files);
 		}
 	};
 
@@ -291,50 +177,35 @@ export const PromptInput = ({
 		const formData = new FormData(form);
 		const text = (formData.get("message") as string) || "";
 
-		// Reset form immediately after capturing text to avoid race condition
-		// where user input during async blob conversion would be lost
 		form.reset();
 
+		if (attachmentsCtx.composerReady === false) {
+			return;
+		}
+
 		try {
-			// Convert blob URLs to data URLs asynchronously
-			const convertedFiles: FileUIPart[] = await Promise.all(
-				activeAttachmentsCtx.files.map(async ({ id: _id, ...item }) => {
-					if (item.url?.startsWith("blob:")) {
-						const dataUrl = await convertBlobUrlToDataUrl(item.url);
-						// If conversion failed, keep the original blob URL
-						return {
-							...item,
-							url: dataUrl ?? item.url,
-						};
-					}
-					return item;
-				}),
-			);
+			const sendFiles = toSendableFileParts(attachmentsCtx.files);
+			const result = onSubmit({ files: sendFiles, text }, event);
 
-			const result = onSubmit({ files: convertedFiles, text }, event);
-
-			// Handle both sync and async onSubmit
 			if (result instanceof Promise) {
 				try {
 					const accepted = await result;
 					if (accepted !== false) {
-						activeAttachmentsCtx.clear();
+						attachmentsCtx.clear();
 					}
 				} catch {
 					// Don't clear on error - user may want to retry
 				}
 			} else if (result !== false) {
-				// Sync function completed without throwing, clear inputs
-				activeAttachmentsCtx.clear();
+				attachmentsCtx.clear();
 			}
 		} catch {
 			// Don't clear on error - user may want to retry
 		}
 	};
 
-	// Render with or without local provider
-	const inner = (
-		<>
+	return (
+		<LocalAttachmentsContext.Provider value={attachmentsCtx}>
 			<input
 				accept={accept}
 				aria-label="Upload files"
@@ -362,12 +233,6 @@ export const PromptInput = ({
 					{children}
 				</InputGroup>
 			</form>
-		</>
-	);
-
-	return (
-		<LocalAttachmentsContext.Provider value={activeAttachmentsCtx}>
-			{inner}
 		</LocalAttachmentsContext.Provider>
 	);
 };
@@ -386,6 +251,7 @@ export type PromptInputTextareaProps = ComponentProps<
 >;
 
 export const PromptInputTextarea = ({
+	disabled,
 	onChange,
 	onKeyDown,
 	className,
@@ -394,12 +260,11 @@ export const PromptInputTextarea = ({
 }: PromptInputTextareaProps) => {
 	const attachments = usePromptInputAttachments();
 	const isComposingRef = useRef(false);
+	const composerReady = attachments.composerReady !== false;
 
 	const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
-		// Call the external onKeyDown handler first
 		onKeyDown?.(event);
 
-		// If the external handler prevented default, don't run internal logic
 		if (event.defaultPrevented) {
 			return;
 		}
@@ -413,7 +278,6 @@ export const PromptInputTextarea = ({
 			}
 			event.preventDefault();
 
-			// Check if the submit button is disabled before submitting
 			const { form } = event.currentTarget;
 			const submitButton = form?.querySelector(
 				'button[type="submit"]',
@@ -425,7 +289,6 @@ export const PromptInputTextarea = ({
 			form?.requestSubmit();
 		}
 
-		// Remove last attachment when Backspace is pressed and textarea is empty
 		if (
 			event.key === "Backspace" &&
 			event.currentTarget.value === "" &&
@@ -473,6 +336,7 @@ export const PromptInputTextarea = ({
 	return (
 		<InputGroupTextarea
 			className={cn("field-sizing-content max-h-48 min-h-16", className)}
+			disabled={disabled || !composerReady}
 			name="message"
 			onChange={onChange}
 			onCompositionEnd={handleCompositionEnd}
@@ -621,9 +485,6 @@ export const PromptInputActionMenuItem = ({
 }: PromptInputActionMenuItemProps) => (
 	<DropdownMenuItem className={cn(className)} {...props} />
 );
-
-// Note: Actions that perform side-effects (like opening a file dialog)
-// are provided in opt-in modules (e.g., prompt-input-attachments).
 
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
 	status?: ChatStatus;

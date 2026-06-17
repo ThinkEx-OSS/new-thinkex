@@ -1,5 +1,6 @@
 import { Bug, Mic, Plus } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
 	type AttachmentsContext,
@@ -70,6 +71,7 @@ function AiChatAttachmentButton() {
 		<PromptInputButton
 			aria-label="Add attachments"
 			className={TOOLBAR_ICON_BUTTON_CLASSNAME}
+			disabled={attachments.composerReady === false}
 			onClick={attachments.openFileDialog}
 		>
 			<Plus className={TOOLBAR_PLUS_ICON_SIZE} />
@@ -102,6 +104,10 @@ export default function AiChatPromptInput({
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const draftFiles = useWorkspaceAiComposerDraftFiles(context.workspaceId);
+	const attachmentsReady =
+		draftFiles.length === 0 ||
+		draftFiles.every((file) => file.status === "ready");
+	const composerReady = status === "ready" && attachmentsReady;
 	const addDraftFiles = useWorkspaceAiComposerDraftStore(
 		(state) => state.addFiles,
 	);
@@ -119,19 +125,19 @@ export default function AiChatPromptInput({
 		AI_CHAT_MODELS[0];
 
 	useTypeToFocusPrompt({
-		enabled: status === "ready",
+		enabled: composerReady,
 		setInput,
 		textareaRef,
 	});
 
 	const attachments: Omit<AttachmentsContext, "openFileDialog"> = {
 		add: (files) => {
-			addDraftFiles(
-				context.workspaceId,
-				files,
-				WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
-			);
+			addDraftFiles(context.workspaceId, files, {
+				...WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
+				onError: (error) => toast.error(error.message),
+			});
 		},
+		composerReady,
 		clear: () => clearDraftFiles(context.workspaceId),
 		files: draftFiles,
 		remove: (fileId) => removeDraftFile(context.workspaceId, fileId),
@@ -139,7 +145,7 @@ export default function AiChatPromptInput({
 
 	const handleSubmit = async (message: PromptInputMessage) => {
 		if (
-			status !== "ready" ||
+			!composerReady ||
 			(!message.text.trim() && message.files.length === 0)
 		) {
 			return false;
@@ -164,8 +170,6 @@ export default function AiChatPromptInput({
 				accept={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept}
 				attachments={attachments}
 				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
-				maxFileSize={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFileSize}
-				maxFiles={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFiles}
 				multiple
 				onSubmit={handleSubmit}
 			>

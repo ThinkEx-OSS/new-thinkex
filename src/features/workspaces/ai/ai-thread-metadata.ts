@@ -54,11 +54,8 @@ export interface AIThreadMetaRow {
 	archived_at: number | null;
 }
 
-export function getThreadTitle(now: number) {
-	return `Chat ${new Date(now).toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-	})}`;
+export function getThreadTitle() {
+	return "New chat";
 }
 
 export function normalizeGeneratedThreadTitle(value: string | undefined) {

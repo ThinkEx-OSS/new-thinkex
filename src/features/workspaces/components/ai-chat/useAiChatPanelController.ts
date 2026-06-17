@@ -1,14 +1,7 @@
-import { useEffect, useState } from "react";
-import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
+import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
-import {
-	getDraftThread,
-	getRealThreads,
-	getWorkspaceAiChatThreadSelection,
-	isDraftThread,
-	useWorkspaceAiChatThreads,
-} from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
+import { useWorkspaceAiChatThreads } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
 import {
 	useWorkspaceActiveAiChatThreadId,
 	useWorkspacePresentation,
@@ -28,7 +21,7 @@ export function useAiChatPanelController({
 	workspaceId,
 }: UseAiChatPanelControllerInput) {
 	const presentation = useWorkspacePresentation(workspaceId);
-	const activeThreadIdFromStore = useWorkspaceActiveAiChatThreadId(workspaceId);
+	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
 	const restorePresentation = useWorkspaceUiStore(
@@ -42,99 +35,96 @@ export function useAiChatPanelController({
 	);
 	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] =
 		useState(false);
-	const [selectedDraftThreadId, setSelectedDraftThreadId] = useState<string>();
 	const [threadPendingDeletion, setThreadPendingDeletion] =
 		useState<AiChatThreadForDialog>();
 	const [markingViewedThreadIds] = useState(() => new Set<string>());
 	const {
+		createThread,
 		deleteThread,
-		ensureDraftThread,
 		getThreadInspectorSnapshot,
-		isEnsuringDraftThread,
+		isCreatingThread,
 		isReady: areThreadsReady,
 		markThreadViewed,
 		threads,
 	} = useWorkspaceAiChatThreads({ workspaceId });
-	const { draftThread, realThreads, selectedThread } =
-		getWorkspaceAiChatThreadSelection({
-			activeThreadId: activeThreadIdFromStore,
-			isReady: areThreadsReady,
-			selectedDraftThreadId,
-			threads,
-		});
-	const activeThreadId = selectedThread?.id;
+	const activeThread = threads.find((thread) => thread.id === activeThreadId);
 	const isMaximized =
 		presentation.mode === "maximized" && presentation.pane.kind === "chat";
 
-	const selectThread = (threadId: string | undefined) => {
-		setActiveAiChatThread(workspaceId, threadId);
-	};
+	const selectThread = useCallback(
+		(threadId: string | undefined) => {
+			setActiveAiChatThread(workspaceId, threadId);
+		},
+		[setActiveAiChatThread, workspaceId],
+	);
 
-	const selectDraftThread = async (
-		candidateThread: AIThreadSummary | undefined,
-	) => {
-		if (candidateThread) {
-			setSelectedDraftThreadId(candidateThread.id);
+	const handleNewChat = useCallback(async () => {
+		if (isCreatingThread) {
 			return;
 		}
 
-		if (isEnsuringDraftThread) {
-			return;
+		try {
+			const thread = await createThread();
+			selectThread(thread.id);
+		} catch (error) {
+			console.warn("[AiChatPanel] Failed to create chat thread", error);
 		}
-
-		const thread = await ensureDraftThread();
-		setSelectedDraftThreadId(thread.id);
-	};
+	}, [createThread, isCreatingThread, selectThread]);
 
 	const handleDeleteThread = async (threadId: string) => {
 		const remainingThreads = threads.filter((thread) => thread.id !== threadId);
 
 		await deleteThread(threadId);
 
-		if (activeThreadId === threadId) {
-			const remainingRealThread = getRealThreads(remainingThreads)[0];
-
-			if (remainingRealThread) {
-				setSelectedDraftThreadId(undefined);
-				selectThread(remainingRealThread.id);
-				return;
-			}
-
-			await selectDraftThread(getDraftThread(remainingThreads));
+		if (activeThreadId !== threadId) {
+			return;
 		}
+
+		selectThread(remainingThreads[0]?.id);
 	};
 
 	useEffect(() => {
-		if (!areThreadsReady || draftThread || isEnsuringDraftThread) {
+		if (!areThreadsReady) {
 			return;
 		}
 
-		void ensureDraftThread().catch((error) => {
-			console.warn("[AiChatPanel] Failed to ensure draft chat thread", error);
-		});
-	}, [areThreadsReady, draftThread, ensureDraftThread, isEnsuringDraftThread]);
+		if (threads.length === 0) {
+			if (activeThreadId) {
+				selectThread(undefined);
+			}
+			return;
+		}
+
+		if (
+			!activeThreadId ||
+			!threads.some((thread) => thread.id === activeThreadId)
+		) {
+			selectThread(threads[0].id);
+		}
+	}, [activeThreadId, areThreadsReady, selectThread, threads]);
 
 	useEffect(() => {
-		if (!selectedThread?.hasUnreadCompletion) {
+		if (!activeThread?.hasUnreadCompletion) {
 			return;
 		}
 
-		if (markingViewedThreadIds.has(selectedThread.id)) {
+		if (markingViewedThreadIds.has(activeThread.id)) {
 			return;
 		}
 
-		markingViewedThreadIds.add(selectedThread.id);
-		void markThreadViewed(selectedThread.id).finally(() => {
-			markingViewedThreadIds.delete(selectedThread.id);
+		markingViewedThreadIds.add(activeThread.id);
+		void markThreadViewed(activeThread.id).finally(() => {
+			markingViewedThreadIds.delete(activeThread.id);
 		});
 	}, [
+		activeThread?.hasUnreadCompletion,
+		activeThread?.id,
 		markingViewedThreadIds,
 		markThreadViewed,
-		selectedThread?.hasUnreadCompletion,
-		selectedThread?.id,
 	]);
 
 	return {
+		activeThread,
 		activeThreadId,
 		areThreadsReady,
 		deleteThreadDialog: {
@@ -145,7 +135,7 @@ export function useAiChatPanelController({
 			thread: threadPendingDeletion,
 		},
 		getThreadInspectorSnapshot,
-		isEnsuringDraftThread,
+		isCreatingThread,
 		isMaximized,
 		modelId,
 		onClose: () => closeChatPanel(workspaceId),
@@ -155,18 +145,10 @@ export function useAiChatPanelController({
 		},
 		onMaximize: () => maximizeChat(workspaceId),
 		onModelChange: setModelId,
-		onNewChat: () => void selectDraftThread(draftThread),
+		onNewChat: () => void handleNewChat(),
 		onRestore: () => restorePresentation(workspaceId),
-		onSelectThread: (threadId: string) => {
-			setSelectedDraftThreadId(undefined);
-			selectThread(threadId);
-		},
-		onThreadActivated:
-			selectedThread && isDraftThread(selectedThread)
-				? () => selectThread(selectedThread.id)
-				: undefined,
-		selectedThread,
-		visibleThreadList: realThreads.map((thread) =>
+		onSelectThread: (threadId: string) => selectThread(threadId),
+		threads: threads.map((thread) =>
 			thread.id === activeThreadId
 				? { ...thread, hasUnreadCompletion: false }
 				: thread,

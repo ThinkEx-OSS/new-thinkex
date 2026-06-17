@@ -9,6 +9,7 @@ import {
 	AttachmentRemove,
 	Attachments,
 	type AttachmentVariant,
+	type FileAttachmentData,
 	getAttachmentLabel,
 	getMediaCategory,
 } from "#/components/ai-elements/attachments";
@@ -53,10 +54,15 @@ export function AiChatAttachmentItem({
 	);
 }
 
-export function getFileAttachmentData(
-	part: FileUIPart,
-): FileUIPart & { id: string } {
-	return { ...part, id: getFileAttachmentId(part) };
+export function getFileAttachmentData(part: FileUIPart): FileAttachmentData {
+	return {
+		filename: part.filename,
+		id: getFileAttachmentId(part),
+		mediaType: part.mediaType,
+		status: "ready",
+		type: "file",
+		url: part.url,
+	};
 }
 
 export function getSourceDocumentAttachmentData(
@@ -66,11 +72,7 @@ export function getSourceDocumentAttachmentData(
 }
 
 function getFileAttachmentId(part: FileUIPart): string {
-	if (part.url && !part.url.startsWith("blob:")) {
-		return part.url;
-	}
-
-	return `${part.filename ?? "attachment"}:${part.mediaType ?? "unknown"}:${part.url ?? "no-url"}`;
+	return part.url;
 }
 
 function getAiChatAttachmentVariant(data: AttachmentData): AttachmentVariant {
@@ -79,10 +81,11 @@ function getAiChatAttachmentVariant(data: AttachmentData): AttachmentVariant {
 
 function isPreviewableImageAttachment(
 	data: AttachmentData,
-): data is FileUIPart & { id: string } {
+): data is FileAttachmentData & { status: "ready"; url: string } {
 	return (
-		getMediaCategory(data) === "image" &&
 		data.type === "file" &&
+		data.status === "ready" &&
+		getMediaCategory(data) === "image" &&
 		Boolean(data.url)
 	);
 }
@@ -91,7 +94,7 @@ function AiChatImageAttachment({
 	data,
 	onRemove,
 }: {
-	data: FileUIPart & { id: string };
+	data: FileAttachmentData & { status: "ready"; url: string };
 	onRemove?: () => void;
 }) {
 	const [isOpen, setIsOpen] = useState(false);

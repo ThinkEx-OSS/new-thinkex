@@ -81,13 +81,11 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	@callable()
-	async ensureDraftThread(input: {
-		workspaceId: string;
-	}): Promise<AIThreadSummary> {
-		return this._ensureDraftThread(input);
+	async createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
+		return this._createThread(input);
 	}
 
-	private async _ensureDraftThread(input: {
+	private async _createThread(input: {
 		workspaceId: string;
 	}): Promise<AIThreadSummary> {
 		const workspaceId = input.workspaceId.trim();
@@ -101,15 +99,9 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			workspaceId,
 		});
 
-		const existingEmptyThread = this._getEmptyThreadSummary(workspaceId);
-
-		if (existingEmptyThread) {
-			return existingEmptyThread;
-		}
-
 		const id = nanoid(12);
 		const now = Date.now();
-		const title = getThreadTitle(now);
+		const title = getThreadTitle();
 
 		await this.subAgent(AIThread, id);
 
@@ -209,7 +201,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async recordThreadRunFinished(
 		threadId: string,
 		result: ChatResponseResult,
-		options: { startedAt: number; viewed: boolean },
+		options: { startedAt: number; viewed: boolean; errorMessage?: string },
 	): Promise<void> {
 		const now = Date.now();
 		const thread = await this._requireThreadMeta(threadId);
@@ -222,6 +214,10 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			lastAssistantMessageAt:
 				result.status === "completed" ? now : thread.last_assistant_message_at,
 			lastViewedAt: options.viewed ? now : thread.last_viewed_at,
+			errorMessage:
+				result.status === "error"
+					? normalizeThreadErrorMessage(options.errorMessage)
+					: null,
 		});
 		this._refreshState();
 	}
@@ -289,28 +285,6 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 	private _getThreadSummary(threadId: string) {
 		const thread = this._getThreadMeta(threadId);
-
-		return thread ? mapThreadMetaRow(thread) : null;
-	}
-
-	private _getEmptyThreadSummary(workspaceId: string) {
-		const registry = this.listSubAgents(AIThread);
-		const threadIds = new Set(registry.map((entry) => entry.name));
-		let thread: AIThreadMetaRow | null = null;
-
-		for (const row of this._getActiveThreadMetaRows()) {
-			if (
-				row.workspace_id !== workspaceId ||
-				row.last_user_message_at !== null ||
-				!threadIds.has(row.id)
-			) {
-				continue;
-			}
-
-			if (!thread || row.created_at > thread.created_at) {
-				thread = row;
-			}
-		}
 
 		return thread ? mapThreadMetaRow(thread) : null;
 	}

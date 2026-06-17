@@ -21,14 +21,24 @@ import {
 	HoverCardContent,
 	HoverCardTrigger,
 } from "#/components/ui/hover-card";
+import { Spinner } from "#/components/ui/spinner";
 import { cn } from "#/lib/utils";
 
 // ============================================================================
 // Types
 // ============================================================================
 
+export type FileAttachmentData = {
+	id: string;
+	type: "file";
+	filename?: string;
+	mediaType: string;
+	status: "loading" | "ready";
+	url?: string;
+};
+
 export type AttachmentData =
-	| (FileUIPart & { id: string })
+	| FileAttachmentData
 	| (SourceDocumentUIPart & { id: string });
 
 export type AttachmentMediaCategory =
@@ -87,6 +97,17 @@ export const getAttachmentLabel = (data: AttachmentData): string => {
 	const category = getMediaCategory(data);
 	return data.filename || (category === "image" ? "Image" : "Attachment");
 };
+
+export function toSendableFileParts(
+	files: readonly FileAttachmentData[],
+): FileUIPart[] {
+	return files
+		.filter(
+			(file): file is FileAttachmentData & { url: string } =>
+				file.status === "ready" && Boolean(file.url),
+		)
+		.map(({ id: _id, status: _status, ...part }) => part);
+}
 
 const renderAttachmentImage = (
 	url: string,
@@ -250,6 +271,10 @@ export const AttachmentPreview = ({
 	);
 
 	const renderContent = () => {
+		if (data.type === "file" && data.status === "loading") {
+			return <Spinner className={cn(iconSize, "text-muted-foreground")} />;
+		}
+
 		if (mediaCategory === "image" && data.type === "file" && data.url) {
 			return renderAttachmentImage(data.url, data.filename, variant === "grid");
 		}

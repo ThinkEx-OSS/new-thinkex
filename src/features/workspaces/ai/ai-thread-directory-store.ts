@@ -27,6 +27,7 @@ interface FinishThreadRunInput {
 	startedAt: number;
 	lastAssistantMessageAt: number | null;
 	lastViewedAt: number;
+	errorMessage: string | null;
 }
 
 export function ensureChatMetaStore(store: ChatMetaStore) {
@@ -152,7 +153,7 @@ export function markThreadRunFinished(
 			last_assistant_message_at = ${input.lastAssistantMessageAt},
 			last_viewed_at = ${input.lastViewedAt},
 			last_run_finished_at = ${input.now},
-			last_error_message = NULL,
+			last_error_message = ${input.errorMessage},
 			updated_at = ${input.now}
 		WHERE id = ${input.threadId}
 			AND archived_at IS NULL

@@ -22,12 +22,13 @@ export default function AiChatPromptSubmit({
 	const attachments = usePromptInputAttachments();
 	const isGenerating = status === "submitted" || status === "streaming";
 	const hasContent = Boolean(input.trim() || attachments.files.length > 0);
+	const composerReady = attachments.composerReady !== false;
 	const canStop = isGenerating && Boolean(onStop);
 
 	return (
 		<PromptInputSubmit
 			className={cn(SEND_BUTTON_SIZE, "rounded-full")}
-			disabled={isGenerating ? !canStop : !hasContent}
+			disabled={isGenerating ? !canStop : !hasContent || !composerReady}
 			status={status}
 			onStop={onStop}
 			type={isGenerating ? "button" : "submit"}

@@ -201,7 +201,6 @@ function WorkspaceBrowseContent({
 								ref={browseSurfaceRef}
 								className="flex h-full flex-col gap-5 overflow-y-auto px-4 py-3 outline-none"
 								aria-label="Workspace content"
-								data-prompt-type-to-focus-surface
 								tabIndex={-1}
 								{...marqueeSurfaceProps}
 							/>
