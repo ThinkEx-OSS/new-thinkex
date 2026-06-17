@@ -15,15 +15,13 @@ production Worker database path, not the normal local dev path.
 
 ## Local reference clones
 
-Upstream repos used while building ThinkEx live in `../references` and are
-opened through the parent multi-root workspace so git stays clean and Cursor
-can still search them.
+Upstream repos live in `../references` and are not tracked by this repo. Run setup, then open the parent workspace file:
 
 ```bash
 pnpm references:setup
 ```
 
-Then open `../new-thinkex.code-workspace` in Cursor. See [docs/references.md](docs/references.md).
+Open `../new-thinkex.code-workspace` as a multi-root workspace. To add another clone: `git clone <repo-url> ../references/<name>`.
 
 ## Configuration
 
