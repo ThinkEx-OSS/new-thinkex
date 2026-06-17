@@ -2,6 +2,7 @@ import { ScriptOnce } from "@tanstack/react-router";
 import { createContext, use, useEffect, useState } from "react";
 
 export type Theme = "dark" | "light" | "system";
+export type ResolvedTheme = Exclude<Theme, "system">;
 
 type ThemeProviderProps = {
 	children: React.ReactNode;
@@ -10,11 +11,13 @@ type ThemeProviderProps = {
 };
 
 type ThemeProviderState = {
+	resolvedTheme: ResolvedTheme;
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>({
+	resolvedTheme: "light",
 	theme: "system",
 	setTheme: () => {},
 });
@@ -26,19 +29,25 @@ function getThemeScript(storageKey: string, defaultTheme: Theme) {
 	return `(function(){try{var t=localStorage.getItem(${key});if(t!=='light'&&t!=='dark'&&t!=='system'){t=${fallback}}var d=matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;var e=document.documentElement;e.classList.add(r);e.style.colorScheme=r}catch(e){}})();`;
 }
 
+function resolveTheme(theme: Theme): ResolvedTheme {
+	if (theme === "system") {
+		return window.matchMedia("(prefers-color-scheme: dark)").matches
+			? "dark"
+			: "light";
+	}
+
+	return theme;
+}
+
 function applyTheme(theme: Theme) {
 	const root = document.documentElement;
 	root.classList.remove("light", "dark");
-
-	const resolved =
-		theme === "system"
-			? window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light"
-			: theme;
+	const resolved = resolveTheme(theme);
 
 	root.classList.add(resolved);
 	root.style.colorScheme = resolved;
+
+	return resolved;
 }
 
 function getStoredTheme(storageKey: string, defaultTheme: Theme) {
@@ -61,16 +70,19 @@ export function ThemeProvider({
 	const [theme, setThemeState] = useState<Theme>(() =>
 		getStoredTheme(storageKey, defaultTheme),
 	);
+	const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
+		typeof window === "undefined" ? "light" : resolveTheme(theme),
+	);
 
 	useEffect(() => {
-		applyTheme(theme);
+		setResolvedTheme(applyTheme(theme));
 	}, [theme]);
 
 	useEffect(() => {
 		if (theme !== "system") return;
 
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
-		const onChange = () => applyTheme("system");
+		const onChange = () => setResolvedTheme(applyTheme("system"));
 		media.addEventListener("change", onChange);
 
 		return () => media.removeEventListener("change", onChange);
@@ -82,7 +94,7 @@ export function ThemeProvider({
 	};
 
 	return (
-		<ThemeProviderContext value={{ theme, setTheme }}>
+		<ThemeProviderContext value={{ resolvedTheme, theme, setTheme }}>
 			<ScriptOnce>{getThemeScript(storageKey, defaultTheme)}</ScriptOnce>
 			{children}
 		</ThemeProviderContext>

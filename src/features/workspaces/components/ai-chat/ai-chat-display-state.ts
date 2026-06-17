@@ -10,25 +10,16 @@ export type AssistantPendingKind = "thinking" | "recovering";
 
 export type AssistantRowDisplay =
 	| { kind: "content"; parts: AiChatMessagePart[] }
-	| { kind: "pending"; pending: AssistantPendingKind }
 	| { kind: "empty-terminal"; canRegenerate: boolean }
 	| { kind: "hidden" };
 
-export interface AiChatLifecycle {
+export interface AiChatPresentation {
 	isBusy: boolean;
 	isRecovering: boolean;
 	isToolContinuation: boolean;
+	lastAssistantMessageId: string | undefined;
 	status: AiChatStatus;
-}
-
-export interface AiChatPresentation {
-	activeAssistantMessageId: string | undefined;
-	lifecycle: AiChatLifecycle;
-	regenerableAssistantMessageId: string | undefined;
-	requestErrorAssistantMessageId: string | undefined;
-	showEphemeralAwaitingFirstToken: boolean;
-	showEphemeralRecovering: boolean;
-	streamingAssistantMessageId: string | undefined;
+	tailPending: AssistantPendingKind | null;
 }
 
 export function deriveAiChatPresentation(
@@ -50,43 +41,28 @@ export function deriveAiChatPresentation(
 	const lastAssistantMessageId =
 		lastMessage?.role === "assistant" ? lastMessage.id : undefined;
 	const isBusy = isRecovering || isStreaming || isServerStreaming;
-	const showAwaitingFirstToken = status === "submitted" && !isToolContinuation;
-	const lifecycle: AiChatLifecycle = {
+	const awaitingFirstToken = status === "submitted" && !isToolContinuation;
+	const hasAssistantTail = lastMessage?.role === "assistant";
+	const assistantTailIsEmpty =
+		lastMessage?.role === "assistant" &&
+		getDisplayableParts(lastMessage).length === 0;
+	const tailPending = isRecovering
+		? hasAssistantTail && !assistantTailIsEmpty
+			? null
+			: "recovering"
+		: !isToolContinuation &&
+				(awaitingFirstToken ||
+					(isBusy && (!hasAssistantTail || assistantTailIsEmpty)))
+			? "thinking"
+			: null;
+
+	return {
 		isBusy,
 		isRecovering,
 		isToolContinuation,
+		lastAssistantMessageId,
 		status,
-	};
-	const activeAssistantMessageId = getActiveAssistantMessageId(
-		messages,
-		lifecycle,
-		showAwaitingFirstToken,
-	);
-	const streamingAssistantMessageId =
-		status === "streaming" && lastAssistantMessageId
-			? lastAssistantMessageId
-			: undefined;
-	const requestErrorAssistantMessageId =
-		status === "error" && lastAssistantMessageId
-			? lastAssistantMessageId
-			: undefined;
-	const regenerableAssistantMessageId =
-		status === "ready" && lastAssistantMessageId
-			? lastAssistantMessageId
-			: undefined;
-	const showEphemeralAwaitingFirstToken =
-		showAwaitingFirstToken && lastMessage?.role !== "assistant";
-	const showEphemeralRecovering =
-		isRecovering && lastMessage?.role !== "assistant";
-
-	return {
-		activeAssistantMessageId,
-		lifecycle,
-		regenerableAssistantMessageId,
-		requestErrorAssistantMessageId,
-		showEphemeralAwaitingFirstToken,
-		showEphemeralRecovering,
-		streamingAssistantMessageId,
+		tailPending,
 	};
 }
 
@@ -99,13 +75,13 @@ export function getAssistantRowDisplay(
 	}
 
 	const displayableParts = getDisplayableParts(message);
-	const isLastAssistant = message.id === presentation.activeAssistantMessageId;
-	const isRequestError =
-		message.id === presentation.requestErrorAssistantMessageId;
-	const isRegenerable =
-		message.id === presentation.regenerableAssistantMessageId;
+	const isLastAssistant = message.id === presentation.lastAssistantMessageId;
 
-	if (isRequestError && displayableParts.length === 0) {
+	if (
+		presentation.status === "error" &&
+		isLastAssistant &&
+		displayableParts.length === 0
+	) {
 		return { kind: "hidden" };
 	}
 
@@ -113,25 +89,18 @@ export function getAssistantRowDisplay(
 		return { kind: "content", parts: displayableParts };
 	}
 
-	if (isLastAssistant && shouldShowAssistantAsPending(message, presentation)) {
-		return {
-			kind: "pending",
-			pending: presentation.lifecycle.isRecovering ? "recovering" : "thinking",
-		};
-	}
-
 	if (
 		isLastAssistant &&
-		presentation.lifecycle.status === "ready" &&
-		!presentation.lifecycle.isBusy
+		presentation.status === "ready" &&
+		!presentation.isBusy
 	) {
 		return {
 			kind: "empty-terminal",
-			canRegenerate: Boolean(isRegenerable),
+			canRegenerate: true,
 		};
 	}
 
-	if (!presentation.lifecycle.isBusy) {
+	if (!presentation.isBusy) {
 		return {
 			kind: "empty-terminal",
 			canRegenerate: false,
@@ -145,10 +114,6 @@ export function getDisplayableParts(
 	message: AiChatMessage,
 ): AiChatMessagePart[] {
 	return message.parts.filter(isDisplayableMessagePart);
-}
-
-export function hasDisplayableContent(message: AiChatMessage): boolean {
-	return getDisplayableParts(message).length > 0;
 }
 
 export function isDisplayableMessagePart(part: AiChatMessagePart): boolean {
@@ -167,63 +132,8 @@ export function isDisplayableMessagePart(part: AiChatMessagePart): boolean {
 	if (
 		part.type === "file" ||
 		part.type === "source-url" ||
-		part.type === "source-document"
-	) {
-		return true;
-	}
-
-	if (part.type.startsWith("data-")) {
-		return true;
-	}
-
-	return false;
-}
-
-function getActiveAssistantMessageId(
-	messages: AiChatMessage[],
-	lifecycle: AiChatLifecycle,
-	showAwaitingFirstToken: boolean,
-) {
-	const lastMessage = messages.at(-1);
-
-	if (lastMessage?.role !== "assistant") {
-		return undefined;
-	}
-
-	if (
-		showAwaitingFirstToken ||
-		lifecycle.isRecovering ||
-		lifecycle.isBusy ||
-		lifecycle.status === "ready" ||
-		lifecycle.status === "error"
-	) {
-		return lastMessage.id;
-	}
-
-	return undefined;
-}
-
-function shouldShowAssistantAsPending(
-	message: AiChatMessage,
-	presentation: AiChatPresentation,
-) {
-	if (message.role !== "assistant" || hasDisplayableContent(message)) {
-		return false;
-	}
-
-	const { lifecycle } = presentation;
-
-	if (lifecycle.isRecovering) {
-		return true;
-	}
-
-	if (lifecycle.status === "submitted" && !lifecycle.isToolContinuation) {
-		return true;
-	}
-
-	if (
-		lifecycle.isBusy &&
-		message.id === presentation.streamingAssistantMessageId
+		part.type === "source-document" ||
+		part.type.startsWith("data-")
 	) {
 		return true;
 	}

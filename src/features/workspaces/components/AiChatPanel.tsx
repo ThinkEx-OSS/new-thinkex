@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -13,6 +13,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
+import { scheduleAiChatThinkingLoaderPrewarm } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
@@ -54,6 +55,10 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 		collisionDetector: workspaceAiContextCollisionDetector,
 		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
 	});
+
+	useEffect(() => {
+		return scheduleAiChatThinkingLoaderPrewarm();
+	}, []);
 
 	return (
 		<aside

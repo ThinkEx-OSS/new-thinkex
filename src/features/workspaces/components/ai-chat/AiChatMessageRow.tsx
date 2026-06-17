@@ -9,7 +9,6 @@ import {
 	MessageToolbar,
 } from "#/components/ai-elements/message";
 import { Button } from "#/components/ui/button";
-import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
 import {
 	type AssistantRowDisplay,
@@ -120,10 +119,6 @@ function AssistantMessageBody({
 				part={part}
 			/>
 		));
-	}
-
-	if (display.kind === "pending") {
-		return <AiChatAssistantPending pending={display.pending} />;
 	}
 
 	if (display.kind === "empty-terminal") {

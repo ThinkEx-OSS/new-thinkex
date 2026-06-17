@@ -14,6 +14,7 @@ import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMes
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import {
 	type AiChatPresentation,
+	type AssistantRowDisplay,
 	getAssistantRowDisplay,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
@@ -30,6 +31,17 @@ type SelectedText = {
 	text: string;
 };
 
+type AiChatListRow =
+	| {
+			display: AssistantRowDisplay | null;
+			message: AiChatMessage;
+			type: "message";
+	  }
+	| {
+			pending: NonNullable<AiChatPresentation["tailPending"]>;
+			type: "pending";
+	  };
+
 interface AiChatMessageListProps {
 	isLoadingHistory?: boolean;
 	messages: AiChatMessage[];
@@ -45,14 +57,9 @@ export default function AiChatMessageList({
 	presentation,
 	workspaceId,
 }: AiChatMessageListProps) {
-	const {
-		regenerableAssistantMessageId,
-		showEphemeralAwaitingFirstToken,
-		showEphemeralRecovering,
-		streamingAssistantMessageId,
-	} = presentation;
-	const hasEphemeralTail =
-		showEphemeralAwaitingFirstToken || showEphemeralRecovering;
+	const { lastAssistantMessageId, status, tailPending } = presentation;
+	const rows = getAiChatListRows(messages, presentation);
+	const hasPendingTail = tailPending !== null;
 	const listRef = useRef<HTMLDivElement>(null);
 	const virtualListRef = useRef<VListHandle>(null);
 	const initialBottomScrollAppliedRef = useRef(false);
@@ -64,15 +71,14 @@ export default function AiChatMessageList({
 		(state) => state.addSelectedMention,
 	);
 	const latestUserMessage = getLatestUserMessage(messages);
-	const latestUserMessageIndex = latestUserMessage
-		? messages.findIndex((message) => message.id === latestUserMessage.id)
-		: -1;
 	const latestUserMessageId = latestUserMessage?.id;
-	const ephemeralRowCount =
-		(showEphemeralRecovering ? 1 : 0) +
-		(showEphemeralAwaitingFirstToken ? 1 : 0);
-	const bottomRowIndex =
-		messages.length > 0 ? messages.length + ephemeralRowCount - 1 : -1;
+	const latestUserMessageIndex = latestUserMessageId
+		? rows.findIndex(
+				(row) =>
+					row.type === "message" && row.message.id === latestUserMessageId,
+			)
+		: -1;
+	const bottomRowIndex = rows.length - 1;
 	const pinnedSpacerMinHeight = Math.max(0, pinnedBlankSize - pinnedUserSize);
 	const pinnedSpacerStyle =
 		pinnedSpacerMinHeight > 0
@@ -88,9 +94,7 @@ export default function AiChatMessageList({
 			currentSize === nextSize ? currentSize : nextSize,
 		);
 	}, []);
-	const { lifecycle } = presentation;
-	const pinActive =
-		lifecycle.status === "submitted" || lifecycle.status === "streaming";
+	const pinActive = status === "submitted" || status === "streaming";
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -110,7 +114,7 @@ export default function AiChatMessageList({
 		}
 
 		if (bottomRowIndex < 0) {
-			if (!hasEphemeralTail) {
+			if (!hasPendingTail) {
 				pinnedUserMessageIdRef.current = null;
 				initialBottomScrollAppliedRef.current = true;
 			}
@@ -120,7 +124,7 @@ export default function AiChatMessageList({
 		pinnedUserMessageIdRef.current = latestUserMessageId ?? null;
 		virtualListRef.current?.scrollToIndex(bottomRowIndex, { align: "end" });
 		initialBottomScrollAppliedRef.current = true;
-	}, [bottomRowIndex, hasEphemeralTail, isLoadingHistory, latestUserMessageId]);
+	}, [bottomRowIndex, hasPendingTail, isLoadingHistory, latestUserMessageId]);
 
 	useEffect(() => {
 		if (
@@ -163,18 +167,10 @@ export default function AiChatMessageList({
 			);
 		}
 
-		if (showEphemeralRecovering) {
+		if (tailPending) {
 			return (
 				<AiChatMessageListFallback>
-					<AiChatAssistantPending pending="recovering" />
-				</AiChatMessageListFallback>
-			);
-		}
-
-		if (showEphemeralAwaitingFirstToken) {
-			return (
-				<AiChatMessageListFallback>
-					<AiChatAssistantPending pending="thinking" />
+					<AiChatAssistantPending pending={tailPending} />
 				</AiChatMessageListFallback>
 			);
 		}
@@ -198,11 +194,23 @@ export default function AiChatMessageList({
 				style={{ height: "100%" }}
 				bufferSize={600}
 			>
-				{messages.map((message, index) => {
-					const display = getAssistantRowDisplay(message, presentation);
-					const isLastMessage = index === messages.length - 1;
+				{rows.map((row, index) => {
+					if (row.type === "pending") {
+						return (
+							<div
+								key="assistant-pending"
+								className="pb-5"
+								style={pinnedSpacerStyle}
+							>
+								<AiChatAssistantPending pending={row.pending} />
+							</div>
+						);
+					}
+
+					const { display, message } = row;
+					const isLastMessage = index === rows.length - 1;
 					const applyPinnedSpacer =
-						!hasEphemeralTail && isLastMessage && message.role === "assistant";
+						!hasPendingTail && isLastMessage && message.role === "assistant";
 
 					return (
 						<div
@@ -217,24 +225,19 @@ export default function AiChatMessageList({
 						>
 							<AiChatMessageRow
 								display={display}
-								isRegenerable={message.id === regenerableAssistantMessageId}
-								isStreaming={message.id === streamingAssistantMessageId}
+								isRegenerable={
+									message.id === lastAssistantMessageId && status === "ready"
+								}
+								isStreaming={
+									message.id === lastAssistantMessageId &&
+									status === "streaming"
+								}
 								message={message}
 								onRegenerate={onRegenerateLastResponse}
 							/>
 						</div>
 					);
 				})}
-				{showEphemeralRecovering ? (
-					<div key="recovering" className="pb-5" style={pinnedSpacerStyle}>
-						<AiChatAssistantPending pending="recovering" />
-					</div>
-				) : null}
-				{showEphemeralAwaitingFirstToken ? (
-					<div key="thinking" className="pb-5" style={pinnedSpacerStyle}>
-						<AiChatAssistantPending pending="thinking" />
-					</div>
-				) : null}
 			</VList>
 			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
@@ -257,6 +260,36 @@ export default function AiChatMessageList({
 
 function AiChatMessageListFallback({ children }: { children: ReactNode }) {
 	return <div className="min-h-0 flex-1 px-4 pt-5 pb-5">{children}</div>;
+}
+
+function getAiChatListRows(
+	messages: AiChatMessage[],
+	presentation: AiChatPresentation,
+): AiChatListRow[] {
+	const rows: AiChatListRow[] = [];
+
+	for (const message of messages) {
+		const display = getAssistantRowDisplay(message, presentation);
+
+		if (display?.kind === "hidden") {
+			continue;
+		}
+
+		rows.push({
+			display,
+			message,
+			type: "message",
+		});
+	}
+
+	if (presentation.tailPending) {
+		rows.push({
+			pending: presentation.tailPending,
+			type: "pending",
+		});
+	}
+
+	return rows;
 }
 
 function getLatestUserMessage(messages: AiChatMessage[]) {

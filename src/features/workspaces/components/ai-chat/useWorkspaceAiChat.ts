@@ -56,17 +56,14 @@ export function useWorkspaceAiChat({
 		isStreaming,
 		isToolContinuation,
 	});
-	const { lifecycle } = presentation;
-	const showThinking = presentation.showEphemeralAwaitingFirstToken;
-	const canSend = status === "ready" && !lifecycle.isBusy;
-	const canStop = status === "submitted" || lifecycle.isBusy;
+	const canSend = status === "ready" && !presentation.isBusy;
+	const canStop = status === "submitted" || presentation.isBusy;
 	const inputStatus: AiChatStatus =
-		isRecovering || showThinking
+		presentation.tailPending || presentation.isRecovering
 			? "submitted"
-			: lifecycle.isBusy
+			: presentation.isBusy
 				? "streaming"
 				: status;
-	const messageStatus: AiChatStatus = lifecycle.isBusy ? "streaming" : status;
 
 	const sendMessage = (
 		message: AiChatSendMessage,
@@ -92,13 +89,10 @@ export function useWorkspaceAiChat({
 	return {
 		error,
 		inputStatus,
-		isRecovering,
-		messageStatus,
 		messages,
 		presentation,
 		regenerate,
 		sendMessage,
-		showThinking,
 		stop,
 	};
 }

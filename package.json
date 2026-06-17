@@ -57,6 +57,7 @@
 		"@embedpdf/plugin-tiling": "^2.14.4",
 		"@embedpdf/plugin-viewport": "^2.14.4",
 		"@embedpdf/plugin-zoom": "^2.14.4",
+		"@lottiefiles/dotlottie-react": "^0.18.10",
 		"@streamdown/cjk": "^1.0.3",
 		"@streamdown/math": "^1.0.2",
 		"@tailwindcss/vite": "^4.1.18",
