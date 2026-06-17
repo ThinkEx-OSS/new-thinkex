@@ -1,9 +1,8 @@
 import { Bug, Mic, Plus } from "lucide-react";
-import { lazy, type RefObject, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 
 import {
 	PromptInput,
-	PromptInputAttachmentDropTarget,
 	PromptInputBody,
 	PromptInputButton,
 	PromptInputFooter,
@@ -20,6 +19,7 @@ import {
 } from "#/components/ai-elements/prompt-input";
 import { Button, buttonVariants } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
+import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
 import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
 import {
@@ -73,12 +73,10 @@ function AiChatAttachmentButton() {
 
 interface AiChatPromptInputProps {
 	activeThreadId?: string;
-	attachmentDropTargetRef?: RefObject<HTMLElement | null>;
 	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	modelId?: AiChatModelId;
 	onModelChange?: (modelId: AiChatModelId) => void;
-	onAttachmentDragActiveChange?: (isActive: boolean) => void;
 	onSubmit?: (message: PromptInputMessage) => boolean | Promise<boolean>;
 	onStop?: () => void;
 	status?: AiChatStatus;
@@ -86,11 +84,9 @@ interface AiChatPromptInputProps {
 
 export default function AiChatPromptInput({
 	activeThreadId,
-	attachmentDropTargetRef,
 	context,
 	getInspectorSnapshot,
 	modelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-	onAttachmentDragActiveChange,
 	onModelChange,
 	onSubmit,
 	onStop,
@@ -143,12 +139,7 @@ export default function AiChatPromptInput({
 				multiple
 				onSubmit={handleSubmit}
 			>
-				{attachmentDropTargetRef ? (
-					<PromptInputAttachmentDropTarget
-						targetRef={attachmentDropTargetRef}
-						onActiveChange={onAttachmentDragActiveChange}
-					/>
-				) : null}
+				<AiChatAttachmentDropBridge />
 				<PromptInputHeader className={PROMPT_INPUT_HEADER_PADDING}>
 					<AiChatPromptContextBar context={context} />
 				</PromptInputHeader>

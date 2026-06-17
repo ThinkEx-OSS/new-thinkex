@@ -17,7 +17,6 @@ import type {
 	HTMLAttributes,
 	KeyboardEventHandler,
 	ReactNode,
-	RefObject,
 } from "react";
 import {
 	Children,
@@ -104,13 +103,6 @@ function handlePromptInputDragOver(event: DragEvent<HTMLFormElement>) {
 	}
 }
 
-function isPromptInputLocalDropEvent(event: Event) {
-	return (
-		event.target instanceof Element &&
-		Boolean(event.target.closest("[data-prompt-input-local-drop-target]"))
-	);
-}
-
 // ============================================================================
 // Attachment Context & Types
 // ============================================================================
@@ -138,104 +130,6 @@ export const usePromptInputAttachments = () => {
 	}
 	return context;
 };
-
-export interface PromptInputAttachmentDropTargetProps {
-	targetRef: RefObject<HTMLElement | null>;
-	onActiveChange?: (isActive: boolean) => void;
-}
-
-export function PromptInputAttachmentDropTarget({
-	targetRef,
-	onActiveChange,
-}: PromptInputAttachmentDropTargetProps) {
-	const { add } = usePromptInputAttachments();
-
-	useEffect(() => {
-		const target = targetRef.current;
-		if (!target) {
-			return;
-		}
-
-		const setActive = (isActive: boolean) => {
-			onActiveChange?.(isActive);
-		};
-		const shouldHandleExternalDropEvent = (event: globalThis.DragEvent) => {
-			if (isPromptInputLocalDropEvent(event)) {
-				setActive(false);
-				return false;
-			}
-
-			return true;
-		};
-		const handleDragEnter = (event: globalThis.DragEvent) => {
-			if (
-				!shouldHandleExternalDropEvent(event) ||
-				!event.dataTransfer ||
-				!hasNativeFiles(event.dataTransfer)
-			) {
-				return;
-			}
-
-			event.preventDefault();
-			event.dataTransfer.dropEffect = "copy";
-			setActive(true);
-		};
-		const handleDragOver = (event: globalThis.DragEvent) => {
-			if (
-				!shouldHandleExternalDropEvent(event) ||
-				!event.dataTransfer ||
-				!hasNativeFiles(event.dataTransfer)
-			) {
-				return;
-			}
-
-			event.preventDefault();
-			event.dataTransfer.dropEffect = "copy";
-			setActive(true);
-		};
-		const handleDragLeave = (event: globalThis.DragEvent) => {
-			if (
-				event.relatedTarget instanceof Node &&
-				target.contains(event.relatedTarget)
-			) {
-				return;
-			}
-
-			setActive(false);
-		};
-		const handleDrop = (event: globalThis.DragEvent) => {
-			if (
-				!shouldHandleExternalDropEvent(event) ||
-				!event.dataTransfer ||
-				!hasNativeFiles(event.dataTransfer)
-			) {
-				return;
-			}
-
-			event.preventDefault();
-			setActive(false);
-
-			if (event.dataTransfer.files.length > 0) {
-				add(event.dataTransfer.files);
-			}
-		};
-
-		target.addEventListener("dragenter", handleDragEnter);
-		target.addEventListener("dragover", handleDragOver);
-		target.addEventListener("dragleave", handleDragLeave);
-		target.addEventListener("drop", handleDrop);
-
-		return () => {
-			target.removeEventListener("dragenter", handleDragEnter);
-			target.removeEventListener("dragover", handleDragOver);
-			target.removeEventListener("dragleave", handleDragLeave);
-			target.removeEventListener("drop", handleDrop);
-			setActive(false);
-		};
-	}, [add, onActiveChange, targetRef]);
-
-	return null;
-}
 
 export type PromptInputActionAddAttachmentsProps = ComponentProps<
 	typeof DropdownMenuItem

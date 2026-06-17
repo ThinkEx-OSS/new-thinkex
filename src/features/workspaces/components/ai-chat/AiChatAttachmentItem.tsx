@@ -56,13 +56,21 @@ export function AiChatAttachmentItem({
 export function getFileAttachmentData(
 	part: FileUIPart,
 ): FileUIPart & { id: string } {
-	return { ...part, id: part.url };
+	return { ...part, id: getFileAttachmentId(part) };
 }
 
 export function getSourceDocumentAttachmentData(
 	part: SourceDocumentUIPart,
 ): SourceDocumentUIPart & { id: string } {
 	return { ...part, id: part.sourceId };
+}
+
+function getFileAttachmentId(part: FileUIPart): string {
+	if (part.url && !part.url.startsWith("blob:")) {
+		return part.url;
+	}
+
+	return `${part.filename ?? "attachment"}:${part.mediaType ?? "unknown"}:${part.url ?? "no-url"}`;
 }
 
 function getAiChatAttachmentVariant(data: AttachmentData): AttachmentVariant {

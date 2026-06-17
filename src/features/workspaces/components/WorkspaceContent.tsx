@@ -1,5 +1,5 @@
-import { FolderOpen, Upload } from "lucide-react";
-import { type DragEvent, lazy, Suspense, useState } from "react";
+import { FolderOpen } from "lucide-react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 
 import {
 	ContextMenu,
@@ -22,6 +22,7 @@ import {
 } from "#/features/workspaces/components/useWorkspaceMarqueeSelection";
 import { useWorkspaceSelection } from "#/features/workspaces/components/useWorkspaceSelection";
 import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/components/WorkspaceCreateMenu";
+import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import {
 	DeleteWorkspaceItemAlert,
@@ -49,7 +50,7 @@ import {
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
 import { workspaceFileUploadTypeLabel } from "#/features/workspaces/workspace-file-uploads";
-import { hasNativeFiles } from "#/lib/native-file-drag";
+import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
@@ -133,10 +134,22 @@ function WorkspaceBrowseContent({
 	const [deleteSelectedAlertOpen, setDeleteSelectedAlertOpen] = useState(false);
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
+	const browseSurfaceRef = useRef<HTMLElement>(null);
 	const { uploadFiles } = useWorkspaceFileUpload();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
+	const handleNativeFileDrop = useCallback(
+		(files: FileList) => {
+			uploadFiles(Array.from(files), parentId);
+		},
+		[parentId, uploadFiles],
+	);
+	useNativeFileDropTarget({
+		onActiveChange: setIsNativeFileDropTarget,
+		onDrop: handleNativeFileDrop,
+		targetRef: browseSurfaceRef,
+	});
 	const {
 		clearSelection,
 		selectedItemIds,
@@ -155,34 +168,6 @@ function WorkspaceBrowseContent({
 		selectedItemIds,
 		setSelectedItemIds,
 	});
-	const handleNativeFileDrag = (event: DragEvent<HTMLElement>) => {
-		if (!hasNativeFiles(event.dataTransfer)) {
-			return;
-		}
-
-		event.preventDefault();
-		event.dataTransfer.dropEffect = "copy";
-		setIsNativeFileDropTarget(true);
-	};
-	const handleNativeFileDragLeave = (event: DragEvent<HTMLElement>) => {
-		if (
-			event.relatedTarget instanceof Node &&
-			event.currentTarget.contains(event.relatedTarget)
-		) {
-			return;
-		}
-
-		setIsNativeFileDropTarget(false);
-	};
-	const handleNativeFileDrop = (event: DragEvent<HTMLElement>) => {
-		if (!hasNativeFiles(event.dataTransfer)) {
-			return;
-		}
-
-		event.preventDefault();
-		setIsNativeFileDropTarget(false);
-		uploadFiles(Array.from(event.dataTransfer.files), parentId);
-	};
 	const handleAskAi = () => {
 		if (selectedItems.length === 0) {
 			return;
@@ -208,19 +193,16 @@ function WorkspaceBrowseContent({
 
 	return (
 		<>
-			<div className="relative h-[calc(100vh-5.75rem)]">
+			<div className="relative h-full min-h-0">
 				<ContextMenu>
 					<ContextMenuTrigger
 						render={
 							<section
+								ref={browseSurfaceRef}
 								className="flex h-full flex-col gap-5 overflow-y-auto px-4 py-3 outline-none"
 								aria-label="Workspace content"
 								data-prompt-type-to-focus-surface
 								tabIndex={-1}
-								onDragEnter={handleNativeFileDrag}
-								onDragOver={handleNativeFileDrag}
-								onDragLeave={handleNativeFileDragLeave}
-								onDrop={handleNativeFileDrop}
 								{...marqueeSurfaceProps}
 							/>
 						}
@@ -280,7 +262,12 @@ function WorkspaceBrowseContent({
 					onClear={clearSelection}
 				/>
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
-				{isNativeFileDropTarget ? <WorkspaceNativeFileDropOverlay /> : null}
+				{isNativeFileDropTarget ? (
+					<WorkspaceFileDropOverlay
+						description="Files will be added here."
+						title={`Drop ${workspaceFileUploadTypeLabel} to upload`}
+					/>
+				) : null}
 			</div>
 			<WorkspaceContentActionDialogs
 				actionDialogs={actionDialogs}
@@ -377,26 +364,6 @@ function WorkspaceMarqueeOverlay({
 	);
 }
 
-function WorkspaceNativeFileDropOverlay() {
-	return (
-		<div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-background/80 p-6 backdrop-blur-[2px]">
-			<div className="flex min-h-40 w-full max-w-md flex-col items-center justify-center gap-3 rounded-md border border-primary/40 border-dashed bg-card/90 px-6 py-8 text-center shadow-lg ring-1 ring-primary/15">
-				<div className="flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
-					<Upload className="size-5" aria-hidden="true" />
-				</div>
-				<div className="space-y-1">
-					<p className="font-medium text-foreground text-sm">
-						Drop {workspaceFileUploadTypeLabel} to upload
-					</p>
-					<p className="text-muted-foreground text-xs">
-						Files will be added here.
-					</p>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 function WorkspaceContentActionDialogs({
 	actionDialogs,
 	workspace,
@@ -466,7 +433,7 @@ function WorkspaceItemView({
 
 	if (isWorkspacePdfItem(item)) {
 		return (
-			<div className="h-[calc(100vh-5.75rem)]">
+			<div className="h-full min-h-0">
 				<ContextMenu>
 					<ContextMenuTrigger
 						render={<section className="h-full min-h-0 overflow-hidden" />}
@@ -497,7 +464,7 @@ function WorkspaceItemView({
 	} = getWorkspaceItemDisplay(item);
 
 	return (
-		<div className="h-[calc(100vh-5.75rem)]">
+		<div className="h-full min-h-0">
 			<ContextMenu>
 				<ContextMenuTrigger
 					render={

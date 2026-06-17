@@ -74,7 +74,7 @@ function WorkspaceContextBarSkeleton() {
 
 export function WorkspaceSkeletonContent() {
 	return (
-		<div className="h-[calc(100vh-5.75rem)] overflow-hidden">
+		<div className="h-full min-h-0 overflow-hidden">
 			<div className="space-y-5 px-4 py-3">
 				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
 					{workspaceSkeletonCardKeys.map((key) => (

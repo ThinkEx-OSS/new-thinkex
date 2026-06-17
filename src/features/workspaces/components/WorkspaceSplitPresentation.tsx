@@ -24,7 +24,7 @@ export default function WorkspaceSplitPresentation({
 		<ResizablePanelGroup
 			id="workspace-split-presentation"
 			orientation={direction}
-			className="min-h-[calc(100vh-5.75rem)]"
+			className="h-full min-h-0"
 		>
 			<ResizablePanel id={panes[0].id} minSize="18rem">
 				<WorkspacePaneRenderer

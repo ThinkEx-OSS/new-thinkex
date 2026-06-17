@@ -1,5 +1,4 @@
-import { Upload } from "lucide-react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -15,11 +14,16 @@ import {
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
 import { scheduleAiChatThinkingLoaderPrewarm } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
+import {
+	AiChatAttachmentDropProvider,
+	useAiChatAttachmentDrop,
+} from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
 import { useWorkspaceAiContextDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
+import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import {
 	WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
 	workspaceAiContextCollisionDetector,
@@ -32,6 +36,25 @@ interface AiChatPanelProps {
 }
 
 export default function AiChatPanel({ context }: AiChatPanelProps) {
+	const workspaceDrop = useWorkspaceAiContextDropTarget({
+		workspaceId: context.workspaceId,
+		collisionDetector: workspaceAiContextCollisionDetector,
+		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
+	});
+
+	return (
+		<AiChatAttachmentDropProvider>
+			<AiChatPanelLayout context={context} workspaceDrop={workspaceDrop} />
+		</AiChatAttachmentDropProvider>
+	);
+}
+
+function AiChatPanelLayout({
+	context,
+	workspaceDrop,
+}: AiChatPanelProps & {
+	workspaceDrop: ReturnType<typeof useWorkspaceAiContextDropTarget>;
+}) {
 	const {
 		activeThreadId,
 		areThreadsReady,
@@ -51,19 +74,13 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 		selectedThread,
 		visibleThreadList,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
-	const { isDropTarget, ref } = useWorkspaceAiContextDropTarget({
-		workspaceId: context.workspaceId,
-		collisionDetector: workspaceAiContextCollisionDetector,
-		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
-	});
-	const [isAttachmentDropTarget, setIsAttachmentDropTarget] = useState(false);
-	const attachmentDropTargetRef = useRef<HTMLElement | null>(null);
+	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
 	const setPanelRef = useCallback(
 		(element: HTMLElement | null) => {
-			attachmentDropTargetRef.current = element;
-			ref(element);
+			mergePanelRef(element);
+			workspaceDrop.ref(element);
 		},
-		[ref],
+		[mergePanelRef, workspaceDrop.ref],
 	);
 
 	useEffect(() => {
@@ -75,7 +92,7 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 			ref={setPanelRef}
 			className={cn(
 				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
-				isDropTarget && "ring-2 ring-primary/45 ring-inset",
+				workspaceDrop.isDropTarget && "ring-2 ring-primary/45 ring-inset",
 			)}
 		>
 			<AiChatPanelToolbar
@@ -96,12 +113,10 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 			) : (
 				<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
 					<AiChatThreadView
-						attachmentDropTargetRef={attachmentDropTargetRef}
 						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
 						hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
 						modelId={modelId}
-						onAttachmentDragActiveChange={setIsAttachmentDropTarget}
 						onModelChange={onModelChange}
 						onThreadActivated={onThreadActivated}
 						threadId={activeThreadId}
@@ -109,7 +124,12 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 				</Suspense>
 			)}
 
-			{isAttachmentDropTarget ? <AiChatAttachmentDropOverlay /> : null}
+			{isDropActive ? (
+				<WorkspaceFileDropOverlay
+					description="Images will be added to your next message."
+					title="Drop images to attach"
+				/>
+			) : null}
 
 			<AlertDialog
 				open={deleteThreadDialog.open}
@@ -148,26 +168,6 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 				</AlertDialogContent>
 			</AlertDialog>
 		</aside>
-	);
-}
-
-function AiChatAttachmentDropOverlay() {
-	return (
-		<div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-background/80 p-6 backdrop-blur-[2px]">
-			<div className="flex min-h-40 w-full max-w-md flex-col items-center justify-center gap-3 rounded-md border border-primary/40 border-dashed bg-card/90 px-6 py-8 text-center shadow-lg ring-1 ring-primary/15">
-				<div className="flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
-					<Upload className="size-5" aria-hidden="true" />
-				</div>
-				<div className="space-y-1">
-					<p className="font-medium text-foreground text-sm">
-						Drop images to attach
-					</p>
-					<p className="text-muted-foreground text-xs">
-						Images will be added to your next message.
-					</p>
-				</div>
-			</div>
-		</div>
 	);
 }
 

@@ -76,8 +76,7 @@ function DocumentEditorInstance({
 		editorProps: {
 			attributes: {
 				"aria-label": `${item.name} editor`,
-				class:
-					"workspace-document-prose min-h-[calc(100vh-5.75rem)] p-4 outline-none",
+				class: "workspace-document-prose min-h-full p-4 outline-none",
 			},
 		},
 	});
@@ -85,16 +84,16 @@ function DocumentEditorInstance({
 	useDocumentEditorToolbar(toolbarSlotId ?? item.id, editor);
 
 	return (
-		<section className="relative flex h-[calc(100vh-5.75rem)] min-h-0 flex-col bg-background">
+		<section className="relative flex h-full min-h-0 flex-col bg-background">
 			<div ref={setScrollTarget} className="min-h-0 flex-1 overflow-y-auto">
-				<div className="w-full pb-8">
+				<div className="min-h-full w-full pb-8">
 					<DocumentAskSelectionMenu
 						editor={editor}
 						itemId={item.id}
 						scrollTarget={scrollTarget}
 						workspaceId={workspaceId}
 					/>
-					<EditorContent editor={editor} />
+					<EditorContent className="min-h-full" editor={editor} />
 				</div>
 			</div>
 			<DocumentWordCount editor={editor} />
@@ -169,7 +168,7 @@ function getCollaborationUserName(user: Record<string, unknown>) {
 
 function DocumentEditorSkeleton() {
 	return (
-		<section className="flex h-[calc(100vh-5.75rem)] min-h-0 flex-col bg-background">
+		<section className="relative flex h-full min-h-0 flex-col bg-background">
 			<div className="min-h-0 flex-1 overflow-hidden p-4">
 				<div className="max-w-3xl space-y-5">
 					<Skeleton className="h-8 w-2/3 rounded-sm bg-muted/55" />
@@ -185,9 +184,7 @@ function DocumentEditorSkeleton() {
 					</div>
 				</div>
 			</div>
-			<div className="px-4 py-2">
-				<Skeleton className="h-3 w-28 rounded-sm bg-muted/45" />
-			</div>
+			<Skeleton className="absolute right-3 bottom-3 h-6 w-16 rounded-full bg-muted/45" />
 		</section>
 	);
 }
