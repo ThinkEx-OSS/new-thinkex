@@ -233,7 +233,7 @@ export function WorkspacePdfCaptureShortcuts({
 	onToggle: () => void;
 }) {
 	useWorkspacePaneHotkey(
-		"Mod+Shift+C",
+		"Mod+Shift+X",
 		(event) => {
 			event.preventDefault();
 			onToggle();
