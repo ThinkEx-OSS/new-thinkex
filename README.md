@@ -13,6 +13,18 @@ pnpm dev
 Local development uses the Infisical `DATABASE_URL` directly. Hyperdrive is the
 production Worker database path, not the normal local dev path.
 
+## Local reference clones
+
+Upstream repos used while building ThinkEx live in a sibling folder and are
+opened through a multi-root workspace so git stays clean and Cursor can still
+search them.
+
+```bash
+pnpm references:setup
+```
+
+Then open `new-thinkex.code-workspace` in Cursor. See [docs/references.md](docs/references.md).
+
 ## Configuration
 
 - `.infisical.json` is project metadata and can be committed.

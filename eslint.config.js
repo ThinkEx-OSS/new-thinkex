@@ -6,7 +6,7 @@ export default tseslint.config(
 		ignores: [
 			"dist/**",
 			".analyze/**",
-			"references/**",
+			"../new-thinkex-references/**",
 			"src/routeTree.gen.ts",
 			"worker-configuration.d.ts",
 		],

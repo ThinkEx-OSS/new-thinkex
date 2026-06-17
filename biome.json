@@ -20,8 +20,6 @@
 			"**/wrangler.jsonc",
 			"!.reference/**/*",
 			"!**/.reference/**/*",
-			"!references/**/*",
-			"!**/references/**/*",
 			"!**/src/styles.css",
 			"!!**/dist",
 			"!!**/.vite",
