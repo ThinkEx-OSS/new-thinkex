@@ -128,7 +128,7 @@ function WorkspaceItemTreePickerRow({
 			<button
 				type="button"
 				className={cn(
-					"flex h-9 min-w-0 flex-1 items-center gap-2 rounded-sm px-2 text-left text-sm outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40",
+					"flex h-9 min-w-0 flex-1 items-center gap-2 rounded-sm px-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/40 dark:hover:bg-accent/60",
 					selected && "bg-muted text-foreground",
 				)}
 				onClick={onSelect}

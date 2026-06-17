@@ -14,10 +14,10 @@ import type {
 	WorkspaceAiContextPresentationReference,
 	WorkspaceAiContextScope,
 	WorkspaceAiContextSnapshot,
-	WorkspaceAiContextSnapshotSelectedMention,
+	WorkspaceAiContextSnapshotSelectedQuote,
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
-import type { WorkspaceSelectedMention } from "./workspace-selected-mentions";
+import type { WorkspaceSelectedQuote } from "./workspace-selected-quotes";
 
 type WorkspaceAiContextSnapshotBuildContext = {
 	context: WorkspaceAiContextScope;
@@ -78,41 +78,41 @@ export function buildWorkspaceAiContextSnapshot(
 		openTabs: context.tabs.map((tab) =>
 			getWorkspaceAiContextTabReference(tab, buildContext),
 		),
-		selectedMentions: context.selectedMentions.map((mention, index) =>
-			getWorkspaceAiContextSelectedMentionReference({
+		selectedQuotes: context.selectedQuotes.map((quote, index) =>
+			getWorkspaceAiContextSelectedQuoteReference({
 				buildContext,
-				mention,
 				order: index + 1,
+				quote,
 			}),
 		),
 		contentIncluded: false,
 	};
 }
 
-function getWorkspaceAiContextSelectedMentionReference(input: {
+function getWorkspaceAiContextSelectedQuoteReference(input: {
 	buildContext: WorkspaceAiContextSnapshotBuildContext;
-	mention: WorkspaceSelectedMention;
 	order: number;
-}): WorkspaceAiContextSnapshotSelectedMention {
-	const { buildContext, mention, order } = input;
+	quote: WorkspaceSelectedQuote;
+}): WorkspaceAiContextSnapshotSelectedQuote {
+	const { buildContext, order, quote } = input;
 	const { context } = buildContext;
 
-	if (mention.source.kind === "assistant-response") {
+	if (quote.source.kind === "assistant-response") {
 		return {
-			label: mention.label,
+			label: quote.label,
 			order,
 			source: {
 				kind: "assistant-response",
 			},
-			text: mention.text,
+			text: quote.text,
 		};
 	}
 
-	if (mention.source.kind === "document-selection") {
-		const item = context.itemsById.get(mention.source.itemId);
+	if (quote.source.kind === "document-selection") {
+		const item = context.itemsById.get(quote.source.itemId);
 
 		return {
-			label: mention.label,
+			label: quote.label,
 			order,
 			source: {
 				kind: "document-selection",
@@ -123,14 +123,14 @@ function getWorkspaceAiContextSelectedMentionReference(input: {
 						})
 					: undefined,
 			},
-			text: mention.text,
+			text: quote.text,
 		};
 	}
 
-	const item = context.itemsById.get(mention.source.itemId);
+	const item = context.itemsById.get(quote.source.itemId);
 
 	return {
-		label: mention.label,
+		label: quote.label,
 		order,
 		source: {
 			kind: "pdf-selection",
@@ -140,9 +140,9 @@ function getWorkspaceAiContextSelectedMentionReference(input: {
 						item,
 					})
 				: undefined,
-			pageNumbers: mention.source.pageNumbers,
+			pageNumbers: quote.source.pageNumbers,
 		},
-		text: mention.text,
+		text: quote.text,
 	};
 }
 

@@ -22,7 +22,7 @@ export default function CreateWorkspaceCard({
 	return (
 		<Card
 			className={cn(
-				"group/card gap-0 overflow-hidden border-2 border-dashed border-muted-foreground/35 bg-muted/10 py-0 shadow-none ring-0 transition-all hover:border-primary/45 hover:bg-muted/20 dark:border-muted-foreground/30 dark:bg-muted/5 dark:hover:bg-muted/10",
+				"group/card gap-0 overflow-hidden border-2 border-dashed border-muted-foreground/35 bg-muted/10 py-0 shadow-none ring-0 transition-all hover:border-foreground/35 hover:bg-muted/20 dark:border-muted-foreground/30 dark:bg-muted/5 dark:hover:bg-muted/10",
 				className,
 			)}
 		>

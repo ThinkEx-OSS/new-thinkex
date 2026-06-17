@@ -4,7 +4,7 @@ import type {
 	WorkspaceAiContextItemViewState,
 	WorkspaceItemViewState,
 } from "#/features/workspaces/model/workspace-item-view-state";
-import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import type { WorkspaceSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import type { WorkspacePresentation } from "#/features/workspaces/state/workspace-ui-store";
 
 export type WorkspaceAiContextScope = {
@@ -16,7 +16,7 @@ export type WorkspaceAiContextScope = {
 	aiContextItemIds: string[];
 	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	presentation: WorkspacePresentation;
-	selectedMentions: WorkspaceSelectedMention[];
+	selectedQuotes: WorkspaceSelectedQuote[];
 	tabs: WorkspaceTab[];
 	workspaceId: string;
 	workspaceName: string;
@@ -33,11 +33,11 @@ export type WorkspaceAiContextSnapshot = {
 	};
 	markedItems: WorkspaceAiContextMarkedItem[];
 	openTabs: WorkspaceAiContextTabReference[];
-	selectedMentions: WorkspaceAiContextSnapshotSelectedMention[];
+	selectedQuotes: WorkspaceAiContextSnapshotSelectedQuote[];
 	contentIncluded: false;
 };
 
-export type WorkspaceAiContextSnapshotSelectedMention = {
+export type WorkspaceAiContextSnapshotSelectedQuote = {
 	label: string;
 	order: number;
 	source:

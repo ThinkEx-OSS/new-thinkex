@@ -17,7 +17,7 @@ import type {
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import { buildWorkspaceAiContextSnapshot } from "#/features/workspaces/model/workspace-ai-context";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 
 export default function AiChatThreadView({
 	context,
@@ -46,8 +46,8 @@ export default function AiChatThreadView({
 		sendMessage: sendChatMessage,
 		stop,
 	} = chat;
-	const clearSelectedMentions = useWorkspaceUiStore(
-		(state) => state.clearSelectedMentions,
+	const clearDraftArtifacts = useWorkspaceAiComposerDraftStore(
+		(state) => state.clearDraftArtifacts,
 	);
 	const sendMessage = (message: PromptInputMessage) => {
 		const chatMessage = getChatMessageFromPrompt(message);
@@ -63,7 +63,7 @@ export default function AiChatThreadView({
 		});
 
 		if (didSend) {
-			clearSelectedMentions(context.workspaceId);
+			clearDraftArtifacts(context.workspaceId);
 			onThreadActivated?.();
 		}
 

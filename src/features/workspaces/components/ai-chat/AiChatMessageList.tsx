@@ -19,12 +19,12 @@ import {
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
-import { createAssistantResponseSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
+import { createAssistantResponseSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import {
 	getRangeClientRect,
 	type SelectionRect,
 } from "#/features/workspaces/model/workspace-selection-geometry";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 type SelectedText = {
 	rect: SelectionRect;
@@ -67,9 +67,6 @@ export default function AiChatMessageList({
 	const [pinnedBlankSize, setPinnedBlankSize] = useState(0);
 	const [pinnedUserSize, setPinnedUserSize] = useState(0);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
-	const addSelectedMention = useWorkspaceUiStore(
-		(state) => state.addSelectedMention,
-	);
 	const latestUserMessage = getLatestUserMessage(messages);
 	const latestUserMessageId = latestUserMessage?.id;
 	const latestUserMessageIndex = latestUserMessageId
@@ -243,11 +240,12 @@ export default function AiChatMessageList({
 				<WorkspaceFloatingAskSelectionMenu
 					rect={selectedText.rect}
 					onAsk={() => {
-						addSelectedMention(
+						stageComposerQuote(
 							workspaceId,
-							createAssistantResponseSelectedMention({
+							createAssistantResponseSelectedQuote({
 								text: selectedText.text,
 							}),
+							{ revealChat: false },
 						);
 						window.getSelection()?.removeAllRanges();
 						setSelectedText(null);

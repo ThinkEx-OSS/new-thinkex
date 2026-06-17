@@ -1,3 +1,9 @@
+/**
+ * User-selectable workspace accent palette.
+ * These are content primitives for user customization — not app chrome semantics.
+ * App UI should use design-tokens.css (--background, --primary, etc.) instead.
+ */
+
 import type { WorkspaceColor } from "#/features/workspaces/contracts";
 
 interface WorkspaceColorDefinition {

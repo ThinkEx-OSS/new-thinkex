@@ -3,12 +3,12 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import { useEffect, useState } from "react";
 
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
-import { createDocumentSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
+import { createDocumentSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import {
 	type ClientPoint,
 	getPointerClientPoint,
 } from "#/features/workspaces/model/workspace-selection-geometry";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const DOCUMENT_ASK_BUBBLE_MENU_PLUGIN_KEY = "documentAskSelectionBubbleMenu";
 
@@ -23,9 +23,6 @@ export function DocumentAskSelectionMenu({
 	scrollTarget: HTMLElement | null;
 	workspaceId: string;
 }) {
-	const addSelectedMention = useWorkspaceUiStore(
-		(state) => state.addSelectedMention,
-	);
 	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
 		null,
 	);
@@ -96,14 +93,15 @@ export function DocumentAskSelectionMenu({
 						return;
 					}
 
-					addSelectedMention(
+					stageComposerQuote(
 						workspaceId,
-						createDocumentSelectedMention({
+						createDocumentSelectedQuote({
 							itemId,
 							text,
 						}),
 					);
-					editor.commands.blur();
+					editor.chain().setTextSelection(to).blur().run();
+					setSelectionPoint(null);
 				}}
 			/>
 		</BubbleMenu>

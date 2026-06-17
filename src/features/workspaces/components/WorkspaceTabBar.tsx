@@ -168,7 +168,7 @@ export default function WorkspaceTabBar({
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					className="shrink-0 text-muted-foreground hover:text-foreground"
+					className="shrink-0"
 					aria-label="Open new workspace tab"
 					onClick={onCreateRootTab}
 				>

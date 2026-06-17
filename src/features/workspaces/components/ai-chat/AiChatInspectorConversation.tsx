@@ -60,7 +60,7 @@ function ConversationMessage({ message }: { message: AIInspectorMessageView }) {
 		<article
 			className={cn(
 				"grid w-full min-w-0 max-w-4xl gap-2 overflow-hidden rounded-md border bg-background p-3",
-				isUser && "ml-auto w-full border-primary/30 bg-primary/5",
+				isUser && "ml-auto w-full border-border bg-muted",
 				isSystem && "border-muted-foreground/20 bg-muted/20",
 			)}
 		>

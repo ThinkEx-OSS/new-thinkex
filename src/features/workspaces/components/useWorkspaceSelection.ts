@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
-	selectWorkspaceSelectionItemIds,
+	useWorkspaceSelectionItemIds,
 	useWorkspaceSelectionStore,
 } from "#/features/workspaces/state/workspace-selection-store";
 
@@ -20,9 +20,7 @@ export function useWorkspaceSelection({
 	items,
 	workspaceId,
 }: UseWorkspaceSelectionInput) {
-	const storedSelectionItemIds = useWorkspaceSelectionStore(
-		selectWorkspaceSelectionItemIds(workspaceId),
-	);
+	const storedSelectionItemIds = useWorkspaceSelectionItemIds(workspaceId);
 	const clearStoredSelection = useWorkspaceSelectionStore(
 		(state) => state.clearSelection,
 	);
@@ -75,9 +73,7 @@ export function useWorkspaceSelectedItems({
 	itemsById,
 	workspaceId,
 }: UseWorkspaceSelectedItemsInput) {
-	const selectedItemIds = useWorkspaceSelectionStore(
-		selectWorkspaceSelectionItemIds(workspaceId),
-	);
+	const selectedItemIds = useWorkspaceSelectionItemIds(workspaceId);
 	const selectedItems: WorkspaceItem[] = [];
 
 	for (const itemId of selectedItemIds) {

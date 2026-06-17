@@ -17,11 +17,17 @@ import {
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { workspaceItemToolbarIconButtonClass } from "#/features/workspaces/components/workspace-item-toolbar-styles";
+import { cn } from "#/lib/utils";
 
 export function PdfToolbar({
+	capture,
 	fileName,
 	fileUrl,
 }: {
+	capture: {
+		isActive: boolean;
+		onToggle: () => void;
+	};
 	fileName: string;
 	fileUrl: string;
 }) {
@@ -40,8 +46,14 @@ export function PdfToolbar({
 				type="button"
 				variant="ghost"
 				size="sm"
-				className="h-8 gap-1.5 px-2.5 text-muted-foreground text-sm hover:bg-transparent hover:text-foreground"
-				disabled
+				className={cn(
+					"h-8 gap-1.5 px-2.5 text-sm",
+					capture.isActive
+						? "bg-blue-500/10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+				aria-pressed={capture.isActive}
+				onClick={capture.onToggle}
 			>
 				<Camera className="size-3.5" />
 				Capture

@@ -36,7 +36,7 @@ const WORKSPACE_ITEM_CARD_UNSELECTED_HOVER =
 const WORKSPACE_ITEM_CARD_SELECTED =
 	"data-[selected=true]:ring-2 data-[selected=true]:ring-white data-[selected=true]:ring-offset-2 data-[selected=true]:ring-offset-background data-[selected=true]:shadow-[0_0_0_2px_rgba(15,23,42,0.34),0_0_0_5px_rgba(15,23,42,0.08),0_16px_36px_rgba(15,23,42,0.20)] dark:data-[selected=true]:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_0_5px_rgba(255,255,255,0.08),0_16px_36px_rgba(0,0,0,0.45)]";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL =
-	"relative z-20 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
+	"relative z-20 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground dark:hover:bg-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50";
 const WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY =
 	"pointer-events-none opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100";
 
@@ -206,7 +206,7 @@ export default function WorkspaceItemCard({
 					!isFolderSortingTarget &&
 					"bg-muted/60",
 				showFolderDropAffordance &&
-					"ring-2 ring-primary/60 ring-offset-2 ring-offset-background",
+					"ring-2 ring-foreground/40 ring-offset-2 ring-offset-background",
 			)}
 			onContextMenu={(event) => event.stopPropagation()}
 		>
@@ -281,7 +281,7 @@ export default function WorkspaceItemCard({
 					aria-hidden="true"
 				>
 					<div className="flex items-center gap-2 rounded-md border bg-popover px-3 py-2 text-xs font-medium text-popover-foreground shadow-sm">
-						<FolderInput className="size-4 text-primary" />
+						<FolderInput className="size-4 text-foreground" />
 						<span>Move here</span>
 					</div>
 				</div>

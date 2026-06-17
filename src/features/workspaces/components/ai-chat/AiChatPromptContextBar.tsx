@@ -15,7 +15,7 @@ export default function AiChatPromptContextBar({
 	const hasAttachments = attachments.files.length > 0;
 	const hasWorkspaceContext =
 		getWorkspaceAiContextChips(context).length > 0 ||
-		context.selectedMentions.length > 0;
+		context.selectedQuotes.length > 0;
 
 	if (!hasAttachments && !hasWorkspaceContext) {
 		return null;

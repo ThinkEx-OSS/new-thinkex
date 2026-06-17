@@ -23,6 +23,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import { formatWorkspaceRecency } from "#/features/workspaces/model/display";
+import { statusBadgeClassName } from "#/lib/design-system-colors";
 import { cn } from "#/lib/utils";
 
 const toolbarIconButtonClassName =
@@ -189,7 +190,10 @@ function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 		return (
 			<Badge
 				variant="outline"
-				className="h-4 shrink-0 gap-1 rounded-full border-destructive/25 bg-destructive/10 px-1.5 font-normal text-[10px] text-destructive leading-none"
+				className={cn(
+					"h-4 shrink-0 gap-1 rounded-full px-1.5 font-normal text-[10px] leading-none",
+					statusBadgeClassName.destructive,
+				)}
 				title={thread.lastErrorMessage ?? undefined}
 			>
 				<AlertCircle className="size-2.5" aria-hidden="true" />
@@ -202,7 +206,10 @@ function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 		return (
 			<Badge
 				variant="outline"
-				className="h-4 shrink-0 gap-1 rounded-full border-emerald-500/25 bg-emerald-500/10 px-1.5 font-normal text-[10px] text-emerald-700 leading-none dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300"
+				className={cn(
+					"h-4 shrink-0 gap-1 rounded-full px-1.5 font-normal text-[10px] leading-none",
+					statusBadgeClassName.success,
+				)}
 			>
 				<Check className="size-2.5" aria-hidden="true" />
 				Unread

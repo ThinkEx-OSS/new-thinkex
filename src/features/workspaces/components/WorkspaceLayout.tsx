@@ -34,12 +34,15 @@ import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWork
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import {
-	selectWorkspaceSelectionItemIds,
+	useWorkspaceAiComposerDraftQuotes,
+} from "#/features/workspaces/state/workspace-ai-composer-draft-store";
+import {
+	useWorkspaceSelectionItemIds,
 	useWorkspaceSelectionStore,
 } from "#/features/workspaces/state/workspace-selection-store";
 import {
-	selectWorkspaceItemViewStates,
-	selectWorkspaceUiSession,
+	useWorkspaceItemViewStates,
+	useWorkspaceUiSession,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
 import { shouldIgnoreWorkspaceClientMutationEcho } from "#/features/workspaces/use-workspace-client-mutation-echo";
@@ -76,15 +79,12 @@ export function WorkspaceShell({
 	const addAiContextItems = useWorkspaceUiStore(
 		(state) => state.addAiContextItems,
 	);
-	const itemViewStatesByItemId = useWorkspaceUiStore(
-		selectWorkspaceItemViewStates(workspace.id),
-	);
+	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
+	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
 	const clearSelection = useWorkspaceSelectionStore(
 		(state) => state.clearSelection,
 	);
-	const selectedItemIds = useWorkspaceSelectionStore(
-		selectWorkspaceSelectionItemIds(workspace.id),
-	);
+	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
 	const toggleChatPanelCollapsed = useWorkspaceUiStore(
 		(state) => state.toggleChatPanelCollapsed,
 	);
@@ -133,9 +133,7 @@ export function WorkspaceShell({
 		activeTabIdFromUrl,
 		activeViewFromUrl,
 	});
-	const normalizedUiSession = useWorkspaceUiStore(
-		selectWorkspaceUiSession(workspace.id),
-	);
+	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
 	const { chatPanelCollapsed, presentation } = normalizedUiSession;
 	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
 	const hasPdfItems = scopedItems.some(isWorkspacePdfItem);
@@ -191,11 +189,11 @@ export function WorkspaceShell({
 	const aiContextScope = {
 		activeItem: isWorkspaceItemView(activeItem) ? activeItem : undefined,
 		activeTabId: activeTab.id,
-		itemViewStatesByItemId: itemViewStatesByItemId ?? {},
+		itemViewStatesByItemId,
 		aiContextItemIds: normalizedUiSession.aiContextItemIds,
 		itemsById,
 		presentation,
-		selectedMentions: normalizedUiSession.selectedMentions,
+		selectedQuotes,
 		tabs: session.tabs,
 		workspaceId: workspace.id,
 		workspaceName: workspace.name,

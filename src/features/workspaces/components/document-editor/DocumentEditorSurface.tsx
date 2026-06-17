@@ -17,6 +17,7 @@ import {
 } from "#/features/workspaces/documents/use-document-collaboration-session";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { authClient } from "#/lib/auth-client";
+import { DEFAULT_COLLABORATION_COLOR } from "#/lib/design-system-colors";
 
 export function DocumentEditorSurface({
 	item,
@@ -159,7 +160,7 @@ function renderCollaborationSelection(user: Record<string, unknown>) {
 }
 
 function getCollaborationUserColor(user: Record<string, unknown>) {
-	return typeof user.color === "string" ? user.color : "#2563eb";
+	return typeof user.color === "string" ? user.color : DEFAULT_COLLABORATION_COLOR;
 }
 
 function getCollaborationUserName(user: Record<string, unknown>) {

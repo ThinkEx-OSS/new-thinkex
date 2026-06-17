@@ -20,6 +20,10 @@ type WorkspaceItemToolbarRegistration =
 			slotId: string;
 	  }
 	| {
+			capture: {
+				isActive: boolean;
+				onToggle: () => void;
+			};
 			fileName: string;
 			fileUrl: string;
 			kind: "pdf";
@@ -67,10 +71,21 @@ export function useDocumentEditorToolbar(
 		}
 
 		const registration = { editor, kind: "document" as const, slotId };
-		setRegistration((current) => ({
-			...current,
-			[slotId]: registration,
-		}));
+		setRegistration((current) => {
+			const existing = current[slotId];
+			if (
+				existing?.kind === "document" &&
+				existing.editor === editor &&
+				existing.slotId === slotId
+			) {
+				return current;
+			}
+
+			return {
+				...current,
+				[slotId]: registration,
+			};
+		});
 
 		return () => {
 			setRegistration((current) => {
@@ -88,10 +103,15 @@ export function useDocumentEditorToolbar(
 }
 
 export function usePdfItemToolbar({
+	capture,
 	fileName,
 	fileUrl,
 	slotId,
 }: {
+	capture: {
+		isActive: boolean;
+		onToggle: () => void;
+	};
 	fileName: string;
 	fileUrl: string;
 	slotId: string;
@@ -104,11 +124,29 @@ export function usePdfItemToolbar({
 			return;
 		}
 
-		const registration = { fileName, fileUrl, kind: "pdf" as const, slotId };
-		setRegistration((current) => ({
-			...current,
-			[slotId]: registration,
-		}));
+		const registration = {
+			capture,
+			fileName,
+			fileUrl,
+			kind: "pdf" as const,
+			slotId,
+		};
+		setRegistration((current) => {
+			const existing = current[slotId];
+			if (
+				existing?.kind === "pdf" &&
+				existing.fileName === fileName &&
+				existing.fileUrl === fileUrl &&
+				existing.capture.isActive === capture.isActive
+			) {
+				return current;
+			}
+
+			return {
+				...current,
+				[slotId]: registration,
+			};
+		});
 
 		return () => {
 			setRegistration((current) => {
@@ -122,7 +160,7 @@ export function usePdfItemToolbar({
 				return next;
 			});
 		};
-	}, [fileName, fileUrl, slotId, setRegistration]);
+	}, [capture, fileName, fileUrl, slotId, setRegistration]);
 }
 
 export function WorkspaceItemToolbarSlot({
@@ -146,6 +184,7 @@ export function WorkspaceItemToolbarSlot({
 					<DocumentToolbar editor={registration.editor} />
 				) : (
 					<PdfToolbar
+						capture={registration.capture}
 						fileName={registration.fileName}
 						fileUrl={registration.fileUrl}
 					/>

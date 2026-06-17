@@ -1,4 +1,4 @@
-export type WorkspaceSelectedMention = {
+export type WorkspaceSelectedQuote = {
 	id: string;
 	label: string;
 	source:
@@ -17,7 +17,7 @@ export type WorkspaceSelectedMention = {
 	text: string;
 };
 
-export function createWorkspaceSelectedMentionId(prefix: string) {
+export function createWorkspaceSelectedQuoteId(prefix: string) {
 	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
 		return `${prefix}:${crypto.randomUUID()}`;
 	}
@@ -25,7 +25,7 @@ export function createWorkspaceSelectedMentionId(prefix: string) {
 	return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`;
 }
 
-export function getPdfSelectedMentionLabel(pageNumbers: number[]) {
+export function getPdfSelectedQuoteLabel(pageNumbers: number[]) {
 	if (pageNumbers.length === 0) {
 		return "PDF selection";
 	}
@@ -37,11 +37,11 @@ export function getPdfSelectedMentionLabel(pageNumbers: number[]) {
 	return `PDF pp. ${pageNumbers.join(", ")}`;
 }
 
-export function createAssistantResponseSelectedMention(input: {
+export function createAssistantResponseSelectedQuote(input: {
 	text: string;
-}): WorkspaceSelectedMention {
+}): WorkspaceSelectedQuote {
 	return {
-		id: createWorkspaceSelectedMentionId("assistant-response"),
+		id: createWorkspaceSelectedQuoteId("assistant-response"),
 		label: "AI response",
 		source: {
 			kind: "assistant-response",
@@ -50,12 +50,12 @@ export function createAssistantResponseSelectedMention(input: {
 	};
 }
 
-export function createDocumentSelectedMention(input: {
+export function createDocumentSelectedQuote(input: {
 	itemId: string;
 	text: string;
-}): WorkspaceSelectedMention {
+}): WorkspaceSelectedQuote {
 	return {
-		id: createWorkspaceSelectedMentionId("document-selection"),
+		id: createWorkspaceSelectedQuoteId("document-selection"),
 		label: "Document selection",
 		source: {
 			kind: "document-selection",
@@ -65,14 +65,14 @@ export function createDocumentSelectedMention(input: {
 	};
 }
 
-export function createPdfSelectedMention(input: {
+export function createPdfSelectedQuote(input: {
 	itemId: string;
 	pageNumbers: number[];
 	text: string;
-}): WorkspaceSelectedMention {
+}): WorkspaceSelectedQuote {
 	return {
-		id: createWorkspaceSelectedMentionId("pdf-selection"),
-		label: getPdfSelectedMentionLabel(input.pageNumbers),
+		id: createWorkspaceSelectedQuoteId("pdf-selection"),
+		label: getPdfSelectedQuoteLabel(input.pageNumbers),
 		source: {
 			kind: "pdf-selection",
 			itemId: input.itemId,
@@ -82,24 +82,24 @@ export function createPdfSelectedMention(input: {
 	};
 }
 
-export function normalizeWorkspaceSelectedMention(
-	mention: unknown,
-): WorkspaceSelectedMention | null {
-	if (!isRecord(mention) || !isWorkspaceSelectedMentionSource(mention.source)) {
+export function normalizeWorkspaceSelectedQuote(
+	quote: unknown,
+): WorkspaceSelectedQuote | null {
+	if (!isRecord(quote) || !isWorkspaceSelectedQuoteSource(quote.source)) {
 		return null;
 	}
 
 	if (
-		typeof mention.id !== "string" ||
-		typeof mention.label !== "string" ||
-		typeof mention.text !== "string"
+		typeof quote.id !== "string" ||
+		typeof quote.label !== "string" ||
+		typeof quote.text !== "string"
 	) {
 		return null;
 	}
 
-	const id = mention.id.trim();
-	const label = mention.label.trim();
-	const text = mention.text.trim();
+	const id = quote.id.trim();
+	const label = quote.label.trim();
+	const text = quote.text.trim();
 
 	if (!id || !label || !text) {
 		return null;
@@ -108,14 +108,14 @@ export function normalizeWorkspaceSelectedMention(
 	return {
 		id,
 		label,
-		source: mention.source,
+		source: quote.source,
 		text,
 	};
 }
 
-function isWorkspaceSelectedMentionSource(
+function isWorkspaceSelectedQuoteSource(
 	source: unknown,
-): source is WorkspaceSelectedMention["source"] {
+): source is WorkspaceSelectedQuote["source"] {
 	if (!isRecord(source) || typeof source.kind !== "string") {
 		return false;
 	}

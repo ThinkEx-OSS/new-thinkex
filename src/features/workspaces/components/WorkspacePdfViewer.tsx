@@ -1,4 +1,4 @@
-import { createPluginRegistration } from "@embedpdf/core";
+import { createPluginRegistration, type DocumentState } from "@embedpdf/core";
 import { EmbedPDF, type PluginBatchRegistrations } from "@embedpdf/core/react";
 import { useEngineContext } from "@embedpdf/engines/react";
 import {
@@ -18,6 +18,7 @@ import {
 import {
 	RenderLayer,
 	RenderPluginPackage,
+	useRenderCapability,
 } from "@embedpdf/plugin-render/react";
 import {
 	Scroller,
@@ -44,10 +45,20 @@ import {
 	ZoomPluginPackage,
 } from "@embedpdf/plugin-zoom/react";
 import { type ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Spinner } from "#/components/ui/spinner";
+import { stageComposerFiles } from "#/features/workspaces/composer/workspace-composer-actions";
+import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import { WorkspacePdfAskSelectionMenu } from "#/features/workspaces/components/WorkspacePdfAskSelectionMenu";
+import {
+	createPdfCaptureAttachmentFile,
+	WorkspacePdfCaptureInteractionMode,
+	WorkspacePdfCapturePageOverlay,
+	type WorkspacePdfCaptureResult,
+	WorkspacePdfCaptureShortcuts,
+} from "#/features/workspaces/components/WorkspacePdfCapture";
 import { WorkspacePdfPageControl } from "#/features/workspaces/components/WorkspacePdfPageControl";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
@@ -97,15 +108,20 @@ export default function WorkspacePdfViewer({
 }) {
 	const fileUrl = getWorkspaceFileContentUrl(workspaceId, item.id);
 	const { engine, error, isLoading } = useEngineContext();
+	const [isCaptureActive, setIsCaptureActive] = useState(false);
 
 	usePdfItemToolbar({
+		capture: {
+			isActive: isCaptureActive,
+			onToggle: () => setIsCaptureActive((current) => !current),
+		},
 		fileName: item.name,
 		fileUrl,
 		slotId: toolbarSlotId ?? item.id,
 	});
 
 	return (
-		<div className="pdf-scrollbar h-full min-h-0 overflow-hidden bg-background">
+		<div className="pdf-scrollbar relative h-full min-h-0 overflow-hidden bg-background">
 			{error ? (
 				<WorkspacePdfLoadFailure fileName={item.name} fileUrl={fileUrl}>
 					Could not load the PDF engine.
@@ -123,7 +139,12 @@ export default function WorkspacePdfViewer({
 								documentId={item.id}
 								fileName={item.name}
 								fileUrl={fileUrl}
+								isCaptureActive={isCaptureActive}
 								itemId={item.id}
+								onCaptureModeExit={() => setIsCaptureActive(false)}
+								onCaptureModeToggle={() =>
+									setIsCaptureActive((current) => !current)
+								}
 								workspaceId={workspaceId}
 							/>
 						) : (
@@ -134,6 +155,9 @@ export default function WorkspacePdfViewer({
 					}
 				</EmbedPDF>
 			)}
+			{isCaptureActive ? (
+				<div className="pointer-events-none absolute inset-0 z-[70] border-2 border-blue-600" />
+			) : null}
 		</div>
 	);
 }
@@ -143,14 +167,20 @@ function WorkspacePdfDocumentLoader({
 	documentId,
 	fileName,
 	fileUrl,
+	isCaptureActive,
 	itemId,
+	onCaptureModeExit,
+	onCaptureModeToggle,
 	workspaceId,
 }: {
 	activeDocumentId: string | null;
 	documentId: string;
 	fileName: string;
 	fileUrl: string;
+	isCaptureActive: boolean;
 	itemId: string;
+	onCaptureModeExit: () => void;
+	onCaptureModeToggle: () => void;
 	workspaceId: string;
 }) {
 	const { provides: documentManager } = useDocumentManagerCapability();
@@ -204,6 +234,7 @@ function WorkspacePdfDocumentLoader({
 			cancelled = true;
 		};
 	}, [documentId, documentManager, fileName, fileUrl]);
+
 	if (currentOpenError) {
 		return (
 			<WorkspacePdfLoadFailure fileName={fileName} fileUrl={fileUrl}>
@@ -225,7 +256,10 @@ function WorkspacePdfDocumentLoader({
 					documentId={activeDocumentId}
 					fileName={fileName}
 					fileUrl={fileUrl}
+					isCaptureActive={isCaptureActive}
 					itemId={itemId}
+					onCaptureModeExit={onCaptureModeExit}
+					onCaptureModeToggle={onCaptureModeToggle}
 					workspaceId={workspaceId}
 					{...props}
 				/>
@@ -236,26 +270,62 @@ function WorkspacePdfDocumentLoader({
 
 function WorkspacePdfDocumentContent({
 	documentId,
+	documentState,
 	fileName,
 	fileUrl,
+	isCaptureActive,
 	isError,
 	isLoaded,
 	isLoading,
 	itemId,
+	onCaptureModeExit,
+	onCaptureModeToggle,
 	workspaceId,
 }: {
 	documentId: string;
+	documentState: DocumentState;
 	fileName: string;
 	fileUrl: string;
+	isCaptureActive: boolean;
 	isError: boolean;
 	isLoaded: boolean;
 	isLoading: boolean;
 	itemId: string;
+	onCaptureModeExit: () => void;
+	onCaptureModeToggle: () => void;
 	workspaceId: string;
 }) {
 	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
 		null,
 	);
+	const { provides: renderCapability } = useRenderCapability();
+
+	const handleCapture = ({ blob, pageIndex }: WorkspacePdfCaptureResult) => {
+		const file = createPdfCaptureAttachmentFile({
+			blob,
+			fileName,
+			pageIndex,
+		});
+		const filesBefore =
+			useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[
+				workspaceId
+			]?.length ?? 0;
+
+		stageComposerFiles(workspaceId, [file], {
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		});
+
+		const filesAfter =
+			useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[
+				workspaceId
+			]?.length ?? 0;
+
+		if (filesAfter > filesBefore) {
+			toast.success("Capture added to chat");
+		}
+	};
 
 	if (isLoading) {
 		return (
@@ -285,6 +355,15 @@ function WorkspacePdfDocumentContent({
 				workspaceId={workspaceId}
 			/>
 			<WorkspacePdfSelectionShortcuts documentId={documentId} />
+			<WorkspacePdfCaptureShortcuts
+				isActive={isCaptureActive}
+				onExit={onCaptureModeExit}
+				onToggle={onCaptureModeToggle}
+			/>
+			<WorkspacePdfCaptureInteractionMode
+				documentId={documentId}
+				isActive={isCaptureActive}
+			/>
 			<ZoomGestureWrapper
 				className="min-h-full"
 				documentId={documentId}
@@ -296,27 +375,27 @@ function WorkspacePdfDocumentContent({
 			>
 				<Scroller
 					documentId={documentId}
-					renderPage={({ pageIndex }) => (
-						<div className="absolute inset-0 overflow-hidden bg-white">
+					renderPage={(pageLayout) => (
+						<div className="absolute inset-0 overflow-hidden bg-background">
 							<PagePointerProvider
 								documentId={documentId}
-								pageIndex={pageIndex}
+								pageIndex={pageLayout.pageIndex}
 							>
 								<RenderLayer
 									className="block select-none"
 									documentId={documentId}
-									pageIndex={pageIndex}
+									pageIndex={pageLayout.pageIndex}
 									style={{ pointerEvents: "none" }}
 								/>
 								<TilingLayer
 									className="absolute inset-0"
 									documentId={documentId}
-									pageIndex={pageIndex}
+									pageIndex={pageLayout.pageIndex}
 									style={{ pointerEvents: "none" }}
 								/>
 								<SelectionLayer
 									documentId={documentId}
-									pageIndex={pageIndex}
+									pageIndex={pageLayout.pageIndex}
 									selectionMenu={(props) => (
 										<WorkspacePdfAskSelectionMenu
 											{...props}
@@ -327,14 +406,24 @@ function WorkspacePdfDocumentContent({
 										/>
 									)}
 									textStyle={{
-										background: "var(--workspace-ask-selection-background)",
+										background: "var(--selection)",
 									}}
 								/>
 								<AnnotationLayer
 									className="absolute inset-0"
 									documentId={documentId}
-									pageIndex={pageIndex}
+									pageIndex={pageLayout.pageIndex}
 								/>
+								{documentState.document?.pages[pageLayout.pageIndex] ? (
+									<WorkspacePdfCapturePageOverlay
+										active={isCaptureActive}
+										documentState={documentState}
+										onCapture={handleCapture}
+										page={documentState.document.pages[pageLayout.pageIndex]}
+										pageLayout={pageLayout}
+										renderCapability={renderCapability}
+									/>
+								) : null}
 							</PagePointerProvider>
 						</div>
 					)}

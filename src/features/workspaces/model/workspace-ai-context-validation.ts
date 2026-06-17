@@ -4,7 +4,7 @@ import type {
 	WorkspaceAiContextPaneReference,
 	WorkspaceAiContextPresentationReference,
 	WorkspaceAiContextSnapshot,
-	WorkspaceAiContextSnapshotSelectedMention,
+	WorkspaceAiContextSnapshotSelectedQuote,
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
 
@@ -20,7 +20,7 @@ export function isWorkspaceAiContextSnapshot(
 		typeof value.workspace.name === "string" &&
 		Array.isArray(value.markedItems) &&
 		Array.isArray(value.openTabs) &&
-		Array.isArray(value.selectedMentions) &&
+		Array.isArray(value.selectedQuotes) &&
 		value.contentIncluded === false &&
 		isRecord(value.view) &&
 		isWorkspaceAiContextPresentationReference(value.view.presentation)
@@ -69,9 +69,9 @@ export function isWorkspaceAiContextTabReference(
 	);
 }
 
-export function isWorkspaceAiContextSelectedMention(
+export function isWorkspaceAiContextSelectedQuote(
 	value: unknown,
-): value is WorkspaceAiContextSnapshotSelectedMention {
+): value is WorkspaceAiContextSnapshotSelectedQuote {
 	if (!isRecord(value) || !isRecord(value.source)) {
 		return false;
 	}

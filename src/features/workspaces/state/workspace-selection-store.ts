@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { useMemo } from "react";
 
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
@@ -31,10 +32,16 @@ type WorkspaceSelectionState = {
 
 const EMPTY_WORKSPACE_SELECTION_ITEM_IDS: readonly string[] = [];
 
-export const selectWorkspaceSelectionItemIds =
-	(workspaceId: string) => (state: WorkspaceSelectionState) =>
-		state.itemIdsByWorkspaceId[workspaceId] ??
-		EMPTY_WORKSPACE_SELECTION_ITEM_IDS;
+export function useWorkspaceSelectionItemIds(workspaceId: string) {
+	return useWorkspaceSelectionStore(
+		useMemo(
+			() => (state: WorkspaceSelectionState) =>
+				state.itemIdsByWorkspaceId[workspaceId] ??
+				EMPTY_WORKSPACE_SELECTION_ITEM_IDS,
+			[workspaceId],
+		),
+	);
+}
 
 export const useWorkspaceSelectionStore = create<WorkspaceSelectionState>()(
 	devtools(

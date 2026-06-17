@@ -49,7 +49,7 @@ export default function WorkspaceContextActions({
 					variant="ghost"
 					size="icon-sm"
 					type="button"
-					className="size-8.5 text-muted-foreground hover:bg-transparent hover:text-foreground"
+					className="size-8.5 text-muted-foreground hover:text-foreground"
 					aria-label="Close item"
 					onClick={onCloseItemView}
 				>

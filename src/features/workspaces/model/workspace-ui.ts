@@ -1,7 +1,3 @@
-import {
-	normalizeWorkspaceSelectedMention,
-	type WorkspaceSelectedMention,
-} from "#/features/workspaces/model/workspace-selected-mentions";
 import type {
 	WorkspacePane,
 	WorkspacePresentation,
@@ -21,7 +17,6 @@ export const defaultWorkspaceUiSession: WorkspaceUiSession = {
 	aiContextItemIds: [],
 	chatPanelCollapsed: false,
 	presentation: standardPresentation,
-	selectedMentions: [],
 };
 
 const chatPane: WorkspacePane = { id: "chat", kind: "chat" };
@@ -31,15 +26,7 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 		return defaultWorkspaceUiSession;
 	}
 
-	if (Array.isArray(session.selectedMentions)) {
-		return session;
-	}
-
-	return {
-		...defaultWorkspaceUiSession,
-		...session,
-		selectedMentions: defaultWorkspaceUiSession.selectedMentions,
-	};
+	return session;
 }
 
 export function normalizeWorkspaceUiSession(
@@ -58,13 +45,11 @@ export function normalizeWorkspaceUiSession(
 		session.aiContextItemIds,
 		validItemIds,
 	);
-	const selectedMentions = normalizeSelectedMentions(session.selectedMentions);
 
 	return presentation === session.presentation &&
-		aiContextItemIds === session.aiContextItemIds &&
-		selectedMentions === session.selectedMentions
+		aiContextItemIds === session.aiContextItemIds
 		? session
-		: { ...session, aiContextItemIds, presentation, selectedMentions };
+		: { ...session, aiContextItemIds, presentation };
 }
 
 export function getUpdatedWorkspaceUiSession(
@@ -123,56 +108,6 @@ export function removeWorkspaceAiContextItemSession(
 
 	return {
 		aiContextItemIds: session.aiContextItemIds.filter((id) => id !== itemId),
-	};
-}
-
-export function addWorkspaceSelectedMentionSession(
-	session: WorkspaceUiSession,
-	mention: WorkspaceSelectedMention,
-) {
-	const normalizedMention = normalizeWorkspaceSelectedMention(mention);
-
-	if (!normalizedMention) {
-		return {};
-	}
-
-	const selectedMentions = [
-		...session.selectedMentions.filter(
-			(item) => item.id !== normalizedMention.id,
-		),
-		normalizedMention,
-	];
-
-	return {
-		chatPanelCollapsed: false,
-		selectedMentions,
-	};
-}
-
-export function removeWorkspaceSelectedMentionSession(
-	session: WorkspaceUiSession,
-	mentionId: string,
-) {
-	if (!session.selectedMentions.some((mention) => mention.id === mentionId)) {
-		return {};
-	}
-
-	return {
-		selectedMentions: session.selectedMentions.filter(
-			(mention) => mention.id !== mentionId,
-		),
-	};
-}
-
-export function clearWorkspaceSelectedMentionsSession(
-	session: WorkspaceUiSession,
-) {
-	if (session.selectedMentions.length === 0) {
-		return {};
-	}
-
-	return {
-		selectedMentions: defaultWorkspaceUiSession.selectedMentions,
 	};
 }
 
@@ -334,37 +269,6 @@ function normalizeAiContextItemIds(
 	return normalizedIds;
 }
 
-function normalizeSelectedMentions(
-	mentions: WorkspaceSelectedMention[] | undefined,
-) {
-	if (!mentions?.length) {
-		return defaultWorkspaceUiSession.selectedMentions;
-	}
-
-	const seen = new Set<string>();
-	const normalizedMentions: WorkspaceSelectedMention[] = [];
-
-	for (const mention of mentions) {
-		const normalizedMention = normalizeWorkspaceSelectedMention(mention);
-
-		if (!normalizedMention || seen.has(normalizedMention.id)) {
-			continue;
-		}
-
-		seen.add(normalizedMention.id);
-		normalizedMentions.push(normalizedMention);
-	}
-
-	if (
-		normalizedMentions.length === mentions.length &&
-		normalizedMentions.every((mention, index) => mention === mentions[index])
-	) {
-		return mentions;
-	}
-
-	return normalizedMentions;
-}
-
 function isSameWorkspaceUiSession(
 	session: WorkspaceUiSession,
 	nextSession: WorkspaceUiSession,
@@ -373,25 +277,11 @@ function isSameWorkspaceUiSession(
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
 		isSameStringArray(session.aiContextItemIds, nextSession.aiContextItemIds) &&
 		session.chatPanelCollapsed === nextSession.chatPanelCollapsed &&
-		session.presentation === nextSession.presentation &&
-		isSameSelectedMentionArray(
-			session.selectedMentions,
-			nextSession.selectedMentions,
-		)
+		session.presentation === nextSession.presentation
 	);
 }
 
 function isSameStringArray(left: readonly string[], right: readonly string[]) {
-	return (
-		left.length === right.length &&
-		left.every((value, index) => value === right[index])
-	);
-}
-
-function isSameSelectedMentionArray(
-	left: readonly WorkspaceSelectedMention[],
-	right: readonly WorkspaceSelectedMention[],
-) {
 	return (
 		left.length === right.length &&
 		left.every((value, index) => value === right[index])

@@ -29,6 +29,7 @@ import {
 	workspaceAiContextCollisionDetector,
 } from "#/features/workspaces/components/workspace-ai-context-collision";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
+import { interactionHighlightClassName } from "#/lib/design-system-colors";
 import { cn } from "#/lib/utils";
 
 interface AiChatPanelProps {
@@ -92,7 +93,7 @@ function AiChatPanelLayout({
 			ref={setPanelRef}
 			className={cn(
 				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
-				workspaceDrop.isDropTarget && "ring-2 ring-primary/45 ring-inset",
+				workspaceDrop.isDropTarget && interactionHighlightClassName.ringInset,
 			)}
 		>
 			<AiChatPanelToolbar

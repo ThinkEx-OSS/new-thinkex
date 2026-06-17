@@ -353,7 +353,7 @@ function WorkspaceMarqueeOverlay({
 
 	return (
 		<div
-			className="pointer-events-none fixed z-20 rounded-sm border border-primary/50 bg-primary/10 shadow-[0_0_0_1px_rgba(255,255,255,0.35)_inset]"
+			className="pointer-events-none fixed z-20 rounded-sm border border-foreground/35 bg-foreground/8 shadow-[0_0_0_1px_color-mix(in_oklch,var(--foreground)_12%,transparent)_inset]"
 			style={{
 				height: rect.height,
 				left: rect.x,

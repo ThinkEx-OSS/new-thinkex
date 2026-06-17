@@ -2,6 +2,7 @@ import { Bug, Mic, Plus } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
 
 import {
+	type AttachmentsContext,
 	PromptInput,
 	PromptInputBody,
 	PromptInputButton,
@@ -25,6 +26,7 @@ import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatP
 import {
 	AI_CHAT_MODELS,
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
 } from "#/features/workspaces/components/ai-chat/constants";
 import type {
 	AiChatModelId,
@@ -32,6 +34,10 @@ import type {
 } from "#/features/workspaces/components/ai-chat/types";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
+import {
+	useWorkspaceAiComposerDraftFiles,
+	useWorkspaceAiComposerDraftStore,
+} from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import { cn } from "#/lib/utils";
 
 // InputGroup defaults to a single horizontal row. Stack vertically so the
@@ -95,6 +101,16 @@ export default function AiChatPromptInput({
 	const [input, setInput] = useState("");
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const draftFiles = useWorkspaceAiComposerDraftFiles(context.workspaceId);
+	const addDraftFiles = useWorkspaceAiComposerDraftStore(
+		(state) => state.addFiles,
+	);
+	const removeDraftFile = useWorkspaceAiComposerDraftStore(
+		(state) => state.removeFile,
+	);
+	const clearDraftFiles = useWorkspaceAiComposerDraftStore(
+		(state) => state.clearFiles,
+	);
 	const selectedModel =
 		AI_CHAT_MODELS.find((item) => item.id === modelId) ??
 		AI_CHAT_MODELS.find(
@@ -107,6 +123,19 @@ export default function AiChatPromptInput({
 		setInput,
 		textareaRef,
 	});
+
+	const attachments: Omit<AttachmentsContext, "openFileDialog"> = {
+		add: (files) => {
+			addDraftFiles(
+				context.workspaceId,
+				files,
+				WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
+			);
+		},
+		clear: () => clearDraftFiles(context.workspaceId),
+		files: draftFiles,
+		remove: (fileId) => removeDraftFile(context.workspaceId, fileId),
+	};
 
 	const handleSubmit = async (message: PromptInputMessage) => {
 		if (
@@ -132,10 +161,11 @@ export default function AiChatPromptInput({
 	return (
 		<>
 			<PromptInput
-				accept="image/*"
+				accept={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept}
+				attachments={attachments}
 				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
-				maxFileSize={5 * 1024 * 1024}
-				maxFiles={4}
+				maxFileSize={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFileSize}
+				maxFiles={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFiles}
 				multiple
 				onSubmit={handleSubmit}
 			>

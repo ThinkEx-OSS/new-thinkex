@@ -39,9 +39,9 @@ export function WorkspaceTabShell({
 				variant === "active" &&
 					"h-8 rounded-md border-transparent bg-background text-foreground",
 				variant === "idle" &&
-					"h-8 rounded-md border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+					"h-8 rounded-md border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
 				isProjected &&
-					"h-8 rounded-md border-primary/40 bg-primary/10 text-foreground shadow-sm",
+					"h-8 rounded-md border-foreground/35 bg-muted text-foreground shadow-sm",
 				isDragSource && "cursor-grabbing",
 			)}
 		>
@@ -70,7 +70,7 @@ export function WorkspaceTabShell({
 					variant="ghost"
 					size="icon-xs"
 					className={cn(
-						"mr-1 size-4 shrink-0 rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100",
+						"mr-1 size-4 shrink-0 rounded-sm text-muted-foreground opacity-0 transition-[opacity,background-color,color] hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100",
 						isActive && "opacity-100",
 					)}
 					aria-label={closeLabel}

@@ -14,7 +14,8 @@ import {
 	type WorkspaceAiContextChip,
 	type WorkspaceAiContextScope,
 } from "#/features/workspaces/model/workspace-ai-context";
-import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import type { WorkspaceSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
+import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
@@ -29,15 +30,15 @@ export default function WorkspaceAiChatContextChips({
 	const removeAiContextItem = useWorkspaceUiStore(
 		(state) => state.removeAiContextItem,
 	);
-	const removeSelectedMention = useWorkspaceUiStore(
-		(state) => state.removeSelectedMention,
+	const removeQuote = useWorkspaceAiComposerDraftStore(
+		(state) => state.removeQuote,
 	);
 	const chips = getWorkspaceAiContextChips(context);
 	const activeChips = chips.filter((chip) => chip.isActiveVisible);
 	const inactiveChips = chips.filter((chip) => !chip.isActiveVisible);
-	const mentionChips = context.selectedMentions;
+	const quoteChips = context.selectedQuotes;
 
-	if (chips.length === 0 && mentionChips.length === 0) {
+	if (chips.length === 0 && quoteChips.length === 0) {
 		return null;
 	}
 
@@ -50,13 +51,11 @@ export default function WorkspaceAiChatContextChips({
 					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
 				/>
 			))}
-			{mentionChips.map((mention) => (
-				<WorkspaceAiChatSelectedMentionChip
-					key={mention.id}
-					mention={mention}
-					onRemove={() =>
-						removeSelectedMention(context.workspaceId, mention.id)
-					}
+			{quoteChips.map((quote) => (
+				<WorkspaceAiChatSelectedQuoteChip
+					key={quote.id}
+					quote={quote}
+					onRemove={() => removeQuote(context.workspaceId, quote.id)}
 				/>
 			))}
 			{inactiveChips.map((chip) => (
@@ -148,7 +147,7 @@ function WorkspaceAiChatContextChipContent({
 	viewStateLabel?: string;
 }) {
 	const LeadingIcon = isActiveVisible ? Eye : Icon;
-	const leadingIconClassName = isActiveVisible ? "text-primary" : iconClassName;
+	const leadingIconClassName = isActiveVisible ? "text-foreground" : iconClassName;
 
 	return (
 		<>
@@ -169,28 +168,28 @@ function WorkspaceAiChatContextChipContent({
 	);
 }
 
-function WorkspaceAiChatSelectedMentionChip({
-	mention,
+function WorkspaceAiChatSelectedQuoteChip({
+	quote,
 	onRemove,
 }: {
-	mention: WorkspaceSelectedMention;
+	quote: WorkspaceSelectedQuote;
 	onRemove: () => void;
 }) {
-	const preview = getWorkspaceAiChatSelectedMentionPreview(mention);
+	const preview = getWorkspaceAiChatSelectedQuotePreview(quote);
 	const chip = (
 		<div
 			className={getWorkspaceAiChatContextChipClassName(
 				"border border-blue-200/80 bg-blue-50 text-blue-950 dark:border-blue-500/25 dark:bg-blue-500/15 dark:text-blue-50",
 			)}
 		>
-			<WorkspaceAiChatSelectedMentionIcon />
+			<WorkspaceAiChatSelectedQuoteIcon />
 			<span className="min-w-0 truncate font-medium">{preview}</span>
 			<Button
 				type="button"
 				variant="ghost"
 				size="icon-xs"
 				className={CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME}
-				aria-label={`Remove ${mention.label} from AI context`}
+				aria-label={`Remove ${quote.label} from AI context`}
 				onClick={onRemove}
 			>
 				<X className="size-3" />
@@ -202,22 +201,20 @@ function WorkspaceAiChatSelectedMentionChip({
 		<Tooltip>
 			<TooltipTrigger render={chip} />
 			<TooltipContent className="block max-w-md whitespace-pre-wrap break-words text-left leading-relaxed">
-				{mention.text}
+				{quote.text}
 			</TooltipContent>
 		</Tooltip>
 	);
 }
 
-function WorkspaceAiChatSelectedMentionIcon() {
+function WorkspaceAiChatSelectedQuoteIcon() {
 	return (
 		<MessageSquare className="size-3 shrink-0 text-blue-600 dark:text-blue-300" />
 	);
 }
 
-function getWorkspaceAiChatSelectedMentionPreview(
-	mention: WorkspaceSelectedMention,
-) {
-	return mention.text.replace(/\s+/g, " ").trim();
+function getWorkspaceAiChatSelectedQuotePreview(quote: WorkspaceSelectedQuote) {
+	return quote.text.replace(/\s+/g, " ").trim();
 }
 
 function getWorkspaceAiChatContextChipIcon(item: WorkspaceItem): {

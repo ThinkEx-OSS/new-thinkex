@@ -10,8 +10,8 @@ import {
 	useWorkspaceAiChatThreads,
 } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
 import {
-	selectWorkspaceActiveAiChatThreadId,
-	selectWorkspacePresentation,
+	useWorkspaceActiveAiChatThreadId,
+	useWorkspacePresentation,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
 
@@ -27,12 +27,8 @@ type AiChatThreadForDialog = {
 export function useAiChatPanelController({
 	workspaceId,
 }: UseAiChatPanelControllerInput) {
-	const presentation = useWorkspaceUiStore(
-		selectWorkspacePresentation(workspaceId),
-	);
-	const activeThreadIdFromStore = useWorkspaceUiStore(
-		selectWorkspaceActiveAiChatThreadId(workspaceId),
-	);
+	const presentation = useWorkspacePresentation(workspaceId);
+	const activeThreadIdFromStore = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
 	const restorePresentation = useWorkspaceUiStore(

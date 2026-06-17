@@ -1,14 +1,13 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { useMemo } from "react";
 import {
+	isSameWorkspaceItemViewState,
 	normalizeWorkspaceItemViewState,
 	type WorkspaceItemViewState,
 } from "#/features/workspaces/model/workspace-item-view-state";
-import type { WorkspaceSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import {
 	addWorkspaceAiContextItemsSession,
-	addWorkspaceSelectedMentionSession,
-	clearWorkspaceSelectedMentionsSession,
 	closeChatPanelSession,
 	defaultWorkspaceUiSession,
 	getUpdatedWorkspaceUiSession,
@@ -18,7 +17,6 @@ import {
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
 	removeWorkspaceAiContextItemSession,
-	removeWorkspaceSelectedMentionSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
 	splitWorkspacePresentationSession,
@@ -55,7 +53,6 @@ export type WorkspaceUiSession = {
 	aiContextItemIds: string[];
 	chatPanelCollapsed: boolean;
 	presentation: WorkspacePresentation;
-	selectedMentions: WorkspaceSelectedMention[];
 };
 
 type EnsureWorkspaceUiSessionInput = {
@@ -73,16 +70,10 @@ type WorkspaceUiState = {
 		input: EnsureWorkspaceUiSessionInput,
 	) => WorkspaceUiSession;
 	addAiContextItems: (workspaceId: string, itemIds: string[]) => void;
-	addSelectedMention: (
-		workspaceId: string,
-		mention: WorkspaceSelectedMention,
-	) => void;
-	clearSelectedMentions: (workspaceId: string) => void;
 	clearItemViewState: (workspaceId: string, itemId?: string) => void;
 	closeChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
 	removeAiContextItem: (workspaceId: string, itemId: string) => void;
-	removeSelectedMention: (workspaceId: string, mentionId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
@@ -108,29 +99,9 @@ type WorkspaceUiState = {
 
 export { defaultWorkspaceUiSession, getWorkspaceUiSession };
 
-export const selectWorkspaceUiSession =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]);
-
-export const selectWorkspacePresentation =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		selectWorkspaceUiSession(workspaceId)(state).presentation;
-
-export const selectWorkspaceActiveAiChatThreadId =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		selectWorkspaceUiSession(workspaceId)(state).activeAiChatThreadId;
-
-export const selectWorkspaceAiContextItemIds =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		selectWorkspaceUiSession(workspaceId)(state).aiContextItemIds;
-
-export const selectWorkspaceSelectedMentions =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		selectWorkspaceUiSession(workspaceId)(state).selectedMentions;
-
-export const selectWorkspaceItemViewStates =
-	(workspaceId: string) => (state: WorkspaceUiState) =>
-		state.itemViewStatesByWorkspaceId[workspaceId];
+export const EMPTY_ITEM_VIEW_STATES: Readonly<
+	Record<string, WorkspaceItemViewState | undefined>
+> = {};
 
 function updateWorkspaceUiSession(
 	state: WorkspaceUiState,
@@ -191,20 +162,6 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							addWorkspaceAiContextItemsSession(session, itemIds),
 						),
 					),
-				addSelectedMention: (workspaceId, mention) =>
-					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) =>
-							addWorkspaceSelectedMentionSession(session, mention),
-						),
-					),
-				clearSelectedMentions: (workspaceId) =>
-					set((state) =>
-						updateWorkspaceUiSession(
-							state,
-							workspaceId,
-							clearWorkspaceSelectedMentionsSession,
-						),
-					),
 				clearItemViewState: (workspaceId, itemId) =>
 					set((state) => {
 						const currentDetails =
@@ -250,12 +207,6 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							removeWorkspaceAiContextItemSession(session, itemId),
 						),
 					),
-				removeSelectedMention: (workspaceId, mentionId) =>
-					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) =>
-							removeWorkspaceSelectedMentionSession(session, mentionId),
-						),
-					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, () =>
@@ -263,15 +214,27 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 						),
 					),
 				setItemViewState: (workspaceId, viewState) =>
-					set((state) => ({
-						itemViewStatesByWorkspaceId: {
-							...state.itemViewStatesByWorkspaceId,
-							[workspaceId]: {
-								...state.itemViewStatesByWorkspaceId[workspaceId],
-								[viewState.itemId]: normalizeWorkspaceItemViewState(viewState),
+					set((state) => {
+						const normalized = normalizeWorkspaceItemViewState(viewState);
+						const current =
+							state.itemViewStatesByWorkspaceId[workspaceId]?.[
+								viewState.itemId
+							];
+
+						if (isSameWorkspaceItemViewState(current, normalized)) {
+							return state;
+						}
+
+						return {
+							itemViewStatesByWorkspaceId: {
+								...state.itemViewStatesByWorkspaceId,
+								[workspaceId]: {
+									...state.itemViewStatesByWorkspaceId[workspaceId],
+									[viewState.itemId]: normalized,
+								},
 							},
-						},
-					})),
+						};
+					}),
 				toggleChatPanelCollapsed: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(
@@ -324,3 +287,56 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 		zustandDevtoolsOptions("WorkspaceUiStore"),
 	),
 );
+
+export function useWorkspaceUiSession(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]),
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspacePresentation(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
+					.presentation,
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
+					.activeAiChatThreadId,
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspaceAiContextItemIds(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
+					.aiContextItemIds,
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspaceItemViewStates(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				state.itemViewStatesByWorkspaceId[workspaceId] ?? EMPTY_ITEM_VIEW_STATES,
+			[workspaceId],
+		),
+	);
+}

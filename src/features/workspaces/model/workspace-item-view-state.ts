@@ -43,6 +43,21 @@ export function normalizeWorkspaceItemViewState(
 	return viewState;
 }
 
+export function isSameWorkspaceItemViewState(
+	left: WorkspaceItemViewState | undefined,
+	right: WorkspaceItemViewState,
+) {
+	if (!left) {
+		return false;
+	}
+
+	return (
+		left.kind === right.kind &&
+		left.itemId === right.itemId &&
+		left.pageNumber === right.pageNumber
+	);
+}
+
 export function formatWorkspaceAiContextItemViewState(
 	viewState: WorkspaceAiContextItemViewState | undefined,
 ) {

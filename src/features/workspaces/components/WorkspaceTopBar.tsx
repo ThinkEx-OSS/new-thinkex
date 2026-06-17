@@ -79,7 +79,7 @@ export default function WorkspaceTopBar({
 	);
 
 	return (
-		<header className="sticky top-0 z-40 bg-workspace-chrome-active">
+		<header className="sticky top-0 z-40 bg-muted">
 			<div className="flex h-12 w-full items-stretch justify-between gap-3 px-4">
 				<div className="flex min-w-0 flex-1 items-stretch gap-4">
 					<Link
@@ -114,7 +114,7 @@ export default function WorkspaceTopBar({
 						variant="ghost"
 						size="icon-sm"
 						type="button"
-						className="text-muted-foreground hover:text-foreground"
+						className="text-muted-foreground"
 						aria-label="Share workspace"
 						onClick={() => setShareOpen(true)}
 					>

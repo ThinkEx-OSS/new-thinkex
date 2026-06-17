@@ -5,12 +5,12 @@ import {
 import { useState } from "react";
 
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
-import { createPdfSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
+import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
+import { createPdfSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import {
 	type ClientPoint,
 	clamp,
 } from "#/features/workspaces/model/workspace-selection-geometry";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const PDF_ASK_SELECTION_MENU_HEIGHT = 40;
 const PDF_ASK_SELECTION_MENU_WIDTH = 78;
@@ -33,9 +33,6 @@ export function WorkspacePdfAskSelectionMenu({
 	const [menuWrapperElement, setMenuWrapperElement] =
 		useState<HTMLDivElement | null>(null);
 	const { provides: selectionCapability } = useSelectionCapability();
-	const addSelectedMention = useWorkspaceUiStore(
-		(state) => state.addSelectedMention,
-	);
 	const setMenuWrapperRef = (element: HTMLDivElement | null) => {
 		menuWrapperProps.ref(element);
 		setMenuWrapperElement((current) =>
@@ -110,9 +107,9 @@ export function WorkspacePdfAskSelectionMenu({
 							),
 						).sort((left, right) => left - right);
 
-						addSelectedMention(
+						stageComposerQuote(
 							workspaceId,
-							createPdfSelectedMention({
+							createPdfSelectedQuote({
 								itemId,
 								pageNumbers,
 								text,

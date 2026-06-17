@@ -22,7 +22,6 @@ import {
 	Children,
 	createContext,
 	use,
-	useCallback,
 	useEffect,
 	useRef,
 	useState,
@@ -53,6 +52,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip.tsx";
+import { acceptIncomingFiles } from "#/lib/accept-files";
 import { hasNativeFiles } from "#/lib/native-file-drag";
 import { cn } from "#/lib/utils.ts";
 
@@ -78,24 +78,6 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
 		return null;
 	}
 };
-
-function fileMatchesAccept(file: File, accept: string | undefined) {
-	if (!accept?.trim()) {
-		return true;
-	}
-
-	return accept
-		.split(",")
-		.flatMap((part) => {
-			const pattern = part.trim();
-			return pattern ? [pattern] : [];
-		})
-		.some((pattern) =>
-			pattern.endsWith("/*")
-				? file.type.startsWith(pattern.slice(0, -1))
-				: file.type === pattern,
-		);
-}
 
 function handlePromptInputDragOver(event: DragEvent<HTMLFormElement>) {
 	if (hasNativeFiles(event.dataTransfer)) {
@@ -181,12 +163,14 @@ export type PromptInputProps = Omit<
 		event: FormEvent<HTMLFormElement>,
 	) => boolean | undefined | Promise<boolean | undefined>;
 	inputGroupClassName?: string;
+	attachments?: Omit<AttachmentsContext, "openFileDialog">;
 };
 
 export const PromptInput = ({
 	className,
 	inputGroupClassName,
 	accept,
+	attachments: externalAttachments,
 	multiple,
 	maxFiles,
 	maxFileSize,
@@ -207,60 +191,36 @@ export const PromptInput = ({
 		inputRef.current?.click();
 	};
 
-	const add = useCallback(
-		(fileList: File[] | FileList) => {
-			const incoming = [...fileList];
-			const accepted = incoming.filter((file) =>
-				fileMatchesAccept(file, accept),
-			);
-			if (incoming.length && accepted.length === 0) {
-				onError?.({
-					code: "accept",
-					message: "No files match the accepted types.",
-				});
-				return;
-			}
-			const withinSize = (file: File) =>
-				maxFileSize ? file.size <= maxFileSize : true;
-			const sized = accepted.filter(withinSize);
-			if (accepted.length > 0 && sized.length === 0) {
-				onError?.({
-					code: "max_file_size",
-					message: "All files exceed the maximum size.",
-				});
-				return;
-			}
-
-			setItems((prev) => {
-				const capacity =
-					typeof maxFiles === "number"
-						? Math.max(0, maxFiles - prev.length)
-						: undefined;
-				const capped =
-					typeof capacity === "number" ? sized.slice(0, capacity) : sized;
-				if (typeof capacity === "number" && sized.length > capacity) {
-					onError?.({
-						code: "max_files",
-						message: "Too many files. Some were not added.",
-					});
-				}
-				const next: (FileUIPart & { id: string })[] = [];
-				for (const file of capped) {
-					next.push({
-						filename: file.name,
-						id: nanoid(),
-						mediaType: file.type,
-						type: "file",
-						url: URL.createObjectURL(file),
-					});
-				}
-				return [...prev, ...next];
+	const add = (fileList: File[] | FileList) => {
+		setItems((prev) => {
+			const capped = acceptIncomingFiles([...fileList], {
+				accept,
+				currentCount: prev.length,
+				maxFileSize,
+				maxFiles,
+				onError,
 			});
-		},
-		[accept, maxFileSize, maxFiles, onError],
-	);
 
-	const remove = (id: string) =>
+			if (capped.length === 0) {
+				return prev;
+			}
+
+			const next: (FileUIPart & { id: string })[] = [];
+			for (const file of capped) {
+				next.push({
+					filename: file.name,
+					id: nanoid(),
+					mediaType: file.type,
+					type: "file",
+					url: URL.createObjectURL(file),
+				});
+			}
+
+			return [...prev, ...next];
+		});
+	};
+
+	const remove = (id: string) => {
 		setItems((prev) => {
 			const found = prev.find((file) => file.id === id);
 			if (found?.url) {
@@ -268,6 +228,7 @@ export const PromptInput = ({
 			}
 			return prev.filter((file) => file.id !== id);
 		});
+	};
 
 	const clear = () => {
 		setItems((prev) => {
@@ -291,20 +252,26 @@ export const PromptInput = ({
 		[],
 	);
 
-	const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
-		if (event.currentTarget.files) {
-			add(event.currentTarget.files);
-		}
-		// Reset input value to allow selecting files that were previously removed
-		event.currentTarget.value = "";
-	};
-
 	const attachmentsCtx: AttachmentsContext = {
 		add,
 		clear,
 		files: items,
 		openFileDialog,
 		remove,
+	};
+	const activeAttachmentsCtx: AttachmentsContext = externalAttachments
+		? {
+				...externalAttachments,
+				openFileDialog,
+			}
+		: attachmentsCtx;
+
+	const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+		if (event.currentTarget.files) {
+			activeAttachmentsCtx.add(event.currentTarget.files);
+		}
+		// Reset input value to allow selecting files that were previously removed
+		event.currentTarget.value = "";
 	};
 
 	const handleDrop = (event: DragEvent<HTMLFormElement>) => {
@@ -313,7 +280,7 @@ export const PromptInput = ({
 			event.stopPropagation();
 		}
 		if (event.dataTransfer.files.length > 0) {
-			add(event.dataTransfer.files);
+			activeAttachmentsCtx.add(event.dataTransfer.files);
 		}
 	};
 
@@ -331,7 +298,7 @@ export const PromptInput = ({
 		try {
 			// Convert blob URLs to data URLs asynchronously
 			const convertedFiles: FileUIPart[] = await Promise.all(
-				items.map(async ({ id: _id, ...item }) => {
+				activeAttachmentsCtx.files.map(async ({ id: _id, ...item }) => {
 					if (item.url?.startsWith("blob:")) {
 						const dataUrl = await convertBlobUrlToDataUrl(item.url);
 						// If conversion failed, keep the original blob URL
@@ -351,14 +318,14 @@ export const PromptInput = ({
 				try {
 					const accepted = await result;
 					if (accepted !== false) {
-						clear();
+						activeAttachmentsCtx.clear();
 					}
 				} catch {
 					// Don't clear on error - user may want to retry
 				}
 			} else if (result !== false) {
 				// Sync function completed without throwing, clear inputs
-				clear();
+				activeAttachmentsCtx.clear();
 			}
 		} catch {
 			// Don't clear on error - user may want to retry
@@ -399,7 +366,7 @@ export const PromptInput = ({
 	);
 
 	return (
-		<LocalAttachmentsContext.Provider value={attachmentsCtx}>
+		<LocalAttachmentsContext.Provider value={activeAttachmentsCtx}>
 			{inner}
 		</LocalAttachmentsContext.Provider>
 	);
