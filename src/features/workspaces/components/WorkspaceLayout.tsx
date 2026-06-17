@@ -33,9 +33,7 @@ import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-c
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
-import {
-	useWorkspaceAiComposerDraftQuotes,
-} from "#/features/workspaces/state/workspace-ai-composer-draft-store";
+import { useWorkspaceAiComposerDraftQuotes } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import {
 	useWorkspaceSelectionItemIds,
 	useWorkspaceSelectionStore,

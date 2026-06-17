@@ -1,6 +1,6 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { useMemo } from "react";
 import {
 	isSameWorkspaceItemViewState,
 	normalizeWorkspaceItemViewState,
@@ -335,7 +335,8 @@ export function useWorkspaceItemViewStates(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
 			() => (state: WorkspaceUiState) =>
-				state.itemViewStatesByWorkspaceId[workspaceId] ?? EMPTY_ITEM_VIEW_STATES,
+				state.itemViewStatesByWorkspaceId[workspaceId] ??
+				EMPTY_ITEM_VIEW_STATES,
 			[workspaceId],
 		),
 	);

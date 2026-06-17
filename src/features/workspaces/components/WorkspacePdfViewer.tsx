@@ -47,8 +47,6 @@ import {
 import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Spinner } from "#/components/ui/spinner";
-import { stageComposerFiles } from "#/features/workspaces/composer/workspace-composer-actions";
-import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import { WorkspacePdfAskSelectionMenu } from "#/features/workspaces/components/WorkspacePdfAskSelectionMenu";
@@ -60,11 +58,13 @@ import {
 	WorkspacePdfCaptureShortcuts,
 } from "#/features/workspaces/components/WorkspacePdfCapture";
 import { WorkspacePdfPageControl } from "#/features/workspaces/components/WorkspacePdfPageControl";
+import { stageComposerFiles } from "#/features/workspaces/composer/workspace-composer-actions";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	type ClientPoint,
 	getPointerClientPoint,
 } from "#/features/workspaces/model/workspace-selection-geometry";
+import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 const pdfPlugins: PluginBatchRegistrations = [

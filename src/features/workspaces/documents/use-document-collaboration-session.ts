@@ -270,4 +270,3 @@ function getCollaborationUser(user: DocumentCollaborationUser) {
 		color: getCollaborationUserColor(user.id),
 	};
 }
-

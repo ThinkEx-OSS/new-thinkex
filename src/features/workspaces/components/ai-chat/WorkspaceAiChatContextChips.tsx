@@ -147,7 +147,9 @@ function WorkspaceAiChatContextChipContent({
 	viewStateLabel?: string;
 }) {
 	const LeadingIcon = isActiveVisible ? Eye : Icon;
-	const leadingIconClassName = isActiveVisible ? "text-foreground" : iconClassName;
+	const leadingIconClassName = isActiveVisible
+		? "text-foreground"
+		: iconClassName;
 
 	return (
 		<>

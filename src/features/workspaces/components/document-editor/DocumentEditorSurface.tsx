@@ -160,7 +160,9 @@ function renderCollaborationSelection(user: Record<string, unknown>) {
 }
 
 function getCollaborationUserColor(user: Record<string, unknown>) {
-	return typeof user.color === "string" ? user.color : DEFAULT_COLLABORATION_COLOR;
+	return typeof user.color === "string"
+		? user.color
+		: DEFAULT_COLLABORATION_COLOR;
 }
 
 function getCollaborationUserName(user: Record<string, unknown>) {

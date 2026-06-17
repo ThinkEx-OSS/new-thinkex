@@ -348,7 +348,8 @@ function WorkspaceColorDropdown({
 							<span
 								className={cn(
 									"size-4 rounded-[4px]",
-									selectedColor?.swatchClassName ?? workspaceColors.sky.swatchClassName,
+									selectedColor?.swatchClassName ??
+										workspaceColors.sky.swatchClassName,
 								)}
 								aria-hidden="true"
 							/>
