@@ -24,6 +24,7 @@ interface FinishThreadRunInput {
 	threadId: string;
 	result: AIThreadRunResult;
 	now: number;
+	startedAt: number;
 	lastAssistantMessageAt: number | null;
 	lastViewedAt: number;
 }
@@ -114,21 +115,27 @@ export function deleteThreadMeta(store: ChatMetaStore, threadId: string) {
 
 export function markThreadRunStarted(
 	store: ChatMetaStore,
-	threadId: string,
-	now: number,
+	input: {
+		threadId: string;
+		now: number;
+		isUserMessage: boolean;
+	},
 ) {
 	store.sql`
 		UPDATE chat_meta
 		SET
 			status = 'running',
 			last_run_result = NULL,
-			last_activity_at = ${now},
-			last_user_message_at = ${now},
-			last_run_started_at = ${now},
+			last_activity_at = ${input.now},
+			last_user_message_at = CASE
+				WHEN ${input.isUserMessage} THEN ${input.now}
+				ELSE last_user_message_at
+			END,
+			last_run_started_at = ${input.now},
 			last_run_finished_at = NULL,
 			last_error_message = NULL,
-			updated_at = ${now}
-		WHERE id = ${threadId} AND archived_at IS NULL
+			updated_at = ${input.now}
+		WHERE id = ${input.threadId} AND archived_at IS NULL
 	`;
 }
 
@@ -147,7 +154,9 @@ export function markThreadRunFinished(
 			last_run_finished_at = ${input.now},
 			last_error_message = NULL,
 			updated_at = ${input.now}
-		WHERE id = ${input.threadId} AND archived_at IS NULL
+		WHERE id = ${input.threadId}
+			AND archived_at IS NULL
+			AND last_run_started_at = ${input.startedAt}
 	`;
 }
 
@@ -168,20 +177,40 @@ export function markGeneratedThreadTitle(
 
 export function markThreadRunFailed(
 	store: ChatMetaStore,
-	threadId: string,
-	errorMessage: string,
-	now: number,
+	input: {
+		threadId: string;
+		errorMessage: string;
+		now: number;
+		startedAt?: number;
+	},
 ) {
+	if (input.startedAt === undefined) {
+		store.sql`
+			UPDATE chat_meta
+			SET
+				status = 'idle',
+				last_run_result = 'error',
+				last_activity_at = ${input.now},
+				last_run_finished_at = ${input.now},
+				last_error_message = ${input.errorMessage},
+				updated_at = ${input.now}
+			WHERE id = ${input.threadId} AND archived_at IS NULL
+		`;
+		return;
+	}
+
 	store.sql`
 		UPDATE chat_meta
 		SET
 			status = 'idle',
 			last_run_result = 'error',
-			last_activity_at = ${now},
-			last_run_finished_at = ${now},
-			last_error_message = ${errorMessage},
-			updated_at = ${now}
-		WHERE id = ${threadId} AND archived_at IS NULL
+			last_activity_at = ${input.now},
+			last_run_finished_at = ${input.now},
+			last_error_message = ${input.errorMessage},
+			updated_at = ${input.now}
+		WHERE id = ${input.threadId}
+			AND archived_at IS NULL
+			AND last_run_started_at = ${input.startedAt}
 	`;
 }
 

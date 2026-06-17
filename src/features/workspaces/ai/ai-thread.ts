@@ -1,4 +1,5 @@
 import type {
+	ChatErrorContext,
 	ChatRecoveryConfig,
 	ChatResponseResult,
 	ChunkContext,
@@ -48,10 +49,11 @@ const aiThreadChatRecovery = {
 export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 	return class AIThread extends Think<Env> {
 		override maxSteps = 5;
-		override messageConcurrency = "latest" as const;
 		override chatRecovery = aiThreadChatRecovery;
 		override chatStreamStallTimeoutMs = 90_000;
+		override sendReasoning = false;
 		private shouldRefreshSessionPrompt = false;
+		private readonly directoryRunStarts: number[] = [];
 		private readonly inspector = new AIThreadInspectorRecorder(this);
 
 		getModel(): LanguageModel {
@@ -99,7 +101,11 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				throw new Error("Chat thread not found");
 			}
 
-			await directory.recordThreadRunStarted(this.name);
+			this.directoryRunStarts.push(
+				await directory.recordThreadRunStarted(this.name, {
+					isUserMessage: !ctx.continuation,
+				}),
+			);
 
 			const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
 			const system = getAIThreadSystemPromptForWorkspace(
@@ -139,13 +145,17 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		override async onChatResponse(result: ChatResponseResult) {
 			this.inspector.recordTurnFinished(result);
+			const startedAt = this.directoryRunStarts.shift();
 			const hasActiveConnections = Array.from(this.getConnections()).length > 0;
 
 			try {
 				const directory = await this.parentAgent(getUserAIStore());
-				await directory.recordThreadRunFinished(this.name, result, {
-					viewed: hasActiveConnections,
-				});
+				if (startedAt !== undefined) {
+					await directory.recordThreadRunFinished(this.name, result, {
+						startedAt,
+						viewed: hasActiveConnections,
+					});
+				}
 
 				const shouldGenerateTitle =
 					result.status === "completed" &&
@@ -168,12 +178,17 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 		}
 
-		override onChatError(error: unknown) {
+		override onChatError(error: unknown, ctx?: ChatErrorContext) {
 			this.inspector.recordTurnError(error);
+			const startedAt = ctx?.messagesPersisted
+				? this.directoryRunStarts.shift()
+				: undefined;
 			void this.keepAliveWhile(async () => {
 				try {
 					const directory = await this.parentAgent(getUserAIStore());
-					await directory.recordThreadRunFailed(this.name, error);
+					await directory.recordThreadRunFailed(this.name, error, {
+						startedAt,
+					});
 				} catch (metadataError) {
 					console.warn(
 						"[AIThread] Failed to clear directory run status",
@@ -184,7 +199,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				await this._refreshSessionPromptIfNeeded();
 			});
 
-			return super.onChatError(error);
+			return super.onChatError(error, ctx);
 		}
 
 		afterToolCall(ctx: ToolCallResultContext): void {

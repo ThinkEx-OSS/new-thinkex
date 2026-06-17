@@ -1,11 +1,13 @@
+import {
+	browserLinks,
+	browserMarkdown,
+	browserScrape,
+	type QuickActionBinding,
+} from "@cloudflare/think/tools/browser";
 import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
 
-import {
-	type BrowserQuickActionBinding,
-	normalizeBrowserQuickActionResult,
-} from "#/features/workspaces/ai/browser-quick-action";
 import { assertPublicHttpUrl } from "#/features/workspaces/ai/web-access-policy";
 import {
 	isRedirect,
@@ -18,6 +20,7 @@ const DEFAULT_FETCH_MAX_BYTES = 200_000;
 const MAX_FETCH_BYTES = 512_000;
 const MAX_REDIRECTS = 3;
 const REQUEST_TIMEOUT_MS = 8_000;
+const MAX_BROWSER_RESULT_CHARS = 50_000;
 
 const readUrlInputSchema = z.object({
 	maxBytes: z
@@ -32,20 +35,22 @@ const readUrlInputSchema = z.object({
 		.describe("Public HTTP(S) URL to fetch with a direct network request."),
 });
 
-const browserReadActionSchema = z.enum(["markdown", "content", "links"]);
-
-const readWebPageInputSchema = z.object({
-	action: browserReadActionSchema
-		.optional()
-		.describe(
-			"Browser read mode. markdown is best for normal reading; content returns HTML; links returns page links.",
-		),
+const browserPageInputSchema = z.object({
 	url: z
 		.url()
 		.describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
 });
 
+const browserScrapeInputSchema = browserPageInputSchema.extend({
+	selectors: z
+		.array(z.string())
+		.min(1)
+		.describe("CSS selectors to extract from the rendered page."),
+});
+
 export function createAIThreadWebTools(env: Env): ToolSet {
+	const browser = env.BROWSER as unknown as QuickActionBinding;
+
 	return {
 		web_fetch_url: tool({
 			description:
@@ -55,20 +60,90 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 				return readPublicUrl(url, maxBytes ?? DEFAULT_FETCH_MAX_BYTES);
 			},
 		}),
-		web_read_page: tool({
+		browser_markdown: tool({
 			description:
-				"Read a public webpage with Cloudflare Browser Run. Best for rendered pages, JavaScript-heavy pages, markdown conversion, or final DOM links.",
-			inputSchema: readWebPageInputSchema,
-			execute: async ({ action = "markdown", url }) => {
+				"Load a public webpage in Cloudflare Browser Run and return its rendered content as Markdown. Best for articles, docs, and JavaScript-heavy pages.",
+			inputSchema: browserPageInputSchema,
+			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
-				const browser = env.BROWSER as unknown as BrowserQuickActionBinding;
-				const result = await browser.quickAction(action, {
-					url: safeUrl.toString(),
-				});
-
-				return normalizeBrowserQuickActionResult(action, result);
+				return truncateText(
+					await browserMarkdown(browser, {
+						url: safeUrl.toString(),
+					}),
+				);
 			},
 		}),
+		browser_links: tool({
+			description:
+				"Load a public webpage in Cloudflare Browser Run and return its rendered links.",
+			inputSchema: browserPageInputSchema,
+			execute: async ({ url }) => {
+				const safeUrl = assertPublicHttpUrl(url);
+				return boundJsonResult(
+					await browserLinks(browser, {
+						url: safeUrl.toString(),
+					}),
+				);
+			},
+		}),
+		browser_scrape: tool({
+			description:
+				"Load a public webpage in Cloudflare Browser Run and scrape rendered elements by CSS selector.",
+			inputSchema: browserScrapeInputSchema,
+			execute: async ({ selectors, url }) => {
+				const safeUrl = assertPublicHttpUrl(url);
+				return boundJsonResult(
+					await browserScrape(browser, {
+						elements: selectors.map((selector) => ({ selector })),
+						url: safeUrl.toString(),
+					}),
+				);
+			},
+		}),
+	};
+}
+
+function truncateText(value: string) {
+	if (value.length <= MAX_BROWSER_RESULT_CHARS) {
+		return value;
+	}
+
+	return `${value.slice(0, MAX_BROWSER_RESULT_CHARS)}\n\n[truncated ${
+		value.length - MAX_BROWSER_RESULT_CHARS
+	} characters]`;
+}
+
+function boundJsonResult(value: unknown) {
+	const json = JSON.stringify(value);
+
+	if (json.length <= MAX_BROWSER_RESULT_CHARS) {
+		return value;
+	}
+
+	if (Array.isArray(value)) {
+		const result: unknown[] = [];
+		let size = 2;
+
+		for (const item of value) {
+			const itemSize = JSON.stringify(item).length + 1;
+
+			if (size + itemSize > MAX_BROWSER_RESULT_CHARS) {
+				break;
+			}
+
+			result.push(item);
+			size += itemSize;
+		}
+
+		if (result.length > 0) {
+			return result;
+		}
+	}
+
+	return {
+		truncated: true,
+		note: `Result is too large (${json.length} characters); narrow the request.`,
+		preview: `${json.slice(0, MAX_BROWSER_RESULT_CHARS)}...`,
 	};
 }
 
@@ -114,7 +189,7 @@ async function readPublicUrl(input: string, maxBytes: number) {
 				kind: "unsupported_content_type",
 				metadata: responseMetadata(response, currentUrl),
 				error:
-					"Response is not a supported text-like content type. Use web_read_page for rendered pages or a future asset import tool for binary content.",
+					"Response is not a supported text-like content type. Use browser_markdown for rendered pages or a future asset import tool for binary content.",
 			};
 		}
 

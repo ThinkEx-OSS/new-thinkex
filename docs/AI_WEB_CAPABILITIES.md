@@ -10,7 +10,7 @@ Implemented in the current branch:
 
 - `wrangler.jsonc` defines a `BROWSER` binding.
 - The compatibility date is set to `2026-03-24`, which is the `env.BROWSER.quickAction()` requirement.
-- `AIThread` exposes `readUrl` for cheap text fetches and `readWebPage` for constrained Browser Run reads.
+- `AIThread` exposes `web_fetch_url` for cheap text fetches plus constrained Browser Run Quick Actions: `browser_markdown`, `browser_links`, and `browser_scrape`.
 - `@cloudflare/codemode` and `worker_loaders` are not installed/configured, which means full CDP/browser tools should wait.
 
 ## Options
@@ -42,9 +42,9 @@ Cons:
 - Cannot capture screenshots or PDFs.
 - Cannot inspect the final rendered DOM.
 
-Recommended initial tools:
+Recommended initial tool:
 
-- `readUrl`: fetch a public HTTP(S) resource and return compact text plus metadata.
+- `web_fetch_url`: fetch a public HTTP(S) resource and return compact text plus metadata.
 
 Guardrails:
 
@@ -100,9 +100,11 @@ Cons:
 - Slower and more expensive than plain fetch.
 - Crawls need approval, limits, and probably background execution.
 
-Recommended initial tool:
+Recommended initial tools:
 
-- `readWebPage`: a constrained Browser Run wrapper with an action enum for `markdown`, `content`, and `links`
+- `browser_markdown`: read rendered public pages as bounded Markdown
+- `browser_links`: extract rendered public-page links
+- `browser_scrape`: scrape rendered elements by CSS selector
 
 Later tools:
 
