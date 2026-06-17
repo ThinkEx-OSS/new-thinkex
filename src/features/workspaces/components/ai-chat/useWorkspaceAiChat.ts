@@ -6,6 +6,7 @@ import {
 	userAIAgentName,
 	userAIBasePath,
 } from "#/features/workspaces/agent-routes";
+import { deriveAiChatPresentation } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type {
 	AiChatMessage,
 	AiChatModelId,
@@ -49,13 +50,23 @@ export function useWorkspaceAiChat({
 		status,
 		stop,
 	} = chat;
-	const isBusy = isRecovering || isStreaming || isServerStreaming;
-	const showThinking = status === "submitted" && !isToolContinuation;
-	const canSend = status === "ready" && !isBusy;
-	const canStop = status === "submitted" || isBusy;
+	const presentation = deriveAiChatPresentation(messages, status, {
+		isRecovering,
+		isServerStreaming,
+		isStreaming,
+		isToolContinuation,
+	});
+	const { lifecycle } = presentation;
+	const showThinking = presentation.showEphemeralAwaitingFirstToken;
+	const canSend = status === "ready" && !lifecycle.isBusy;
+	const canStop = status === "submitted" || lifecycle.isBusy;
 	const inputStatus: AiChatStatus =
-		isRecovering || showThinking ? "submitted" : isBusy ? "streaming" : status;
-	const messageStatus: AiChatStatus = isBusy ? "streaming" : status;
+		isRecovering || showThinking
+			? "submitted"
+			: lifecycle.isBusy
+				? "streaming"
+				: status;
+	const messageStatus: AiChatStatus = lifecycle.isBusy ? "streaming" : status;
 
 	const sendMessage = (
 		message: AiChatSendMessage,
@@ -80,10 +91,11 @@ export function useWorkspaceAiChat({
 
 	return {
 		error,
-		isRecovering,
 		inputStatus,
+		isRecovering,
 		messageStatus,
 		messages,
+		presentation,
 		regenerate,
 		sendMessage,
 		showThinking,

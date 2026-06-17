@@ -1,4 +1,3 @@
-import { RefreshCw } from "lucide-react";
 import {
 	type ReactNode,
 	useCallback,
@@ -10,14 +9,14 @@ import {
 import { VList, type VListHandle } from "virtua";
 
 import { ConversationEmptyState } from "#/components/ai-elements/conversation";
-import { Message, MessageContent } from "#/components/ai-elements/message";
-import { Shimmer } from "#/components/ai-elements/shimmer";
+import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
-import type {
-	AiChatMessage,
-	AiChatStatus,
-} from "#/features/workspaces/components/ai-chat/types";
+import {
+	type AiChatPresentation,
+	getAssistantRowDisplay,
+} from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { createAssistantResponseSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import {
@@ -33,36 +32,27 @@ type SelectedText = {
 
 interface AiChatMessageListProps {
 	isLoadingHistory?: boolean;
-	isRecovering?: boolean;
 	messages: AiChatMessage[];
 	onRegenerateLastResponse?: () => void;
-	showThinking?: boolean;
-	status: AiChatStatus;
+	presentation: AiChatPresentation;
 	workspaceId: string;
 }
 
 export default function AiChatMessageList({
 	isLoadingHistory = false,
-	isRecovering = false,
 	messages,
 	onRegenerateLastResponse,
-	showThinking = false,
-	status,
+	presentation,
 	workspaceId,
 }: AiChatMessageListProps) {
-	const lastMessage = messages.at(-1);
-	const regenerableAssistantMessageId =
-		status === "ready" && lastMessage?.role === "assistant"
-			? lastMessage.id
-			: undefined;
-	const streamingAssistantMessageId =
-		status === "streaming" && lastMessage?.role === "assistant"
-			? lastMessage.id
-			: undefined;
-	const requestErrorAssistantMessageId =
-		status === "error" && lastMessage?.role === "assistant"
-			? lastMessage.id
-			: undefined;
+	const {
+		regenerableAssistantMessageId,
+		showEphemeralAwaitingFirstToken,
+		showEphemeralRecovering,
+		streamingAssistantMessageId,
+	} = presentation;
+	const hasEphemeralTail =
+		showEphemeralAwaitingFirstToken || showEphemeralRecovering;
 	const listRef = useRef<HTMLDivElement>(null);
 	const virtualListRef = useRef<VListHandle>(null);
 	const initialBottomScrollAppliedRef = useRef(false);
@@ -78,10 +68,11 @@ export default function AiChatMessageList({
 		? messages.findIndex((message) => message.id === latestUserMessage.id)
 		: -1;
 	const latestUserMessageId = latestUserMessage?.id;
+	const ephemeralRowCount =
+		(showEphemeralRecovering ? 1 : 0) +
+		(showEphemeralAwaitingFirstToken ? 1 : 0);
 	const bottomRowIndex =
-		messages.length > 0
-			? messages.length + (isRecovering ? 1 : 0) + (showThinking ? 1 : 0) - 1
-			: -1;
+		messages.length > 0 ? messages.length + ephemeralRowCount - 1 : -1;
 	const pinnedSpacerMinHeight = Math.max(0, pinnedBlankSize - pinnedUserSize);
 	const pinnedSpacerStyle =
 		pinnedSpacerMinHeight > 0
@@ -97,6 +88,9 @@ export default function AiChatMessageList({
 			currentSize === nextSize ? currentSize : nextSize,
 		);
 	}, []);
+	const { lifecycle } = presentation;
+	const pinActive =
+		lifecycle.status === "submitted" || lifecycle.status === "streaming";
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -116,7 +110,7 @@ export default function AiChatMessageList({
 		}
 
 		if (bottomRowIndex < 0) {
-			if (!isRecovering && !showThinking) {
+			if (!hasEphemeralTail) {
 				pinnedUserMessageIdRef.current = null;
 				initialBottomScrollAppliedRef.current = true;
 			}
@@ -126,19 +120,13 @@ export default function AiChatMessageList({
 		pinnedUserMessageIdRef.current = latestUserMessageId ?? null;
 		virtualListRef.current?.scrollToIndex(bottomRowIndex, { align: "end" });
 		initialBottomScrollAppliedRef.current = true;
-	}, [
-		bottomRowIndex,
-		isLoadingHistory,
-		isRecovering,
-		latestUserMessageId,
-		showThinking,
-	]);
+	}, [bottomRowIndex, hasEphemeralTail, isLoadingHistory, latestUserMessageId]);
 
 	useEffect(() => {
 		if (
 			!latestUserMessageId ||
 			latestUserMessageIndex < 0 ||
-			(status !== "submitted" && status !== "streaming") ||
+			!pinActive ||
 			pinnedUserMessageIdRef.current === latestUserMessageId
 		) {
 			return;
@@ -164,7 +152,7 @@ export default function AiChatMessageList({
 		return () => {
 			cancelAnimationFrame(frame);
 		};
-	}, [latestUserMessageId, latestUserMessageIndex, status]);
+	}, [latestUserMessageId, latestUserMessageIndex, pinActive]);
 
 	if (messages.length === 0) {
 		if (isLoadingHistory) {
@@ -175,18 +163,18 @@ export default function AiChatMessageList({
 			);
 		}
 
-		if (isRecovering) {
+		if (showEphemeralRecovering) {
 			return (
 				<AiChatMessageListFallback>
-					<RecoveringAssistantMessage />
+					<AiChatAssistantPending pending="recovering" />
 				</AiChatMessageListFallback>
 			);
 		}
 
-		if (showThinking) {
+		if (showEphemeralAwaitingFirstToken) {
 			return (
 				<AiChatMessageListFallback>
-					<SubmittedAssistantMessage />
+					<AiChatAssistantPending pending="thinking" />
 				</AiChatMessageListFallback>
 			);
 		}
@@ -210,45 +198,41 @@ export default function AiChatMessageList({
 				style={{ height: "100%" }}
 				bufferSize={600}
 			>
-				{messages.map((message, index) => (
-					<div
-						key={message.id}
-						ref={
-							message.id === latestUserMessageId
-								? measurePinnedUserRow
-								: undefined
-						}
-						className="pb-5"
-						style={
-							!isRecovering &&
-							!showThinking &&
-							index === messages.length - 1 &&
-							message.role === "assistant"
-								? pinnedSpacerStyle
-								: undefined
-						}
-					>
-						<AiChatMessageRow
-							isRegenerable={message.id === regenerableAssistantMessageId}
-							isRequestError={message.id === requestErrorAssistantMessageId}
-							isStreaming={message.id === streamingAssistantMessageId}
-							message={message}
-							onRegenerate={onRegenerateLastResponse}
-						/>
-					</div>
-				))}
-				{isRecovering ? (
-					<div
-						key="recovering"
-						className="pb-5"
-						style={showThinking ? undefined : pinnedSpacerStyle}
-					>
-						<RecoveringAssistantMessage />
+				{messages.map((message, index) => {
+					const display = getAssistantRowDisplay(message, presentation);
+					const isLastMessage = index === messages.length - 1;
+					const applyPinnedSpacer =
+						!hasEphemeralTail && isLastMessage && message.role === "assistant";
+
+					return (
+						<div
+							key={message.id}
+							ref={
+								message.id === latestUserMessageId
+									? measurePinnedUserRow
+									: undefined
+							}
+							className="pb-5"
+							style={applyPinnedSpacer ? pinnedSpacerStyle : undefined}
+						>
+							<AiChatMessageRow
+								display={display}
+								isRegenerable={message.id === regenerableAssistantMessageId}
+								isStreaming={message.id === streamingAssistantMessageId}
+								message={message}
+								onRegenerate={onRegenerateLastResponse}
+							/>
+						</div>
+					);
+				})}
+				{showEphemeralRecovering ? (
+					<div key="recovering" className="pb-5" style={pinnedSpacerStyle}>
+						<AiChatAssistantPending pending="recovering" />
 					</div>
 				) : null}
-				{showThinking ? (
+				{showEphemeralAwaitingFirstToken ? (
 					<div key="thinking" className="pb-5" style={pinnedSpacerStyle}>
-						<SubmittedAssistantMessage />
+						<AiChatAssistantPending pending="thinking" />
 					</div>
 				) : null}
 			</VList>
@@ -301,27 +285,4 @@ function getSelectedText(root: HTMLElement | null): SelectedText | null {
 
 	const rect = getRangeClientRect(selection.getRangeAt(0), null);
 	return rect ? { rect, text } : null;
-}
-
-function SubmittedAssistantMessage() {
-	return (
-		<Message from="assistant" className="max-w-full">
-			<MessageContent>
-				<Shimmer duration={1}>{"Thinking\u2026"}</Shimmer>
-			</MessageContent>
-		</Message>
-	);
-}
-
-function RecoveringAssistantMessage() {
-	return (
-		<Message from="assistant" className="max-w-full">
-			<MessageContent>
-				<div className="flex items-center gap-2 text-muted-foreground">
-					<RefreshCw className="size-3.5 animate-spin" aria-hidden="true" />
-					<Shimmer duration={1.4}>{"Recovering response\u2026"}</Shimmer>
-				</div>
-			</MessageContent>
-		</Message>
-	);
 }

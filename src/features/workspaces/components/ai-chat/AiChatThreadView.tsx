@@ -40,12 +40,10 @@ export default function AiChatThreadView({
 	const {
 		error,
 		inputStatus,
-		isRecovering,
-		messageStatus,
 		messages,
+		presentation,
 		regenerate,
 		sendMessage: sendChatMessage,
-		showThinking,
 		stop,
 	} = chat;
 	const clearSelectedMentions = useWorkspaceUiStore(
@@ -81,10 +79,8 @@ export default function AiChatThreadView({
 				>
 					<AiChatMessageList
 						isLoadingHistory={hasPersistedMessages && messages.length === 0}
-						isRecovering={isRecovering}
 						messages={messages}
-						showThinking={showThinking}
-						status={messageStatus}
+						presentation={presentation}
 						workspaceId={context.workspaceId}
 						onRegenerateLastResponse={regenerate}
 					/>

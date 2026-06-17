@@ -9,7 +9,12 @@ import {
 	MessageToolbar,
 } from "#/components/ai-elements/message";
 import { Button } from "#/components/ui/button";
+import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
+import {
+	type AssistantRowDisplay,
+	getDisplayableParts,
+} from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type {
 	AiChatMessage,
 	AiChatMessagePart,
@@ -17,25 +22,25 @@ import type {
 import { cn } from "#/lib/utils";
 
 export default function AiChatMessageRow({
+	display,
 	isRegenerable,
-	isRequestError,
 	isStreaming,
 	message,
 	onRegenerate,
 }: {
+	display: AssistantRowDisplay | null;
 	isRegenerable: boolean;
-	isRequestError: boolean;
 	isStreaming: boolean;
 	message: AiChatMessage;
 	onRegenerate?: () => void;
 }) {
-	const isAssistant = message.role === "assistant";
-	const visibleParts = message.parts.filter(shouldShowMessagePart);
-	const copyableText = getCopyableMessageText(message);
-
-	if (isAssistant && visibleParts.length === 0 && isRequestError) {
+	if (message.role === "assistant" && display?.kind === "hidden") {
 		return null;
 	}
+
+	const isAssistant = message.role === "assistant";
+	const visibleParts = isAssistant ? [] : getDisplayableParts(message);
+	const copyableText = isAssistant ? getCopyableMessageText(message) : "";
 
 	return (
 		<Message
@@ -47,21 +52,25 @@ export default function AiChatMessageRow({
 		>
 			<div className="min-w-0 max-w-full">
 				<MessageContent>
-					{visibleParts.length > 0 ? (
+					{isAssistant && display ? (
+						<AssistantMessageBody
+							display={display}
+							message={message}
+							onRegenerate={onRegenerate}
+						/>
+					) : (
 						visibleParts.map((part, index) => (
 							<AiChatMessagePartView
 								key={getMessagePartKey(message.id, part, index)}
 								part={part}
 							/>
 						))
-					) : isAssistant ? (
-						<EmptyAssistantResponse
-							canRegenerate={isRegenerable && Boolean(onRegenerate)}
-							onRegenerate={onRegenerate}
-						/>
-					) : null}
+					)}
 				</MessageContent>
-				{isAssistant && visibleParts.length > 0 && !isStreaming ? (
+				{isAssistant &&
+				display?.kind === "content" &&
+				display.parts.length > 0 &&
+				!isStreaming ? (
 					<MessageToolbar className="mt-2 justify-start">
 						<MessageActions className="-ms-2.5">
 							{copyableText ? (
@@ -93,6 +102,40 @@ export default function AiChatMessageRow({
 			</div>
 		</Message>
 	);
+}
+
+function AssistantMessageBody({
+	display,
+	message,
+	onRegenerate,
+}: {
+	display: AssistantRowDisplay;
+	message: AiChatMessage;
+	onRegenerate?: () => void;
+}) {
+	if (display.kind === "content") {
+		return display.parts.map((part, index) => (
+			<AiChatMessagePartView
+				key={getMessagePartKey(message.id, part, index)}
+				part={part}
+			/>
+		));
+	}
+
+	if (display.kind === "pending") {
+		return <AiChatAssistantPending pending={display.pending} />;
+	}
+
+	if (display.kind === "empty-terminal") {
+		return (
+			<EmptyAssistantResponse
+				canRegenerate={display.canRegenerate && Boolean(onRegenerate)}
+				onRegenerate={onRegenerate}
+			/>
+		);
+	}
+
+	return null;
 }
 
 function EmptyAssistantResponse({
@@ -150,25 +193,18 @@ function getMessagePartKey(
 		return `${messageId}-tool-${part.toolCallId}`;
 	}
 
-	if (part.type === "source-url" || part.type === "source-document") {
-		return `${messageId}-${part.type}-${part.sourceId}`;
-	}
-
 	if (part.type === "file") {
 		return `${messageId}-file-${part.url}`;
 	}
 
+	if (part.type === "source-url" || part.type === "source-document") {
+		return `${messageId}-${part.type}-${part.sourceId}`;
+	}
+
+	if (part.type.startsWith("data-")) {
+		const dataPart = part as { id?: string; type: string };
+		return `${messageId}-${dataPart.type}-${dataPart.id ?? index}`;
+	}
+
 	return `${messageId}-${part.type}-${index}`;
-}
-
-function shouldShowMessagePart(part: AiChatMessagePart) {
-	if (part.type === "text") {
-		return part.text.length > 0 || part.state === "streaming";
-	}
-
-	if (part.type === "reasoning") {
-		return false;
-	}
-
-	return true;
 }
