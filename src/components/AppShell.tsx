@@ -18,7 +18,7 @@ export default function AppShell({
 }: AppShellProps) {
 	return (
 		<div className="min-h-screen bg-background text-foreground">
-			<header className="sticky top-0 z-40 bg-workspace-chrome-active">
+			<header className="sticky top-0 z-40 bg-muted">
 				<div className="flex h-12 w-full items-center gap-3 px-4">
 					<Link
 						to="/home"
