@@ -48,6 +48,7 @@ import { Spinner } from "#/components/ui/spinner";
 import { usePdfItemToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import { WorkspacePdfAskSelectionMenu } from "#/features/workspaces/components/WorkspacePdfAskSelectionMenu";
+import { WorkspacePdfPageControl } from "#/features/workspaces/components/WorkspacePdfPageControl";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	type ClientPoint,
@@ -339,6 +340,7 @@ function WorkspacePdfDocumentContent({
 					)}
 				/>
 			</ZoomGestureWrapper>
+			<WorkspacePdfPageControl documentId={documentId} />
 		</Viewport>
 	);
 }
