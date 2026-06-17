@@ -3,6 +3,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	useState,
 } from "react";
@@ -64,6 +65,7 @@ export default function AiChatMessageList({
 			: undefined;
 	const listRef = useRef<HTMLDivElement>(null);
 	const virtualListRef = useRef<VListHandle>(null);
+	const initialBottomScrollAppliedRef = useRef(false);
 	const pinnedUserMessageIdRef = useRef<string | null>(null);
 	const [pinnedBlankSize, setPinnedBlankSize] = useState(0);
 	const [pinnedUserSize, setPinnedUserSize] = useState(0);
@@ -76,6 +78,10 @@ export default function AiChatMessageList({
 		? messages.findIndex((message) => message.id === latestUserMessage.id)
 		: -1;
 	const latestUserMessageId = latestUserMessage?.id;
+	const bottomRowIndex =
+		messages.length > 0
+			? messages.length + (isRecovering ? 1 : 0) + (showThinking ? 1 : 0) - 1
+			: -1;
 	const pinnedSpacerMinHeight = Math.max(0, pinnedBlankSize - pinnedUserSize);
 	const pinnedSpacerStyle =
 		pinnedSpacerMinHeight > 0
@@ -103,6 +109,30 @@ export default function AiChatMessageList({
 			document.removeEventListener("selectionchange", updateSelection);
 		};
 	}, []);
+
+	useLayoutEffect(() => {
+		if (initialBottomScrollAppliedRef.current || isLoadingHistory) {
+			return;
+		}
+
+		if (bottomRowIndex < 0) {
+			if (!isRecovering && !showThinking) {
+				pinnedUserMessageIdRef.current = null;
+				initialBottomScrollAppliedRef.current = true;
+			}
+			return;
+		}
+
+		pinnedUserMessageIdRef.current = latestUserMessageId ?? null;
+		virtualListRef.current?.scrollToIndex(bottomRowIndex, { align: "end" });
+		initialBottomScrollAppliedRef.current = true;
+	}, [
+		bottomRowIndex,
+		isLoadingHistory,
+		isRecovering,
+		latestUserMessageId,
+		showThinking,
+	]);
 
 	useEffect(() => {
 		if (
