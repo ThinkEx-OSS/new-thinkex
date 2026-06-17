@@ -13,7 +13,6 @@ import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/
 import type {
 	AiChatMessage,
 	AiChatMessagePart,
-	AiChatToolApprovalResponse,
 } from "#/features/workspaces/components/ai-chat/types";
 import { cn } from "#/lib/utils";
 
@@ -23,14 +22,12 @@ export default function AiChatMessageRow({
 	isStreaming,
 	message,
 	onRegenerate,
-	onToolApprovalResponse,
 }: {
 	isRegenerable: boolean;
 	isRequestError: boolean;
 	isStreaming: boolean;
 	message: AiChatMessage;
 	onRegenerate?: () => void;
-	onToolApprovalResponse?: (response: AiChatToolApprovalResponse) => void;
 }) {
 	const isAssistant = message.role === "assistant";
 	const visibleParts = message.parts.filter(shouldShowMessagePart);
@@ -49,28 +46,21 @@ export default function AiChatMessageRow({
 			)}
 		>
 			<div className="min-w-0 max-w-full">
-				<div
-					data-ai-assistant-message-id={
-						isAssistant && !isStreaming ? message.id : undefined
-					}
-				>
-					<MessageContent>
-						{visibleParts.length > 0 ? (
-							visibleParts.map((part, index) => (
-								<AiChatMessagePartView
-									key={getMessagePartKey(message.id, part, index)}
-									onToolApprovalResponse={onToolApprovalResponse}
-									part={part}
-								/>
-							))
-						) : isAssistant ? (
-							<EmptyAssistantResponse
-								canRegenerate={isRegenerable && Boolean(onRegenerate)}
-								onRegenerate={onRegenerate}
+				<MessageContent>
+					{visibleParts.length > 0 ? (
+						visibleParts.map((part, index) => (
+							<AiChatMessagePartView
+								key={getMessagePartKey(message.id, part, index)}
+								part={part}
 							/>
-						) : null}
-					</MessageContent>
-				</div>
+						))
+					) : isAssistant ? (
+						<EmptyAssistantResponse
+							canRegenerate={isRegenerable && Boolean(onRegenerate)}
+							onRegenerate={onRegenerate}
+						/>
+					) : null}
+				</MessageContent>
 				{isAssistant && visibleParts.length > 0 && !isStreaming ? (
 					<MessageToolbar className="mt-2 justify-start">
 						<MessageActions className="-ms-2.5">
@@ -172,12 +162,12 @@ function getMessagePartKey(
 }
 
 function shouldShowMessagePart(part: AiChatMessagePart) {
-	if (part.type === "text" || part.type === "reasoning") {
-		if (part.type === "reasoning" && part.state !== "streaming") {
-			return false;
-		}
-
+	if (part.type === "text") {
 		return part.text.length > 0 || part.state === "streaming";
+	}
+
+	if (part.type === "reasoning") {
+		return false;
 	}
 
 	return true;

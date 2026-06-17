@@ -11,7 +11,7 @@ import type {
 	AiChatModelId,
 	AiChatSendMessage,
 	AiChatSendMessageOptions,
-	AiChatToolApprovalResponse,
+	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 
 interface UseWorkspaceAiChatOptions {
@@ -37,27 +37,31 @@ export function useWorkspaceAiChat({
 		}),
 	});
 	const {
-		addToolApprovalResponse: addAgentToolApprovalResponse,
 		clearError,
 		error,
 		isRecovering,
+		isServerStreaming,
 		isStreaming,
+		isToolContinuation,
 		messages,
 		regenerate: regenerateAgentMessage,
 		sendMessage: sendAgentMessage,
 		status,
 		stop,
 	} = chat;
+	const isBusy = isRecovering || isStreaming || isServerStreaming;
+	const showThinking = status === "submitted" && !isToolContinuation;
+	const canSend = status === "ready" && !isBusy;
+	const canStop = status === "submitted" || isBusy;
+	const inputStatus: AiChatStatus =
+		isRecovering || showThinking ? "submitted" : isBusy ? "streaming" : status;
+	const messageStatus: AiChatStatus = isBusy ? "streaming" : status;
 
 	const sendMessage = (
 		message: AiChatSendMessage,
 		options?: AiChatSendMessageOptions,
 	) => {
-		if (
-			message.parts.length === 0 ||
-			status === "submitted" ||
-			status === "streaming"
-		) {
+		if (message.parts.length === 0 || !canSend) {
 			return false;
 		}
 
@@ -65,11 +69,8 @@ export function useWorkspaceAiChat({
 		void sendAgentMessage(message, options);
 		return true;
 	};
-	const addToolApprovalResponse = (response: AiChatToolApprovalResponse) => {
-		void addAgentToolApprovalResponse(response);
-	};
 	const regenerate = () => {
-		if (isStreaming || isRecovering) {
+		if (canStop) {
 			return;
 		}
 
@@ -78,17 +79,14 @@ export function useWorkspaceAiChat({
 	};
 
 	return {
-		addToolApprovalResponse,
-		clearError,
 		error,
 		isRecovering,
-		isStreaming,
-		isBusy: isStreaming || isRecovering,
+		inputStatus,
+		messageStatus,
 		messages,
-		modelId,
 		regenerate,
 		sendMessage,
-		status,
+		showThinking,
 		stop,
 	};
 }

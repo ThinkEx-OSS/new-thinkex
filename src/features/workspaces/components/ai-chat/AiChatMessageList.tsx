@@ -9,22 +9,17 @@ import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiCha
 import type {
 	AiChatMessage,
 	AiChatStatus,
-	AiChatToolApprovalResponse,
 } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { createAssistantResponseSelectedMention } from "#/features/workspaces/model/workspace-selected-mentions";
 import {
-	type ClientPoint,
-	getPointerClientPoint,
 	getRangeClientRect,
+	type SelectionRect,
 } from "#/features/workspaces/model/workspace-selection-geometry";
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
-const ASSISTANT_MESSAGE_SELECTION_ATTRIBUTE = "data-ai-assistant-message-id";
-
-type AssistantSelectionState = {
-	point: ClientPoint | null;
-	rect: DOMRect;
+type SelectedText = {
+	rect: SelectionRect;
 	text: string;
 };
 
@@ -33,7 +28,7 @@ interface AiChatMessageListProps {
 	isRecovering?: boolean;
 	messages: AiChatMessage[];
 	onRegenerateLastResponse?: () => void;
-	onToolApprovalResponse?: (response: AiChatToolApprovalResponse) => void;
+	showThinking?: boolean;
 	status: AiChatStatus;
 	workspaceId: string;
 }
@@ -43,7 +38,7 @@ export default function AiChatMessageList({
 	isRecovering = false,
 	messages,
 	onRegenerateLastResponse,
-	onToolApprovalResponse,
+	showThinking = false,
 	status,
 	workspaceId,
 }: AiChatMessageListProps) {
@@ -61,57 +56,22 @@ export default function AiChatMessageList({
 			? lastMessage.id
 			: undefined;
 	const listRef = useRef<HTMLDivElement>(null);
-	const lastSelectionPointRef = useRef<ClientPoint | null>(null);
-	const [selection, setSelection] = useState<AssistantSelectionState | null>(
-		null,
-	);
+	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
 	const addSelectedMention = useWorkspaceUiStore(
 		(state) => state.addSelectedMention,
 	);
 
 	useEffect(() => {
 		const updateSelection = () => {
-			setSelection(
-				getAssistantSelectionState({
-					point: lastSelectionPointRef.current,
-					root: listRef.current,
-					streamingAssistantMessageId,
-				}),
-			);
-		};
-		const clearPointAndUpdateSelection = () => {
-			lastSelectionPointRef.current = null;
-			updateSelection();
-		};
-		const handlePointerUp = (event: PointerEvent) => {
-			const target = event.target;
-
-			if (!(target instanceof Node) || !listRef.current?.contains(target)) {
-				return;
-			}
-
-			lastSelectionPointRef.current = getPointerClientPoint(event);
-			queueMicrotask(updateSelection);
+			setSelectedText(getSelectedText(listRef.current));
 		};
 
 		document.addEventListener("selectionchange", updateSelection);
-		document.addEventListener("pointerup", handlePointerUp, true);
-		document.addEventListener("keydown", clearPointAndUpdateSelection);
-		document.addEventListener("scroll", clearPointAndUpdateSelection, true);
-		window.addEventListener("resize", clearPointAndUpdateSelection);
 
 		return () => {
 			document.removeEventListener("selectionchange", updateSelection);
-			document.removeEventListener("pointerup", handlePointerUp, true);
-			document.removeEventListener("keydown", clearPointAndUpdateSelection);
-			document.removeEventListener(
-				"scroll",
-				clearPointAndUpdateSelection,
-				true,
-			);
-			window.removeEventListener("resize", clearPointAndUpdateSelection);
 		};
-	}, [streamingAssistantMessageId]);
+	}, []);
 
 	if (messages.length === 0) {
 		if (isLoadingHistory) {
@@ -122,7 +82,7 @@ export default function AiChatMessageList({
 			return <RecoveringAssistantMessage />;
 		}
 
-		if (status === "submitted") {
+		if (showThinking) {
 			return <SubmittedAssistantMessage />;
 		}
 
@@ -145,24 +105,22 @@ export default function AiChatMessageList({
 					isStreaming={message.id === streamingAssistantMessageId}
 					message={message}
 					onRegenerate={onRegenerateLastResponse}
-					onToolApprovalResponse={onToolApprovalResponse}
 				/>
 			))}
 			{isRecovering ? <RecoveringAssistantMessage /> : null}
-			{status === "submitted" ? <SubmittedAssistantMessage /> : null}
-			{selection ? (
+			{showThinking ? <SubmittedAssistantMessage /> : null}
+			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
-					point={selection.point}
-					rect={selection.rect}
+					rect={selectedText.rect}
 					onAsk={() => {
 						addSelectedMention(
 							workspaceId,
 							createAssistantResponseSelectedMention({
-								text: selection.text,
+								text: selectedText.text,
 							}),
 						);
 						window.getSelection()?.removeAllRanges();
-						setSelection(null);
+						setSelectedText(null);
 					}}
 				/>
 			) : null}
@@ -170,53 +128,22 @@ export default function AiChatMessageList({
 	);
 }
 
-function getAssistantSelectionState({
-	point,
-	root,
-	streamingAssistantMessageId,
-}: {
-	point: ClientPoint | null;
-	root: HTMLElement | null;
-	streamingAssistantMessageId?: string;
-}): AssistantSelectionState | null {
+function getSelectedText(root: HTMLElement | null): SelectedText | null {
 	const selection = window.getSelection();
 
 	if (!root || !selection || selection.rangeCount === 0) {
 		return null;
 	}
 
+	const anchorNode = selection.anchorNode;
 	const text = selection.toString().trim();
-	const anchorRoot = getAssistantSelectionRoot(selection.anchorNode, root);
-	const focusRoot = getAssistantSelectionRoot(selection.focusNode, root);
 
-	if (!text || !anchorRoot || anchorRoot !== focusRoot) {
+	if (!anchorNode || !root.contains(anchorNode) || !text) {
 		return null;
 	}
 
-	const messageId = anchorRoot.getAttribute(
-		ASSISTANT_MESSAGE_SELECTION_ATTRIBUTE,
-	);
-
-	if (!messageId || messageId === streamingAssistantMessageId) {
-		return null;
-	}
-
-	const rect = getRangeClientRect(selection.getRangeAt(0), point);
-
-	if (!rect) {
-		return null;
-	}
-
-	return { point, rect, text };
-}
-
-function getAssistantSelectionRoot(node: Node | null, root: HTMLElement) {
-	const element = node instanceof Element ? node : node?.parentElement;
-	const assistantRoot = element?.closest<HTMLElement>(
-		`[${ASSISTANT_MESSAGE_SELECTION_ATTRIBUTE}]`,
-	);
-
-	return assistantRoot && root.contains(assistantRoot) ? assistantRoot : null;
+	const rect = getRangeClientRect(selection.getRangeAt(0), null);
+	return rect ? { rect, text } : null;
 }
 
 function SubmittedAssistantMessage() {

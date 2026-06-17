@@ -2,48 +2,16 @@ import { isToolUIPart } from "ai";
 import { FileText, LinkIcon } from "lucide-react";
 
 import { MessageResponse } from "#/components/ai-elements/message";
-import {
-	Reasoning,
-	ReasoningContent,
-	ReasoningTrigger,
-} from "#/components/ai-elements/reasoning";
 import AiChatToolCard from "#/features/workspaces/components/ai-chat/AiChatToolCard";
-import type {
-	AiChatMessagePart,
-	AiChatToolApprovalResponse,
-} from "#/features/workspaces/components/ai-chat/types";
+import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat/types";
 
-export function AiChatMessagePartView({
-	part,
-	onToolApprovalResponse,
-}: {
-	part: AiChatMessagePart;
-	onToolApprovalResponse?: (response: AiChatToolApprovalResponse) => void;
-}) {
+export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
 	if (part.type === "text") {
 		return <MessageResponse>{part.text}</MessageResponse>;
 	}
 
-	if (part.type === "reasoning") {
-		return (
-			<Reasoning
-				className="mb-3"
-				defaultOpen={false}
-				isStreaming={part.state === "streaming"}
-			>
-				<ReasoningTrigger />
-				<ReasoningContent>{part.text}</ReasoningContent>
-			</Reasoning>
-		);
-	}
-
 	if (isToolUIPart(part)) {
-		return (
-			<AiChatToolCard
-				part={part}
-				onToolApprovalResponse={onToolApprovalResponse}
-			/>
-		);
+		return <AiChatToolCard part={part} />;
 	}
 
 	if (part.type === "file") {

@@ -20,9 +20,4 @@ export interface AiChatSendMessage {
 
 export type AiChatSendMessageOptions = ChatRequestOptions;
 
-export interface AiChatToolApprovalResponse {
-	id: string;
-	approved: boolean;
-}
-
 export type AiChatStatus = ChatStatus;
