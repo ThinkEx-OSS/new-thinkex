@@ -291,6 +291,7 @@ function WorkspaceBrowseContent({
 				workspace={workspace}
 				items={items}
 				itemIds={selectedItems.map((item) => item.id)}
+				showToast
 				onOpenChange={setMoveSelectedDialogOpen}
 				onMoved={clearSelection}
 			/>

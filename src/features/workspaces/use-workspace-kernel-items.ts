@@ -155,31 +155,7 @@ export function useMoveWorkspaceItemsMutation() {
 		mutationFn: (input: MoveWorkspaceItemsInput) => {
 			const inputWithClientMutation =
 				prepareWorkspaceClientMutationInput(input);
-			const movePromise = moveWorkspaceItems({ data: inputWithClientMutation });
-
-			void toast.promise(movePromise, {
-				loading: getMoveWorkspaceItemsToastMessage(
-					"Moving",
-					input.items.length,
-					"...",
-				),
-				success: getMoveWorkspaceItemsToastMessage(
-					"Moved",
-					input.items.length,
-					".",
-				),
-				error: (error) =>
-					getErrorMessage(
-						error,
-						getMoveWorkspaceItemsToastMessage(
-							"Unable to move",
-							input.items.length,
-							" right now.",
-						),
-					),
-			});
-
-			return movePromise;
+			return moveWorkspaceItems({ data: inputWithClientMutation });
 		},
 		onMutate: async (input) => {
 			await queryClient.cancelQueries({
@@ -292,14 +268,6 @@ export function useDeleteWorkspaceItemsMutation() {
 
 function getDeleteWorkspaceItemsToastMessage(
 	action: "Deleting" | "Deleted" | "Unable to delete",
-	itemCount: number,
-	suffix: string,
-) {
-	return `${action} ${itemCount === 1 ? "item" : `${itemCount} items`}${suffix}`;
-}
-
-function getMoveWorkspaceItemsToastMessage(
-	action: "Moving" | "Moved" | "Unable to move",
 	itemCount: number,
 	suffix: string,
 ) {

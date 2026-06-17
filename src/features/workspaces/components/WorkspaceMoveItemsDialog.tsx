@@ -1,5 +1,6 @@
 import { FolderPlus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
 import { WorkspaceItemTreePickerDialog } from "#/features/workspaces/components/WorkspaceItemTreePickerDialog";
@@ -17,12 +18,14 @@ import {
 	useCreateWorkspaceItemMutation,
 	useMoveWorkspaceItemsMutation,
 } from "#/features/workspaces/use-workspace-kernel-items";
+import { getErrorMessage } from "#/lib/error-message";
 
 export function MoveWorkspaceItemsDialog({
 	open,
 	items,
 	itemIds,
 	workspace,
+	showToast = false,
 	onOpenChange,
 	onMoved,
 }: {
@@ -30,6 +33,7 @@ export function MoveWorkspaceItemsDialog({
 	items: WorkspaceItem[];
 	itemIds: string[];
 	workspace: WorkspaceSummary;
+	showToast?: boolean;
 	onOpenChange: (open: boolean) => void;
 	onMoved?: () => void;
 }) {
@@ -146,21 +150,51 @@ export function MoveWorkspaceItemsDialog({
 					return;
 				}
 
-				moveWorkspaceItemsMutation.mutate(
-					{
-						workspaceId: workspace.id,
-						items: rootItems.map((item) => ({ itemId: item.id })),
-						parentId: selectedParentId,
-					},
-					{
-						onSuccess: () => {
-							setSelectedParentDraft(null);
-							onMoved?.();
-							handleOpenChange(false);
-						},
-					},
-				);
+				const input = {
+					workspaceId: workspace.id,
+					items: rootItems.map((item) => ({ itemId: item.id })),
+					parentId: selectedParentId,
+				};
+				const movePromise = moveWorkspaceItemsMutation.mutateAsync(input);
+
+				if (showToast) {
+					void toast.promise(movePromise, {
+						loading: getMoveWorkspaceItemsToastMessage(
+							"Moving",
+							rootItems.length,
+							"...",
+						),
+						success: getMoveWorkspaceItemsToastMessage(
+							"Moved",
+							rootItems.length,
+							".",
+						),
+						error: (error) =>
+							getErrorMessage(
+								error,
+								getMoveWorkspaceItemsToastMessage(
+									"Unable to move",
+									rootItems.length,
+									" right now.",
+								),
+							),
+					});
+				}
+
+				void movePromise.then(() => {
+					setSelectedParentDraft(null);
+					onMoved?.();
+					handleOpenChange(false);
+				});
 			}}
 		/>
 	);
+}
+
+function getMoveWorkspaceItemsToastMessage(
+	action: "Moving" | "Moved" | "Unable to move",
+	itemCount: number,
+	suffix: string,
+) {
+	return `${action} ${itemCount === 1 ? "item" : `${itemCount} items`}${suffix}`;
 }
