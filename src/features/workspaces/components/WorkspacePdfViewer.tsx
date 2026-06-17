@@ -489,6 +489,7 @@ function WorkspacePdfSelectionShortcuts({
 		},
 		{
 			enabled: Boolean(selection),
+			ignoreInputs: true,
 			preventDefault: false,
 			stopPropagation: false,
 		},

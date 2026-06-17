@@ -1,19 +1,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useEffect, useRef } from "react";
 
-const ACTIVE_LAYER_SELECTOR = [
-	'[data-slot="alert-dialog-content"][data-open]',
-	'[data-slot="combobox-content"][data-open]',
-	'[data-slot="context-menu-content"][data-open]',
-	'[data-slot="dialog-content"][data-open]',
-	'[data-slot="drawer-content"][data-open]',
-	'[data-slot="dropdown-menu-content"][data-open]',
-	'[data-slot="popover-content"][data-open]',
-	'[data-slot="select-content"][data-open]',
-	'[data-slot="sheet-content"][data-open]',
-].join(",");
-const EDITABLE_TARGET_SELECTOR =
-	"input, textarea, select, [contenteditable=''], [contenteditable='true']";
+import { eventTargetsPreventTypeToFocus } from "#/lib/keyboard-event-target";
 
 export function useTypeToFocusPrompt({
 	enabled,
@@ -78,25 +66,9 @@ function shouldRouteTypingToPrompt(event: KeyboardEvent) {
 		return false;
 	}
 
-	if (event.key.length !== 1 || event.key === " ") {
+	if (event.key.length !== 1) {
 		return false;
 	}
 
-	if (document.querySelector(ACTIVE_LAYER_SELECTOR)) {
-		return false;
-	}
-
-	if (isEditableEventTarget(document.activeElement)) {
-		return false;
-	}
-
-	return true;
-}
-
-function isEditableEventTarget(target: EventTarget | null) {
-	if (!(target instanceof Element)) {
-		return false;
-	}
-
-	return Boolean(target.closest(EDITABLE_TARGET_SELECTOR));
+	return !eventTargetsPreventTypeToFocus(event);
 }

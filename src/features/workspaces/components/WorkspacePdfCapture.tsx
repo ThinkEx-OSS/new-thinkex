@@ -239,6 +239,7 @@ export function WorkspacePdfCaptureShortcuts({
 			onToggle();
 		},
 		{
+			ignoreInputs: true,
 			preventDefault: false,
 			stopPropagation: true,
 		},
@@ -252,6 +253,7 @@ export function WorkspacePdfCaptureShortcuts({
 		},
 		{
 			enabled: isActive,
+			ignoreInputs: true,
 			preventDefault: false,
 			stopPropagation: true,
 		},

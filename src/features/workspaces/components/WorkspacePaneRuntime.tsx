@@ -10,10 +10,6 @@ type WorkspacePaneRuntimeValue = {
 	isActive: boolean;
 };
 
-type WorkspacePaneHotkeyOptions = UseHotkeyOptions & {
-	ignoreEditableTargets?: boolean;
-};
-
 const WorkspacePaneRuntimeContext =
 	createContext<WorkspacePaneRuntimeValue | null>(null);
 
@@ -45,24 +41,16 @@ function useWorkspacePaneRuntime() {
 function useWorkspacePaneHotkey(
 	hotkey: Hotkey,
 	callback: HotkeyCallback,
-	options?: WorkspacePaneHotkeyOptions,
+	options?: UseHotkeyOptions,
 ) {
 	const runtime = useWorkspacePaneRuntime();
 	const isActive = runtime?.isActive ?? true;
-	const {
-		enabled = true,
-		ignoreEditableTargets = true,
-		...hotkeyOptions
-	} = options ?? {};
+	const { enabled = true, ...hotkeyOptions } = options ?? {};
 
 	useHotkey(
 		hotkey,
 		(event, context) => {
 			if (!isActive) {
-				return;
-			}
-
-			if (ignoreEditableTargets && isEditableEventTarget(event.target)) {
 				return;
 			}
 
@@ -72,18 +60,6 @@ function useWorkspacePaneHotkey(
 			...hotkeyOptions,
 			enabled: isActive && enabled,
 		},
-	);
-}
-
-function isEditableEventTarget(target: EventTarget | null) {
-	if (!(target instanceof Element)) {
-		return false;
-	}
-
-	return Boolean(
-		target.closest(
-			"input, textarea, select, [contenteditable=''], [contenteditable='true']",
-		),
 	);
 }
 
