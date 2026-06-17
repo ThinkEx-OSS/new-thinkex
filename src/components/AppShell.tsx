@@ -1,9 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { MessageSquarePlus } from "lucide-react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
-import { Button } from "#/components/ui/button";
 
 interface AppShellProps {
 	title?: string;
@@ -21,7 +19,7 @@ export default function AppShell({
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<header className="sticky top-0 z-40 border-b border-border/70 bg-background/95">
-				<div className="grid h-12 w-full grid-cols-[minmax(0,1fr)_minmax(0,26rem)_minmax(0,1fr)] items-center gap-3 px-4">
+				<div className="flex h-12 w-full items-center gap-3 px-4">
 					<Link
 						to="/home"
 						className="flex shrink-0 items-center gap-3 rounded-md text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -32,38 +30,21 @@ export default function AppShell({
 						</span>
 					</Link>
 
-					{navbarControls ? (
-						<div className="flex min-w-0 items-center justify-center gap-2">
-							{navbarControls}
-						</div>
-					) : null}
+					<div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+						{navbarControls}
+					</div>
 
 					<nav
 						className="flex shrink-0 items-center justify-end"
 						aria-label="Site"
 					>
-						<Button
-							variant="ghost"
-							size="sm"
-							type="button"
-							className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-							aria-label="Send feedback"
-							onClick={() => {
-								// Placeholder until the feedback flow is wired up.
-							}}
-						>
-							<MessageSquarePlus className="size-3.5" />
-							<span>Feedback</span>
-						</Button>
-						<div className="ml-2 flex shrink-0">
-							<UserProfileDropdown />
-						</div>
+						<UserProfileDropdown />
 					</nav>
 				</div>
 			</header>
 
 			<div className="flex min-h-[calc(100vh-3rem)] w-full flex-col">
-				<main className="flex-1 px-4 py-4">
+				<main className="flex-1 min-h-0 p-3">
 					{title || subtitle ? (
 						<section className="space-y-2">
 							{title ? (

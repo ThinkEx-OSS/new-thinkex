@@ -1,6 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Laptop, LogOut, Moon, Settings, Sun } from "lucide-react";
+import {
+	Laptop,
+	LogOut,
+	MessageSquarePlus,
+	Moon,
+	Settings,
+	Sun,
+	SunMoon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { type Theme, useTheme } from "#/components/theme-provider";
@@ -12,17 +20,13 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
-	DropdownMenuSeparator,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "#/components/ui/select";
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
 import { getErrorMessage } from "#/lib/error-message";
@@ -51,10 +55,6 @@ const themeOptions = [
 	},
 ] as const;
 
-const themeOptionsByValue = Object.fromEntries(
-	themeOptions.map((option) => [option.value, option]),
-) as Record<Theme, (typeof themeOptions)[number]>;
-
 export default function UserProfileDropdown() {
 	const navigate = useNavigate();
 	const router = useRouter();
@@ -79,8 +79,6 @@ export default function UserProfileDropdown() {
 
 	if (session?.user) {
 		const displayName = session.user.name || session.user.email || "User";
-		const activeThemeOption = themeOptionsByValue[theme];
-		const ActiveThemeIcon = activeThemeOption.icon;
 
 		return (
 			<DropdownMenu>
@@ -113,42 +111,33 @@ export default function UserProfileDropdown() {
 								</p>
 							</div>
 						</DropdownMenuLabel>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
-						<div className="flex flex-col gap-1.5 px-2 py-1.5">
-							<div className="text-xs font-medium text-muted-foreground">
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								<SunMoon className="size-4" />
 								Theme
-							</div>
-							<Select
-								items={themeOptions}
-								value={theme}
-								onValueChange={(value) => setTheme(value as Theme)}
-							>
-								<SelectTrigger
-									className="w-full justify-between bg-background"
-									aria-label="Theme"
+							</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent>
+								<DropdownMenuRadioGroup
+									value={theme}
+									onValueChange={(value) => setTheme(value as Theme)}
 								>
-									<SelectValue>
-										<ActiveThemeIcon className="size-4" />
-										{activeThemeOption.label}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent alignItemWithTrigger={false} sideOffset={0}>
-									<SelectGroup>
-										{themeOptions.map(({ value, label, icon: Icon }) => (
-											<SelectItem key={value} value={value}>
-												<Icon className="size-4" />
-												{label}
-											</SelectItem>
-										))}
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</div>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
+									{themeOptions.map(({ value, label, icon: Icon }) => (
+										<DropdownMenuRadioItem key={value} value={value}>
+											<Icon className="size-4" />
+											{label}
+										</DropdownMenuRadioItem>
+									))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+						<DropdownMenuItem
+							onClick={() => {
+								// Placeholder until the feedback flow is wired up.
+							}}
+						>
+							<MessageSquarePlus className="size-4" />
+							Feedback
+						</DropdownMenuItem>
 						<DropdownMenuItem>
 							<Settings className="size-4" />
 							Settings

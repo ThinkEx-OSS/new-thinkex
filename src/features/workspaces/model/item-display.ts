@@ -102,7 +102,7 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 		},
 		{
 			id: "record-audio",
-			label: "Record audio",
+			label: "Record",
 			description: "Soon",
 			Icon: Mic,
 			iconClassName: "text-orange-600 dark:text-orange-400",

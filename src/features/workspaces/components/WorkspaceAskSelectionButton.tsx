@@ -23,7 +23,7 @@ export function WorkspaceAskSelectionButton({
 			onMouseDown={(event) => event.preventDefault()}
 		>
 			<MessageSquare className="size-4" />
-			Ask
+			Chat
 		</Button>
 	);
 }
