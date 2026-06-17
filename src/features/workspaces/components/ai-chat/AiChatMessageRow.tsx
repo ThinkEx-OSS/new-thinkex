@@ -38,7 +38,9 @@ export default function AiChatMessageRow({
 	}
 
 	const isAssistant = message.role === "assistant";
-	const visibleParts = isAssistant ? [] : getDisplayableParts(message);
+	const visibleParts = isAssistant
+		? []
+		: orderUserMessageParts(getDisplayableParts(message));
 	const copyableText = isAssistant ? getCopyableMessageText(message) : "";
 
 	return (
@@ -101,6 +103,17 @@ export default function AiChatMessageRow({
 			</div>
 		</Message>
 	);
+}
+
+function orderUserMessageParts(parts: AiChatMessagePart[]) {
+	const attachments = parts.filter(isAttachmentPart);
+	const otherParts = parts.filter((part) => !isAttachmentPart(part));
+
+	return [...attachments, ...otherParts];
+}
+
+function isAttachmentPart(part: AiChatMessagePart) {
+	return part.type === "file" || part.type === "source-document";
 }
 
 function AssistantMessageBody({

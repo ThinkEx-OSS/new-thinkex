@@ -18,6 +18,9 @@ import type { WorkspaceSelectedMention } from "#/features/workspaces/model/works
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
+const CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME =
+	"-mr-1 size-5 shrink-0 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive";
+
 export default function WorkspaceAiChatContextChips({
 	context,
 }: {
@@ -39,7 +42,7 @@ export default function WorkspaceAiChatContextChips({
 	}
 
 	return (
-		<div className="flex w-full min-w-0 flex-wrap items-center gap-1 pt-2">
+		<div className="flex w-full min-w-0 flex-wrap items-center gap-1">
 			{activeChips.map((chip) => (
 				<WorkspaceAiChatContextChipRenderer
 					key={chip.id}
@@ -120,7 +123,7 @@ function WorkspaceAiChatContextChip({
 					type="button"
 					variant="ghost"
 					size="icon-xs"
-					className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
+					className={CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME}
 					aria-label={`Remove ${label} from AI context`}
 					onClick={onRemove}
 				>
@@ -186,7 +189,7 @@ function WorkspaceAiChatSelectedMentionChip({
 				type="button"
 				variant="ghost"
 				size="icon-xs"
-				className="-mr-1 size-5 shrink-0 text-muted-foreground hover:text-foreground"
+				className={CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME}
 				aria-label={`Remove ${mention.label} from AI context`}
 				onClick={onRemove}
 			>

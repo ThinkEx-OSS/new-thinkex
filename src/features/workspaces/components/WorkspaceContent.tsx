@@ -49,6 +49,7 @@ import {
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
 import { workspaceFileUploadTypeLabel } from "#/features/workspaces/workspace-file-uploads";
+import { hasNativeFiles } from "#/lib/native-file-drag";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceContentProps {
@@ -394,10 +395,6 @@ function WorkspaceNativeFileDropOverlay() {
 			</div>
 		</div>
 	);
-}
-
-function hasNativeFiles(dataTransfer: DataTransfer) {
-	return Array.from(dataTransfer.types).includes("Files");
 }
 
 function WorkspaceContentActionDialogs({

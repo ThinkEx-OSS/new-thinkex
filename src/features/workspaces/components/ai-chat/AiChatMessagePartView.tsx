@@ -1,7 +1,13 @@
 import { isToolUIPart } from "ai";
-import { FileText, LinkIcon } from "lucide-react";
+import { LinkIcon } from "lucide-react";
 
 import { MessageResponse } from "#/components/ai-elements/message";
+import {
+	AiChatAttachmentGroup,
+	AiChatAttachmentItem,
+	getFileAttachmentData,
+	getSourceDocumentAttachmentData,
+} from "#/features/workspaces/components/ai-chat/AiChatAttachmentItem";
 import AiChatToolCard from "#/features/workspaces/components/ai-chat/AiChatToolCard";
 import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat/types";
 
@@ -15,13 +21,12 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
 	}
 
 	if (part.type === "file") {
+		const attachment = getFileAttachmentData(part);
+
 		return (
-			<div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
-				<FileText className="size-4" />
-				<span className="min-w-0 truncate">
-					{part.filename ?? part.mediaType}
-				</span>
-			</div>
+			<AiChatAttachmentGroup data={attachment}>
+				<AiChatAttachmentItem data={attachment} />
+			</AiChatAttachmentGroup>
 		);
 	}
 
@@ -40,11 +45,12 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
 	}
 
 	if (part.type === "source-document") {
+		const attachment = getSourceDocumentAttachmentData(part);
+
 		return (
-			<div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
-				<FileText className="size-4" />
-				<span className="min-w-0 truncate">{part.filename ?? part.title}</span>
-			</div>
+			<AiChatAttachmentGroup data={attachment}>
+				<AiChatAttachmentItem data={attachment} />
+			</AiChatAttachmentGroup>
 		);
 	}
 

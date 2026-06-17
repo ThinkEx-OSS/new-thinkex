@@ -1,4 +1,5 @@
 import { RotateCcw } from "lucide-react";
+import type { RefObject } from "react";
 
 import {
 	Conversation,
@@ -20,18 +21,22 @@ import { buildWorkspaceAiContextSnapshot } from "#/features/workspaces/model/wor
 import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
 
 export default function AiChatThreadView({
+	attachmentDropTargetRef,
 	context,
 	getInspectorSnapshot,
 	hasPersistedMessages,
 	modelId,
+	onAttachmentDragActiveChange,
 	onModelChange,
 	onThreadActivated,
 	threadId,
 }: {
+	attachmentDropTargetRef: RefObject<HTMLElement | null>;
 	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	hasPersistedMessages: boolean;
 	modelId: AiChatModelId;
+	onAttachmentDragActiveChange?: (isActive: boolean) => void;
 	onModelChange: (modelId: AiChatModelId) => void;
 	onThreadActivated?: () => void;
 	threadId: string;
@@ -71,7 +76,7 @@ export default function AiChatThreadView({
 	};
 
 	return (
-		<>
+		<div className="relative flex min-h-0 flex-1 flex-col">
 			<Conversation className="min-h-0">
 				<ConversationContent
 					scrollClassName="min-h-0 overflow-hidden"
@@ -110,9 +115,11 @@ export default function AiChatThreadView({
 					) : null}
 					<AiChatPromptInput
 						activeThreadId={threadId}
+						attachmentDropTargetRef={attachmentDropTargetRef}
 						context={context}
 						getInspectorSnapshot={getInspectorSnapshot}
 						modelId={modelId}
+						onAttachmentDragActiveChange={onAttachmentDragActiveChange}
 						status={inputStatus}
 						onModelChange={onModelChange}
 						onSubmit={sendMessage}
@@ -120,7 +127,7 @@ export default function AiChatThreadView({
 					/>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 

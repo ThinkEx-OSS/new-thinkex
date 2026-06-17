@@ -1,8 +1,9 @@
 import { Bug, Mic, Plus } from "lucide-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, type RefObject, Suspense, useRef, useState } from "react";
 
 import {
 	PromptInput,
+	PromptInputAttachmentDropTarget,
 	PromptInputBody,
 	PromptInputButton,
 	PromptInputFooter,
@@ -19,7 +20,7 @@ import {
 } from "#/components/ai-elements/prompt-input";
 import { Button, buttonVariants } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
-import AiChatPromptAttachments from "#/features/workspaces/components/ai-chat/AiChatPromptAttachments";
+import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
 import {
 	AI_CHAT_MODELS,
@@ -30,7 +31,6 @@ import type {
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
-import WorkspaceAiChatContextChips from "#/features/workspaces/components/ai-chat/WorkspaceAiChatContextChips";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import { cn } from "#/lib/utils";
 
@@ -39,7 +39,8 @@ import { cn } from "#/lib/utils";
 const PROMPT_INPUT_GROUP_CLASSNAME =
 	"h-auto flex-col border-border/70 bg-muted/30 shadow-none dark:bg-muted/30";
 const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
-const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-0";
+const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
+const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
 const TOOLBAR_ICON_BUTTON_CLASSNAME =
 	"size-8 text-muted-foreground hover:text-foreground";
 const TOOLBAR_MODEL_TRIGGER_CLASSNAME =
@@ -72,10 +73,12 @@ function AiChatAttachmentButton() {
 
 interface AiChatPromptInputProps {
 	activeThreadId?: string;
+	attachmentDropTargetRef?: RefObject<HTMLElement | null>;
 	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	modelId?: AiChatModelId;
 	onModelChange?: (modelId: AiChatModelId) => void;
+	onAttachmentDragActiveChange?: (isActive: boolean) => void;
 	onSubmit?: (message: PromptInputMessage) => boolean | Promise<boolean>;
 	onStop?: () => void;
 	status?: AiChatStatus;
@@ -83,9 +86,11 @@ interface AiChatPromptInputProps {
 
 export default function AiChatPromptInput({
 	activeThreadId,
+	attachmentDropTargetRef,
 	context,
 	getInspectorSnapshot,
 	modelId = DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	onAttachmentDragActiveChange,
 	onModelChange,
 	onSubmit,
 	onStop,
@@ -131,13 +136,21 @@ export default function AiChatPromptInput({
 	return (
 		<>
 			<PromptInput
+				accept="image/*"
 				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
-				onSubmit={handleSubmit}
+				maxFileSize={5 * 1024 * 1024}
+				maxFiles={4}
 				multiple
+				onSubmit={handleSubmit}
 			>
-				<PromptInputHeader className={PROMPT_INPUT_INLINE_PADDING}>
-					<WorkspaceAiChatContextChips context={context} />
-					<AiChatPromptAttachments />
+				{attachmentDropTargetRef ? (
+					<PromptInputAttachmentDropTarget
+						targetRef={attachmentDropTargetRef}
+						onActiveChange={onAttachmentDragActiveChange}
+					/>
+				) : null}
+				<PromptInputHeader className={PROMPT_INPUT_HEADER_PADDING}>
+					<AiChatPromptContextBar context={context} />
 				</PromptInputHeader>
 				<PromptInputBody>
 					<PromptInputTextarea
@@ -147,7 +160,7 @@ export default function AiChatPromptInput({
 						placeholder="Ask anything"
 						onChange={(event) => setInput(event.currentTarget.value)}
 						className={cn(
-							"min-h-10 pt-1.5 pb-0.5 text-base placeholder:text-foreground/45 md:text-base",
+							"min-h-10 pt-2 pb-1 text-base placeholder:text-foreground/45 md:text-base",
 							PROMPT_INPUT_INLINE_PADDING,
 						)}
 					/>

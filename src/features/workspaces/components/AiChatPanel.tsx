@@ -1,4 +1,5 @@
-import { Suspense, useEffect } from "react";
+import { Upload } from "lucide-react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -55,6 +56,15 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 		collisionDetector: workspaceAiContextCollisionDetector,
 		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
 	});
+	const [isAttachmentDropTarget, setIsAttachmentDropTarget] = useState(false);
+	const attachmentDropTargetRef = useRef<HTMLElement | null>(null);
+	const setPanelRef = useCallback(
+		(element: HTMLElement | null) => {
+			attachmentDropTargetRef.current = element;
+			ref(element);
+		},
+		[ref],
+	);
 
 	useEffect(() => {
 		return scheduleAiChatThinkingLoaderPrewarm();
@@ -62,7 +72,7 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 
 	return (
 		<aside
-			ref={ref}
+			ref={setPanelRef}
 			className={cn(
 				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
 				isDropTarget && "ring-2 ring-primary/45 ring-inset",
@@ -86,16 +96,20 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 			) : (
 				<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
 					<AiChatThreadView
+						attachmentDropTargetRef={attachmentDropTargetRef}
 						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
 						hasPersistedMessages={Boolean(selectedThread?.lastUserMessageAt)}
 						modelId={modelId}
+						onAttachmentDragActiveChange={setIsAttachmentDropTarget}
 						onModelChange={onModelChange}
 						onThreadActivated={onThreadActivated}
 						threadId={activeThreadId}
 					/>
 				</Suspense>
 			)}
+
+			{isAttachmentDropTarget ? <AiChatAttachmentDropOverlay /> : null}
 
 			<AlertDialog
 				open={deleteThreadDialog.open}
@@ -134,6 +148,26 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 				</AlertDialogContent>
 			</AlertDialog>
 		</aside>
+	);
+}
+
+function AiChatAttachmentDropOverlay() {
+	return (
+		<div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-background/80 p-6 backdrop-blur-[2px]">
+			<div className="flex min-h-40 w-full max-w-md flex-col items-center justify-center gap-3 rounded-md border border-primary/40 border-dashed bg-card/90 px-6 py-8 text-center shadow-lg ring-1 ring-primary/15">
+				<div className="flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+					<Upload className="size-5" aria-hidden="true" />
+				</div>
+				<div className="space-y-1">
+					<p className="font-medium text-foreground text-sm">
+						Drop images to attach
+					</p>
+					<p className="text-muted-foreground text-xs">
+						Images will be added to your next message.
+					</p>
+				</div>
+			</div>
+		</div>
 	);
 }
 
