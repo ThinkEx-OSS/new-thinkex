@@ -20,6 +20,7 @@ import type {
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
 } from "#/features/workspaces/contracts";
+import { resolveWorkspaceItemColorForCreate } from "#/features/workspaces/model/workspace-item-colors";
 import {
 	createWorkspaceItemFn,
 	deleteWorkspaceItemsFn,
@@ -38,19 +39,22 @@ export function useCreateWorkspaceItemMutation() {
 
 	return useMutation({
 		mutationFn: (input: CreateWorkspaceItemInput) => {
+			const preparedInput = prepareCreateWorkspaceItemInput(input);
 			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(input);
+				prepareWorkspaceClientMutationInput(preparedInput);
 			return createWorkspaceItem({ data: inputWithClientMutation });
 		},
 		onMutate: async (input) => {
+			const preparedInput = prepareCreateWorkspaceItemInput(input);
+
 			await queryClient.cancelQueries({
-				queryKey: workspacePageQueryKey(input.workspaceId),
+				queryKey: workspacePageQueryKey(preparedInput.workspaceId),
 			});
 
-			if (input.id) {
+			if (preparedInput.id) {
 				createWorkspaceItemInPageCache(queryClient, {
-					...input,
-					id: input.id,
+					...preparedInput,
+					id: preparedInput.id,
 				});
 			}
 		},
@@ -220,4 +224,19 @@ function getDeleteWorkspaceItemsToastMessage(
 
 function getWorkspaceItemColorCommitKey(input: UpdateWorkspaceItemColorInput) {
 	return `${input.workspaceId}:${input.itemId}`;
+}
+
+function prepareCreateWorkspaceItemInput(
+	input: CreateWorkspaceItemInput,
+): CreateWorkspaceItemInput {
+	const color = resolveWorkspaceItemColorForCreate({
+		type: input.type,
+		color: input.color,
+	});
+
+	if (!color) {
+		return input;
+	}
+
+	return { ...input, color };
 }

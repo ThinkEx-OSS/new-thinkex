@@ -8,7 +8,6 @@ import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import { getWorkspaceRootItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
 import {
 	createWorkspaceFolderTreePickerNodes,
 	getCommonWorkspaceItemParentId,
@@ -119,7 +118,6 @@ export function MoveWorkspaceItemsDialog({
 								workspaceId: workspace.id,
 								parentId: selectedParentId,
 								type: "folder",
-								color: getRandomWorkspaceColor(),
 							},
 							{
 								onError: () => {
