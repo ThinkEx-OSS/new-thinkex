@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { LucideIcon } from "lucide-react";
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -80,18 +80,15 @@ export function WorkspaceTabItem({
 	const [element, setElement] = useState<Element | null>(null);
 	const elementRef = useRef<HTMLDivElement | null>(null);
 	const handleRef = useRef<HTMLButtonElement | null>(null);
-	const setTabElement = useCallback(
-		(nextElement: HTMLDivElement | null) => {
-			elementRef.current = nextElement;
-			setElement(nextElement);
-			setLayoutElement(layoutKey, nextElement);
-		},
-		[layoutKey, setLayoutElement],
-	);
-	const handleClose = useCallback(() => {
+	const setTabElement = (nextElement: HTMLDivElement | null) => {
+		elementRef.current = nextElement;
+		setElement(nextElement);
+		setLayoutElement(layoutKey, nextElement);
+	};
+	const handleClose = () => {
 		onBeforeClose(elementRef.current);
 		onClose();
-	}, [onBeforeClose, onClose]);
+	};
 	const { isDragSource, isDropTarget } = useSortable({
 		id: tab.id,
 		index,
@@ -171,13 +168,10 @@ export function WorkspaceProjectedTabItem({
 		projection.insertIndex,
 		"projected",
 	);
-	const setProjectedElement = useCallback(
-		(nextElement: HTMLDivElement | null) => {
-			ref(nextElement);
-			setLayoutElement(layoutKey, nextElement);
-		},
-		[layoutKey, ref, setLayoutElement],
-	);
+	const setProjectedElement = (nextElement: HTMLDivElement | null) => {
+		ref(nextElement);
+		setLayoutElement(layoutKey, nextElement);
+	};
 
 	return (
 		<div

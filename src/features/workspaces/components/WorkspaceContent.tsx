@@ -1,5 +1,5 @@
 import { FolderOpen } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import {
 	ContextMenu,
@@ -134,12 +134,9 @@ function WorkspaceBrowseContent({
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
-	const handleNativeFileDrop = useCallback(
-		(files: FileList) => {
-			uploadFiles(Array.from(files), parentId);
-		},
-		[parentId, uploadFiles],
-	);
+	const handleNativeFileDrop = (files: FileList) => {
+		uploadFiles(Array.from(files), parentId);
+	};
 	useNativeFileDropTarget({
 		onActiveChange: setIsNativeFileDropTarget,
 		onDrop: handleNativeFileDrop,

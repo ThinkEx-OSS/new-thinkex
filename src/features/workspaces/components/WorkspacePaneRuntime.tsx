@@ -4,7 +4,7 @@ import {
 	type UseHotkeyOptions,
 	useHotkey,
 } from "@tanstack/react-hotkeys";
-import { createContext, type ReactNode, use, useMemo } from "react";
+import { createContext, type ReactNode, use } from "react";
 
 type WorkspacePaneRuntimeValue = {
 	isActive: boolean;
@@ -20,15 +20,8 @@ function WorkspacePaneRuntimeProvider({
 	children: ReactNode;
 	isActive: boolean;
 }) {
-	const value = useMemo(
-		() => ({
-			isActive,
-		}),
-		[isActive],
-	);
-
 	return (
-		<WorkspacePaneRuntimeContext value={value}>
+		<WorkspacePaneRuntimeContext value={{ isActive }}>
 			{children}
 		</WorkspacePaneRuntimeContext>
 	);

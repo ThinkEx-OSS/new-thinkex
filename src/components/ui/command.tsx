@@ -36,7 +36,7 @@ function Command({
 	const [search, setSearch] = React.useState("");
 	const [items, setItems] = React.useState(() => new Map<string, boolean>());
 
-	const registerItem = React.useCallback((id: string, visible: boolean) => {
+	const registerItem = (id: string, visible: boolean) => {
 		setItems((current) => {
 			if (current.get(id) === visible) {
 				return current;
@@ -46,9 +46,9 @@ function Command({
 			next.set(id, visible);
 			return next;
 		});
-	}, []);
+	};
 
-	const unregisterItem = React.useCallback((id: string) => {
+	const unregisterItem = (id: string) => {
 		setItems((current) => {
 			if (!current.has(id)) {
 				return current;
@@ -58,21 +58,18 @@ function Command({
 			next.delete(id);
 			return next;
 		});
-	}, []);
-
-	const contextValue = React.useMemo(
-		() => ({
-			registerItem,
-			search,
-			setSearch,
-			unregisterItem,
-			visibleCount: Array.from(items.values()).filter(Boolean).length,
-		}),
-		[items, registerItem, search, unregisterItem],
-	);
+	};
 
 	return (
-		<CommandContext.Provider value={contextValue}>
+		<CommandContext.Provider
+			value={{
+				registerItem,
+				search,
+				setSearch,
+				unregisterItem,
+				visibleCount: Array.from(items.values()).filter(Boolean).length,
+			}}
+		>
 			<div
 				data-slot="command"
 				className={cn(

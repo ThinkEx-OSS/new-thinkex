@@ -14,7 +14,7 @@ import type {
 	MouseEvent,
 	ReactNode,
 } from "react";
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useContext } from "react";
 import { Button } from "#/components/ui/button";
 import {
 	HoverCard,
@@ -180,10 +180,8 @@ export const Attachments = ({
 	children,
 	...props
 }: AttachmentsProps) => {
-	const contextValue = useMemo(() => ({ variant }), [variant]);
-
 	return (
-		<AttachmentsContext.Provider value={contextValue}>
+		<AttachmentsContext.Provider value={{ variant }}>
 			<div
 				className={cn(
 					"flex items-start",
@@ -218,13 +216,10 @@ export const Attachment = ({
 	const { variant } = useAttachmentsContext();
 	const mediaCategory = getMediaCategory(data);
 
-	const contextValue = useMemo<AttachmentContextValue>(
-		() => ({ data, mediaCategory, onRemove, variant }),
-		[data, mediaCategory, onRemove, variant],
-	);
-
 	return (
-		<AttachmentContext.Provider value={contextValue}>
+		<AttachmentContext.Provider
+			value={{ data, mediaCategory, onRemove, variant }}
+		>
 			<div
 				className={cn(
 					"group relative",
@@ -351,13 +346,10 @@ export const AttachmentRemove = ({
 }: AttachmentRemoveProps) => {
 	const { onRemove, variant } = useAttachmentContext();
 
-	const handleClick = useCallback(
-		(e: MouseEvent) => {
-			e.stopPropagation();
-			onRemove?.();
-		},
-		[onRemove],
-	);
+	const handleClick = (e: MouseEvent) => {
+		e.stopPropagation();
+		onRemove?.();
+	};
 
 	if (!onRemove) {
 		return null;

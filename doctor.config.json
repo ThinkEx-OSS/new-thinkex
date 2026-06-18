@@ -1,14 +1,23 @@
 {
+	"$schema": "https://react.doctor/schema/config.json",
 	"ignore": {
 		"files": [
+			".analyze/**",
 			".cache/**",
+			".firecrawl/**",
+			".nitro/**",
+			".output/**",
 			".reference/**",
 			".tanstack/**",
 			".tmp/**",
+			".vinxi/**",
 			".wrangler/**",
+			"coverage/**",
 			"dist/**",
+			"dist-ssr/**",
 			"node_modules/**",
 			"../references/**",
+			"references/**",
 			"tmp/**"
 		]
 	}
