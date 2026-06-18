@@ -131,6 +131,8 @@
 		"@biomejs/biome": "2.4.15",
 		"@cloudflare/vitest-pool-workers": "^0.16.4",
 		"@cloudflare/workers-types": "^4.20260607.1",
+		"@commitlint/cli": "^21.0.2",
+		"@commitlint/config-conventional": "^21.0.2",
 		"@rolldown/plugin-babel": "^0.2.3",
 		"@tailwindcss/typography": "^0.5.16",
 		"@tanstack/devtools-event-client": "latest",
