@@ -6,11 +6,8 @@ import {
 } from "#/components/ai-elements/prompt-input";
 import { isAiChatStreamActive } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatStatus } from "#/features/workspaces/components/ai-chat/types";
+import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { cn } from "#/lib/utils";
-
-const SEND_BUTTON_SIZE = "size-8";
-const SEND_ICON_SIZE = "size-4";
-const STOP_ICON_SIZE = "size-3.5";
 
 export default function AiChatPromptSubmit({
 	input,
@@ -29,17 +26,13 @@ export default function AiChatPromptSubmit({
 
 	return (
 		<PromptInputSubmit
-			className={cn(SEND_BUTTON_SIZE, "rounded-full")}
+			className={cn(workspaceToolbarButtonSizeClass, "rounded-full")}
 			disabled={isGenerating ? !canStop : !hasContent || !composerReady}
 			status={status}
 			onStop={onStop}
 			type={isGenerating ? "button" : "submit"}
 		>
-			{isGenerating ? (
-				<Square className={STOP_ICON_SIZE} />
-			) : (
-				<ArrowUp className={SEND_ICON_SIZE} />
-			)}
+			{isGenerating ? <Square /> : <ArrowUp />}
 		</PromptInputSubmit>
 	);
 }

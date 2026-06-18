@@ -18,6 +18,7 @@ import type {
 	AiChatMessage,
 	AiChatMessagePart,
 } from "#/features/workspaces/components/ai-chat/types";
+import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { cn } from "#/lib/utils";
 
 export default function AiChatMessageRow({
@@ -95,22 +96,29 @@ export default function AiChatMessageRow({
 									tooltip="Copy response"
 									label="Copy response"
 									size="icon-sm"
-									className="text-muted-foreground/70 hover:text-foreground"
+									className={cn(
+										workspaceToolbarIconButtonClass,
+										"text-muted-foreground/70 hover:text-foreground",
+									)}
 									onClick={() => {
 										void copyTextToClipboard(copyableText);
 									}}
 								>
-									<Copy className="size-3.5" />
+									<Copy className="size-4" />
 								</MessageAction>
 							) : null}
 							{isRegenerable && onRegenerate ? (
 								<MessageAction
 									tooltip="Regenerate response"
 									label="Regenerate response"
+									size="icon-sm"
+									className={cn(
+										workspaceToolbarIconButtonClass,
+										"text-muted-foreground/70 hover:text-foreground",
+									)}
 									onClick={onRegenerate}
-									className="text-muted-foreground/70 hover:text-foreground"
 								>
-									<RotateCcw className="size-3.5" />
+									<RotateCcw className="size-4" />
 								</MessageAction>
 							) : null}
 						</MessageActions>

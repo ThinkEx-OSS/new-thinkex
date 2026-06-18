@@ -1,6 +1,7 @@
 import { FolderInput, MessageSquare, Trash2, X } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
+import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 
 interface WorkspaceSelectionActionBarProps {
 	selectedCount: number;
@@ -49,16 +50,12 @@ export default function WorkspaceSelectionActionBar({
 					<Trash2 className="size-4" aria-hidden="true" />
 					Delete
 				</Button>
-				<Button
-					type="button"
-					size="icon"
-					variant="ghost"
-					className="text-muted-foreground"
+				<WorkspaceToolbarIconButton
 					aria-label="Clear selection"
 					onClick={onClear}
 				>
-					<X className="size-4" aria-hidden="true" />
-				</Button>
+					<X aria-hidden="true" />
+				</WorkspaceToolbarIconButton>
 			</div>
 		</div>
 	);

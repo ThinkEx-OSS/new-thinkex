@@ -6,7 +6,6 @@ import {
 	Printer,
 } from "lucide-react";
 
-import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -16,7 +15,11 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import { workspaceItemToolbarIconButtonClass } from "#/features/workspaces/components/workspace-item-toolbar-styles";
+import {
+	WorkspaceToolbarGroup,
+	WorkspaceToolbarIconButton,
+	WorkspaceToolbarTextButton,
+} from "#/features/workspaces/components/WorkspaceToolbar";
 import { cn } from "#/lib/utils";
 
 export function WorkspaceFileToolbar({
@@ -41,34 +44,22 @@ export function WorkspaceFileToolbar({
 	};
 
 	return (
-		<div className="flex max-w-full items-center gap-1 overflow-x-auto">
-			<Button
-				type="button"
-				variant="ghost"
-				size="sm"
+		<WorkspaceToolbarGroup scrollable>
+			<WorkspaceToolbarTextButton
 				className={cn(
-					"h-8 gap-1.5 px-2.5 text-sm",
 					capture.isActive
 						? "bg-blue-500/10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-						: "text-muted-foreground hover:text-foreground",
+						: undefined,
 				)}
 				aria-pressed={capture.isActive}
 				onClick={capture.onToggle}
 			>
-				<Camera className="size-3.5" />
+				<Camera />
 				Capture
-			</Button>
+			</WorkspaceToolbarTextButton>
 			<DropdownMenu>
 				<DropdownMenuTrigger
-					render={
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-xs"
-							className={workspaceItemToolbarIconButtonClass}
-							aria-label="More file actions"
-						/>
-					}
+					render={<WorkspaceToolbarIconButton aria-label="More file actions" />}
 				>
 					<EllipsisVertical />
 				</DropdownMenuTrigger>
@@ -108,6 +99,6 @@ export function WorkspaceFileToolbar({
 					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
-		</div>
+		</WorkspaceToolbarGroup>
 	);
 }

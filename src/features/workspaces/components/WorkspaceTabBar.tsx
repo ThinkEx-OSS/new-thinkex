@@ -1,7 +1,6 @@
 import { useDragOperation } from "@dnd-kit/react";
 import { FileQuestion, Plus } from "lucide-react";
 
-import { Button } from "#/components/ui/button";
 import { useWorkspaceTabCloseResizeLock } from "#/features/workspaces/components/useWorkspaceTabCloseResizeLock";
 import { useWorkspaceTabLayoutAnimation } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
 import { WorkspaceTabContextMenuContent } from "#/features/workspaces/components/WorkspaceTabActionsMenu";
@@ -11,6 +10,7 @@ import {
 	WorkspaceTabItem,
 	WorkspaceTabTailDropZone,
 } from "#/features/workspaces/components/WorkspaceTabBarItem";
+import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import {
 	getWorkspaceTabGridStyle,
 	getWorkspaceTabRenderItemKey,
@@ -165,15 +165,13 @@ export default function WorkspaceTabBar({
 						!isWorkspaceTabRenderItemActive(lastRenderItem, activeTab.id)
 					}
 				/>
-				<Button
-					variant="ghost"
-					size="icon-sm"
+				<WorkspaceToolbarIconButton
 					className="shrink-0"
 					aria-label="Open new workspace tab"
 					onClick={onCreateRootTab}
 				>
-					<Plus className="size-4" />
-				</Button>
+					<Plus />
+				</WorkspaceToolbarIconButton>
 			</WorkspaceTabTailDropZone>
 		</nav>
 	);

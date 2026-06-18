@@ -1,6 +1,5 @@
 import { FilePlus2 } from "lucide-react";
 
-import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,6 +10,7 @@ import {
 	workspaceContextMenuRenderer,
 	workspaceDropdownMenuRenderer,
 } from "#/features/workspaces/components/WorkspaceMenuRenderers";
+import { WorkspaceToolbarTextButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
 import { renderWorkspaceMenuActions } from "#/features/workspaces/components/workspace-menu-actions";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
@@ -34,17 +34,8 @@ export default function WorkspaceCreateMenu({
 }: WorkspaceCreateMenuProps) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={
-					<Button
-						variant="ghost"
-						size="sm"
-						type="button"
-						className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-					/>
-				}
-			>
-				<FilePlus2 className="size-3.5" />
+			<DropdownMenuTrigger render={<WorkspaceToolbarTextButton />}>
+				<FilePlus2 />
 				<span className="hidden sm:inline">New</span>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-56">

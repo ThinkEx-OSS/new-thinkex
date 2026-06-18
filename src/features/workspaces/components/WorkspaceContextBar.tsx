@@ -20,6 +20,7 @@ import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/Works
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import { WorkspaceSearchDialog } from "#/features/workspaces/components/WorkspaceSearchDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
+import { WorkspaceToolbarGroup } from "#/features/workspaces/components/WorkspaceToolbar";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -142,7 +143,7 @@ export default function WorkspaceContextBar({
 					</BreadcrumbList>
 				</Breadcrumb>
 
-				<div className="flex min-w-0 shrink-0 items-center gap-1">
+				<WorkspaceToolbarGroup className="min-w-0 shrink-0">
 					<WorkspaceItemToolbarSlot
 						activeToolbarSlotId={toolbarSlotId ?? activeItem?.id}
 					/>
@@ -154,7 +155,7 @@ export default function WorkspaceContextBar({
 						onSearch={openWorkspaceSearch}
 						onCloseItemView={onCloseItemView}
 					/>
-				</div>
+				</WorkspaceToolbarGroup>
 			</div>
 			<RenameWorkspaceItemDialog
 				item={renamingItem}

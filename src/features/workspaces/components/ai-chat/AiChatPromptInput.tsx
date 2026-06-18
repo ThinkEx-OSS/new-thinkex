@@ -19,7 +19,7 @@ import {
 	PromptInputTools,
 	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
-import { Button, buttonVariants } from "#/components/ui/button";
+import { buttonVariants } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
 import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
@@ -34,6 +34,11 @@ import type {
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
+import {
+	WorkspaceToolbarGroup,
+	WorkspaceToolbarIconButton,
+} from "#/features/workspaces/components/WorkspaceToolbar";
+import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
 import {
 	useWorkspaceAiComposerDraftFiles,
@@ -48,12 +53,8 @@ const PROMPT_INPUT_GROUP_CLASSNAME =
 const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
 const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
 const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
-const TOOLBAR_ICON_BUTTON_CLASSNAME =
-	"size-8 text-muted-foreground hover:text-foreground";
-const TOOLBAR_MODEL_TRIGGER_CLASSNAME =
-	"h-8 w-auto border-none px-2 font-normal text-muted-foreground shadow-none hover:text-foreground focus-visible:ring-0 aria-expanded:text-foreground dark:bg-transparent [&>svg:last-child]:hidden";
-const TOOLBAR_ICON_SIZE = "size-4";
-const TOOLBAR_PLUS_ICON_SIZE = "size-4.5";
+const COMPOSER_MODEL_TRIGGER_CLASSNAME =
+	"h-8.5 w-auto border-none px-2 font-normal text-muted-foreground shadow-none hover:text-foreground focus-visible:ring-0 aria-expanded:text-foreground dark:bg-transparent [&>svg:last-child]:hidden";
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
 			const module = await import(
@@ -70,11 +71,11 @@ function AiChatAttachmentButton() {
 	return (
 		<PromptInputButton
 			aria-label="Add attachments"
-			className={TOOLBAR_ICON_BUTTON_CLASSNAME}
+			className={workspaceToolbarIconButtonClass}
 			disabled={attachments.composerReady === false}
 			onClick={attachments.openFileDialog}
 		>
-			<Plus className={TOOLBAR_PLUS_ICON_SIZE} />
+			<Plus />
 		</PromptInputButton>
 	);
 }
@@ -203,7 +204,7 @@ export default function AiChatPromptInput({
 								size="sm"
 								className={cn(
 									buttonVariants({ variant: "ghost", size: "sm" }),
-									TOOLBAR_MODEL_TRIGGER_CLASSNAME,
+									COMPOSER_MODEL_TRIGGER_CLASSNAME,
 								)}
 							>
 								{selectedModel.name}
@@ -220,32 +221,22 @@ export default function AiChatPromptInput({
 						</PromptInputSelect>
 
 						{import.meta.env.DEV && getInspectorSnapshot ? (
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								className={TOOLBAR_ICON_BUTTON_CLASSNAME}
+							<WorkspaceToolbarIconButton
 								aria-label="Open AI inspector"
 								disabled={!activeThreadId}
 								onClick={() => setIsInspectorOpen(true)}
-								type="button"
 							>
-								<Bug className={TOOLBAR_ICON_SIZE} />
-							</Button>
+								<Bug />
+							</WorkspaceToolbarIconButton>
 						) : null}
 					</PromptInputTools>
 
-					<div className="ml-auto flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className={TOOLBAR_ICON_BUTTON_CLASSNAME}
-							aria-label="Dictation unavailable"
-							type="button"
-						>
-							<Mic className={TOOLBAR_ICON_SIZE} />
-						</Button>
+					<WorkspaceToolbarGroup className="ml-auto">
+						<WorkspaceToolbarIconButton aria-label="Dictation unavailable">
+							<Mic />
+						</WorkspaceToolbarIconButton>
 						<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
-					</div>
+					</WorkspaceToolbarGroup>
 				</PromptInputFooter>
 			</PromptInput>
 

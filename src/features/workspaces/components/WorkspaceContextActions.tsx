@@ -1,6 +1,5 @@
 import { Search, X } from "lucide-react";
 
-import { Button } from "#/components/ui/button";
 import { Kbd } from "#/components/ui/kbd";
 import {
 	Tooltip,
@@ -8,6 +7,10 @@ import {
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
 import WorkspaceCreateMenu from "#/features/workspaces/components/WorkspaceCreateMenu";
+import {
+	WorkspaceToolbarIconButton,
+	WorkspaceToolbarTextButton,
+} from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -34,7 +37,7 @@ export default function WorkspaceContextActions({
 	const showBrowseActions = !activeItem || activeItem.type === "folder";
 
 	return (
-		<div className="flex shrink-0 items-center gap-1">
+		<>
 			{showBrowseActions ? (
 				<>
 					<WorkspaceSearchAction hotkey={searchHotkey} onSearch={onSearch} />
@@ -45,18 +48,14 @@ export default function WorkspaceContextActions({
 				</>
 			) : null}
 			{onCloseItemView ? (
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					type="button"
-					className="size-8.5 text-muted-foreground hover:text-foreground"
+				<WorkspaceToolbarIconButton
 					aria-label="Close item"
 					onClick={onCloseItemView}
 				>
-					<X className="size-4" />
-				</Button>
+					<X />
+				</WorkspaceToolbarIconButton>
 			) : null}
-		</div>
+		</>
 	);
 }
 
@@ -71,16 +70,10 @@ function WorkspaceSearchAction({
 		<Tooltip>
 			<TooltipTrigger
 				render={
-					<Button
-						variant="ghost"
-						size="sm"
-						type="button"
-						className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground hover:text-foreground"
-						onClick={onSearch}
-					>
-						<Search className="size-3.5" />
+					<WorkspaceToolbarTextButton onClick={onSearch}>
+						<Search />
 						<span className="hidden sm:inline">Search</span>
-					</Button>
+					</WorkspaceToolbarTextButton>
 				}
 			/>
 			<TooltipContent>

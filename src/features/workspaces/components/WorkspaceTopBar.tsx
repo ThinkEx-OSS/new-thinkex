@@ -25,6 +25,10 @@ import {
 } from "#/components/ui/tooltip";
 import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePresence";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
+import {
+	WorkspaceToolbarIconButton,
+	WorkspaceToolbarTextButton,
+} from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
@@ -110,32 +114,26 @@ export default function WorkspaceTopBar({
 					className="flex shrink-0 items-center gap-2"
 					aria-label="Workspace global actions"
 				>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						type="button"
-						className="text-muted-foreground"
+					<WorkspaceToolbarIconButton
 						aria-label="Share workspace"
 						onClick={() => setShareOpen(true)}
 					>
-						<Share2 className="size-3.5" />
-					</Button>
+						<Share2 />
+					</WorkspaceToolbarIconButton>
 					<WorkspacePresence status={presence.status} users={presence.users} />
 					<UserProfileDropdown />
 					{isCollapsed ? (
 						<Tooltip>
 							<TooltipTrigger
 								render={
-									<Button
+									<WorkspaceToolbarTextButton
 										variant="outline"
-										size="sm"
-										type="button"
-										className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+										className="border-border bg-background shadow-xs hover:bg-muted"
 										onClick={() => openAiChat(workspace.id)}
 									>
-										<MessageSquare className="size-3.5" />
+										<MessageSquare />
 										<span>Chat</span>
-									</Button>
+									</WorkspaceToolbarTextButton>
 								}
 							/>
 							<TooltipContent>

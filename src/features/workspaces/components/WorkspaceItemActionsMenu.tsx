@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 
-import { Button } from "#/components/ui/button";
 import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
 import {
 	ContextMenuContent,
@@ -27,6 +26,7 @@ import {
 	workspaceContextMenuRenderer,
 	workspaceDropdownMenuRenderer,
 } from "#/features/workspaces/components/WorkspaceMenuRenderers";
+import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
 import type { WorkspaceItemColor } from "#/features/workspaces/contracts";
 import {
@@ -67,17 +67,13 @@ export default function WorkspaceItemActionsMenu({
 			<DropdownMenuTrigger
 				render={
 					trigger ?? (
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="text-muted-foreground hover:text-foreground"
+						<WorkspaceToolbarIconButton
 							aria-label={`Open actions for ${item.name}`}
 						/>
 					)
 				}
 			>
-				{triggerChildren ??
-					(trigger ? null : <EllipsisVertical className="size-4" />)}
+				{triggerChildren ?? (trigger ? null : <EllipsisVertical />)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align={align} className="w-52">
 				<WorkspaceItemActionsMenuContent

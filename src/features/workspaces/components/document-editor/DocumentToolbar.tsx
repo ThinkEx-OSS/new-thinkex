@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -42,14 +41,16 @@ import {
 	getTextAlignIcon,
 	isCodeBlock,
 } from "#/features/workspaces/components/document-editor/document-editor-toolbar-actions";
-import { workspaceItemToolbarIconButtonClass } from "#/features/workspaces/components/workspace-item-toolbar-styles";
-import { cn } from "#/lib/utils";
+import {
+	WorkspaceToolbarGroup,
+	WorkspaceToolbarIconButton,
+} from "#/features/workspaces/components/WorkspaceToolbar";
 
 export function DocumentToolbar({ editor }: { editor: Editor | null }) {
 	const editorState = useDocumentEditorUiState(editor);
 
 	return (
-		<div className="flex max-w-full items-center gap-1 overflow-x-auto">
+		<WorkspaceToolbarGroup scrollable>
 			<BlockTypeMenu editor={editor} editorState={editorState} />
 			<InlineFormatMenu editor={editor} editorState={editorState} />
 			<AlignMenu editor={editor} editorState={editorState} />
@@ -68,7 +69,7 @@ export function DocumentToolbar({ editor }: { editor: Editor | null }) {
 				<Redo2 />
 			</ToolbarButton>
 			<DocumentMoreMenu disabled={!editor} />
-		</div>
+		</WorkspaceToolbarGroup>
 	);
 }
 
@@ -83,11 +84,7 @@ function BlockTypeMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-xs"
-						className={workspaceItemToolbarIconButtonClass}
+					<WorkspaceToolbarIconButton
 						disabled={!editor}
 						aria-label="Text block"
 					/>
@@ -140,11 +137,7 @@ function AlignMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-xs"
-						className={workspaceItemToolbarIconButtonClass}
+					<WorkspaceToolbarIconButton
 						disabled={disabled}
 						aria-label="Text alignment"
 					/>
@@ -180,14 +173,8 @@ function InlineFormatMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-xs"
-						className={cn(
-							workspaceItemToolbarIconButtonClass,
-							activeFormat && "text-foreground",
-						)}
+					<WorkspaceToolbarIconButton
+						className={activeFormat ? "text-foreground" : undefined}
 						disabled={disabled}
 						aria-label="Text formatting"
 					/>
@@ -249,11 +236,7 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-xs"
-						className={workspaceItemToolbarIconButtonClass}
+					<WorkspaceToolbarIconButton
 						disabled={disabled}
 						aria-label="More document actions"
 					/>
@@ -312,17 +295,13 @@ function ToolbarButton({
 	onClick?: () => void;
 }) {
 	const button = (
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon-xs"
-			className={workspaceItemToolbarIconButtonClass}
+		<WorkspaceToolbarIconButton
 			disabled={disabled}
 			aria-label={label}
 			onClick={onClick}
 		>
 			{children}
-		</Button>
+		</WorkspaceToolbarIconButton>
 	);
 
 	return (

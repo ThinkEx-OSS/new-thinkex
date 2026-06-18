@@ -5,6 +5,8 @@ import { Skeleton } from "#/components/ui/skeleton";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
+import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
+import { cn } from "#/lib/utils";
 
 const workspaceSkeletonCardKeys = [
 	"card-1",
@@ -48,8 +50,12 @@ export function WorkspaceSkeletonChrome() {
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					<Skeleton className="size-8 rounded-md" />
-					<Skeleton className="size-8 rounded-full" />
+					<Skeleton
+						className={cn(workspaceToolbarButtonSizeClass, "rounded-md")}
+					/>
+					<Skeleton
+						className={cn(workspaceToolbarButtonSizeClass, "rounded-full")}
+					/>
 				</div>
 			</div>
 			<WorkspaceContextBarSkeleton />
@@ -65,8 +71,10 @@ function WorkspaceContextBarSkeleton() {
 				<Skeleton className="h-4 w-36 rounded-sm" />
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
-				<Skeleton className="h-8 w-20 rounded-md" />
-				<Skeleton className="size-8 rounded-md" />
+				<Skeleton className="h-8.5 w-20 rounded-md" />
+				<Skeleton
+					className={cn(workspaceToolbarButtonSizeClass, "rounded-md")}
+				/>
 			</div>
 		</div>
 	);
@@ -90,9 +98,15 @@ export function WorkspaceSkeletonAiChatPanel() {
 	return (
 		<aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
 			<div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-bl-md border border-border/70 bg-background/95 p-1 shadow-sm backdrop-blur">
-				<Skeleton className="size-8.5 rounded-md" />
-				<Skeleton className="size-8.5 rounded-md" />
-				<Skeleton className="size-8.5 rounded-md" />
+				<Skeleton
+					className={cn(workspaceToolbarButtonSizeClass, "rounded-md")}
+				/>
+				<Skeleton
+					className={cn(workspaceToolbarButtonSizeClass, "rounded-md")}
+				/>
+				<Skeleton
+					className={cn(workspaceToolbarButtonSizeClass, "rounded-md")}
+				/>
 			</div>
 			<div className="px-4 pt-14">
 				<AiChatThreadSkeleton />

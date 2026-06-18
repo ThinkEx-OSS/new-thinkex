@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 
-import { Button } from "#/components/ui/button";
 import {
 	Card,
 	CardDescription,
@@ -9,6 +8,7 @@ import {
 	CardTitle,
 } from "#/components/ui/card";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
+import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import {
 	getWorkspaceDisplay,
@@ -78,17 +78,14 @@ export default function WorkspaceCard({
 				<WorkspaceSettingsDialog
 					workspace={workspace}
 					trigger={
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="text-muted-foreground hover:text-foreground"
+						<WorkspaceToolbarIconButton
 							aria-label={`Open settings for ${workspace.name}`}
 							onClick={(event) => {
 								event.stopPropagation();
 							}}
 						>
-							<Settings className="size-4" />
-						</Button>
+							<Settings />
+						</WorkspaceToolbarIconButton>
 					}
 				/>
 			</div>
