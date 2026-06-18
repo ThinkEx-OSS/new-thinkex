@@ -4,14 +4,23 @@ import type {
 	JsonValue,
 	WorkspaceItemSummary,
 } from "#/features/workspaces/contracts";
+import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
+import {
+	resolveUploadPreviewGenerator,
+	WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
+} from "#/features/workspaces/files/workspace-file-preview";
 import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
-import { getWorkspaceKernelFileShellPath } from "#/features/workspaces/kernel/workspace-kernel-files";
+import {
+	getWorkspaceKernelFilePreviewShellPath,
+	getWorkspaceKernelFileShellPath,
+} from "#/features/workspaces/kernel/workspace-kernel-files";
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
 	CreateWorkspaceKernelFileFromUploadArgs,
 	ReadWorkspaceKernelFileContentArgs,
 	ReadWorkspaceKernelFileContentResult,
+	ReadWorkspaceKernelFilePreviewResult,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileProjectionResult,
 	UpsertWorkspaceKernelFileProjectionArgs,
@@ -19,13 +28,13 @@ import type {
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
 import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
+import type { WorkspaceFileTypeDescriptor } from "#/features/workspaces/model/workspace-file-upload-policy";
 import {
 	getWorkspaceFileShellExtension,
 	normalizeWorkspaceUploadFileName,
 	requireWorkspaceFileTypeFromHint,
 	resolveWorkspaceFileContentType,
-	type WorkspaceFileTypeDescriptor,
-} from "#/features/workspaces/model/workspace-file-registry";
+} from "#/features/workspaces/model/workspace-file-upload-policy";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelFileCommands {
@@ -144,6 +153,20 @@ export class WorkspaceKernelFileCommands {
 			payload: { item },
 		});
 
+		const previewGenerator = resolveUploadPreviewGenerator(
+			descriptor.assetKind,
+		);
+
+		if (previewGenerator) {
+			await this.tryCreateUploadPreview({
+				bytes,
+				generate: previewGenerator,
+				itemId,
+				label: descriptor.assetKind,
+				now,
+			});
+		}
+
 		return { result: item, event };
 	}
 
@@ -175,6 +198,40 @@ export class WorkspaceKernelFileCommands {
 		};
 	}
 
+	async readFilePreview(
+		input: ReadWorkspaceKernelFileContentArgs,
+	): Promise<ReadWorkspaceKernelFilePreviewResult | null> {
+		const row = this.store.assertActiveItem(input.itemId);
+
+		if (row.type !== "file") {
+			throw new Error("Workspace item is not a file.");
+		}
+
+		const projection = this.getProjectionRow({
+			itemId: input.itemId,
+			format: "preview",
+		});
+
+		if (!projection) {
+			return null;
+		}
+
+		const bytes =
+			projection.status === "ready" && projection.content_shell_path
+				? await this.workspace.readFileBytes(projection.content_shell_path)
+				: null;
+
+		return {
+			itemId: projection.item_id,
+			status: projection.status,
+			bytes,
+			contentType: WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
+			sourceHash: projection.source_hash,
+			metadataJson: parseProjectionMetadataJson(projection.metadata_json),
+			updatedAt: new Date(projection.updated_at).toISOString(),
+		};
+	}
+
 	async upsertFileProjection(
 		input: UpsertWorkspaceKernelFileProjectionArgs,
 	): Promise<void> {
@@ -199,7 +256,7 @@ export class WorkspaceKernelFileCommands {
 		now: number;
 	}) {
 		const contentShellPath =
-			input.projection.content == null
+			input.projection.content == null && input.projection.contentBytes == null
 				? this.getExistingProjectionPath({
 						itemId: input.itemId,
 						format: input.projection.format,
@@ -221,7 +278,22 @@ export class WorkspaceKernelFileCommands {
 			await this.workspace.writeFile(
 				projectionShellPath,
 				input.projection.content,
-				getProjectionContentType(),
+				getMarkdownProjectionContentType(),
+			);
+		}
+
+		if (input.projection.contentBytes != null) {
+			const previewShellPath = getWorkspaceKernelFilePreviewShellPath(
+				input.itemId,
+			);
+
+			await this.workspace.mkdir(`/items/${input.itemId}/derivatives`, {
+				recursive: true,
+			});
+			await this.workspace.writeFileBytes(
+				previewShellPath,
+				input.projection.contentBytes,
+				WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
 			);
 		}
 
@@ -315,6 +387,54 @@ export class WorkspaceKernelFileCommands {
 			`[0] ?? null
 		);
 	}
+
+	private async tryCreateUploadPreview(input: {
+		bytes: Uint8Array;
+		generate: (
+			bytes: Uint8Array,
+		) => Promise<{ bytes: Uint8Array; width: number; height: number }>;
+		itemId: string;
+		label: string;
+		now: number;
+	}) {
+		try {
+			const preview = await input.generate(input.bytes);
+			const sourceHash = await sha256Base64Url(input.bytes);
+
+			await this.writeProjectionRow({
+				itemId: input.itemId,
+				now: input.now,
+				projection: {
+					itemId: input.itemId,
+					format: "preview",
+					status: "ready",
+					contentBytes: preview.bytes,
+					sourceHash,
+					metadataJson: {
+						contentType: WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
+						width: preview.width,
+						height: preview.height,
+					},
+				},
+			});
+		} catch (error) {
+			console.warn(
+				`[WorkspaceKernel] Unable to generate ${input.label} preview`,
+				error,
+			);
+
+			await this.writeProjectionRow({
+				itemId: input.itemId,
+				now: input.now,
+				projection: {
+					itemId: input.itemId,
+					format: "preview",
+					status: "failed",
+					errorMessage: getErrorMessage(error),
+				},
+			});
+		}
+	}
 }
 
 type KernelItemProjectionRow = {
@@ -361,11 +481,19 @@ function getWorkspaceKernelProjectionShellPath(input: {
 	itemId: string;
 	format: WorkspaceKernelFileProjectionFormat;
 }) {
+	if (input.format === "preview") {
+		return getWorkspaceKernelFilePreviewShellPath(input.itemId);
+	}
+
 	return `/items/${input.itemId}/projections/${input.format}.md`;
 }
 
-function getProjectionContentType() {
+function getMarkdownProjectionContentType() {
 	return "text/markdown";
+}
+
+function getErrorMessage(error: unknown) {
+	return error instanceof Error ? error.message : String(error);
 }
 
 function parseProjectionMetadataJson(value: string): Record<string, JsonValue> {

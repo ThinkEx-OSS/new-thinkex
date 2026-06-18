@@ -75,7 +75,7 @@ export interface ReadWorkspaceKernelFileContentResult {
 	sizeBytes: number;
 }
 
-export type WorkspaceKernelFileProjectionFormat = "markdown";
+export type WorkspaceKernelFileProjectionFormat = "markdown" | "preview";
 
 export type WorkspaceKernelFileProjectionStatus =
 	| "not_started"
@@ -90,6 +90,7 @@ export interface UpsertWorkspaceKernelFileProjectionArgs {
 	format: WorkspaceKernelFileProjectionFormat;
 	status: WorkspaceKernelFileProjectionStatus;
 	content?: string | null;
+	contentBytes?: Uint8Array | null;
 	provider?: string | null;
 	providerMode?: string | null;
 	errorMessage?: string | null;
@@ -97,6 +98,16 @@ export interface UpsertWorkspaceKernelFileProjectionArgs {
 	metadataJson?: Record<string, JsonValue>;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
+}
+
+export interface ReadWorkspaceKernelFilePreviewResult {
+	itemId: string;
+	status: WorkspaceKernelFileProjectionStatus;
+	bytes: Uint8Array | null;
+	contentType: string;
+	sourceHash: string | null;
+	metadataJson: Record<string, JsonValue>;
+	updatedAt: string;
 }
 
 export interface ReadWorkspaceKernelFileProjectionArgs {

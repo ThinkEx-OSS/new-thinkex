@@ -76,7 +76,8 @@ export default function WorkspaceItemActionsMenu({
 					)
 				}
 			>
-				{triggerChildren ?? <EllipsisVertical className="size-4" />}
+				{triggerChildren ??
+					(trigger ? null : <EllipsisVertical className="size-4" />)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align={align} className="w-52">
 				<WorkspaceItemActionsMenuContent

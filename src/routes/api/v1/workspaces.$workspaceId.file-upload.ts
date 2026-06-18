@@ -8,7 +8,7 @@ import {
 	getWorkspaceFileUploadValidationError,
 	requireWorkspaceFileTypeFromHint,
 	WorkspaceFileUploadError,
-} from "#/features/workspaces/model/workspace-file-registry";
+} from "#/features/workspaces/model/workspace-file-upload-policy";
 import {
 	assertCanMutateWorkspace,
 	WorkspaceForbiddenError,

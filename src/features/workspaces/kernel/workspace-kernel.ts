@@ -132,6 +132,10 @@ export class WorkspaceKernel extends Agent<Env> {
 		return await this.fileCommands.readFileContent(input);
 	}
 
+	async readFilePreview(input: ReadWorkspaceKernelFileContentArgs) {
+		return await this.fileCommands.readFilePreview(input);
+	}
+
 	async upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs) {
 		return await this.fileCommands.upsertFileProjection(input);
 	}

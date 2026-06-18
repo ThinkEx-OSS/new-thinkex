@@ -18,6 +18,7 @@ import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedWorkspacesWorkspaceIdRouteImport } from './routes/_protected/workspaces.$workspaceId'
 import { Route as ApiV1WorkspacesWorkspaceIdFileUploadRouteImport } from './routes/api/v1/workspaces.$workspaceId.file-upload'
+import { Route as ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport } from './routes/api/v1/workspaces.$workspaceId.files.$itemId.preview'
 import { Route as ApiV1WorkspacesWorkspaceIdFilesItemIdContentRouteImport } from './routes/api/v1/workspaces.$workspaceId.files.$itemId.content'
 
 const SignupRoute = SignupRouteImport.update({
@@ -66,6 +67,12 @@ const ApiV1WorkspacesWorkspaceIdFileUploadRoute =
     path: '/$workspaceId/file-upload',
     getParentRoute: () => ApiV1WorkspacesRoute,
   } as any)
+const ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute =
+  ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport.update({
+    id: '/$workspaceId/files/$itemId/preview',
+    path: '/$workspaceId/files/$itemId/preview',
+    getParentRoute: () => ApiV1WorkspacesRoute,
+  } as any)
 const ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute =
   ApiV1WorkspacesWorkspaceIdFilesItemIdContentRouteImport.update({
     id: '/$workspaceId/files/$itemId/content',
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
+  '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
+  '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
+  '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
+    | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
+    | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
   id:
     | '__root__'
     | '/'
@@ -143,6 +155,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
+    | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRouteImport
       parentRoute: typeof ApiV1WorkspacesRoute
     }
+    '/api/v1/workspaces/$workspaceId/files/$itemId/preview': {
+      id: '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
+      path: '/$workspaceId/files/$itemId/preview'
+      fullPath: '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
+      preLoaderRoute: typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport
+      parentRoute: typeof ApiV1WorkspacesRoute
+    }
     '/api/v1/workspaces/$workspaceId/files/$itemId/content': {
       id: '/api/v1/workspaces/$workspaceId/files/$itemId/content'
       path: '/$workspaceId/files/$itemId/content'
@@ -246,6 +266,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 interface ApiV1WorkspacesRouteChildren {
   ApiV1WorkspacesWorkspaceIdFileUploadRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute: typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
+  ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute: typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
 }
 
 const ApiV1WorkspacesRouteChildren: ApiV1WorkspacesRouteChildren = {
@@ -253,6 +274,8 @@ const ApiV1WorkspacesRouteChildren: ApiV1WorkspacesRouteChildren = {
     ApiV1WorkspacesWorkspaceIdFileUploadRoute,
   ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute:
     ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute,
+  ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute:
+    ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute,
 }
 
 const ApiV1WorkspacesRouteWithChildren = ApiV1WorkspacesRoute._addFileChildren(

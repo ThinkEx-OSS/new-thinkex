@@ -11,7 +11,7 @@ import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import {
 	workspaceFileAssetKinds,
 	workspaceFileUploadTypeLabel,
-} from "#/features/workspaces/model/workspace-file-registry";
+} from "#/features/workspaces/model/workspace-file-upload-policy";
 
 export type WorkspaceItemCapability =
 	| "view"
@@ -35,6 +35,8 @@ export type WorkspaceItemRealtimeModel =
 	| "item-room-when-open"
 	| "none";
 
+export type WorkspaceItemCardPreview = "fill" | "icon";
+
 export interface WorkspaceItemRegistryEntry {
 	type: WorkspaceItemType;
 	family: WorkspaceItemFamily;
@@ -44,8 +46,7 @@ export interface WorkspaceItemRegistryEntry {
 	menuGroup: WorkspaceItemCreateGroup;
 	creatable: boolean;
 	icon: LucideIcon;
-	iconClassName: string;
-	surfaceClassName: string;
+	cardPreview: WorkspaceItemCardPreview;
 	viewer: string;
 	editor?: string;
 	storage: readonly string[];
@@ -64,8 +65,7 @@ export const workspaceObjectRegistry = {
 		menuGroup: "primary",
 		creatable: true,
 		icon: Folder,
-		iconClassName: "text-amber-600 dark:text-amber-400",
-		surfaceClassName: "bg-amber-500/10 dark:bg-amber-500/15",
+		cardPreview: "icon",
 		viewer: "folder",
 		storage: ["workspace_kernel.items"],
 		contentFormats: [],
@@ -81,8 +81,7 @@ export const workspaceObjectRegistry = {
 		menuGroup: "primary",
 		creatable: true,
 		icon: FileText,
-		iconClassName: "text-sky-600 dark:text-sky-400",
-		surfaceClassName: "bg-sky-500/10 dark:bg-sky-500/15",
+		cardPreview: "fill",
 		viewer: "document",
 		editor: "tiptap-document",
 		storage: ["workspace_kernel.items", "workspace_kernel.snapshots"],
@@ -100,8 +99,7 @@ export const workspaceObjectRegistry = {
 		menuGroup: "primary",
 		creatable: false,
 		icon: Paperclip,
-		iconClassName: "text-rose-600 dark:text-rose-400",
-		surfaceClassName: "bg-rose-500/10 dark:bg-rose-500/15",
+		cardPreview: "fill",
 		viewer: "file-router",
 		storage: [
 			"workspace_kernel.items",
@@ -121,8 +119,7 @@ export const workspaceObjectRegistry = {
 		menuGroup: "learn",
 		creatable: true,
 		icon: Layers3,
-		iconClassName: "text-violet-600 dark:text-violet-400",
-		surfaceClassName: "bg-violet-500/10 dark:bg-violet-500/15",
+		cardPreview: "icon",
 		viewer: "flashcard-deck",
 		editor: "flashcard-editor",
 		storage: ["workspace_kernel.items", "workspace_kernel.snapshots"],
@@ -139,8 +136,7 @@ export const workspaceObjectRegistry = {
 		menuGroup: "learn",
 		creatable: true,
 		icon: ListChecks,
-		iconClassName: "text-emerald-600 dark:text-emerald-400",
-		surfaceClassName: "bg-emerald-500/10 dark:bg-emerald-500/15",
+		cardPreview: "icon",
 		viewer: "quiz",
 		editor: "quiz-editor",
 		storage: ["workspace_kernel.items", "workspace_kernel.snapshots"],
@@ -153,6 +149,14 @@ export const workspaceObjectRegistry = {
 
 export function getWorkspaceObjectRegistryEntry(type: WorkspaceItemType) {
 	return workspaceObjectRegistry[type];
+}
+
+export function workspaceItemUsesFillPreview(
+	itemOrType: { type: WorkspaceItemType } | WorkspaceItemType,
+) {
+	const type = typeof itemOrType === "string" ? itemOrType : itemOrType.type;
+
+	return workspaceObjectRegistry[type].cardPreview === "fill";
 }
 
 export const workspaceObjectRegistryEntries: WorkspaceItemRegistryEntry[] =

@@ -1,15 +1,24 @@
 import { useDragOperation } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { CheckIcon, FolderInput } from "lucide-react";
-import type { ComponentProps, MouseEvent } from "react";
+import { FolderInput } from "lucide-react";
+import type { MouseEvent } from "react";
 
-import { Button } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
 import { ContextMenu, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
-import WorkspaceItemActionsMenu, {
-	WorkspaceItemActionsContextMenuContent,
-} from "#/features/workspaces/components/WorkspaceItemActionsMenu";
+import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
+import WorkspaceItemPreviewSurface from "#/features/workspaces/components/WorkspaceItemPreviewSurface";
+import {
+	workspaceItemCardBaseClass,
+	workspaceItemCardHoverClass,
+	workspaceItemCardSelectedClass,
+	workspaceItemCardUnselectedHoverClass,
+} from "#/features/workspaces/components/workspace-item-card-chrome";
+import { WorkspaceItemCardFooter } from "#/features/workspaces/components/workspace-item-card-footer";
+import {
+	WORKSPACE_ITEM_PREVIEW_CONTROL_ROW,
+	WorkspaceItemCardPreviewControls,
+} from "#/features/workspaces/components/workspace-item-card-preview-controls";
 import { workspaceItemSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	createWorkspaceItemDragData,
@@ -19,6 +28,7 @@ import {
 	getWorkspaceItemSortableGroup,
 } from "#/features/workspaces/model/drag";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
+import { workspaceItemUsesFillPreview } from "#/features/workspaces/model/object-registry";
 import { getWorkspaceItemMeta } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
@@ -26,19 +36,6 @@ import { cn } from "#/lib/utils";
 const WORKSPACE_COLLISION_PRIORITY_HIGH = 3;
 const WORKSPACE_COLLISION_PRIORITY_HIGHEST = 4;
 const WORKSPACE_COLLISION_TYPE_POINTER_INTERSECTION = 2;
-const WORKSPACE_ITEM_PREVIEW_CONTROL_ROW = "2.5rem";
-const WORKSPACE_ITEM_PREVIEW_CONTROL_INSET = "px-2";
-const WORKSPACE_ITEM_CARD_BASE =
-	"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all active:cursor-grabbing";
-const WORKSPACE_ITEM_CARD_HOVER = "hover:bg-accent dark:hover:bg-accent/60";
-const WORKSPACE_ITEM_CARD_UNSELECTED_HOVER =
-	"not-data-[selected=true]:hover:shadow-md";
-const WORKSPACE_ITEM_CARD_SELECTED =
-	"data-[selected=true]:ring-2 data-[selected=true]:ring-white data-[selected=true]:ring-offset-2 data-[selected=true]:ring-offset-background data-[selected=true]:shadow-[0_0_0_2px_rgba(15,23,42,0.34),0_0_0_5px_rgba(15,23,42,0.08),0_16px_36px_rgba(15,23,42,0.20)] dark:data-[selected=true]:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_0_5px_rgba(255,255,255,0.08),0_16px_36px_rgba(0,0,0,0.45)]";
-const WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL =
-	"relative z-20 flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground dark:hover:bg-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50";
-const WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY =
-	"pointer-events-none opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100";
 
 interface WorkspaceItemCardProps {
 	item: WorkspaceItem;
@@ -185,10 +182,7 @@ export default function WorkspaceItemCard({
 		event.stopPropagation();
 		onRenameItem(item);
 	};
-	const handleSelectionPreviewClick = (event: MouseEvent<HTMLElement>) => {
-		event.stopPropagation();
-		onSelectionChange(item, !isSelected);
-	};
+	const hasPreviewFill = workspaceItemUsesFillPreview(item);
 
 	const card = (
 		<Card
@@ -196,10 +190,10 @@ export default function WorkspaceItemCard({
 			data-workspace-selection-item
 			data-selected={isSelected ? "true" : undefined}
 			className={cn(
-				WORKSPACE_ITEM_CARD_BASE,
-				WORKSPACE_ITEM_CARD_HOVER,
-				WORKSPACE_ITEM_CARD_UNSELECTED_HOVER,
-				WORKSPACE_ITEM_CARD_SELECTED,
+				workspaceItemCardBaseClass,
+				workspaceItemCardHoverClass,
+				workspaceItemCardUnselectedHoverClass,
+				workspaceItemCardSelectedClass,
 				isDragging && "opacity-70 shadow-lg",
 				isDropTarget &&
 					!showFolderDropAffordance &&
@@ -219,61 +213,42 @@ export default function WorkspaceItemCard({
 			/>
 			<div
 				className={cn(
-					"pointer-events-none relative z-10 grid min-h-20 flex-1 bg-muted",
+					"pointer-events-none relative z-10 grid min-h-20 flex-1 overflow-hidden bg-muted",
 					surfaceClassName,
 				)}
 				style={{
-					gridTemplateRows: `${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW} 1fr ${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW}`,
+					gridTemplateRows: `${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW} minmax(0, 1fr) ${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW}`,
 				}}
 			>
-				<div
-					className={cn(
-						"flex items-center justify-between",
-						WORKSPACE_ITEM_PREVIEW_CONTROL_INSET,
-					)}
-				>
-					<WorkspaceItemPreviewControl
-						aria-label={`Select ${item.name}`}
-						aria-pressed={isSelected}
-						className={cn(isSelected && "pointer-events-auto opacity-100")}
-						onClick={handleSelectionPreviewClick}
-					>
-						<span
-							className={cn(
-								"flex size-4 items-center justify-center rounded-[4px] border border-input bg-background shadow-xs transition-colors dark:bg-input/30",
-								isSelected &&
-									"border-primary bg-primary text-primary-foreground dark:bg-primary",
-							)}
-							aria-hidden="true"
-						>
-							{isSelected ? <CheckIcon className="size-3.5" /> : null}
-						</span>
-					</WorkspaceItemPreviewControl>
-					<div aria-hidden="true" className="h-full flex-1" />
-					<WorkspaceItemActionsMenu
+				{hasPreviewFill ? (
+					<WorkspaceItemPreviewSurface
 						item={item}
-						trigger={
-							<WorkspaceItemPreviewControl
-								aria-label={`Open actions for ${item.name}`}
-								onClick={(event) => event.stopPropagation()}
-							/>
-						}
-						onMoveItem={onMoveItem}
-						onRenameItem={onRenameItem}
-						onDeleteItem={onDeleteItem}
+						className="absolute inset-0"
 					/>
-				</div>
-				<div
-					className="flex items-center justify-center bg-transparent"
-					aria-hidden="true"
-				>
-					<ItemIcon
-						className={cn("size-10", iconClassName)}
-						strokeWidth={1.75}
+				) : null}
+				<WorkspaceItemCardPreviewControls
+					item={item}
+					isSelected={isSelected}
+					onSelectionChange={onSelectionChange}
+					onMoveItem={onMoveItem}
+					onRenameItem={onRenameItem}
+					onDeleteItem={onDeleteItem}
+				/>
+				{hasPreviewFill ? (
+					<div aria-hidden="true" className="relative z-10 min-h-0" />
+				) : (
+					<div
+						className="relative z-10 flex items-center justify-center bg-transparent"
 						aria-hidden="true"
-					/>
-				</div>
-				<div aria-hidden="true" />
+					>
+						<ItemIcon
+							className={cn("size-10", iconClassName)}
+							strokeWidth={1.75}
+							aria-hidden="true"
+						/>
+					</div>
+				)}
+				<div aria-hidden="true" className="relative z-10" />
 			</div>
 			{showFolderDropAffordance ? (
 				<div
@@ -297,7 +272,13 @@ export default function WorkspaceItemCard({
 						{item.name}
 					</button>
 				</CardTitle>
-				{meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
+				{isFolder ? (
+					meta ? (
+						<p className="text-xs text-muted-foreground">{meta}</p>
+					) : null
+				) : (
+					<WorkspaceItemCardFooter item={item} />
+				)}
 			</CardHeader>
 		</Card>
 	);
@@ -312,23 +293,5 @@ export default function WorkspaceItemCard({
 				onDeleteItem={onDeleteItem}
 			/>
 		</ContextMenu>
-	);
-}
-
-function WorkspaceItemPreviewControl({
-	className,
-	...props
-}: ComponentProps<typeof Button>) {
-	return (
-		<Button
-			variant="ghost"
-			size="icon-sm"
-			className={cn(
-				WORKSPACE_ITEM_PREVIEW_CONTROL_SHELL,
-				WORKSPACE_ITEM_PREVIEW_CONTROL_VISIBILITY,
-				className,
-			)}
-			{...props}
-		/>
 	);
 }

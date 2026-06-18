@@ -15,24 +15,41 @@ import {
 	workspaceColorOptions,
 	workspaceColors,
 } from "#/features/workspaces/model/workspace-colors";
-import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-registry";
+import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-upload-policy";
 
 export const workspaceItemColorOptions = workspaceColorOptions;
+
+const workspaceItemTypeDefaultColor = {
+	document: "sky",
+	file: "rose",
+	flashcard: "violet",
+	folder: "amber",
+	quiz: "emerald",
+} as const satisfies Record<WorkspaceItemType, WorkspaceItemColor>;
 
 export function getWorkspaceItemTypeDisplay(type: WorkspaceItemType) {
 	return getWorkspaceObjectRegistryEntry(type);
 }
 
+function getWorkspaceItemPalette(item: WorkspaceItem) {
+	const customColor = getWorkspaceItemColorValue(item.color);
+
+	if (customColor) {
+		return workspaceColors[customColor];
+	}
+
+	return workspaceColors[workspaceItemTypeDefaultColor[item.type]];
+}
+
 export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	const typeDisplay = getWorkspaceItemTypeDisplay(item.type);
-	const colorDisplay = getWorkspaceItemColorDisplay(item.color);
+	const palette = getWorkspaceItemPalette(item);
 
 	return {
 		...typeDisplay,
 		Icon: typeDisplay.icon,
-		iconClassName: colorDisplay?.iconClassName ?? typeDisplay.iconClassName,
-		surfaceClassName:
-			colorDisplay?.surfaceClassName ?? typeDisplay.surfaceClassName,
+		iconClassName: palette.iconClassName,
+		surfaceClassName: palette.surfaceClassName,
 	};
 }
 
@@ -44,12 +61,6 @@ export function getWorkspaceItemColorValue(
 	return parsed.success ? parsed.data : null;
 }
 
-function getWorkspaceItemColorDisplay(color: string | null) {
-	const value = getWorkspaceItemColorValue(color);
-
-	return value ? workspaceColors[value] : null;
-}
-
 export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
 	(display) => ({
 		type: display.type,
@@ -57,7 +68,9 @@ export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
 		description: display.menuDescription,
 		group: display.menuGroup,
 		Icon: display.icon,
-		iconClassName: display.iconClassName,
+		iconClassName:
+			workspaceColors[workspaceItemTypeDefaultColor[display.type]]
+				.iconClassName,
 	}),
 );
 
@@ -98,7 +111,7 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 			label: "Upload",
 			description: workspaceFileUploadTypeLabel,
 			Icon: Upload,
-			iconClassName: "text-rose-600 dark:text-rose-400",
+			iconClassName: workspaceColors.rose.iconClassName,
 			disabled: false,
 		},
 		{
@@ -106,7 +119,7 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 			label: "Record",
 			description: "Soon",
 			Icon: Mic,
-			iconClassName: "text-orange-600 dark:text-orange-400",
+			iconClassName: workspaceColors.orange.iconClassName,
 			disabled: true,
 		},
 	];

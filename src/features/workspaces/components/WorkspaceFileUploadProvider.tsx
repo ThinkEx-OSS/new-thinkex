@@ -5,7 +5,7 @@ import {
 	use,
 	useRef,
 } from "react";
-import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file-registry";
+import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file-upload-policy";
 import { useUploadWorkspaceFileMutation } from "#/features/workspaces/use-workspace-kernel-items";
 
 interface WorkspaceFileUploadContextValue {

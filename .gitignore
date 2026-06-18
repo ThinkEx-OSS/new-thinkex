@@ -24,6 +24,7 @@ coverage
 .cta.json
 .cursorrules
 .firecrawl/
+public/vendor/embedpdf/pdfium.wasm
 
 .reference/
 
