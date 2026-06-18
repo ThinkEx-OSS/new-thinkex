@@ -28,7 +28,6 @@ import type {
 } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
-import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
 import { workspaceItemRequiresHeavyViewerRuntime } from "#/features/workspaces/model/workspace-file";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
@@ -162,7 +161,6 @@ export function WorkspaceShell({
 			workspaceId: workspace.id,
 			parentId: input.parentId,
 			type: input.type,
-			color: getRandomWorkspaceColor(),
 		});
 	};
 

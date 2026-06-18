@@ -1,34 +1,24 @@
 import { type LucideIcon, Mic, Upload } from "lucide-react";
-import {
-	type WorkspaceItemColor,
-	workspaceItemColorSchema,
-} from "#/features/workspaces/contracts";
+
 import {
 	creatableWorkspaceObjectEntries,
 	getWorkspaceObjectRegistryEntry,
 } from "#/features/workspaces/model/object-registry";
-import type {
-	WorkspaceItem,
-	WorkspaceItemType,
-} from "#/features/workspaces/model/types";
-import {
-	workspaceColorOptions,
-	workspaceColors,
-} from "#/features/workspaces/model/workspace-colors";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
 import {
 	resolveWorkspaceFileTypeFromItem,
 	workspaceFileUploadTypeLabel,
 } from "#/features/workspaces/model/workspace-file";
+import {
+	getWorkspaceItemPalette,
+	workspaceItemTypeColors,
+} from "#/features/workspaces/model/workspace-item-colors";
 
-export const workspaceItemColorOptions = workspaceColorOptions;
-
-const workspaceItemTypeDefaultColor = {
-	document: "sky",
-	file: "rose",
-	flashcard: "violet",
-	folder: "amber",
-	quiz: "emerald",
-} as const satisfies Record<WorkspaceItemType, WorkspaceItemColor>;
+export {
+	getWorkspaceItemColorValue,
+	workspaceFolderColorOptions as workspaceItemColorOptions,
+} from "#/features/workspaces/model/workspace-item-colors";
 
 export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	const typeDisplay = getWorkspaceObjectRegistryEntry(item.type);
@@ -45,24 +35,6 @@ export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	};
 }
 
-function getWorkspaceItemPalette(item: WorkspaceItem) {
-	const customColor = getWorkspaceItemColorValue(item.color);
-
-	if (customColor) {
-		return workspaceColors[customColor];
-	}
-
-	return workspaceColors[workspaceItemTypeDefaultColor[item.type]];
-}
-
-export function getWorkspaceItemColorValue(
-	color: string | null,
-): WorkspaceItemColor | null {
-	const parsed = workspaceItemColorSchema.safeParse(color);
-
-	return parsed.success ? parsed.data : null;
-}
-
 export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
 	(display) => ({
 		type: display.type,
@@ -71,15 +43,11 @@ export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
 		group: display.menuGroup,
 		Icon: display.icon,
 		iconClassName:
-			workspaceColors[workspaceItemTypeDefaultColor[display.type]]
-				.iconClassName,
+			workspaceColors[workspaceItemTypeColors[display.type]].iconClassName,
 	}),
 );
 
-const workspaceItemPrimaryCreateActionOrder: WorkspaceItemType[] = [
-	"document",
-	"folder",
-];
+const workspaceItemPrimaryCreateActionOrder = ["document", "folder"] as const;
 
 export const workspaceItemPrimaryCreateActions =
 	workspaceItemPrimaryCreateActionOrder.map((type) => {
@@ -113,7 +81,8 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 			label: "Upload",
 			description: workspaceFileUploadTypeLabel,
 			Icon: Upload,
-			iconClassName: workspaceColors.rose.iconClassName,
+			iconClassName:
+				workspaceColors[workspaceItemTypeColors.file].iconClassName,
 			disabled: false,
 		},
 		{

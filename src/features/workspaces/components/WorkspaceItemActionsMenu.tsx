@@ -34,6 +34,7 @@ import {
 	workspaceItemColorOptions,
 } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { workspaceItemSupportsCustomColor } from "#/features/workspaces/model/workspace-item-colors";
 import { useUpdateWorkspaceItemColorMutation } from "#/features/workspaces/use-workspace-kernel-items";
 
 const workspaceItemColorSubmenuTrigger = (
@@ -112,17 +113,19 @@ export function WorkspaceItemActionsMenuContent({
 				renderer={renderer}
 				onRenameItem={onRenameItem}
 			/>
-			<WorkspaceItemColorSubmenu
-				item={item}
-				menuKind={menuKind}
-				onUpdateItemColor={(color) =>
-					updateWorkspaceItemColorMutation.mutate({
-						workspaceId: item.workspaceId,
-						itemId: item.id,
-						color,
-					})
-				}
-			/>
+			{workspaceItemSupportsCustomColor(item.type) ? (
+				<WorkspaceItemColorSubmenu
+					item={item}
+					menuKind={menuKind}
+					onUpdateItemColor={(color) =>
+						updateWorkspaceItemColorMutation.mutate({
+							workspaceId: item.workspaceId,
+							itemId: item.id,
+							color,
+						})
+					}
+				/>
+			) : null}
 			<WorkspaceItemMoveMenuItem
 				item={item}
 				renderer={renderer}
