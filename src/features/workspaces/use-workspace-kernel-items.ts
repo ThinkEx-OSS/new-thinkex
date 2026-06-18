@@ -19,9 +19,7 @@ import type {
 	MoveWorkspaceItemsInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
-	WorkspaceItemSummary,
 } from "#/features/workspaces/contracts";
-import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	createWorkspaceItemFn,
 	deleteWorkspaceItemsFn,
@@ -30,7 +28,6 @@ import {
 	updateWorkspaceItemColorFn,
 } from "#/features/workspaces/server/functions";
 import { prepareWorkspaceClientMutationInput } from "#/features/workspaces/use-workspace-client-mutation-echo";
-import { apiErrorSchema } from "#/lib/api/contracts";
 import { getErrorMessage } from "#/lib/error-message";
 import { createKeyedDebouncedLatest } from "#/lib/keyed-debounced-latest";
 
@@ -90,59 +87,6 @@ export function useRenameWorkspaceItemMutation() {
 			toast.error(
 				getErrorMessage(error, "Unable to rename workspace item right now."),
 			);
-		},
-	});
-}
-
-export function useUploadWorkspaceFileMutation() {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: async (input: {
-			workspaceId: string;
-			parentId: string | null;
-			file: File;
-			clientMutationId?: string;
-		}) => {
-			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(input);
-			const formData = new FormData();
-
-			formData.set("file", inputWithClientMutation.file);
-			formData.set(
-				"clientMutationId",
-				inputWithClientMutation.clientMutationId,
-			);
-
-			if (inputWithClientMutation.parentId) {
-				formData.set("parentId", inputWithClientMutation.parentId);
-			}
-
-			const uploadPromise = fetch(
-				`/api/v1/workspaces/${inputWithClientMutation.workspaceId}/file-upload`,
-				{
-					method: "POST",
-					body: formData,
-				},
-			).then(async (uploadResponse) => {
-				if (!uploadResponse.ok) {
-					throw new Error(await getUploadErrorMessage(uploadResponse));
-				}
-
-				return (await uploadResponse.json()) as WorkspaceCommandResult<WorkspaceItemSummary>;
-			});
-
-			void toast.promise(uploadPromise, {
-				loading: `Uploading ${input.file.name}...`,
-				success: `Uploaded ${input.file.name}.`,
-				error: (error) =>
-					getErrorMessage(error, "Unable to upload file right now."),
-			});
-
-			return uploadPromise;
-		},
-		onSuccess: (command) => {
-			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 	});
 }
@@ -272,18 +216,6 @@ function getDeleteWorkspaceItemsToastMessage(
 	suffix: string,
 ) {
 	return `${action} ${itemCount === 1 ? "item" : `${itemCount} items`}${suffix}`;
-}
-
-async function getUploadErrorMessage(response: Response) {
-	const fallback = "Unable to upload file to workspace storage.";
-
-	try {
-		const payload = apiErrorSchema.safeParse(await response.json());
-
-		return payload.success ? payload.data.message : fallback;
-	} catch {
-		return fallback;
-	}
 }
 
 function getWorkspaceItemColorCommitKey(input: UpdateWorkspaceItemColorInput) {

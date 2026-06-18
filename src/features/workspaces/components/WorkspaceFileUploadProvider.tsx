@@ -1,12 +1,16 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	type ChangeEvent,
 	createContext,
 	type ReactNode,
 	use,
+	useCallback,
 	useRef,
 } from "react";
+
+import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
+import { runWorkspaceFileUploadBatch } from "#/features/workspaces/files/workspace-file-upload";
 import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file-upload-policy";
-import { useUploadWorkspaceFileMutation } from "#/features/workspaces/use-workspace-kernel-items";
 
 interface WorkspaceFileUploadContextValue {
 	requestFileUpload: (parentId: string | null) => void;
@@ -23,9 +27,29 @@ export function WorkspaceFileUploadProvider({
 	children: ReactNode;
 	workspaceId: string;
 }) {
-	const uploadWorkspaceFileMutation = useUploadWorkspaceFileMutation();
+	const queryClient = useQueryClient();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const parentIdRef = useRef<string | null>(null);
+
+	const uploadFiles = useCallback(
+		(files: Iterable<File>, parentId: string | null) => {
+			const fileList = Array.from(files);
+
+			if (fileList.length === 0) {
+				return;
+			}
+
+			void runWorkspaceFileUploadBatch({
+				workspaceId,
+				parentId,
+				files: fileList,
+				onSuccess: (command) => {
+					applyWorkspaceEventToCache(queryClient, command.event);
+				},
+			});
+		},
+		[queryClient, workspaceId],
+	);
 
 	const requestFileUpload = (parentId: string | null) => {
 		parentIdRef.current = parentId;
@@ -35,25 +59,19 @@ export function WorkspaceFileUploadProvider({
 			inputRef.current.click();
 		}
 	};
-	const uploadFiles = (files: Iterable<File>, parentId: string | null) => {
-		for (const file of files) {
-			uploadWorkspaceFileMutation.mutate({
-				workspaceId,
-				parentId,
-				file,
-			});
-		}
-	};
+
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-		const file = event.currentTarget.files?.[0];
+		const selectedFiles = event.currentTarget.files
+			? Array.from(event.currentTarget.files)
+			: [];
 
 		event.currentTarget.value = "";
 
-		if (!file) {
+		if (selectedFiles.length === 0) {
 			return;
 		}
 
-		uploadFiles([file], parentIdRef.current);
+		uploadFiles(selectedFiles, parentIdRef.current);
 	};
 
 	return (
@@ -63,8 +81,9 @@ export function WorkspaceFileUploadProvider({
 			<input
 				ref={inputRef}
 				type="file"
+				multiple
 				accept={workspaceFileUploadAccept}
-				aria-label="Upload file"
+				aria-label="Upload files"
 				className="hidden"
 				tabIndex={-1}
 				onChange={handleInputChange}
