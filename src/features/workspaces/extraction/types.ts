@@ -3,9 +3,9 @@ import type {
 	WorkspaceFileExtractionRoute,
 } from "#/features/workspaces/model/workspace-file/types";
 import {
-	workspaceFileExtractionProviders,
-	type WorkspaceFileExtractionProviderId,
 	type WorkspaceFileExtractionMode,
+	type WorkspaceFileExtractionProviderId,
+	workspaceFileExtractionProviders,
 } from "#/features/workspaces/model/workspace-file/types";
 
 export type MarkdownExtractionProviderId = WorkspaceFileExtractionProviderId;

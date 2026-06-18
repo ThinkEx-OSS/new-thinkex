@@ -225,10 +225,7 @@ export function partitionWorkspaceUploadBatch(files: readonly File[]) {
 			continue;
 		}
 
-		if (
-			batchBytes + file.size >
-			workspaceFileUploadLimits.maxBytesPerBatch
-		) {
+		if (batchBytes + file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
 			rejected.push({
 				file,
 				message: "This file would exceed the batch upload size limit.",

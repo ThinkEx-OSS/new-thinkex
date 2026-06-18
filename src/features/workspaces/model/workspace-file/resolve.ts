@@ -1,7 +1,7 @@
 import type { JsonValue } from "#/features/workspaces/contracts";
 import { getMetadataString } from "#/features/workspaces/model/workspace-file/metadata";
-import { getWorkspaceUploadFamily } from "#/features/workspaces/model/workspace-file/policy";
 import type { WorkspaceFileTypeDescriptor } from "#/features/workspaces/model/workspace-file/policy";
+import { getWorkspaceUploadFamily } from "#/features/workspaces/model/workspace-file/policy";
 import {
 	type WorkspaceFileAssetKind,
 	workspaceFileAssetKinds,

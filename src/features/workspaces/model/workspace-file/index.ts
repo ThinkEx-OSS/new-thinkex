@@ -4,9 +4,8 @@ export {
 	getMetadataString,
 } from "#/features/workspaces/model/workspace-file/metadata";
 export {
-	WorkspaceFileUploadError,
-	getWorkspaceFileUploadValidationError,
 	getWorkspaceFileShellExtension,
+	getWorkspaceFileUploadValidationError,
 	getWorkspaceUploadFamily,
 	normalizeWorkspaceUploadFileName,
 	partitionWorkspaceUploadBatch,
@@ -16,18 +15,19 @@ export {
 	resolveWorkspaceFileContentType,
 	resolveWorkspaceFileTypeFromHint,
 	resolveWorkspaceUploadFormat,
-	workspaceFileUploadAccept,
-	workspaceFileUploadTypeLabel,
 	type WorkspaceFileTypeDescriptor,
+	WorkspaceFileUploadError,
 	type WorkspaceFileUploadHint,
 	type WorkspaceFileUploadValidationError,
 	type WorkspaceUploadFamily,
 	type WorkspaceUploadFormat,
+	workspaceFileUploadAccept,
+	workspaceFileUploadTypeLabel,
 } from "#/features/workspaces/model/workspace-file/policy";
 export {
 	resolveWorkspaceFileTypeFromItem,
-	workspaceItemRequiresHeavyViewerRuntime,
 	type WorkspaceFileItemLike,
+	workspaceItemRequiresHeavyViewerRuntime,
 } from "#/features/workspaces/model/workspace-file/resolve";
 export type {
 	WorkspaceFileAiReadStrategy,

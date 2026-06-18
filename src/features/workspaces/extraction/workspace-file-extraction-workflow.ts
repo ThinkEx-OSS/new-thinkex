@@ -57,7 +57,9 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						itemId: params.itemId,
 					});
 					const sourceHash = await sha256Base64Url(source.bytes);
-					const route = getWorkspaceUploadFamily(params.assetKind).extractionRoute;
+					const route = getWorkspaceUploadFamily(
+						params.assetKind,
+					).extractionRoute;
 					const provider = createMarkdownExtractionProvider(
 						route.provider,
 						this.env,
@@ -112,7 +114,9 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					);
 
 					if (!artifact) {
-						throw new Error("Staged markdown extraction artifact was not found.");
+						throw new Error(
+							"Staged markdown extraction artifact was not found.",
+						);
 					}
 
 					const markdown = await artifact.text();
