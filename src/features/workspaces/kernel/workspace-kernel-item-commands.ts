@@ -30,7 +30,10 @@ import type {
 	UpdateWorkspaceKernelItemColorArgs,
 	WriteWorkspaceKernelItemArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
-import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
+import {
+	resolveWorkspaceItemColorForCreate,
+	workspaceItemSupportsCustomColor,
+} from "#/features/workspaces/model/workspace-item-colors";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelItemCommands {
@@ -60,7 +63,10 @@ export class WorkspaceKernelItemCommands {
 		const type = workspaceItemTypeSchema.parse(input.type);
 		const id = input.id ?? crypto.randomUUID();
 		const parentId = input.parentId ?? null;
-		const color = input.color ?? getRandomWorkspaceColor();
+		const color = resolveWorkspaceItemColorForCreate({
+			type,
+			color: input.color,
+		});
 		const now = Date.now();
 
 		if (this.store.getItemRowIncludingDeleted(id)) {
@@ -199,7 +205,12 @@ export class WorkspaceKernelItemCommands {
 	async updateItemColor(
 		input: UpdateWorkspaceKernelItemColorArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
-		this.store.assertActiveItem(input.itemId);
+		const item = this.store.assertActiveItem(input.itemId);
+		const type = workspaceItemTypeSchema.parse(item.type);
+
+		if (!workspaceItemSupportsCustomColor(type)) {
+			throw new Error("Only folders support custom colors.");
+		}
 
 		this.sql`
 			UPDATE kernel_items

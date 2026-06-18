@@ -8,3 +8,8 @@ pre-commit:
       run: pnpm eslint --max-warnings 0 --no-warn-ignored {staged_files}
     typecheck:
       run: pnpm typecheck
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}

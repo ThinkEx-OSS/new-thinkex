@@ -27,7 +27,6 @@ import type {
 	WorkspaceKernelFileProjectionFormat,
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
-import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
 import {
 	getMetadataNumber,
 	getMetadataString,
@@ -89,7 +88,7 @@ export class WorkspaceKernelFileCommands {
 
 		const now = Date.now();
 		const itemId = crypto.randomUUID();
-		const color = getRandomWorkspaceColor();
+		const color = null;
 		const requestedName = normalizeWorkspaceUploadFileName(
 			input.fileName,
 			descriptor,
