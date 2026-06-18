@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
@@ -53,14 +53,11 @@ export function useAiChatPanelController({
 	const isMaximized =
 		presentation.mode === "maximized" && presentation.pane.kind === "chat";
 
-	const selectThread = useCallback(
-		(threadId: string | undefined) => {
-			setActiveAiChatThread(workspaceId, threadId);
-		},
-		[setActiveAiChatThread, workspaceId],
-	);
+	const selectThread = (threadId: string | undefined) => {
+		setActiveAiChatThread(workspaceId, threadId);
+	};
 
-	const handleNewChat = useCallback(async () => {
+	const handleNewChat = async () => {
 		if (isCreatingThread) {
 			return;
 		}
@@ -71,7 +68,7 @@ export function useAiChatPanelController({
 		} catch (error) {
 			console.warn("[AiChatPanel] Failed to create chat thread", error);
 		}
-	}, [createThread, isCreatingThread, selectThread]);
+	};
 
 	const handleDeleteThread = async (threadId: string) => {
 		const remainingThreads = threads.filter((thread) => thread.id !== threadId);
@@ -98,7 +95,7 @@ export function useAiChatPanelController({
 
 		if (threads.length === 0) {
 			if (activeThreadId) {
-				selectThread(undefined);
+				setActiveAiChatThread(workspaceId, undefined);
 			}
 			return;
 		}
@@ -107,9 +104,15 @@ export function useAiChatPanelController({
 			!activeThreadId ||
 			!threads.some((thread) => thread.id === activeThreadId)
 		) {
-			selectThread(threads[0].id);
+			setActiveAiChatThread(workspaceId, threads[0].id);
 		}
-	}, [activeThreadId, areThreadsReady, selectThread, threads]);
+	}, [
+		activeThreadId,
+		areThreadsReady,
+		setActiveAiChatThread,
+		threads,
+		workspaceId,
+	]);
 
 	useEffect(() => {
 		if (!activeThread?.hasUnreadCompletion) {
@@ -132,7 +135,6 @@ export function useAiChatPanelController({
 	]);
 
 	return {
-		activeThread,
 		activeThreadId,
 		areThreadsReady,
 		deleteThreadDialog: {

@@ -22,14 +22,12 @@ import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/wo
 export default function AiChatThreadView({
 	context,
 	getInspectorSnapshot,
-	hasPersistedMessages,
 	modelId,
 	onModelChange,
 	threadId,
 }: {
 	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
-	hasPersistedMessages: boolean;
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
 	threadId: string;
@@ -75,7 +73,6 @@ export default function AiChatThreadView({
 					className="p-0"
 				>
 					<AiChatMessageList
-						isLoadingHistory={hasPersistedMessages && messages.length === 0}
 						messages={messages}
 						presentation={presentation}
 						workspaceId={context.workspaceId}

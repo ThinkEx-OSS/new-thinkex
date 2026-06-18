@@ -31,7 +31,6 @@ export function useWorkspaceAiChat({
 	});
 	const chat = useAgentChat<unknown, AiChatMessage>({
 		agent,
-		getInitialMessages: null,
 		body: () => ({
 			modelId,
 			timeZone: getClientTimeZone(),

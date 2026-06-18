@@ -3,7 +3,6 @@ import {
 	type ReactNode,
 	type RefObject,
 	use,
-	useCallback,
 	useRef,
 	useState,
 } from "react";
@@ -31,9 +30,9 @@ export function AiChatAttachmentDropProvider({
 }) {
 	const panelRef = useRef<HTMLElement | null>(null);
 	const [isDropActive, setDropActive] = useState(false);
-	const mergePanelRef = useCallback((element: HTMLElement | null) => {
+	const mergePanelRef = (element: HTMLElement | null) => {
 		panelRef.current = element;
-	}, []);
+	};
 
 	return (
 		<AiChatAttachmentDropContext.Provider

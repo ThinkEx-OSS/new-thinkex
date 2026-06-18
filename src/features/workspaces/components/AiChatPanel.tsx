@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -22,6 +22,7 @@ import {
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
+import { getAiChatPanelBodyPhase } from "#/features/workspaces/components/ai-chat/ai-chat-panel-phase";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
 import { useWorkspaceAiContextDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
@@ -62,7 +63,6 @@ function AiChatPanelLayout({
 		areThreadsReady,
 		deleteThreadDialog,
 		getThreadInspectorSnapshot,
-		activeThread,
 		isCreatingThread,
 		isMaximized,
 		modelId,
@@ -76,17 +76,20 @@ function AiChatPanelLayout({
 		threads,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
-	const setPanelRef = useCallback(
-		(element: HTMLElement | null) => {
-			mergePanelRef(element);
-			workspaceDrop.ref(element);
-		},
-		[mergePanelRef, workspaceDrop.ref],
-	);
+	const setPanelRef = (element: HTMLElement | null) => {
+		mergePanelRef(element);
+		workspaceDrop.ref(element);
+	};
 
 	useEffect(() => {
 		return scheduleAiChatThinkingLoaderPrewarm();
 	}, []);
+
+	const panelBodyPhase = getAiChatPanelBodyPhase({
+		activeThreadId,
+		areThreadsReady,
+		threadCount: threads.length,
+	});
 
 	return (
 		<aside
@@ -109,22 +112,24 @@ function AiChatPanelLayout({
 				threads={threads}
 			/>
 
-			{!areThreadsReady ? (
-				<AiChatPanelLoading />
-			) : !activeThreadId ? (
+			{panelBodyPhase.kind === "empty" ? (
 				<AiChatPanelEmpty
 					isCreatingThread={isCreatingThread}
 					onNewChat={onNewChat}
 				/>
+			) : panelBodyPhase.kind === "loading" ? (
+				<AiChatPanelLoading />
 			) : (
-				<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
+				<Suspense
+					key={panelBodyPhase.threadId}
+					fallback={<AiChatPanelLoading />}
+				>
 					<AiChatThreadView
 						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
-						hasPersistedMessages={Boolean(activeThread?.lastUserMessageAt)}
 						modelId={modelId}
 						onModelChange={onModelChange}
-						threadId={activeThreadId}
+						threadId={panelBodyPhase.threadId}
 					/>
 				</Suspense>
 			)}

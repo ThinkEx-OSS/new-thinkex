@@ -1,5 +1,5 @@
 import { useAgent } from "agents/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import {
 	userAIAgentName,
@@ -28,7 +28,7 @@ export function useWorkspaceAiChatThreads({
 		(thread) => thread.workspaceId === workspaceId,
 	);
 
-	const createThread = useCallback(async () => {
+	const createThread = async () => {
 		setIsCreatingThread(true);
 
 		try {
@@ -41,7 +41,7 @@ export function useWorkspaceAiChatThreads({
 			setIsCreatingThread(false);
 			throw error;
 		}
-	}, [directory, workspaceId]);
+	};
 
 	const deleteThread = async (threadId: string) => {
 		await directory.call("deleteThread", [threadId]);

@@ -1,23 +1,20 @@
-import {
-	type ReactNode,
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from "react";
-import { VList, type VListHandle } from "virtua";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { VList } from "virtua";
 
 import { ConversationEmptyState } from "#/components/ai-elements/conversation";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
-import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import {
 	type AiChatPresentation,
 	type AssistantRowDisplay,
 	getAssistantRowDisplay,
+	isAiChatStreamActive,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
+import {
+	getLatestUserMessage,
+	useAiChatMessageListScroll,
+} from "#/features/workspaces/components/ai-chat/useAiChatMessageListScroll";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
 import { createAssistantResponseSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
@@ -43,7 +40,6 @@ type AiChatListRow =
 	  };
 
 interface AiChatMessageListProps {
-	isLoadingHistory?: boolean;
 	messages: AiChatMessage[];
 	onRegenerateLastResponse?: () => void;
 	presentation: AiChatPresentation;
@@ -51,7 +47,6 @@ interface AiChatMessageListProps {
 }
 
 export default function AiChatMessageList({
-	isLoadingHistory = false,
 	messages,
 	onRegenerateLastResponse,
 	presentation,
@@ -61,11 +56,6 @@ export default function AiChatMessageList({
 	const rows = getAiChatListRows(messages, presentation);
 	const hasPendingTail = tailPending !== null;
 	const listRef = useRef<HTMLDivElement>(null);
-	const virtualListRef = useRef<VListHandle>(null);
-	const initialBottomScrollAppliedRef = useRef(false);
-	const pinnedUserMessageIdRef = useRef<string | null>(null);
-	const [pinnedBlankSize, setPinnedBlankSize] = useState(0);
-	const [pinnedUserSize, setPinnedUserSize] = useState(0);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
 	const latestUserMessage = getLatestUserMessage(messages);
 	const latestUserMessageId = latestUserMessage?.id;
@@ -76,22 +66,15 @@ export default function AiChatMessageList({
 			)
 		: -1;
 	const bottomRowIndex = rows.length - 1;
-	const pinnedSpacerMinHeight = Math.max(0, pinnedBlankSize - pinnedUserSize);
-	const pinnedSpacerStyle =
-		pinnedSpacerMinHeight > 0
-			? { minHeight: pinnedSpacerMinHeight }
-			: undefined;
-	const measurePinnedUserRow = useCallback((element: HTMLDivElement | null) => {
-		if (!element) {
-			return;
-		}
-
-		const nextSize = element.getBoundingClientRect().height;
-		setPinnedUserSize((currentSize) =>
-			currentSize === nextSize ? currentSize : nextSize,
-		);
-	}, []);
-	const pinActive = status === "submitted" || status === "streaming";
+	const { measurePinnedUserRow, pinnedSpacerStyle, virtualListRef } =
+		useAiChatMessageListScroll({
+			bottomRowIndex,
+			latestUserMessageId,
+			latestUserMessageIndex,
+			messageCount: messages.length,
+			pinActive: isAiChatStreamActive(status),
+			viewportRootRef: listRef,
+		});
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -105,65 +88,7 @@ export default function AiChatMessageList({
 		};
 	}, []);
 
-	useLayoutEffect(() => {
-		if (initialBottomScrollAppliedRef.current || isLoadingHistory) {
-			return;
-		}
-
-		if (bottomRowIndex < 0) {
-			if (!hasPendingTail) {
-				pinnedUserMessageIdRef.current = null;
-				initialBottomScrollAppliedRef.current = true;
-			}
-			return;
-		}
-
-		pinnedUserMessageIdRef.current = latestUserMessageId ?? null;
-		virtualListRef.current?.scrollToIndex(bottomRowIndex, { align: "end" });
-		initialBottomScrollAppliedRef.current = true;
-	}, [bottomRowIndex, hasPendingTail, isLoadingHistory, latestUserMessageId]);
-
-	useEffect(() => {
-		if (
-			!latestUserMessageId ||
-			latestUserMessageIndex < 0 ||
-			!pinActive ||
-			pinnedUserMessageIdRef.current === latestUserMessageId
-		) {
-			return;
-		}
-
-		pinnedUserMessageIdRef.current = latestUserMessageId;
-		setPinnedUserSize(0);
-
-		const frame = requestAnimationFrame(() => {
-			const virtualList = virtualListRef.current;
-
-			setPinnedBlankSize(
-				virtualList?.viewportSize ||
-					listRef.current?.parentElement?.clientHeight ||
-					0,
-			);
-			virtualList?.scrollToIndex(latestUserMessageIndex, {
-				align: "start",
-				smooth: true,
-			});
-		});
-
-		return () => {
-			cancelAnimationFrame(frame);
-		};
-	}, [latestUserMessageId, latestUserMessageIndex, pinActive]);
-
 	if (messages.length === 0) {
-		if (isLoadingHistory) {
-			return (
-				<AiChatMessageListFallback>
-					<AiChatThreadSkeleton />
-				</AiChatMessageListFallback>
-			);
-		}
-
 		if (tailPending) {
 			return (
 				<AiChatMessageListFallback>
@@ -288,16 +213,6 @@ function getAiChatListRows(
 	}
 
 	return rows;
-}
-
-function getLatestUserMessage(messages: AiChatMessage[]) {
-	for (let index = messages.length - 1; index >= 0; index -= 1) {
-		const message = messages[index];
-
-		if (message?.role === "user") {
-			return message;
-		}
-	}
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {

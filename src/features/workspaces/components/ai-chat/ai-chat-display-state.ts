@@ -22,6 +22,10 @@ export interface AiChatPresentation {
 	tailPending: AssistantPendingKind | null;
 }
 
+export function isAiChatStreamActive(status: AiChatStatus) {
+	return status === "submitted" || status === "streaming";
+}
+
 export function deriveAiChatPresentation(
 	messages: AiChatMessage[],
 	status: AiChatStatus,
