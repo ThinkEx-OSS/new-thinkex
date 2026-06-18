@@ -11,8 +11,15 @@ import StarterKit from "@tiptap/starter-kit";
 
 export const tiptapDocumentYjsField = "default";
 
+/**
+ * Server-side code block extension. The editor swaps in `CodeBlockShiki`,
+ * which extends the same `codeBlock` node spec, so JSON snapshots stay
+ * compatible between kernel preview/session code and the live editor.
+ */
+export const tiptapDocumentKernelCodeBlock = CodeBlock;
+
 export function getTiptapDocumentSchemaExtensions({
-	codeBlock = CodeBlock,
+	codeBlock = tiptapDocumentKernelCodeBlock,
 }: {
 	codeBlock?: AnyExtension;
 } = {}) {
@@ -55,6 +62,8 @@ export function getTiptapDocumentSchemaExtensions({
 	];
 }
 
+const tiptapDocumentSchema = getSchema(getTiptapDocumentSchemaExtensions());
+
 export function getTiptapDocumentSchema() {
-	return getSchema(getTiptapDocumentSchemaExtensions());
+	return tiptapDocumentSchema;
 }

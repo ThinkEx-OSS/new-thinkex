@@ -13,6 +13,7 @@ export { tiptapDocumentYjsField };
 export function getTiptapDocumentBaseExtensions() {
 	return [
 		...getTiptapDocumentSchemaExtensions({
+			// Extends the same codeBlock node spec used by tiptapDocumentKernelCodeBlock.
 			codeBlock: CodeBlockShiki,
 		}),
 		Placeholder.configure({

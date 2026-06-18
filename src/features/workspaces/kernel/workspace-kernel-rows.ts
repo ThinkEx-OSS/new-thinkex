@@ -1,9 +1,7 @@
-import type {
-	JsonValue,
-	WorkspaceItemSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import { getWorkspaceItemTypeMeta } from "#/features/workspaces/defaults";
+import { parseWorkspaceItemMetadataJson } from "#/features/workspaces/kernel/workspace-kernel-metadata";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
 export type KernelItemRow = {
@@ -45,7 +43,7 @@ export function mapKernelItemRow(
 		name: row.name,
 		meta: getWorkspaceItemTypeMeta(type),
 		color: row.color,
-		metadataJson: parseMetadataJson(row.metadata_json),
+		metadataJson: parseWorkspaceItemMetadataJson(row.metadata_json),
 		sortOrder: row.sort_order,
 		createdAt: new Date(row.created_at).toISOString(),
 		updatedAt: new Date(row.updated_at).toISOString(),
@@ -105,18 +103,4 @@ function getStringArray(value: unknown) {
 	return Array.isArray(value)
 		? value.filter((item): item is string => typeof item === "string")
 		: [];
-}
-
-function parseMetadataJson(value: string): Record<string, JsonValue> {
-	try {
-		const parsed = JSON.parse(value) as unknown;
-
-		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-			return {};
-		}
-
-		return parsed as Record<string, JsonValue>;
-	} catch {
-		return {};
-	}
 }

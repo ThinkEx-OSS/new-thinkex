@@ -1,4 +1,7 @@
-import type { WorkspaceSummary } from "#/features/workspaces/contracts";
+import type {
+	WorkspaceItemSummary,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
 import {
 	workspaceColorOptions,
 	workspaceColors,
@@ -53,6 +56,22 @@ export function getWorkspaceRecencyLabel(workspace: WorkspaceSummary) {
 	}
 
 	return `Opened ${formatWorkspaceRecency(workspace.lastOpenedAt)}`;
+}
+
+export function getWorkspaceItemRecencyLabel(
+	item: Pick<WorkspaceItemSummary, "createdAt" | "updatedAt">,
+	now = new Date(),
+) {
+	const createdAt = Date.parse(item.createdAt);
+	const updatedAt = Date.parse(item.updatedAt);
+	const isCreatedState =
+		!Number.isNaN(createdAt) &&
+		!Number.isNaN(updatedAt) &&
+		updatedAt <= createdAt;
+	const prefix = isCreatedState ? "Created" : "Edited";
+	const timestamp = isCreatedState ? item.createdAt : item.updatedAt;
+
+	return `${prefix} ${formatWorkspaceRecency(timestamp, now)}`;
 }
 
 export function formatWorkspaceRecency(timestamp: string, now = new Date()) {

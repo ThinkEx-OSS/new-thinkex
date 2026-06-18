@@ -1,11 +1,10 @@
+import { getWorkspaceItemRecencyLabel } from "#/features/workspaces/model/display";
 import {
 	getWorkspaceItemDisplay,
 	getWorkspaceItemTypeDisplay,
 } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
-
-const MOCK_LAST_EDITED_LABEL = "Edited 2 days ago";
 
 interface WorkspaceItemCardFooterProps {
 	item: WorkspaceItem;
@@ -27,7 +26,7 @@ export function WorkspaceItemCardFooter({
 				/>
 				<span className="truncate">{label}</span>
 			</span>
-			<span className="shrink-0">{MOCK_LAST_EDITED_LABEL}</span>
+			<span className="shrink-0">{getWorkspaceItemRecencyLabel(item)}</span>
 		</div>
 	);
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { workspaceItemDocumentPreviewTextClass } from "#/features/workspaces/components/workspace-item-card-chrome";
+import { getWorkspaceDocumentPreviewText } from "#/features/workspaces/documents/document-preview-text";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceFilePreviewUrl } from "#/features/workspaces/model/workspace-file-registry";
@@ -25,12 +26,14 @@ export default function WorkspaceItemPreviewSurface({
 	const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
 
 	if (item.type === "document") {
+		const previewText = getWorkspaceDocumentPreviewText(item);
+
 		return (
 			<div
 				className={cn("size-full overflow-hidden bg-transparent", className)}
 			>
 				<p className={workspaceItemDocumentPreviewTextClass}>
-					{DOCUMENT_PREVIEW_PLACEHOLDER}
+					{previewText || DOCUMENT_PREVIEW_PLACEHOLDER}
 				</p>
 			</div>
 		);

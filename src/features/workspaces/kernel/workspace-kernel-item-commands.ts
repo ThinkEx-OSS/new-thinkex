@@ -2,6 +2,11 @@ import type { Workspace as ShellWorkspace } from "@cloudflare/shell";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
+import {
+	persistDocumentItemContentUpdate,
+	prepareDocumentItemMetadata,
+	touchWorkspaceItemUpdatedAt,
+} from "#/features/workspaces/documents/document-item-content";
 import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
 import {
 	getInitialWorkspaceKernelContent,
@@ -69,12 +74,18 @@ export class WorkspaceKernelItemCommands {
 			requestedName: input.name,
 		});
 		const shellPath = getWorkspaceKernelShellPath({ id, type });
+		const initialContent =
+			input.initialContent ?? getInitialWorkspaceKernelContent(type, name);
+		const metadataJson =
+			type === "document"
+				? prepareDocumentItemMetadata(input.metadataJson ?? {}, initialContent)
+				: (input.metadataJson ?? {});
 
 		await this.createWorkspaceFile({
 			type,
 			name,
 			shellPath,
-			initialContent: input.initialContent,
+			initialContent,
 		});
 
 		this.sql`
@@ -97,7 +108,7 @@ export class WorkspaceKernelItemCommands {
 				${type},
 				${name},
 				${color},
-				${JSON.stringify(input.metadataJson ?? {})},
+				${JSON.stringify(metadataJson)},
 				${this.store.getNextSortOrder(parentId)},
 				${shellPath},
 				${now},
@@ -251,24 +262,35 @@ export class WorkspaceKernelItemCommands {
 		input: WriteWorkspaceKernelItemArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const item = this.store.assertActiveItem(input.itemId);
+		const type = workspaceItemTypeSchema.parse(item.type);
 
-		if (item.type === "folder") {
+		if (type === "folder") {
 			throw new Error("Folders do not have writable content.");
 		}
 
 		await this.workspace.writeFile(
 			item.shell_path,
 			input.content,
-			getWorkspaceKernelContentMimeType(
-				workspaceItemTypeSchema.parse(item.type),
-			),
+			getWorkspaceKernelContentMimeType(type),
 		);
 
-		this.sql`
-			UPDATE kernel_items
-			SET updated_at = ${Date.now()}
-			WHERE id = ${input.itemId} AND deleted_at IS NULL
-		`;
+		const now = Date.now();
+
+		if (type === "document") {
+			persistDocumentItemContentUpdate({
+				content: input.content,
+				itemId: input.itemId,
+				metadataJson: item.metadata_json,
+				sql: this.sql,
+				updatedAt: now,
+			});
+		} else {
+			touchWorkspaceItemUpdatedAt({
+				itemId: input.itemId,
+				sql: this.sql,
+				updatedAt: now,
+			});
+		}
 
 		return this.commitItemEvent({
 			type: "workspace.item.content.updated",
