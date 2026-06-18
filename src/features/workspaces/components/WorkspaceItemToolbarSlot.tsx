@@ -11,7 +11,7 @@ import {
 
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { DocumentToolbar } from "#/features/workspaces/components/document-editor/DocumentToolbar";
-import { PdfToolbar } from "#/features/workspaces/components/PdfToolbar";
+import { WorkspaceFileToolbar } from "#/features/workspaces/components/WorkspaceFileToolbar";
 
 type WorkspaceItemToolbarRegistration =
 	| {
@@ -26,7 +26,7 @@ type WorkspaceItemToolbarRegistration =
 			};
 			fileName: string;
 			fileUrl: string;
-			kind: "pdf";
+			kind: "file";
 			slotId: string;
 	  };
 
@@ -102,7 +102,7 @@ export function useDocumentEditorToolbar(
 	}, [editor, slotId, setRegistration]);
 }
 
-export function usePdfItemToolbar({
+export function useFileItemToolbar({
 	capture,
 	fileName,
 	fileUrl,
@@ -128,13 +128,13 @@ export function usePdfItemToolbar({
 			capture,
 			fileName,
 			fileUrl,
-			kind: "pdf" as const,
+			kind: "file" as const,
 			slotId,
 		};
 		setRegistration((current) => {
 			const existing = current[slotId];
 			if (
-				existing?.kind === "pdf" &&
+				existing?.kind === "file" &&
 				existing.fileName === fileName &&
 				existing.fileUrl === fileUrl &&
 				existing.capture.isActive === capture.isActive
@@ -183,7 +183,7 @@ export function WorkspaceItemToolbarSlot({
 				{registration.kind === "document" ? (
 					<DocumentToolbar editor={registration.editor} />
 				) : (
-					<PdfToolbar
+					<WorkspaceFileToolbar
 						capture={registration.capture}
 						fileName={registration.fileName}
 						fileUrl={registration.fileUrl}

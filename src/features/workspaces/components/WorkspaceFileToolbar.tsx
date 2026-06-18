@@ -19,7 +19,7 @@ import {
 import { workspaceItemToolbarIconButtonClass } from "#/features/workspaces/components/workspace-item-toolbar-styles";
 import { cn } from "#/lib/utils";
 
-export function PdfToolbar({
+export function WorkspaceFileToolbar({
 	capture,
 	fileName,
 	fileUrl,
@@ -66,7 +66,7 @@ export function PdfToolbar({
 							variant="ghost"
 							size="icon-xs"
 							className={workspaceItemToolbarIconButtonClass}
-							aria-label="More PDF actions"
+							aria-label="More file actions"
 						/>
 					}
 				>

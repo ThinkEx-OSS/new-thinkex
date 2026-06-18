@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { WORKSPACE_AI_CHAT_ATTACHMENT_POLICY } from "#/features/workspaces/components/ai-chat/constants";
 import type { WorkspaceSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
@@ -44,4 +45,42 @@ export function stageComposerFiles(
 	if (revealChat) {
 		useWorkspaceUiStore.getState().openChatPanel(workspaceId);
 	}
+}
+
+export function stageCaptureAttachmentToComposer(
+	workspaceId: string,
+	file: File,
+	options: StageComposerFilesOptions = {},
+) {
+	const filesBefore =
+		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]
+			?.length ?? 0;
+
+	stageComposerFiles(workspaceId, [file], options);
+
+	const filesAfter =
+		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]
+			?.length ?? 0;
+
+	return filesAfter > filesBefore;
+}
+
+export function stageCaptureAttachmentToComposerWithFeedback(
+	workspaceId: string,
+	file: File,
+	options: StageComposerFilesOptions = {},
+) {
+	const staged = stageCaptureAttachmentToComposer(workspaceId, file, {
+		...options,
+		onError: (error) => {
+			options.onError?.(error);
+			toast.error(error.message);
+		},
+	});
+
+	if (staged) {
+		toast.success("Capture added to chat");
+	}
+
+	return staged;
 }
