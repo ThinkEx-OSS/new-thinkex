@@ -1,4 +1,4 @@
-import { FileImage, FileType, type LucideIcon } from "lucide-react";
+import { FileText, Image, type LucideIcon } from "lucide-react";
 
 import { normalizeWorkspaceItemName } from "#/features/workspaces/defaults";
 import { workspaceFileUploadLimits } from "#/features/workspaces/model/workspace-file/limits";
@@ -101,7 +101,7 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 		assetKind: "pdf",
 		label: "PDF",
 		pluralLabel: "PDFs",
-		icon: FileType,
+		icon: FileText,
 		defaultFileName: "Uploaded file.pdf",
 		aiReadStrategy: "markdown_extraction",
 		requiresHeavyViewerRuntime: true,
@@ -116,7 +116,7 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 		assetKind: "image",
 		label: "Image",
 		pluralLabel: "images",
-		icon: FileImage,
+		icon: Image,
 		defaultFileName: "Uploaded image.png",
 		aiReadStrategy: "markdown_extraction",
 		requiresHeavyViewerRuntime: false,
