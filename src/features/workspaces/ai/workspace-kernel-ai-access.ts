@@ -318,10 +318,7 @@ async function readWorkspaceKernelAiFileItem(input: {
 		return {
 			content: page.content,
 			extraction: {
-				reason:
-					projection.status === "needs_review"
-						? "extracted_markdown_needs_review"
-						: "extracted_markdown_ready",
+				reason: "extracted_markdown_ready",
 				status: projection.status,
 			},
 			...(page.page ? { page: page.page } : {}),

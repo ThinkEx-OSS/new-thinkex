@@ -5,7 +5,6 @@ import {
 } from "cloudflare:workers";
 
 import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
-import { evaluatePdfMarkdownQuality } from "#/features/workspaces/extraction/quality";
 import {
 	createPdfExtractionProvider,
 	routePdfExtraction,
@@ -119,18 +118,16 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					}
 
 					const markdown = await artifact.text();
-					const quality = evaluatePdfMarkdownQuality(markdown);
 					const metadataJson = {
 						...extraction.metadata,
 						routeReason: extraction.routeReason,
-						qualityReason: quality.reason,
-						markdownLength: quality.markdownLength,
+						markdownLength: markdown.trim().length,
 					};
 
 					await kernel.upsertFileProjection({
 						itemId: params.itemId,
 						format: "markdown",
-						status: quality.status,
+						status: "ready",
 						content: markdown,
 						provider: extraction.provider,
 						providerMode: extraction.providerMode,
@@ -140,10 +137,10 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					});
 
 					return {
-						status: quality.status,
+						status: "ready",
 						provider: extraction.provider,
 						providerMode: extraction.providerMode,
-						markdownLength: quality.markdownLength,
+						markdownLength: markdown.trim().length,
 					};
 				},
 			);
