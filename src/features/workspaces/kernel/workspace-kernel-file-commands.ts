@@ -38,7 +38,6 @@ import {
 	normalizeWorkspaceUploadFileName,
 	resolveWorkspaceFileContentType,
 } from "#/features/workspaces/model/workspace-file/policy";
-import { resolveWorkspaceItemColorForCreate } from "#/features/workspaces/model/workspace-item-colors";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelFileCommands {
@@ -89,7 +88,7 @@ export class WorkspaceKernelFileCommands {
 
 		const now = Date.now();
 		const itemId = crypto.randomUUID();
-		const color = resolveWorkspaceItemColorForCreate({ type: "file" });
+		const color = null;
 		const requestedName = normalizeWorkspaceUploadFileName(
 			input.fileName,
 			descriptor,

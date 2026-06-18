@@ -37,16 +37,13 @@ export function useCreateWorkspaceItemMutation() {
 	const createWorkspaceItem = useServerFn(createWorkspaceItemFn);
 	const queryClient = useQueryClient();
 
-	return useMutation({
-		mutationFn: (input: CreateWorkspaceItemInput) => {
-			const preparedInput = prepareCreateWorkspaceItemInput(input);
+	const mutation = useMutation({
+		mutationFn: (preparedInput: CreateWorkspaceItemInput) => {
 			const inputWithClientMutation =
 				prepareWorkspaceClientMutationInput(preparedInput);
 			return createWorkspaceItem({ data: inputWithClientMutation });
 		},
-		onMutate: async (input) => {
-			const preparedInput = prepareCreateWorkspaceItemInput(input);
-
+		onMutate: async (preparedInput) => {
 			await queryClient.cancelQueries({
 				queryKey: workspacePageQueryKey(preparedInput.workspaceId),
 			});
@@ -61,17 +58,38 @@ export function useCreateWorkspaceItemMutation() {
 		onSuccess: (command) => {
 			applyWorkspaceEventToCache(queryClient, command.event);
 		},
-		onError: (error, input) => {
-			if (input.id) {
-				removeWorkspaceItemsFromPageCache(queryClient, input.workspaceId, [
-					input.id,
-				]);
+		onError: (error, preparedInput) => {
+			if (preparedInput.id) {
+				removeWorkspaceItemsFromPageCache(
+					queryClient,
+					preparedInput.workspaceId,
+					[preparedInput.id],
+				);
 			}
 			toast.error(
 				getErrorMessage(error, "Unable to create workspace item right now."),
 			);
 		},
 	});
+
+	return {
+		...mutation,
+		mutate: (
+			input: CreateWorkspaceItemInput,
+			options?: Parameters<typeof mutation.mutate>[1],
+		) => {
+			mutation.mutate(prepareCreateWorkspaceItemInput(input), options);
+		},
+		mutateAsync: (
+			input: CreateWorkspaceItemInput,
+			options?: Parameters<typeof mutation.mutateAsync>[1],
+		) => {
+			return mutation.mutateAsync(
+				prepareCreateWorkspaceItemInput(input),
+				options,
+			);
+		},
+	};
 }
 
 export function useRenameWorkspaceItemMutation() {

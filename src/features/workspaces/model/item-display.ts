@@ -15,11 +15,6 @@ import {
 	workspaceItemTypeColors,
 } from "#/features/workspaces/model/workspace-item-colors";
 
-export {
-	getWorkspaceItemColorValue,
-	workspaceFolderColorOptions as workspaceItemColorOptions,
-} from "#/features/workspaces/model/workspace-item-colors";
-
 export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	const typeDisplay = getWorkspaceObjectRegistryEntry(item.type);
 	const palette = getWorkspaceItemPalette(item);

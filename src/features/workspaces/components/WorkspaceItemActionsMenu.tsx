@@ -29,12 +29,12 @@ import {
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
 import type { WorkspaceItemColor } from "#/features/workspaces/contracts";
+import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
 	getWorkspaceItemColorValue,
 	workspaceItemColorOptions,
-} from "#/features/workspaces/model/item-display";
-import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { workspaceItemSupportsCustomColor } from "#/features/workspaces/model/workspace-item-colors";
+	workspaceItemSupportsCustomColor,
+} from "#/features/workspaces/model/workspace-item-colors";
 import { useUpdateWorkspaceItemColorMutation } from "#/features/workspaces/use-workspace-kernel-items";
 
 const workspaceItemColorSubmenuTrigger = (

@@ -17,7 +17,7 @@ export const workspaceItemTypeColors = {
 	quiz: "emerald",
 } as const satisfies Record<WorkspaceItemType, WorkspaceItemColor>;
 
-export const workspaceFolderColorOptions = workspaceColorOptions;
+export const workspaceItemColorOptions = workspaceColorOptions;
 
 export function workspaceItemSupportsCustomColor(type: WorkspaceItemType) {
 	return type === "folder";
@@ -31,6 +31,7 @@ export function getWorkspaceItemColorValue(
 	return parsed.success ? parsed.data : null;
 }
 
+// Non-folder items ignore stored color; palette comes from workspaceItemTypeColors.
 export function resolveWorkspaceItemColor(input: {
 	type: WorkspaceItemType;
 	color: string | null;
