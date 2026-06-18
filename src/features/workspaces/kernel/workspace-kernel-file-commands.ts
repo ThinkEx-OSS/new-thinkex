@@ -28,13 +28,17 @@ import type {
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
 import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
-import type { WorkspaceFileTypeDescriptor } from "#/features/workspaces/model/workspace-file-upload-policy";
+import {
+	getMetadataNumber,
+	getMetadataString,
+} from "#/features/workspaces/model/workspace-file/metadata";
+import type { WorkspaceFileTypeDescriptor } from "#/features/workspaces/model/workspace-file/policy";
 import {
 	getWorkspaceFileShellExtension,
+	getWorkspaceUploadFamily,
 	normalizeWorkspaceUploadFileName,
-	requireWorkspaceFileTypeFromHint,
 	resolveWorkspaceFileContentType,
-} from "#/features/workspaces/model/workspace-file-upload-policy";
+} from "#/features/workspaces/model/workspace-file/policy";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelFileCommands {
@@ -76,10 +80,7 @@ export class WorkspaceKernelFileCommands {
 		}
 
 		const bytes = new Uint8Array(await object.arrayBuffer());
-		const descriptor = requireWorkspaceFileTypeFromHint({
-			fileName: input.fileName,
-			contentType: input.contentType,
-		});
+		const descriptor = getWorkspaceUploadFamily(input.assetKind);
 		const contentType = resolveWorkspaceFileContentType({
 			contentType: input.contentType,
 			descriptor,
@@ -153,9 +154,7 @@ export class WorkspaceKernelFileCommands {
 			payload: { item },
 		});
 
-		const previewGenerator = resolveUploadPreviewGenerator(
-			descriptor.assetKind,
-		);
+		const previewGenerator = resolveUploadPreviewGenerator(descriptor);
 
 		if (previewGenerator) {
 			await this.tryCreateUploadPreview({
@@ -458,23 +457,11 @@ function createFileMetadata(input: {
 	sizeBytes: number;
 }): Record<string, JsonValue> {
 	return {
-		assetFamily: input.descriptor.assetKind,
+		assetKind: input.descriptor.assetKind,
 		mimeType: input.contentType,
 		originalName: input.originalName,
 		sizeBytes: input.sizeBytes,
 	};
-}
-
-function getMetadataString(metadata: Record<string, JsonValue>, key: string) {
-	const value = metadata[key];
-
-	return typeof value === "string" ? value : null;
-}
-
-function getMetadataNumber(metadata: Record<string, JsonValue>, key: string) {
-	const value = metadata[key];
-
-	return typeof value === "number" ? value : null;
 }
 
 function getWorkspaceKernelProjectionShellPath(input: {

@@ -3,7 +3,10 @@ import type { ImageDataLike } from "@embedpdf/models";
 
 import { getPdfiumNative } from "#/features/workspaces/files/pdfium-server";
 import { WORKSPACE_FILE_PREVIEW_MAX_WIDTH } from "#/features/workspaces/files/workspace-file-preview.constants";
-import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file-upload-policy";
+import type {
+	WorkspaceFilePreviewGeneratorId,
+	WorkspaceFileTypeDescriptor,
+} from "#/features/workspaces/model/workspace-file";
 
 export {
 	WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
@@ -20,17 +23,22 @@ type PreviewGenerator = (
 	bytes: Uint8Array,
 ) => Promise<WorkspaceFilePreviewResult>;
 
+const workspaceFilePreviewGenerators: Record<
+	WorkspaceFilePreviewGeneratorId,
+	PreviewGenerator
+> = {
+	pdf_webp: generatePdfPreviewWebp,
+	image_webp: generateImagePreviewWebp,
+};
+
 export function resolveUploadPreviewGenerator(
-	assetKind: WorkspaceFileAssetKind,
+	descriptor: WorkspaceFileTypeDescriptor,
 ): PreviewGenerator | null {
-	switch (assetKind) {
-		case "image":
-			return generateImagePreviewWebp;
-		case "pdf":
-			return generatePdfPreviewWebp;
-		default:
-			return null;
+	if (!descriptor.previewGenerator) {
+		return null;
 	}
+
+	return workspaceFilePreviewGenerators[descriptor.previewGenerator] ?? null;
 }
 
 export async function generateImagePreviewWebp(

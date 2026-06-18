@@ -4,6 +4,7 @@ import type {
 	WorkspaceItemSummary,
 	WorkspaceItemType,
 } from "#/features/workspaces/contracts";
+import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file";
 
 export interface WorkspaceKernelPage {
 	workspaceId: string;
@@ -141,6 +142,7 @@ export interface CreateWorkspaceKernelFileFromUploadArgs {
 	fileSize: number;
 	objectKey: string;
 	contentType?: string | null;
+	assetKind: WorkspaceFileAssetKind;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }

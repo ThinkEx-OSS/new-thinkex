@@ -4,7 +4,10 @@ import { workspaceItemDocumentPreviewTextClass } from "#/features/workspaces/com
 import { getWorkspaceDocumentPreviewText } from "#/features/workspaces/documents/document-preview-text";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { getWorkspaceFilePreviewUrl } from "#/features/workspaces/model/workspace-file-registry";
+import {
+	getWorkspaceFilePreviewUrl,
+	resolveWorkspaceFileTypeFromItem,
+} from "#/features/workspaces/model/workspace-file";
 import { cn } from "#/lib/utils";
 
 const DOCUMENT_PREVIEW_PLACEHOLDER =
@@ -19,8 +22,10 @@ export default function WorkspaceItemPreviewSurface({
 	item,
 	className,
 }: WorkspaceItemPreviewSurfaceProps) {
+	const fileDescriptor =
+		item.type === "file" ? resolveWorkspaceFileTypeFromItem(item) : null;
 	const previewUrl =
-		item.type === "file"
+		fileDescriptor?.previewGenerator != null
 			? getWorkspaceFilePreviewUrl(item.workspaceId, item.id)
 			: null;
 	const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);

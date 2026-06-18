@@ -10,7 +10,7 @@ import {
 
 import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
 import { runWorkspaceFileUploadBatch } from "#/features/workspaces/files/workspace-file-upload";
-import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file-upload-policy";
+import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
 
 interface WorkspaceFileUploadContextValue {
 	requestFileUpload: (parentId: string | null) => void;

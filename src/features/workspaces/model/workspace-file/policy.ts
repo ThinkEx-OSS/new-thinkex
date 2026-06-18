@@ -1,10 +1,13 @@
+import { FileImage, FileType, type LucideIcon } from "lucide-react";
+
 import { normalizeWorkspaceItemName } from "#/features/workspaces/defaults";
-
-export type WorkspaceFileAssetKind = "pdf" | "image";
-
-export type WorkspaceFileAiReadStrategy =
-	| "markdown_extraction"
-	| "metadata_only";
+import { workspaceFileUploadLimits } from "#/features/workspaces/model/workspace-file/limits";
+import type {
+	WorkspaceFileAiReadStrategy,
+	WorkspaceFileAssetKind,
+	WorkspaceFileExtractionRoute,
+	WorkspaceFilePreviewGeneratorId,
+} from "#/features/workspaces/model/workspace-file/types";
 
 export interface WorkspaceFileUploadHint {
 	fileName: string;
@@ -15,15 +18,19 @@ export interface WorkspaceUploadFormat {
 	ext: string;
 	mime: string;
 	assetKind: WorkspaceFileAssetKind;
+	aiReadStrategy?: WorkspaceFileAiReadStrategy;
 }
 
 export interface WorkspaceUploadFamily {
 	assetKind: WorkspaceFileAssetKind;
 	label: string;
 	pluralLabel: string;
+	icon: LucideIcon;
 	defaultFileName: string;
 	aiReadStrategy: WorkspaceFileAiReadStrategy;
 	requiresHeavyViewerRuntime: boolean;
+	previewGenerator: WorkspaceFilePreviewGeneratorId | null;
+	extractionRoute: WorkspaceFileExtractionRoute;
 }
 
 export interface WorkspaceFileTypeDescriptor extends WorkspaceUploadFamily {
@@ -36,8 +43,14 @@ export interface WorkspaceUploadDeniedFormat {
 	message: string;
 }
 
+export type WorkspaceFileUploadValidationErrorCode =
+	| "UNSUPPORTED_FILE_TYPE"
+	| "UPLOAD_TOO_LARGE"
+	| "TOO_MANY_FILES"
+	| "BATCH_TOO_LARGE";
+
 export interface WorkspaceFileUploadValidationError {
-	code: "UNSUPPORTED_FILE_TYPE" | "UPLOAD_TOO_LARGE";
+	code: WorkspaceFileUploadValidationErrorCode;
 	message: string;
 	status: 400 | 413;
 }
@@ -54,8 +67,6 @@ export class WorkspaceFileUploadError extends Error {
 	}
 }
 
-export const workspaceFileUploadMaxBytes = 25 * 1024 * 1024;
-
 /**
  * Explicit upload allowlist. Add or remove formats here; everything else is rejected.
  * Do not use broad MIME wildcards (e.g. image/*) — they bypass this list.
@@ -65,7 +76,12 @@ const WORKSPACE_UPLOAD_FORMATS = [
 	{ ext: "png", mime: "image/png", assetKind: "image" },
 	{ ext: "jpg", mime: "image/jpeg", assetKind: "image" },
 	{ ext: "jpeg", mime: "image/jpeg", assetKind: "image" },
-	{ ext: "gif", mime: "image/gif", assetKind: "image" },
+	{
+		ext: "gif",
+		mime: "image/gif",
+		assetKind: "image",
+		aiReadStrategy: "metadata_only",
+	},
 	{ ext: "webp", mime: "image/webp", assetKind: "image" },
 ] as const satisfies readonly WorkspaceUploadFormat[];
 
@@ -85,17 +101,31 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 		assetKind: "pdf",
 		label: "PDF",
 		pluralLabel: "PDFs",
+		icon: FileType,
 		defaultFileName: "Uploaded file.pdf",
 		aiReadStrategy: "markdown_extraction",
 		requiresHeavyViewerRuntime: true,
+		previewGenerator: "pdf_webp",
+		extractionRoute: {
+			provider: "firecrawl",
+			mode: "auto",
+			reason: "default_pdf_upload_route",
+		},
 	},
 	{
 		assetKind: "image",
-		label: "image",
+		label: "Image",
 		pluralLabel: "images",
+		icon: FileImage,
 		defaultFileName: "Uploaded image.png",
-		aiReadStrategy: "metadata_only",
+		aiReadStrategy: "markdown_extraction",
 		requiresHeavyViewerRuntime: false,
+		previewGenerator: "image_webp",
+		extractionRoute: {
+			provider: "workers_ai_to_markdown",
+			mode: "default",
+			reason: "default_image_upload_route",
+		},
 	},
 ] as const satisfies readonly WorkspaceUploadFamily[];
 
@@ -116,10 +146,6 @@ const workspaceUploadFamilyByKind: Record<
 		).map(({ ext, mime }) => ({ ext, mime })),
 	},
 };
-
-export const workspaceFileAssetKinds = WORKSPACE_UPLOAD_FAMILIES.map(
-	(family) => family.assetKind,
-);
 
 export const workspaceFileUploadAccept = [
 	...new Set(
@@ -162,7 +188,7 @@ export function getWorkspaceFileUploadValidationError(input: {
 	if (
 		!Number.isInteger(input.sizeBytes) ||
 		input.sizeBytes <= 0 ||
-		input.sizeBytes > workspaceFileUploadMaxBytes
+		input.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile
 	) {
 		return {
 			code: "UPLOAD_TOO_LARGE",
@@ -172,6 +198,49 @@ export function getWorkspaceFileUploadValidationError(input: {
 	}
 
 	return null;
+}
+
+export function partitionWorkspaceUploadBatch(files: readonly File[]) {
+	const accepted: File[] = [];
+	const rejected: Array<{ file: File; message: string }> = [];
+	let batchBytes = 0;
+
+	for (const [index, file] of files.entries()) {
+		if (index >= workspaceFileUploadLimits.maxFilesPerBatch) {
+			rejected.push({
+				file,
+				message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
+			});
+			continue;
+		}
+
+		const validationError = getWorkspaceFileUploadValidationError({
+			fileName: file.name,
+			sizeBytes: file.size,
+			contentType: file.type,
+		});
+
+		if (validationError) {
+			rejected.push({ file, message: validationError.message });
+			continue;
+		}
+
+		if (
+			batchBytes + file.size >
+			workspaceFileUploadLimits.maxBytesPerBatch
+		) {
+			rejected.push({
+				file,
+				message: "This file would exceed the batch upload size limit.",
+			});
+			continue;
+		}
+
+		batchBytes += file.size;
+		accepted.push(file);
+	}
+
+	return { accepted, rejected };
 }
 
 export function requireWorkspaceFileTypeFromHint(
@@ -210,6 +279,16 @@ export function resolveWorkspaceFileTypeFromHint(
 	}
 
 	return workspaceUploadFamilyByKind[format.assetKind];
+}
+
+export function resolveWorkspaceFileAiReadStrategy(input: {
+	fileName: string;
+	contentType?: string | null;
+	descriptor: WorkspaceFileTypeDescriptor;
+}): WorkspaceFileAiReadStrategy {
+	const format = resolveMatchedUploadFormat(input, input.descriptor);
+
+	return format?.aiReadStrategy ?? input.descriptor.aiReadStrategy;
 }
 
 export function getWorkspaceUploadFamily(

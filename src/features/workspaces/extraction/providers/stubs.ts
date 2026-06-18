@@ -1,16 +1,26 @@
 import type {
-	PdfExtractionProvider,
-	PdfExtractionProviderId,
+	MarkdownExtractionProvider,
+	MarkdownExtractionProviderId,
 } from "#/features/workspaces/extraction/types";
 
-export function createStubPdfExtractionProvider(
-	id: Exclude<PdfExtractionProviderId, "firecrawl">,
-): PdfExtractionProvider {
+const implementedMarkdownExtractionProviders = [
+	"firecrawl",
+	"workers_ai_to_markdown",
+] as const satisfies readonly MarkdownExtractionProviderId[];
+
+type StubMarkdownExtractionProviderId = Exclude<
+	MarkdownExtractionProviderId,
+	(typeof implementedMarkdownExtractionProviders)[number]
+>;
+
+export function createStubMarkdownExtractionProvider(
+	id: StubMarkdownExtractionProviderId,
+): MarkdownExtractionProvider {
 	return {
 		id,
 		async extract() {
 			throw new Error(
-				`${id} PDF extraction is intentionally stubbed. Add credentials, pricing limits, and quality gates before routing uploads here.`,
+				`${id} markdown extraction is intentionally stubbed. Add credentials, pricing limits, and routing rules before routing uploads here.`,
 			);
 		},
 	};

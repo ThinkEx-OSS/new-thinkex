@@ -20,6 +20,7 @@ import type {
 	ReadWorkspaceKernelFileProjectionResult,
 	UpsertWorkspaceKernelFileProjectionArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
+import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
 	assertCanMutateWorkspace,
@@ -61,6 +62,7 @@ export interface WorkspaceKernelClient {
 		fileSize: number;
 		objectKey: string;
 		contentType?: string | null;
+		assetKind: WorkspaceFileAssetKind;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
@@ -228,6 +230,7 @@ export async function createWorkspaceFileFromUpload(input: {
 	fileSize: number;
 	objectKey: string;
 	contentType?: string | null;
+	assetKind: WorkspaceFileAssetKind;
 	clientMutationId?: string | null;
 }): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
@@ -242,6 +245,7 @@ export async function createWorkspaceFileFromUpload(input: {
 			fileSize: input.fileSize,
 			objectKey: input.objectKey,
 			contentType: input.contentType ?? null,
+			assetKind: input.assetKind,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

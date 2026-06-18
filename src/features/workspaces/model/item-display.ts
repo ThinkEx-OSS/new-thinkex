@@ -15,7 +15,10 @@ import {
 	workspaceColorOptions,
 	workspaceColors,
 } from "#/features/workspaces/model/workspace-colors";
-import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-upload-policy";
+import {
+	resolveWorkspaceFileTypeFromItem,
+	workspaceFileUploadTypeLabel,
+} from "#/features/workspaces/model/workspace-file";
 
 export const workspaceItemColorOptions = workspaceColorOptions;
 
@@ -27,8 +30,19 @@ const workspaceItemTypeDefaultColor = {
 	quiz: "emerald",
 } as const satisfies Record<WorkspaceItemType, WorkspaceItemColor>;
 
-export function getWorkspaceItemTypeDisplay(type: WorkspaceItemType) {
-	return getWorkspaceObjectRegistryEntry(type);
+export function getWorkspaceItemDisplay(item: WorkspaceItem) {
+	const typeDisplay = getWorkspaceObjectRegistryEntry(item.type);
+	const palette = getWorkspaceItemPalette(item);
+	const fileDescriptor =
+		item.type === "file" ? resolveWorkspaceFileTypeFromItem(item) : null;
+
+	return {
+		...typeDisplay,
+		label: fileDescriptor?.label ?? typeDisplay.label,
+		Icon: fileDescriptor?.icon ?? typeDisplay.icon,
+		iconClassName: palette.iconClassName,
+		surfaceClassName: palette.surfaceClassName,
+	};
 }
 
 function getWorkspaceItemPalette(item: WorkspaceItem) {
@@ -39,18 +53,6 @@ function getWorkspaceItemPalette(item: WorkspaceItem) {
 	}
 
 	return workspaceColors[workspaceItemTypeDefaultColor[item.type]];
-}
-
-export function getWorkspaceItemDisplay(item: WorkspaceItem) {
-	const typeDisplay = getWorkspaceItemTypeDisplay(item.type);
-	const palette = getWorkspaceItemPalette(item);
-
-	return {
-		...typeDisplay,
-		Icon: typeDisplay.icon,
-		iconClassName: palette.iconClassName,
-		surfaceClassName: palette.surfaceClassName,
-	};
 }
 
 export function getWorkspaceItemColorValue(

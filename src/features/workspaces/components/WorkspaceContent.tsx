@@ -48,7 +48,7 @@ import {
 	getWorkspaceBrowseParentId,
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
-import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-upload-policy";
+import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file";
 import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
 import { cn } from "#/lib/utils";
 

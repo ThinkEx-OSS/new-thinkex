@@ -1,8 +1,5 @@
 import { getWorkspaceItemRecencyLabel } from "#/features/workspaces/model/display";
-import {
-	getWorkspaceItemDisplay,
-	getWorkspaceItemTypeDisplay,
-} from "#/features/workspaces/model/item-display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
 
@@ -13,8 +10,7 @@ interface WorkspaceItemCardFooterProps {
 export function WorkspaceItemCardFooter({
 	item,
 }: WorkspaceItemCardFooterProps) {
-	const { Icon, iconClassName } = getWorkspaceItemDisplay(item);
-	const { label } = getWorkspaceItemTypeDisplay(item.type);
+	const { Icon, iconClassName, label } = getWorkspaceItemDisplay(item);
 
 	return (
 		<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">

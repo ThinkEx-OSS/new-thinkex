@@ -10,8 +10,10 @@ import { Spinner } from "#/components/ui/spinner";
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file-registry";
-import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file-upload-policy";
+import {
+	resolveWorkspaceFileTypeFromItem,
+	type WorkspaceFileAssetKind,
+} from "#/features/workspaces/model/workspace-file";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceFileViewerComponentProps {

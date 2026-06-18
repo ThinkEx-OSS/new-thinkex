@@ -65,7 +65,7 @@ import { WorkspacePdfPageControl } from "#/features/workspaces/components/Worksp
 import { createCaptureAttachmentFile } from "#/features/workspaces/components/workspace-region-capture";
 import { stageCaptureAttachmentToComposerWithFeedback } from "#/features/workspaces/composer/workspace-composer-actions";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { getWorkspaceFileContentUrl } from "#/features/workspaces/model/workspace-file-registry";
+import { getWorkspaceFileContentUrl } from "#/features/workspaces/model/workspace-file";
 import {
 	type ClientPoint,
 	getPointerClientPoint,

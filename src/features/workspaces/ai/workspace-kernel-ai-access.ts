@@ -21,7 +21,11 @@ import type {
 	ReadWorkspaceKernelFileProjectionResult,
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
-import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file-registry";
+import {
+	getMetadataNumber,
+	getMetadataString,
+	resolveWorkspaceFileTypeFromItem,
+} from "#/features/workspaces/model/workspace-file";
 import {
 	assertCanMutateWorkspace,
 	assertCanReadWorkspace,
@@ -73,7 +77,7 @@ export type WorkspaceKernelAiReadItem =
 			content?: string;
 			extraction: WorkspaceKernelAiFileExtraction;
 			metadata?: {
-				assetFamily: string | null;
+				assetKind: string | null;
 				mimeType: string | null;
 				sizeBytes: number | null;
 			};
@@ -273,9 +277,9 @@ async function readWorkspaceKernelAiFileItem(input: {
 	const { item } = input;
 	const fileType = resolveWorkspaceFileTypeFromItem(item);
 	const metadata = {
-		assetFamily: getMetadataString(item, "assetFamily"),
-		mimeType: getMetadataString(item, "mimeType"),
-		sizeBytes: getMetadataNumber(item, "sizeBytes"),
+		assetKind: getMetadataString(item.metadataJson, "assetKind"),
+		mimeType: getMetadataString(item.metadataJson, "mimeType"),
+		sizeBytes: getMetadataNumber(item.metadataJson, "sizeBytes"),
 	};
 
 	if (!fileType) {
@@ -474,16 +478,4 @@ class WorkspaceAiContentPageError extends Error {
 	constructor(readonly code: string) {
 		super(code);
 	}
-}
-
-function getMetadataString(item: WorkspaceItemSummary, key: string) {
-	const value = item.metadataJson[key];
-
-	return typeof value === "string" ? value : null;
-}
-
-function getMetadataNumber(item: WorkspaceItemSummary, key: string) {
-	const value = item.metadataJson[key];
-
-	return typeof value === "number" ? value : null;
 }

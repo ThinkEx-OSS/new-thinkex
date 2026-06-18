@@ -100,7 +100,7 @@ export function createAIThreadWorkspaceTools(input: {
 		}),
 		workspace_read_items: tool({
 			description:
-				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Ready PDF files return extracted Markdown; PDFs still queued, processing, or failed return concise extraction status. Images and other files without text projections return metadata and an explicit no-text-projection reason. A page object is included only when content is truncated or a non-default offset was requested; if page.next is present, use contentOffset=page.next to continue. Unsupported item types are reported explicitly.",
+				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Ready PDF and image files return extracted Markdown; files still queued, processing, or failed return concise extraction status. Files without text projections return metadata and an explicit no-text-projection reason. A page object is included only when content is truncated or a non-default offset was requested; if page.next is present, use contentOffset=page.next to continue. Unsupported item types are reported explicitly.",
 			inputSchema: workspaceReadItemsInputSchema,
 			execute: async ({ contentLimit, contentOffset, paths, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);

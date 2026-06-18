@@ -2,13 +2,14 @@ import { AsyncQueuer } from "@tanstack/pacer";
 import { toast } from "sonner";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { getWorkspaceFileUploadValidationError } from "#/features/workspaces/model/workspace-file-upload-policy";
+import {
+	partitionWorkspaceUploadBatch,
+	workspaceFileUploadLimits,
+} from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import { prepareWorkspaceClientMutationInput } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import { apiErrorSchema } from "#/lib/api/contracts";
 import { getErrorMessage } from "#/lib/error-message";
-
-const WORKSPACE_FILE_UPLOAD_CONCURRENCY = 3;
 
 interface WorkspaceFileUploadJob {
 	workspaceId: string;
@@ -33,7 +34,7 @@ interface WorkspaceFileUploadBatchResult {
 export async function runWorkspaceFileUploadBatch(
 	input: WorkspaceFileUploadBatchInput,
 ): Promise<WorkspaceFileUploadBatchResult> {
-	const { accepted, rejected } = partitionUploadFiles(input.files);
+	const { accepted, rejected } = partitionWorkspaceUploadBatch(input.files);
 
 	for (const rejection of rejected) {
 		toast.error(`${rejection.file.name}: ${rejection.message}`);
@@ -124,7 +125,7 @@ function uploadAcceptedFiles(input: {
 
 	return new Promise((resolve, reject) => {
 		new AsyncQueuer<WorkspaceFileUploadJob>(postWorkspaceFileUpload, {
-			concurrency: WORKSPACE_FILE_UPLOAD_CONCURRENCY,
+			concurrency: workspaceFileUploadLimits.concurrency,
 			throwOnError: false,
 			initialItems: jobs,
 			onSuccess: (command) => {
@@ -152,28 +153,6 @@ function uploadAcceptedFiles(input: {
 			},
 		});
 	});
-}
-
-function partitionUploadFiles(files: readonly File[]) {
-	const accepted: File[] = [];
-	const rejected: Array<{ file: File; message: string }> = [];
-
-	for (const file of files) {
-		const validationError = getWorkspaceFileUploadValidationError({
-			fileName: file.name,
-			sizeBytes: file.size,
-			contentType: file.type,
-		});
-
-		if (validationError) {
-			rejected.push({ file, message: validationError.message });
-			continue;
-		}
-
-		accepted.push(file);
-	}
-
-	return { accepted, rejected };
 }
 
 async function getWorkspaceFileUploadErrorMessage(response: Response) {

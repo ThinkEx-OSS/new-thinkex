@@ -7,8 +7,9 @@ import { createWorkspaceFileFromUpload } from "#/features/workspaces/kernel/work
 import {
 	getWorkspaceFileUploadValidationError,
 	requireWorkspaceFileTypeFromHint,
+	resolveWorkspaceFileAiReadStrategy,
 	WorkspaceFileUploadError,
-} from "#/features/workspaces/model/workspace-file-upload-policy";
+} from "#/features/workspaces/model/workspace-file";
 import {
 	assertCanMutateWorkspace,
 	WorkspaceForbiddenError,
@@ -97,13 +98,20 @@ async function handleWorkspaceFileUpload(
 			fileSize: file.size,
 			objectKey,
 			contentType: file.type || null,
+			assetKind: descriptor.assetKind,
 			clientMutationId: getNullableString(
 				formData.get(clientMutationIdFormKey),
 			),
 		});
 
 		objectKey = null;
-		if (descriptor.aiReadStrategy === "markdown_extraction") {
+		if (
+			resolveWorkspaceFileAiReadStrategy({
+				fileName: file.name,
+				contentType: file.type,
+				descriptor,
+			}) === "markdown_extraction"
+		) {
 			try {
 				await requestWorkspaceFileExtraction({
 					workspaceId,

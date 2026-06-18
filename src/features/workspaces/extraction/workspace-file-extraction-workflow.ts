@@ -5,16 +5,14 @@ import {
 } from "cloudflare:workers";
 
 import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
-import {
-	createPdfExtractionProvider,
-	routePdfExtraction,
-} from "#/features/workspaces/extraction/router";
+import { createMarkdownExtractionProvider } from "#/features/workspaces/extraction/providers/index";
 import type {
-	PdfExtractionProviderId,
-	PdfExtractionProviderMode,
+	MarkdownExtractionProviderId,
+	MarkdownExtractionProviderMode,
 	WorkspaceFileExtractionWorkflowParams,
 } from "#/features/workspaces/extraction/types";
 import { getWorkspaceKernelFromEnv } from "#/features/workspaces/kernel/workspace-kernel-access";
+import { getWorkspaceUploadFamily } from "#/features/workspaces/model/workspace-file";
 
 export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 	Env,
@@ -41,7 +39,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 
 		try {
 			const extraction = await step.do(
-				"extract pdf with provider",
+				"extract markdown with provider",
 				{
 					retries: {
 						limit: 2,
@@ -59,8 +57,8 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						itemId: params.itemId,
 					});
 					const sourceHash = await sha256Base64Url(source.bytes);
-					const route = routePdfExtraction();
-					const provider = createPdfExtractionProvider(
+					const route = getWorkspaceUploadFamily(params.assetKind).extractionRoute;
+					const provider = createMarkdownExtractionProvider(
 						route.provider,
 						this.env,
 					);
@@ -90,7 +88,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						metadata: extraction.metadata,
 						routeReason: route.reason,
 						sourceHash,
-					} satisfies StagedPdfExtractionResult;
+					} satisfies StagedMarkdownExtractionResult;
 				},
 			);
 
@@ -114,7 +112,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					);
 
 					if (!artifact) {
-						throw new Error("Staged PDF extraction artifact was not found.");
+						throw new Error("Staged markdown extraction artifact was not found.");
 					}
 
 					const markdown = await artifact.text();
@@ -172,10 +170,10 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 	}
 }
 
-interface StagedPdfExtractionResult {
+interface StagedMarkdownExtractionResult {
 	artifactKey: string;
-	provider: PdfExtractionProviderId;
-	providerMode: PdfExtractionProviderMode;
+	provider: MarkdownExtractionProviderId;
+	providerMode: MarkdownExtractionProviderMode;
 	metadata: Record<string, string | number | boolean | null>;
 	routeReason: string;
 	sourceHash: string;
@@ -184,7 +182,7 @@ interface StagedPdfExtractionResult {
 function assertWorkflowParams(
 	value: Readonly<WorkspaceFileExtractionWorkflowParams>,
 ): WorkspaceFileExtractionWorkflowParams {
-	if (!value.workspaceId || !value.itemId) {
+	if (!value.workspaceId || !value.itemId || !value.assetKind) {
 		throw new Error("Invalid workspace file extraction payload.");
 	}
 
@@ -192,11 +190,12 @@ function assertWorkflowParams(
 		workspaceId: value.workspaceId,
 		itemId: value.itemId,
 		actorUserId: value.actorUserId ?? null,
+		assetKind: value.assetKind,
 	};
 }
 
 function getExtractionArtifactKey(instanceId: string) {
-	return `workflow-artifacts/pdf-extraction/${instanceId}/firecrawl.md`;
+	return `workflow-artifacts/markdown-extraction/${instanceId}/projection.md`;
 }
 
 function getErrorMessage(error: unknown) {

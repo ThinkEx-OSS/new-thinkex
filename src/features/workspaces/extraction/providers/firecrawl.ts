@@ -1,9 +1,9 @@
 import { toArrayBuffer } from "#/features/workspaces/extraction/binary";
 import type {
 	FirecrawlPdfMode,
-	PdfExtractionInput,
-	PdfExtractionProvider,
-	PdfExtractionResult,
+	MarkdownExtractionInput,
+	MarkdownExtractionProvider,
+	MarkdownExtractionResult,
 } from "#/features/workspaces/extraction/types";
 
 const defaultFirecrawlApiUrl = "https://api.firecrawl.dev";
@@ -11,7 +11,7 @@ const firecrawlParseTimeoutMs = 300_000;
 
 export function createFirecrawlPdfExtractionProvider(
 	env: Env,
-): PdfExtractionProvider {
+): MarkdownExtractionProvider {
 	return {
 		id: "firecrawl",
 		async extract(input) {
@@ -60,13 +60,13 @@ export function createFirecrawlPdfExtractionProvider(
 				provider: "firecrawl",
 				providerMode: mode,
 				metadata: getFirecrawlMetadata(responseJson),
-			} satisfies PdfExtractionResult;
+			} satisfies MarkdownExtractionResult;
 		},
 	};
 }
 
 function normalizeFirecrawlMode(
-	mode: PdfExtractionInput["mode"],
+	mode: MarkdownExtractionInput["mode"],
 ): FirecrawlPdfMode {
 	if (mode === "fast" || mode === "ocr") {
 		return mode;
