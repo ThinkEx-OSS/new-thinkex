@@ -15,11 +15,7 @@ export default function WorkspaceImageViewer({
 	const fileUrl = getWorkspaceFileContentUrl(workspaceId, item.id);
 
 	return (
-		<WorkspaceImageViewerContent
-			key={fileUrl}
-			fileUrl={fileUrl}
-			item={item}
-		/>
+		<WorkspaceImageViewerContent key={fileUrl} fileUrl={fileUrl} item={item} />
 	);
 }
 
