@@ -19,6 +19,9 @@ import { useWorkspacePaneHotkey } from "#/features/workspaces/components/Workspa
 const PDF_CAPTURE_MODE_ID = "pdfCapture";
 const MIN_CAPTURE_SIZE = 8;
 const MAX_RENDER_SCALE = 2;
+// Above PDF content inside the viewer, below app overlays (dropdowns/dialogs at z-50).
+const PDF_CAPTURE_VIEWER_FRAME_CLASSNAME =
+	"pointer-events-none absolute inset-0 z-30 ring-[3px] ring-inset ring-blue-600";
 
 export interface WorkspacePdfCaptureResult {
 	blob: Blob;
@@ -37,6 +40,18 @@ interface WorkspacePdfCapturePageOverlayProps {
 interface CaptureDraft {
 	current: Position;
 	start: Position;
+}
+
+export function WorkspacePdfCaptureViewerFrame({
+	active,
+}: {
+	active: boolean;
+}) {
+	if (!active) {
+		return null;
+	}
+
+	return <div aria-hidden className={PDF_CAPTURE_VIEWER_FRAME_CLASSNAME} />;
 }
 
 export function WorkspacePdfCapturePageOverlay({
@@ -146,12 +161,9 @@ export function WorkspacePdfCapturePageOverlay({
 				setIsRendering(false);
 			}}
 		>
-			{active ? (
-				<div className="pointer-events-none absolute inset-0 bg-blue-500/5" />
-			) : null}
 			{selectionRect ? (
 				<div
-					className="pointer-events-none absolute rounded-sm border border-blue-500 bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.35)]"
+					className="pointer-events-none absolute rounded-sm border border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.35)]"
 					style={{
 						height: selectionRect.size.height,
 						left: selectionRect.origin.x,

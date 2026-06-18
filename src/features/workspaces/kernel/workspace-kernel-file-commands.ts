@@ -19,14 +19,14 @@ import type {
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
 import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
-import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
-	getWorkspaceFileTypeForUpload,
-	getWorkspaceFileUploadValidationError,
+	getWorkspaceFileShellExtension,
 	normalizeWorkspaceUploadFileName,
+	requireWorkspaceFileTypeFromHint,
+	resolveWorkspaceFileContentType,
 	type WorkspaceFileTypeDescriptor,
-	WorkspaceFileUploadError,
-} from "#/features/workspaces/workspace-file-uploads";
+} from "#/features/workspaces/model/workspace-file-registry";
+import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 
 export class WorkspaceKernelFileCommands {
 	private readonly events: WorkspaceKernelEventBus;
@@ -53,15 +53,6 @@ export class WorkspaceKernelFileCommands {
 		input: CreateWorkspaceKernelFileFromUploadArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		const parentId = input.parentId ?? null;
-		const validationError = getWorkspaceFileUploadValidationError({
-			fileName: input.fileName,
-			sizeBytes: input.fileSize,
-			contentType: input.contentType,
-		});
-
-		if (validationError) {
-			throw new WorkspaceFileUploadError(validationError);
-		}
 
 		this.store.assertParentIsValid(parentId);
 
@@ -76,9 +67,14 @@ export class WorkspaceKernelFileCommands {
 		}
 
 		const bytes = new Uint8Array(await object.arrayBuffer());
-		const descriptor = getWorkspaceFileTypeForUpload({
+		const descriptor = requireWorkspaceFileTypeFromHint({
 			fileName: input.fileName,
 			contentType: input.contentType,
+		});
+		const contentType = resolveWorkspaceFileContentType({
+			contentType: input.contentType,
+			descriptor,
+			fileName: input.fileName,
 		});
 
 		const now = Date.now();
@@ -95,19 +91,20 @@ export class WorkspaceKernelFileCommands {
 		});
 		const shellPath = getWorkspaceKernelFileShellPath({
 			itemId,
-			extension: descriptor.shellExtension,
+			extension: getWorkspaceFileShellExtension({
+				contentType,
+				descriptor,
+				fileName: requestedName,
+			}),
 		});
 		const metadataJson = createFileMetadata({
+			contentType,
 			descriptor,
 			originalName: requestedName,
 			sizeBytes: bytes.byteLength,
 		});
 
-		await this.workspace.writeFileBytes(
-			shellPath,
-			bytes,
-			descriptor.contentType,
-		);
+		await this.workspace.writeFileBytes(shellPath, bytes, contentType);
 		await this.r2.delete(input.objectKey);
 
 		this.sql`
@@ -335,13 +332,14 @@ type KernelItemProjectionRow = {
 };
 
 function createFileMetadata(input: {
+	contentType: string;
 	descriptor: WorkspaceFileTypeDescriptor;
 	originalName: string;
 	sizeBytes: number;
 }): Record<string, JsonValue> {
 	return {
 		assetFamily: input.descriptor.assetKind,
-		mimeType: input.descriptor.contentType,
+		mimeType: input.contentType,
 		originalName: input.originalName,
 		sizeBytes: input.sizeBytes,
 	};

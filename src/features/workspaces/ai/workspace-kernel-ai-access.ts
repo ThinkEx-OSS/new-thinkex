@@ -21,6 +21,7 @@ import type {
 	ReadWorkspaceKernelFileProjectionResult,
 	WorkspaceKernelFileProjectionStatus,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
+import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file-registry";
 import {
 	assertCanMutateWorkspace,
 	assertCanReadWorkspace,
@@ -270,16 +271,30 @@ async function readWorkspaceKernelAiFileItem(input: {
 	path: string;
 }): Promise<WorkspaceKernelAiReadItem> {
 	const { item } = input;
+	const fileType = resolveWorkspaceFileTypeFromItem(item);
 	const metadata = {
 		assetFamily: getMetadataString(item, "assetFamily"),
 		mimeType: getMetadataString(item, "mimeType"),
 		sizeBytes: getMetadataNumber(item, "sizeBytes"),
 	};
 
-	if (metadata.assetFamily !== "pdf") {
+	if (!fileType) {
 		return {
 			extraction: {
 				reason: "unsupported_file_type",
+				status: "not_started",
+			},
+			metadata,
+			path: input.path,
+			title: item.name,
+			type: "file",
+		};
+	}
+
+	if (fileType.aiReadStrategy !== "markdown_extraction") {
+		return {
+			extraction: {
+				reason: "no_text_projection_available",
 				status: "not_started",
 			},
 			metadata,

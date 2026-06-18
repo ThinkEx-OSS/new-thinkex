@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChatThreads } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
@@ -7,6 +8,7 @@ import {
 	useWorkspacePresentation,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
+import { getErrorMessage } from "#/lib/error-message";
 
 type UseAiChatPanelControllerInput = {
 	workspaceId: string;
@@ -74,7 +76,13 @@ export function useAiChatPanelController({
 	const handleDeleteThread = async (threadId: string) => {
 		const remainingThreads = threads.filter((thread) => thread.id !== threadId);
 
-		await deleteThread(threadId);
+		try {
+			await deleteThread(threadId);
+			toast.success("Chat deleted.");
+		} catch (error) {
+			toast.error(getErrorMessage(error, "Unable to delete chat right now."));
+			return;
+		}
 
 		if (activeThreadId !== threadId) {
 			return;

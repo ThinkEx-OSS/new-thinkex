@@ -15,6 +15,7 @@ import {
 	workspaceColorOptions,
 	workspaceColors,
 } from "#/features/workspaces/model/workspace-colors";
+import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-registry";
 
 export const workspaceItemColorOptions = workspaceColorOptions;
 
@@ -95,7 +96,7 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 		{
 			id: "upload-file",
 			label: "Upload",
-			description: "PDF",
+			description: workspaceFileUploadTypeLabel,
 			Icon: Upload,
 			iconClassName: "text-rose-600 dark:text-rose-400",
 			disabled: false,

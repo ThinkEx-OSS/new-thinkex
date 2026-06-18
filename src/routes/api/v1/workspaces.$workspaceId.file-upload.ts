@@ -5,13 +5,14 @@ import { createDbContext } from "#/db/server";
 import { requestWorkspaceFileExtraction } from "#/features/workspaces/extraction/request-workspace-file-extraction";
 import { createWorkspaceFileFromUpload } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
+	getWorkspaceFileUploadValidationError,
+	requireWorkspaceFileTypeFromHint,
+	WorkspaceFileUploadError,
+} from "#/features/workspaces/model/workspace-file-registry";
+import {
 	assertCanMutateWorkspace,
 	WorkspaceForbiddenError,
 } from "#/features/workspaces/server/permissions";
-import {
-	getWorkspaceFileUploadValidationError,
-	WorkspaceFileUploadError,
-} from "#/features/workspaces/workspace-file-uploads";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
@@ -76,6 +77,11 @@ async function handleWorkspaceFileUpload(
 			);
 		}
 
+		const descriptor = requireWorkspaceFileTypeFromHint({
+			fileName: file.name,
+			contentType: file.type,
+		});
+
 		objectKey = getWorkspaceFileUploadObjectKey(workspaceId);
 		await env.WORKSPACE_KERNEL_FILES.put(objectKey, file, {
 			httpMetadata: {
@@ -97,11 +103,21 @@ async function handleWorkspaceFileUpload(
 		});
 
 		objectKey = null;
-		await requestFileExtractionAfterUpload({
-			workspaceId,
-			itemId: command.result.id,
-			actorUserId: session.user.id,
-		});
+		if (descriptor.aiReadStrategy === "markdown_extraction") {
+			try {
+				await requestWorkspaceFileExtraction({
+					workspaceId,
+					itemId: command.result.id,
+					actorUserId: session.user.id,
+					assetKind: descriptor.assetKind,
+				});
+			} catch (error) {
+				console.warn(
+					"[WorkspaceFileUpload] Uploaded file, but extraction could not be queued",
+					error,
+				);
+			}
+		}
 
 		return apiJson(command, requestId);
 	} catch (error) {
@@ -149,21 +165,6 @@ function getWorkspaceFileUploadObjectKey(workspaceId: string) {
 
 function getNullableString(value: FormDataEntryValue | null) {
 	return typeof value === "string" && value.trim() ? value : null;
-}
-
-async function requestFileExtractionAfterUpload(input: {
-	workspaceId: string;
-	itemId: string;
-	actorUserId: string;
-}) {
-	try {
-		await requestWorkspaceFileExtraction(input);
-	} catch (error) {
-		console.warn(
-			"[WorkspaceFileUpload] Uploaded file, but extraction could not be queued",
-			error,
-		);
-	}
 }
 
 export { handleWorkspaceFileUpload };

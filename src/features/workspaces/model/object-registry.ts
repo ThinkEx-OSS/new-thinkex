@@ -8,6 +8,10 @@ import {
 } from "lucide-react";
 
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
+import {
+	workspaceFileAssetKinds,
+	workspaceFileUploadTypeLabel,
+} from "#/features/workspaces/model/workspace-file-registry";
 
 export type WorkspaceItemCapability =
 	| "view"
@@ -92,7 +96,7 @@ export const workspaceObjectRegistry = {
 		family: "file",
 		label: "File",
 		menuLabel: "Upload file",
-		menuDescription: "PDF",
+		menuDescription: workspaceFileUploadTypeLabel,
 		menuGroup: "primary",
 		creatable: false,
 		icon: Paperclip,
@@ -104,8 +108,8 @@ export const workspaceObjectRegistry = {
 			"workspace_kernel.assets",
 			"workspace_kernel.snapshots",
 		],
-		contentFormats: ["pdf", "markdown", "transcript_json"],
-		assetFamilies: ["pdf"],
+		contentFormats: ["pdf", "image", "markdown", "transcript_json"],
+		assetFamilies: workspaceFileAssetKinds,
 		capabilities: ["view", "index", "ai_read"],
 		realtime: "workspace-events",
 	},

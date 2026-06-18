@@ -21,7 +21,6 @@ import {
 import WorkspaceSplitPresentation from "#/features/workspaces/components/WorkspaceSplitPresentation";
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
-import { isWorkspacePdfItem } from "#/features/workspaces/components/workspace-pdf-item";
 import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
@@ -30,6 +29,7 @@ import type {
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { getRandomWorkspaceColor } from "#/features/workspaces/model/workspace-colors";
+import { workspaceItemRequiresHeavyViewerRuntime } from "#/features/workspaces/model/workspace-file-registry";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
@@ -134,7 +134,9 @@ export function WorkspaceShell({
 	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
 	const { chatPanelCollapsed, presentation } = normalizedUiSession;
 	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
-	const hasPdfItems = scopedItems.some(isWorkspacePdfItem);
+	const hasHeavyViewerRuntimeItems = scopedItems.some(
+		workspaceItemRequiresHeavyViewerRuntime,
+	);
 	const addItemsToAiContext = (itemsToAdd: WorkspaceItem[]) => {
 		addAiContextItems(
 			workspace.id,
@@ -293,7 +295,7 @@ export function WorkspaceShell({
 		</WorkspaceFileUploadProvider>
 	);
 
-	return hasPdfItems ? (
+	return hasHeavyViewerRuntimeItems ? (
 		<WorkspacePdfEngineProvider>
 			{workspaceInteractionContent}
 		</WorkspacePdfEngineProvider>

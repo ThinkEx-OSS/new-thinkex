@@ -56,10 +56,12 @@ import {
 	WorkspacePdfCapturePageOverlay,
 	type WorkspacePdfCaptureResult,
 	WorkspacePdfCaptureShortcuts,
+	WorkspacePdfCaptureViewerFrame,
 } from "#/features/workspaces/components/WorkspacePdfCapture";
 import { WorkspacePdfPageControl } from "#/features/workspaces/components/WorkspacePdfPageControl";
 import { stageComposerFiles } from "#/features/workspaces/composer/workspace-composer-actions";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
+import { getWorkspaceFileContentUrl } from "#/features/workspaces/model/workspace-file-registry";
 import {
 	type ClientPoint,
 	getPointerClientPoint,
@@ -155,9 +157,7 @@ export default function WorkspacePdfViewer({
 					}
 				</EmbedPDF>
 			)}
-			{isCaptureActive ? (
-				<div className="pointer-events-none absolute inset-0 z-[70] border-2 border-blue-600" />
-			) : null}
+			<WorkspacePdfCaptureViewerFrame active={isCaptureActive} />
 		</div>
 	);
 }
@@ -544,8 +544,4 @@ function WorkspacePdfLoadFailure({
 			{children}
 		</WorkspacePdfViewerStatus>
 	);
-}
-
-function getWorkspaceFileContentUrl(workspaceId: string, itemId: string) {
-	return `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(itemId)}/content`;
 }

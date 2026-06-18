@@ -38,9 +38,13 @@ export default function AiChatMessageRow({
 	}
 
 	const isAssistant = message.role === "assistant";
-	const visibleParts = isAssistant
+	const displayableParts = isAssistant ? [] : getDisplayableParts(message);
+	const userAttachmentParts = isAssistant
 		? []
-		: orderUserMessageParts(getDisplayableParts(message));
+		: displayableParts.filter(isAttachmentPart);
+	const userBodyParts = isAssistant
+		? []
+		: displayableParts.filter((part) => !isAttachmentPart(part));
 	const copyableText = isAssistant ? getCopyableMessageText(message) : "";
 
 	return (
@@ -52,22 +56,34 @@ export default function AiChatMessageRow({
 			)}
 		>
 			<div className="min-w-0 max-w-full">
-				<MessageContent>
-					{isAssistant && display ? (
-						<AssistantMessageBody
-							display={display}
-							message={message}
-							onRegenerate={onRegenerate}
-						/>
-					) : (
-						visibleParts.map((part, index) => (
+				{userAttachmentParts.length > 0 ? (
+					<div className="mb-2 ml-auto flex w-fit max-w-full flex-col gap-2">
+						{userAttachmentParts.map((part, index) => (
 							<AiChatMessagePartView
 								key={getMessagePartKey(message.id, part, index)}
 								part={part}
 							/>
-						))
-					)}
-				</MessageContent>
+						))}
+					</div>
+				) : null}
+				{isAssistant || userBodyParts.length > 0 ? (
+					<MessageContent>
+						{isAssistant && display ? (
+							<AssistantMessageBody
+								display={display}
+								message={message}
+								onRegenerate={onRegenerate}
+							/>
+						) : (
+							userBodyParts.map((part, index) => (
+								<AiChatMessagePartView
+									key={getMessagePartKey(message.id, part, index)}
+									part={part}
+								/>
+							))
+						)}
+					</MessageContent>
+				) : null}
 				{isAssistant &&
 				display?.kind === "content" &&
 				display.parts.length > 0 &&
@@ -103,13 +119,6 @@ export default function AiChatMessageRow({
 			</div>
 		</Message>
 	);
-}
-
-function orderUserMessageParts(parts: AiChatMessagePart[]) {
-	const attachments = parts.filter(isAttachmentPart);
-	const otherParts = parts.filter((part) => !isAttachmentPart(part));
-
-	return [...attachments, ...otherParts];
 }
 
 function isAttachmentPart(part: AiChatMessagePart) {

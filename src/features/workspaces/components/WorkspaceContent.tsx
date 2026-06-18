@@ -1,5 +1,5 @@
 import { FolderOpen } from "lucide-react";
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import {
 	ContextMenu,
@@ -13,7 +13,6 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "#/components/ui/empty";
-import { Spinner } from "#/components/ui/spinner";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
 import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import {
@@ -24,6 +23,7 @@ import { useWorkspaceSelection } from "#/features/workspaces/components/useWorks
 import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/components/WorkspaceCreateMenu";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
+import WorkspaceFileViewer from "#/features/workspaces/components/WorkspaceFileViewer";
 import {
 	DeleteWorkspaceItemAlert,
 	DeleteWorkspaceItemsAlert,
@@ -34,7 +34,6 @@ import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/co
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
-import { isWorkspacePdfItem } from "#/features/workspaces/components/workspace-pdf-item";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -49,7 +48,7 @@ import {
 	getWorkspaceBrowseParentId,
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
-import { workspaceFileUploadTypeLabel } from "#/features/workspaces/workspace-file-uploads";
+import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file-registry";
 import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
 import { cn } from "#/lib/utils";
 
@@ -69,10 +68,6 @@ interface WorkspaceContentProps {
 type WorkspaceItemActionDialogsState = ReturnType<
 	typeof useWorkspaceItemActionDialogState
 >;
-
-const WorkspacePdfViewer = lazy(
-	() => import("#/features/workspaces/components/WorkspacePdfViewer"),
-);
 
 export default function WorkspaceContent({
 	instanceId,
@@ -430,29 +425,16 @@ function WorkspaceItemView({
 		);
 	}
 
-	if (isWorkspacePdfItem(item)) {
+	if (item.type === "file") {
 		return (
-			<div className="h-full min-h-0">
-				<ContextMenu>
-					<ContextMenuTrigger
-						render={<section className="h-full min-h-0 overflow-hidden" />}
-					>
-						<Suspense fallback={<WorkspacePdfViewerSkeleton />}>
-							<WorkspacePdfViewer
-								item={item}
-								toolbarSlotId={viewInstanceId}
-								workspaceId={workspaceId}
-							/>
-						</Suspense>
-					</ContextMenuTrigger>
-					<WorkspaceItemActionsContextMenuContent
-						item={item}
-						onMoveItem={onMoveItem}
-						onRenameItem={onRenameItem}
-						onDeleteItem={onDeleteItem}
-					/>
-				</ContextMenu>
-			</div>
+			<WorkspaceFileViewer
+				item={item}
+				toolbarSlotId={viewInstanceId}
+				workspaceId={workspaceId}
+				onMoveItem={onMoveItem}
+				onRenameItem={onRenameItem}
+				onDeleteItem={onDeleteItem}
+			/>
 		);
 	}
 
@@ -495,15 +477,6 @@ function WorkspaceItemView({
 					onDeleteItem={onDeleteItem}
 				/>
 			</ContextMenu>
-		</div>
-	);
-}
-
-function WorkspacePdfViewerSkeleton() {
-	return (
-		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-hidden bg-background px-4 text-center text-muted-foreground text-sm">
-			<Spinner className="size-4" />
-			<p>Loading PDF viewer...</p>
 		</div>
 	);
 }

@@ -8,6 +8,7 @@ export async function requestWorkspaceFileExtraction(input: {
 	workspaceId: string;
 	itemId: string;
 	actorUserId: string | null;
+	assetKind: string;
 }) {
 	const kernel = await getWorkspaceKernel(input.workspaceId);
 	const workflowId = await getWorkspaceFileExtractionWorkflowId(input);
@@ -53,10 +54,11 @@ export async function requestWorkspaceFileExtraction(input: {
 async function getWorkspaceFileExtractionWorkflowId(input: {
 	workspaceId: string;
 	itemId: string;
+	assetKind: string;
 }) {
 	const digest = await sha256Base64UrlText(
-		`${input.workspaceId}:${input.itemId}:pdf-extraction:v1`,
+		`${input.workspaceId}:${input.itemId}:${input.assetKind}-extraction:v1`,
 	);
 
-	return `pdf-${digest.slice(0, 48)}`;
+	return `${input.assetKind}-${digest.slice(0, 48)}`;
 }
