@@ -509,7 +509,7 @@ function WorkspacePdfViewerStatus({
 }) {
 	return (
 		<div
-			className="flex h-full min-h-0 flex-col items-center justify-center gap-3 bg-background px-4 text-center text-muted-foreground text-sm"
+			className="flex h-full flex-col items-center justify-center gap-3 bg-background px-4 text-center text-muted-foreground text-sm"
 			aria-live="polite"
 		>
 			{loading ? <Spinner className="size-4" /> : null}

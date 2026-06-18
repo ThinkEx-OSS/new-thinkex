@@ -206,22 +206,26 @@ export function resolveWorkspaceFileTypeFromItem(
 		return null;
 	}
 
-	const assetFamily = getMetadataString(item.metadataJson, "assetFamily");
-
-	if (assetFamily) {
-		const byAssetKind = workspaceFileTypes.find(
-			(descriptor) => descriptor.assetKind === assetFamily,
-		);
-
-		if (byAssetKind) {
-			return byAssetKind;
-		}
-	}
-
-	return resolveWorkspaceFileTypeFromHint({
+	const hint = resolveWorkspaceFileTypeFromHint({
 		fileName: item.name,
 		contentType: getMetadataString(item.metadataJson, "mimeType"),
 	});
+
+	if (hint) {
+		return hint;
+	}
+
+	const assetFamily = getMetadataString(item.metadataJson, "assetFamily");
+
+	if (!assetFamily) {
+		return null;
+	}
+
+	return (
+		workspaceFileTypes.find(
+			(descriptor) => descriptor.assetKind === assetFamily,
+		) ?? null
+	);
 }
 
 export function getWorkspaceFileShellExtension(input: {

@@ -52,22 +52,13 @@ export default function WorkspaceFileViewer({
 	onRenameItem,
 }: WorkspaceFileViewerProps) {
 	const descriptor = resolveWorkspaceFileTypeFromItem(item);
-	const Viewer = descriptor
-		? workspaceFileViewers[descriptor.assetKind]
-		: undefined;
+	const Viewer = descriptor ? workspaceFileViewers[descriptor.assetKind] : null;
 
 	return (
 		<div className="h-full min-h-0">
 			<ContextMenu>
 				<ContextMenuTrigger
-					render={
-						<section
-							className={cn(
-								"flex h-full min-h-0 overflow-hidden",
-								!Viewer && "items-center justify-center bg-background",
-							)}
-						/>
-					}
+					render={<section className="h-full min-h-0 overflow-hidden" />}
 				>
 					{Viewer ? (
 						<Suspense fallback={<WorkspaceFileViewerSkeleton />}>
@@ -78,7 +69,9 @@ export default function WorkspaceFileViewer({
 							/>
 						</Suspense>
 					) : (
-						<WorkspaceFilePlaceholder item={item} unsupported={!Viewer} />
+						<div className="flex h-full items-center justify-center bg-background">
+							<WorkspaceUnsupportedFilePlaceholder item={item} />
+						</div>
 					)}
 				</ContextMenuTrigger>
 				<WorkspaceItemActionsContextMenuContent
@@ -92,12 +85,10 @@ export default function WorkspaceFileViewer({
 	);
 }
 
-function WorkspaceFilePlaceholder({
+function WorkspaceUnsupportedFilePlaceholder({
 	item,
-	unsupported,
 }: {
 	item: WorkspaceItem;
-	unsupported: boolean;
 }) {
 	const {
 		Icon: ItemIcon,
@@ -119,11 +110,9 @@ function WorkspaceFilePlaceholder({
 			/>
 			<div className="space-y-1">
 				<h2 className="font-medium text-foreground text-sm">{item.name}</h2>
-				{unsupported ? (
-					<p className="text-muted-foreground text-xs">
-						This file type does not have a viewer yet.
-					</p>
-				) : null}
+				<p className="text-muted-foreground text-xs">
+					This file type does not have a viewer yet.
+				</p>
 			</div>
 		</div>
 	);
@@ -131,7 +120,7 @@ function WorkspaceFilePlaceholder({
 
 function WorkspaceFileViewerSkeleton() {
 	return (
-		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground text-sm">
+		<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 bg-background px-4 text-center text-muted-foreground text-sm">
 			<Spinner className="size-4" />
 			<p>Loading file viewer...</p>
 		</div>

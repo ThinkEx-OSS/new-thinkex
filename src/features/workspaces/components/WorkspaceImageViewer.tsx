@@ -32,7 +32,7 @@ function WorkspaceImageViewerContent({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-			<div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
+			<div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto">
 				{status === "loading" ? (
 					<div className="absolute inset-0 flex items-center justify-center">
 						<Spinner className="size-4" />

@@ -286,7 +286,7 @@ export default function WorkspaceItemCard({
 					</div>
 				</div>
 			) : null}
-			<CardHeader className="pointer-events-none relative z-10 shrink-0 gap-2 px-4 py-3">
+			<CardHeader className="pointer-events-none relative z-10 shrink-0 gap-1 px-3 py-2">
 				<CardTitle className="min-w-0">
 					<button
 						type="button"
