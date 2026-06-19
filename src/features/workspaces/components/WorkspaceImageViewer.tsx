@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { Spinner } from "#/components/ui/spinner";
+import { useWorkspaceImageViewerTransform } from "#/features/workspaces/components/use-workspace-image-viewer-transform";
 import {
 	WorkspaceCaptureShortcuts,
 	WorkspaceCaptureViewerFrame,
@@ -13,11 +13,6 @@ import { stageCaptureAttachmentToComposerWithFeedback } from "#/features/workspa
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceFileContentUrl } from "#/features/workspaces/model/workspace-file";
 import { cn } from "#/lib/utils";
-
-const IMAGE_VIEWER_MIN_SCALE = 0.25;
-const IMAGE_VIEWER_MAX_SCALE = 8;
-const IMAGE_VIEWER_WHEEL_STEP = 0.05;
-const IMAGE_VIEWER_PINCH_STEP = 3;
 
 interface WorkspaceImageViewerProps {
 	item: WorkspaceItem;
@@ -54,12 +49,15 @@ function WorkspaceImageViewerContent({
 	toolbarSlotId?: string;
 	workspaceId: string;
 }) {
-	const viewerRef = useRef<HTMLDivElement>(null);
 	const imageRef = useRef<HTMLImageElement>(null);
 	const [status, setStatus] = useState<"loading" | "ready" | "error">(
 		"loading",
 	);
 	const [isCaptureActive, setIsCaptureActive] = useState(false);
+	const { containerRef, contentStyle } = useWorkspaceImageViewerTransform({
+		enabled: status !== "error",
+		isCaptureActive,
+	});
 
 	useFileItemToolbar({
 		capture: {
@@ -78,7 +76,7 @@ function WorkspaceImageViewerContent({
 	const handleCapture = useCallback(
 		async (region: Parameters<typeof renderImageRegionCapture>[1]) => {
 			const image = imageRef.current;
-			const viewer = viewerRef.current;
+			const viewer = containerRef.current;
 
 			if (!image || !viewer) {
 				throw new Error("Image viewer is not ready.");
@@ -94,15 +92,17 @@ function WorkspaceImageViewerContent({
 				}),
 			);
 		},
-		[item.name, workspaceId],
+		[containerRef, item.name, workspaceId],
 	);
 
 	return (
 		<div
-			ref={viewerRef}
+			ref={containerRef}
 			className={cn(
-				"relative h-full min-h-0 overflow-hidden bg-background",
-				isCaptureActive && "cursor-crosshair",
+				"relative h-full min-h-0 overflow-hidden bg-background touch-none",
+				isCaptureActive
+					? "cursor-crosshair"
+					: "cursor-grab active:cursor-grabbing",
 			)}
 		>
 			{status === "loading" ? (
@@ -124,45 +124,24 @@ function WorkspaceImageViewerContent({
 					</div>
 				</div>
 			) : (
-				<TransformWrapper
-					key={fileUrl}
-					initialScale={1}
-					minScale={IMAGE_VIEWER_MIN_SCALE}
-					maxScale={IMAGE_VIEWER_MAX_SCALE}
-					centerOnInit
-					limitToBounds={false}
-					smooth={false}
-					wheel={{ step: IMAGE_VIEWER_WHEEL_STEP }}
-					pinch={{ step: IMAGE_VIEWER_PINCH_STEP }}
-					panning={{
-						allowLeftClickPan: !isCaptureActive,
-						allowMiddleClickPan: true,
-						activationKeys: isCaptureActive ? [" "] : [],
-					}}
-					doubleClick={{ disabled: true }}
-				>
-					<TransformComponent
-						wrapperClass="!h-full !w-full"
-						contentClass="!h-full !w-full"
-					>
-						<img
-							ref={imageRef}
-							alt={item.name}
-							className="h-full w-full select-none object-contain"
-							draggable={false}
-							src={fileUrl}
-							onError={() => {
-								setStatus("error");
-							}}
-							onLoad={handleImageLoad}
-						/>
-					</TransformComponent>
-				</TransformWrapper>
+				<div className="h-full w-full" style={contentStyle}>
+					<img
+						ref={imageRef}
+						alt={item.name}
+						className="h-full w-full select-none object-contain"
+						draggable={false}
+						src={fileUrl}
+						onError={() => {
+							setStatus("error");
+						}}
+						onLoad={handleImageLoad}
+					/>
+				</div>
 			)}
 			{status === "ready" ? (
 				<WorkspaceImageRegionCaptureOverlay
 					active={isCaptureActive}
-					boundsRef={viewerRef}
+					boundsRef={containerRef}
 					onCapture={handleCapture}
 				/>
 			) : null}
