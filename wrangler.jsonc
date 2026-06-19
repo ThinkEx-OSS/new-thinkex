@@ -17,8 +17,15 @@
 		"binding": "BROWSER"
 	},
 	"vars": {
-		"FIRECRAWL_API_URL": "https://api.firecrawl.dev"
+		"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
+		"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app"
 	},
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"remote": true
+		}
+	],
 	"r2_buckets": [
 		{
 			"binding": "WORKSPACE_KERNEL_FILES",
