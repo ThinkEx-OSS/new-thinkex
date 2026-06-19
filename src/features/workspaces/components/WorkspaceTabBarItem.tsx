@@ -8,8 +8,8 @@ import {
 } from "#/components/ui/context-menu";
 import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import type { WorkspaceTabLayoutElementHandler } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
-import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { workspaceControlledSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	WORKSPACE_TAB_ITEM_CLASS,

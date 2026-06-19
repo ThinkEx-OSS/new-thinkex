@@ -20,8 +20,8 @@ import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/Works
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import { WorkspaceSearchDialog } from "#/features/workspaces/components/WorkspaceSearchDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
-import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { WorkspaceToolbarGroup } from "#/features/workspaces/components/WorkspaceToolbar";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,

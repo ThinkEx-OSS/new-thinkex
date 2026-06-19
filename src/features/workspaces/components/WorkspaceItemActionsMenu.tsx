@@ -187,7 +187,9 @@ function WorkspaceItemRenameMenuItem({
 	renderer: WorkspaceMenuRenderer;
 	onRenameItem: (item: WorkspaceItem) => void;
 }) {
-	const interaction = workspaceMenuItemInteraction(readOnly, () => onRenameItem(item));
+	const interaction = workspaceMenuItemInteraction(readOnly, () =>
+		onRenameItem(item),
+	);
 
 	return renderer.item({
 		id: "rename",
@@ -261,7 +263,9 @@ function WorkspaceItemMoveMenuItem({
 	renderer: WorkspaceMenuRenderer;
 	onMoveItem: (item: WorkspaceItem) => void;
 }) {
-	const interaction = workspaceMenuItemInteraction(readOnly, () => onMoveItem(item));
+	const interaction = workspaceMenuItemInteraction(readOnly, () =>
+		onMoveItem(item),
+	);
 
 	return renderer.item({
 		id: "move",

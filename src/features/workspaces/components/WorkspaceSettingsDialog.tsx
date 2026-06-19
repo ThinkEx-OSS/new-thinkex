@@ -41,11 +41,9 @@ import {
 	workspaceColors,
 	workspaceIconOptions,
 } from "#/features/workspaces/model/display";
-import {
-	type WorkspaceMemberCapabilities,
-} from "#/features/workspaces/workspace-member-capabilities";
 import { useDeleteWorkspaceMutation } from "#/features/workspaces/use-delete-workspace";
 import { useUpdateWorkspaceMutation } from "#/features/workspaces/use-update-workspace";
+import type { WorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceSettingsDialogProps {

@@ -6,10 +6,6 @@ import {
 import type { Connection, ConnectionContext } from "partyserver";
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
-import {
-	type DocumentSessionConnectionState,
-	resolveDocumentSessionConnectionAccess,
-} from "#/features/workspaces/documents/document-session-connection-access";
 import type { DocumentSessionRouteParams } from "#/features/workspaces/agent-routes";
 import {
 	parseMarkdownToTiptapDocument,
@@ -20,6 +16,10 @@ import {
 	type DocumentMarkdownEdit,
 	type DocumentMarkdownEditResultStatus,
 } from "#/features/workspaces/documents/document-markdown-edits";
+import {
+	type DocumentSessionConnectionState,
+	resolveDocumentSessionConnectionAccess,
+} from "#/features/workspaces/documents/document-session-connection-access";
 import {
 	parseTiptapDocumentJson,
 	stringifyTiptapDocumentJson,
@@ -82,9 +82,7 @@ export class DocumentSession extends YServer {
 		super.onConnect(connection, context);
 	}
 
-	override isReadOnly(
-		connection: Connection<DocumentSessionConnectionState>,
-	) {
+	override isReadOnly(connection: Connection<DocumentSessionConnectionState>) {
 		return connection.state?.canMutate !== true;
 	}
 

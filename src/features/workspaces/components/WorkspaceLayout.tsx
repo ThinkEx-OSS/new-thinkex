@@ -30,7 +30,6 @@ import type {
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { workspaceItemRequiresHeavyViewerRuntime } from "#/features/workspaces/model/workspace-file";
-import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
@@ -49,6 +48,7 @@ import {
 	useCreateWorkspaceItemMutation,
 	useMoveWorkspaceItemsMutation,
 } from "#/features/workspaces/use-workspace-kernel-items";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { useAppHotkey } from "#/lib/hotkeys-core";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -158,7 +158,9 @@ export function WorkspaceShell({
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => {
-		if (!getWorkspaceMemberCapabilities(workspace.membershipRole).canMutateContent) {
+		if (
+			!getWorkspaceMemberCapabilities(workspace.membershipRole).canMutateContent
+		) {
 			return;
 		}
 

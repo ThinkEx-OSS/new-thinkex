@@ -4,10 +4,10 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { useState } from "react";
 
 import { Skeleton } from "#/components/ui/skeleton";
-import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { DocumentAskSelectionMenu } from "#/features/workspaces/components/document-editor/DocumentAskSelectionMenu";
 import { DocumentWordCount } from "#/features/workspaces/components/document-editor/DocumentWordCount";
 import { useDocumentEditorToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import {
 	getTiptapDocumentBaseExtensions,
 	tiptapDocumentYjsField,

@@ -1,6 +1,6 @@
 import { createDbContext } from "#/db/server";
-import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { getWorkspaceMemberRole } from "#/features/workspaces/server/permissions";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 export interface DocumentSessionConnectionState {
