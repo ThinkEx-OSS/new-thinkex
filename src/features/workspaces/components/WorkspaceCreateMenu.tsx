@@ -87,11 +87,10 @@ function getWorkspaceCreateMenuActions({
 }) {
 	return [
 		...workspaceItemPrimaryCreateActions.map(
-			({ type, label, description, Icon, iconClassName }) => ({
+			({ type, label, Icon, iconClassName }) => ({
 				kind: "item" as const,
 				id: type,
 				label,
-				trailing: description,
 				leading: <Icon className={`size-4 ${iconClassName}`} />,
 				onSelect: () => onCreateItem({ type, parentId }),
 			}),

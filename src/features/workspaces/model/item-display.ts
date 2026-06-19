@@ -6,10 +6,7 @@ import {
 } from "#/features/workspaces/model/object-registry";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
-import {
-	resolveWorkspaceFileTypeFromItem,
-	workspaceFileUploadTypeLabel,
-} from "#/features/workspaces/model/workspace-file";
+import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
 import {
 	getWorkspaceItemPalette,
 	workspaceItemTypeColors,
@@ -34,7 +31,6 @@ export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
 	(display) => ({
 		type: display.type,
 		label: display.menuLabel,
-		description: display.menuDescription,
 		group: display.menuGroup,
 		Icon: display.icon,
 		iconClassName:
@@ -63,7 +59,7 @@ export const workspaceItemLearnCreateActions =
 export interface WorkspaceItemAcquisitionAction {
 	id: "upload-file" | "record-audio";
 	label: string;
-	description: string;
+	description?: string;
 	Icon: LucideIcon;
 	iconClassName: string;
 	disabled: boolean;
@@ -74,7 +70,6 @@ export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
 		{
 			id: "upload-file",
 			label: "Upload",
-			description: workspaceFileUploadTypeLabel,
 			Icon: Upload,
 			iconClassName:
 				workspaceColors[workspaceItemTypeColors.file].iconClassName,
