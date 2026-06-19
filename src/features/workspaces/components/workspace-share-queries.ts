@@ -11,8 +11,48 @@ import {
 	getWorkspaceInviteLinkFn,
 	listWorkspaceEmailInvitesFn,
 } from "#/features/workspaces/invites/workspace-invite-functions";
-import { defaultInviteLinkExpiryMs } from "#/features/workspaces/invites/workspace-invite-rules";
+import { isInviteExpired } from "#/features/workspaces/invites/workspace-invite-rules";
 import { listWorkspaceMembersFn } from "#/features/workspaces/members/workspace-member-functions";
+
+export type WorkspaceInviteLinkResult = Awaited<
+	ReturnType<typeof getWorkspaceInviteLinkFn>
+>;
+
+function parseInviteExpiresAt(expiresAt: Date | string | null | undefined) {
+	if (expiresAt == null) {
+		return null;
+	}
+
+	if (expiresAt instanceof Date) {
+		return expiresAt;
+	}
+
+	const parsed = new Date(expiresAt);
+	return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function isWorkspaceInviteLinkCacheValid(
+	data: WorkspaceInviteLinkResult | undefined,
+) {
+	if (!data?.path) {
+		return false;
+	}
+
+	return !isInviteExpired(parseInviteExpiresAt(data.expiresAt));
+}
+
+function getInviteLinkStaleTime(data: WorkspaceInviteLinkResult | undefined) {
+	if (!isWorkspaceInviteLinkCacheValid(data)) {
+		return 0;
+	}
+
+	const expiresAt = parseInviteExpiresAt(data?.expiresAt);
+	if (!expiresAt) {
+		return 0;
+	}
+
+	return Math.max(0, expiresAt.getTime() - Date.now());
+}
 
 export function getWorkspaceMembersQueryKey(workspaceId: string) {
 	return ["workspace-members", workspaceId] as const;
@@ -56,8 +96,28 @@ export function getWorkspaceInviteLinkQueryOptions(
 					role,
 				},
 			}),
-		staleTime: defaultInviteLinkExpiryMs,
+		staleTime: (query) =>
+			getInviteLinkStaleTime(
+				query.state.data as WorkspaceInviteLinkResult | undefined,
+			),
 	});
+}
+
+export async function resolveWorkspaceInviteLink(
+	queryClient: QueryClient,
+	workspaceId: string,
+	role: WorkspaceMembershipRole,
+) {
+	const options = getWorkspaceInviteLinkQueryOptions(workspaceId, role);
+	const cached = queryClient.getQueryData<WorkspaceInviteLinkResult>(
+		options.queryKey,
+	);
+
+	if (isWorkspaceInviteLinkCacheValid(cached)) {
+		return cached as WorkspaceInviteLinkResult;
+	}
+
+	return queryClient.fetchQuery(options);
 }
 
 export function prefetchWorkspaceInviteLinks(

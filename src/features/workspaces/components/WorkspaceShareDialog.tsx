@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Link2 } from "lucide-react";
-import { useMemo } from "react";
+import { Check, ChevronDown, Link2, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
@@ -24,6 +24,8 @@ import { WorkspaceShareEmailInviteField } from "#/features/workspaces/components
 import { WorkspaceShareMemberList } from "#/features/workspaces/components/WorkspaceShareMemberList";
 import {
 	getWorkspaceInviteLinkQueryOptions,
+	isWorkspaceInviteLinkCacheValid,
+	resolveWorkspaceInviteLink,
 	useWorkspaceShareDialogQueries,
 } from "#/features/workspaces/components/workspace-share-queries";
 import {
@@ -55,6 +57,8 @@ export function WorkspaceShareDialog({
 	workspaceName,
 }: WorkspaceShareDialogProps) {
 	const queryClient = useQueryClient();
+	const [copyingRole, setCopyingRole] =
+		useState<WorkspaceMembershipRole | null>(null);
 	const grantableRoles = useMemo(
 		() => getGrantableInviteRoles(membershipRole),
 		[membershipRole],
@@ -70,11 +74,28 @@ export function WorkspaceShareDialog({
 	});
 
 	async function copyInviteLinkForRole(role: WorkspaceMembershipRole) {
-		const result = await queryClient.ensureQueryData(
-			getWorkspaceInviteLinkQueryOptions(workspaceId, role),
+		const cached = queryClient.getQueryData(
+			getWorkspaceInviteLinkQueryOptions(workspaceId, role).queryKey,
 		);
+		const needsFetch = !isWorkspaceInviteLinkCacheValid(cached);
 
-		await copy(buildClientAbsoluteUrl(result.path));
+		if (needsFetch) {
+			setCopyingRole(role);
+		}
+
+		try {
+			const result = await resolveWorkspaceInviteLink(
+				queryClient,
+				workspaceId,
+				role,
+			);
+
+			await copy(buildClientAbsoluteUrl(result.path));
+		} catch {
+			toast.error("Could not create invite link");
+		} finally {
+			setCopyingRole(null);
+		}
 	}
 
 	return (
@@ -107,11 +128,30 @@ export function WorkspaceShareDialog({
 				<DialogFooter className="flex-row items-center justify-end gap-2 border-t pt-4">
 					<DropdownMenu>
 						<DropdownMenuTrigger
-							render={<Button type="button" variant="outline" size="sm" />}
+							render={
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={copyingRole !== null}
+								/>
+							}
 						>
-							{copied ? <Check /> : <Link2 />}
-							{copied ? "Copied" : "Copy link"}
-							{copied ? null : <ChevronDown className="size-4 opacity-60" />}
+							{copyingRole !== null ? (
+								<Loader2 className="animate-spin" />
+							) : copied ? (
+								<Check />
+							) : (
+								<Link2 />
+							)}
+							{copyingRole !== null
+								? "Copying…"
+								: copied
+									? "Copied"
+									: "Copy link"}
+							{copyingRole !== null || copied ? null : (
+								<ChevronDown className="size-4 opacity-60" />
+							)}
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" side="bottom" className="w-56">
 							<DropdownMenuGroup>
@@ -121,10 +161,14 @@ export function WorkspaceShareDialog({
 								{grantableRoles.map((role) => (
 									<DropdownMenuItem
 										key={role}
+										disabled={copyingRole !== null}
 										onClick={() => {
 											void copyInviteLinkForRole(role);
 										}}
 									>
+										{copyingRole === role ? (
+											<Loader2 className="animate-spin" />
+										) : null}
 										{workspaceRoleLabels[role]}
 									</DropdownMenuItem>
 								))}
