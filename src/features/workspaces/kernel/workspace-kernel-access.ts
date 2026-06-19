@@ -156,6 +156,7 @@ export async function getWorkspaceKernelPage(input: {
 	workspaceId: string;
 	userId: string;
 	workspace: WorkspacePage["workspace"];
+	membershipRole: WorkspacePage["membershipRole"];
 }): Promise<WorkspacePage> {
 	const dbContext = await createDbContext();
 
@@ -168,6 +169,7 @@ export async function getWorkspaceKernelPage(input: {
 			workspace: input.workspace,
 			items: page.items,
 			revision: page.revision,
+			membershipRole: input.membershipRole,
 		};
 	} finally {
 		await dbContext.dispose();
