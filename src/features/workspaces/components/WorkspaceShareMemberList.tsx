@@ -8,7 +8,7 @@ import { WorkspaceShareRoleMenu } from "#/features/workspaces/components/Workspa
 import {
 	getWorkspaceEmailInvitesQueryKey,
 	getWorkspaceMembersQueryKey,
-} from "#/features/workspaces/components/workspace-share-query-keys";
+} from "#/features/workspaces/components/workspace-share-queries";
 import {
 	type WorkspaceEmailInviteSummary,
 	type WorkspaceMemberSummary,

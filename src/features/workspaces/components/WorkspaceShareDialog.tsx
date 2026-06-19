@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Link2 } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -23,23 +23,17 @@ import {
 import { WorkspaceShareEmailInviteField } from "#/features/workspaces/components/WorkspaceShareEmailInviteField";
 import { WorkspaceShareMemberList } from "#/features/workspaces/components/WorkspaceShareMemberList";
 import {
-	getWorkspaceEmailInvitesQueryKey,
-	getWorkspaceInviteLinkQueryKey,
-	getWorkspaceMembersQueryKey,
-} from "#/features/workspaces/components/workspace-share-query-keys";
+	getWorkspaceInviteLinkQueryOptions,
+	useWorkspaceShareDialogQueries,
+} from "#/features/workspaces/components/workspace-share-queries";
 import {
 	type WorkspaceMembershipRole,
 	workspaceRoleLabels,
 } from "#/features/workspaces/contracts";
 import {
-	getWorkspaceInviteLinkFn,
-	listWorkspaceEmailInvitesFn,
-} from "#/features/workspaces/invites/workspace-invite-functions";
-import {
 	defaultInviteLinkExpiryMs,
 	getGrantableInviteRoles,
 } from "#/features/workspaces/invites/workspace-invite-rules";
-import { listWorkspaceMembersFn } from "#/features/workspaces/members/workspace-member-functions";
 import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 
 const defaultInviteLinkExpiryDays = defaultInviteLinkExpiryMs / 86_400_000;
@@ -76,30 +70,16 @@ export function WorkspaceShareDialog({
 		resetTimeoutMs: 2000,
 		onError: () => toast.error("Could not copy invite link"),
 	});
-
-	const membersQuery = useQuery({
-		queryKey: getWorkspaceMembersQueryKey(workspaceId),
-		queryFn: () => listWorkspaceMembersFn({ data: { workspaceId } }),
-		enabled: open,
-	});
-
-	const emailInvitesQuery = useQuery({
-		queryKey: getWorkspaceEmailInvitesQueryKey(workspaceId),
-		queryFn: () => listWorkspaceEmailInvitesFn({ data: { workspaceId } }),
-		enabled: open,
+	const { emailInvites, isLoading, members } = useWorkspaceShareDialogQueries({
+		grantableRoles,
+		open,
+		workspaceId,
 	});
 
 	async function copyInviteLinkForRole(role: WorkspaceMembershipRole) {
-		const result = await queryClient.fetchQuery({
-			queryKey: getWorkspaceInviteLinkQueryKey(workspaceId, role),
-			queryFn: () =>
-				getWorkspaceInviteLinkFn({
-					data: {
-						workspaceId,
-						role,
-					},
-				}),
-		});
+		const result = await queryClient.ensureQueryData(
+			getWorkspaceInviteLinkQueryOptions(workspaceId, role),
+		);
 
 		await copy(getInviteUrl(result.path));
 	}
@@ -122,9 +102,9 @@ export function WorkspaceShareDialog({
 					/>
 					<div className="min-h-0 max-h-64 overflow-y-auto p-1">
 						<WorkspaceShareMemberList
-							emailInvites={emailInvitesQuery.data ?? []}
-							isLoading={membersQuery.isLoading || emailInvitesQuery.isLoading}
-							members={membersQuery.data ?? []}
+							emailInvites={emailInvites}
+							isLoading={isLoading}
+							members={members}
 							membershipRole={membershipRole}
 							workspaceId={workspaceId}
 						/>
