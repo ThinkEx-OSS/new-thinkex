@@ -12,7 +12,11 @@ import {
 import { toast } from "sonner";
 
 import { type Theme, useTheme } from "#/components/theme-provider";
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
@@ -33,9 +37,7 @@ import { getErrorMessage } from "#/lib/error-message";
 import { removeAuthSession } from "#/lib/session-query";
 
 const userMenuTriggerClassName =
-	"size-8 overflow-hidden rounded-full border-border bg-background p-0 shadow-xs hover:bg-muted focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0 dark:border-input dark:bg-input/30 dark:hover:bg-input/50";
-const userMenuAvatarClassName = "size-full after:border-0";
-const userMenuAvatarFallbackClassName = "bg-transparent";
+	"size-8 rounded-full p-0 hover:bg-muted focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0 dark:hover:bg-input/50";
 
 const themeOptions = [
 	{
@@ -85,16 +87,16 @@ export default function UserProfileDropdown() {
 				<DropdownMenuTrigger
 					render={
 						<Button
-							variant="outline"
+							variant="ghost"
 							size="icon-sm"
 							className={userMenuTriggerClassName}
 							aria-label="Open account menu"
 						/>
 					}
 				>
-					<Avatar className={userMenuAvatarClassName}>
+					<Avatar className="size-full">
 						<AvatarImage src={session.user.image ?? undefined} alt="" />
-						<AvatarFallback className={userMenuAvatarFallbackClassName}>
+						<AvatarFallback>
 							{displayName.charAt(0).toUpperCase()}
 						</AvatarFallback>
 					</Avatar>

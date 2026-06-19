@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, X } from "lucide-react";
-import { useMemo } from "react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
@@ -45,16 +44,18 @@ function sortMembersWithCurrentUserFirst(
 		return members;
 	}
 
-	const currentUser = members.find((member) => member.userId === currentUserId);
+	let currentUser: WorkspaceMemberSummary | undefined;
+	const rest: WorkspaceMemberSummary[] = [];
 
-	if (!currentUser) {
-		return members;
+	for (const member of members) {
+		if (member.userId === currentUserId) {
+			currentUser = member;
+		} else {
+			rest.push(member);
+		}
 	}
 
-	return [
-		currentUser,
-		...members.filter((member) => member.userId !== currentUserId),
-	];
+	return currentUser ? [currentUser, ...rest] : members;
 }
 
 export function WorkspaceShareMemberList({
@@ -72,12 +73,9 @@ export function WorkspaceShareMemberList({
 }) {
 	const queryClient = useQueryClient();
 	const assignableRoles = getAssignableMemberRoles(membershipRole);
-	const sessionQuery = useQuery(getAuthSessionQueryOptions());
-	const currentUserId = sessionQuery.data?.user.id;
-	const sortedMembers = useMemo(
-		() => sortMembersWithCurrentUserFirst(members, currentUserId),
-		[members, currentUserId],
-	);
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
+	const currentUserId = session?.user.id;
+	const sortedMembers = sortMembersWithCurrentUserFirst(members, currentUserId);
 
 	const updateRoleMutation = useMutation({
 		mutationFn: updateWorkspaceMemberRoleFn,
@@ -139,12 +137,9 @@ export function WorkspaceShareMemberList({
 				<WorkspaceShareMemberRow
 					key={member.userId}
 					assignableRoles={assignableRoles}
-					canManage={
-						member.userId !== currentUserId &&
-						canManageMember(membershipRole, member.role)
-					}
-					isCurrentUser={member.userId === currentUserId}
+					currentUserId={currentUserId}
 					member={member}
+					membershipRole={membershipRole}
 					onRemove={() =>
 						removeMemberMutation.mutate({
 							data: {
@@ -206,19 +201,23 @@ function WorkspaceShareEmailInviteRow({
 
 function WorkspaceShareMemberRow({
 	assignableRoles,
-	canManage,
-	isCurrentUser,
+	currentUserId,
 	member,
+	membershipRole,
 	onRemove,
 	onRoleChange,
 }: {
 	assignableRoles: WorkspaceMembershipRole[];
-	canManage: boolean;
-	isCurrentUser: boolean;
+	currentUserId: string | undefined;
 	member: WorkspaceMemberSummary;
+	membershipRole: WorkspaceMembershipRole;
 	onRemove: () => void;
 	onRoleChange: (role: WorkspaceMembershipRole) => void;
 }) {
+	const isCurrentUser = member.userId === currentUserId;
+	const canManage =
+		!isCurrentUser && canManageMember(membershipRole, member.role);
+
 	return (
 		<div className="flex items-center gap-2 rounded-md px-1 py-1.5 hover:bg-muted/50">
 			<Avatar size="sm">
