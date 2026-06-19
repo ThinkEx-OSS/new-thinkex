@@ -1,6 +1,5 @@
 import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
-import { useEffect, useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import {
@@ -10,6 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select";
+import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 import { cn } from "#/lib/utils";
 
 const codeFileExtensions: Record<string, string> = {
@@ -109,38 +109,11 @@ export const CodeBlockCopyButton = ({
 	className,
 	...props
 }: CodeBlockCopyButtonProps) => {
-	const [isCopied, setIsCopied] = useState(false);
-	const timeoutRef = useRef<number | null>(null);
-
-	const copyToClipboard = async () => {
-		if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-			onError?.(new Error("Clipboard API not available"));
-			return;
-		}
-
-		try {
-			await navigator.clipboard.writeText(code);
-			setIsCopied(true);
-			onCopy?.();
-
-			if (timeoutRef.current !== null) {
-				window.clearTimeout(timeoutRef.current);
-			}
-
-			timeoutRef.current = window.setTimeout(() => setIsCopied(false), timeout);
-		} catch (error) {
-			onError?.(error as Error);
-		}
-	};
-
-	useEffect(
-		() => () => {
-			if (timeoutRef.current !== null) {
-				window.clearTimeout(timeoutRef.current);
-			}
-		},
-		[],
-	);
+	const { copied: isCopied, copy } = useCopyToClipboard({
+		resetTimeoutMs: timeout,
+		onCopy,
+		onError,
+	});
 
 	const Icon = isCopied ? CheckIcon : CopyIcon;
 
@@ -148,7 +121,9 @@ export const CodeBlockCopyButton = ({
 		<Button
 			aria-label="Copy code"
 			className={cn("size-7 shrink-0 text-muted-foreground", className)}
-			onClick={copyToClipboard}
+			onClick={() => {
+				void copy(code);
+			}}
 			size="icon"
 			title="Copy code"
 			variant="ghost"

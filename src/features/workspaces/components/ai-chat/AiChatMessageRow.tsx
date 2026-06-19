@@ -1,5 +1,5 @@
 import { isToolUIPart } from "ai";
-import { Copy, RotateCcw } from "lucide-react";
+import { Check, Copy, RotateCcw } from "lucide-react";
 
 import {
 	Message,
@@ -19,7 +19,13 @@ import type {
 	AiChatMessagePart,
 } from "#/features/workspaces/components/ai-chat/types";
 import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
+import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 import { cn } from "#/lib/utils";
+
+const messageToolbarActionClass = cn(
+	workspaceToolbarIconButtonClass,
+	"text-muted-foreground/70 hover:text-foreground",
+);
 
 export default function AiChatMessageRow({
 	display,
@@ -91,31 +97,13 @@ export default function AiChatMessageRow({
 				!isStreaming ? (
 					<MessageToolbar className="mt-2 justify-start">
 						<MessageActions className="-ms-2.5">
-							{copyableText ? (
-								<MessageAction
-									tooltip="Copy response"
-									label="Copy response"
-									size="icon-sm"
-									className={cn(
-										workspaceToolbarIconButtonClass,
-										"text-muted-foreground/70 hover:text-foreground",
-									)}
-									onClick={() => {
-										void copyTextToClipboard(copyableText);
-									}}
-								>
-									<Copy className="size-4" />
-								</MessageAction>
-							) : null}
+							{copyableText ? <CopyResponseAction text={copyableText} /> : null}
 							{isRegenerable && onRegenerate ? (
 								<MessageAction
 									tooltip="Regenerate response"
 									label="Regenerate response"
 									size="icon-sm"
-									className={cn(
-										workspaceToolbarIconButtonClass,
-										"text-muted-foreground/70 hover:text-foreground",
-									)}
+									className={messageToolbarActionClass}
 									onClick={onRegenerate}
 								>
 									<RotateCcw className="size-4" />
@@ -189,6 +177,29 @@ function EmptyAssistantResponse({
 	);
 }
 
+function CopyResponseAction({ text }: { text: string }) {
+	const { copied, copy } = useCopyToClipboard({
+		onError: (error) => {
+			console.warn("[AiChatMessageRow] Failed to copy response", error);
+		},
+	});
+	const label = copied ? "Copied" : "Copy response";
+
+	return (
+		<MessageAction
+			tooltip={label}
+			label={label}
+			size="icon-sm"
+			className={messageToolbarActionClass}
+			onClick={() => {
+				void copy(text);
+			}}
+		>
+			{copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+		</MessageAction>
+	);
+}
+
 function getCopyableMessageText(message: AiChatMessage) {
 	const textParts: string[] = [];
 
@@ -199,14 +210,6 @@ function getCopyableMessageText(message: AiChatMessage) {
 	}
 
 	return textParts.join("\n\n").trim();
-}
-
-async function copyTextToClipboard(text: string) {
-	try {
-		await navigator.clipboard.writeText(text);
-	} catch (error) {
-		console.warn("[AiChatMessageRow] Failed to copy response", error);
-	}
 }
 
 function getMessagePartKey(
