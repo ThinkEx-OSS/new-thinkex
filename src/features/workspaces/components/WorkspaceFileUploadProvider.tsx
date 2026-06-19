@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { runWorkspaceFileUploadBatch } from "#/features/workspaces/files/workspace-file-upload";
 import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
 
@@ -28,11 +29,16 @@ export function WorkspaceFileUploadProvider({
 	workspaceId: string;
 }) {
 	const queryClient = useQueryClient();
+	const { capabilities } = useWorkspaceMutationAccess();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const parentIdRef = useRef<string | null>(null);
 
 	const uploadFiles = useCallback(
 		(files: Iterable<File>, parentId: string | null) => {
+			if (!capabilities.canMutateContent) {
+				return;
+			}
+
 			const fileList = Array.from(files);
 
 			if (fileList.length === 0) {
@@ -48,10 +54,14 @@ export function WorkspaceFileUploadProvider({
 				},
 			});
 		},
-		[queryClient, workspaceId],
+		[capabilities.canMutateContent, queryClient, workspaceId],
 	);
 
 	const requestFileUpload = (parentId: string | null) => {
+		if (!capabilities.canMutateContent) {
+			return;
+		}
+
 		parentIdRef.current = parentId;
 
 		if (inputRef.current) {

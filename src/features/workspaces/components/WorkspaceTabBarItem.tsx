@@ -8,6 +8,7 @@ import {
 } from "#/components/ui/context-menu";
 import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import type { WorkspaceTabLayoutElementHandler } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
 import { workspaceControlledSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
@@ -89,6 +90,7 @@ export function WorkspaceTabItem({
 		onBeforeClose(elementRef.current);
 		onClose();
 	};
+	const { capabilities } = useWorkspaceMutationAccess();
 	const { isDragSource, isDropTarget } = useSortable({
 		id: tab.id,
 		index,
@@ -96,6 +98,7 @@ export function WorkspaceTabItem({
 		handle: handleRef,
 		type: WORKSPACE_TAB_DRAG_TYPE,
 		accept: WORKSPACE_TAB_DRAG_TYPE,
+		disabled: !capabilities.canMutateContent,
 		collisionDetector: horizontalTabCollisionDetector,
 		transition: {
 			...WORKSPACE_SORTABLE_TAB_TRANSITION,

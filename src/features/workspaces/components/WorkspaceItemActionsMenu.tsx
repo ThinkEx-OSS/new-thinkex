@@ -28,6 +28,9 @@ import {
 } from "#/features/workspaces/components/WorkspaceMenuRenderers";
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
 import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
+import { workspaceMenuItemInteraction } from "#/features/workspaces/components/workspace-menu-actions";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
+import { WorkspaceViewerMenuNotice } from "#/features/workspaces/components/workspace-viewer-ui";
 import type { WorkspaceItemColor } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
@@ -103,13 +106,17 @@ export function WorkspaceItemActionsMenuContent({
 	renderer?: WorkspaceMenuRenderer;
 	menuKind?: "dropdown" | "context";
 }) {
+	const { capabilities } = useWorkspaceMutationAccess();
 	const updateWorkspaceItemColorMutation =
 		useUpdateWorkspaceItemColorMutation();
+	const readOnly = !capabilities.canMutateContent;
 
 	return (
 		<>
+			{readOnly ? <WorkspaceViewerMenuNotice menuKind={menuKind} /> : null}
 			<WorkspaceItemRenameMenuItem
 				item={item}
+				readOnly={readOnly}
 				renderer={renderer}
 				onRenameItem={onRenameItem}
 			/>
@@ -117,6 +124,7 @@ export function WorkspaceItemActionsMenuContent({
 				<WorkspaceItemColorSubmenu
 					item={item}
 					menuKind={menuKind}
+					readOnly={readOnly}
 					onUpdateItemColor={(color) =>
 						updateWorkspaceItemColorMutation.mutate({
 							workspaceId: item.workspaceId,
@@ -128,12 +136,14 @@ export function WorkspaceItemActionsMenuContent({
 			) : null}
 			<WorkspaceItemMoveMenuItem
 				item={item}
+				readOnly={readOnly}
 				renderer={renderer}
 				onMoveItem={onMoveItem}
 			/>
 			{renderer.separator("danger-separator")}
 			<WorkspaceItemDeleteMenuItem
 				item={item}
+				readOnly={readOnly}
 				renderer={renderer}
 				onDeleteItem={onDeleteItem}
 			/>
@@ -168,16 +178,20 @@ export function WorkspaceItemActionsContextMenuContent({
 
 function WorkspaceItemRenameMenuItem({
 	item,
+	readOnly,
 	renderer,
 	onRenameItem,
 }: {
 	item: WorkspaceItem;
+	readOnly: boolean;
 	renderer: WorkspaceMenuRenderer;
 	onRenameItem: (item: WorkspaceItem) => void;
 }) {
+	const interaction = workspaceMenuItemInteraction(readOnly, () => onRenameItem(item));
+
 	return renderer.item({
 		id: "rename",
-		onClick: () => onRenameItem(item),
+		...interaction,
 		children: (
 			<>
 				<Pencil className="size-4" />
@@ -190,10 +204,12 @@ function WorkspaceItemRenameMenuItem({
 function WorkspaceItemColorSubmenu({
 	item,
 	menuKind,
+	readOnly,
 	onUpdateItemColor,
 }: {
 	item: WorkspaceItem;
 	menuKind: "dropdown" | "context";
+	readOnly: boolean;
 	onUpdateItemColor: (color: WorkspaceItemColor) => void;
 }) {
 	const selectedColor = getWorkspaceItemColorValue(item.color);
@@ -205,13 +221,14 @@ function WorkspaceItemColorSubmenu({
 			onValueChange={onUpdateItemColor}
 			showLabels={false}
 			className="grid-flow-col grid-rows-4 gap-1.5"
+			disabled={readOnly}
 		/>
 	);
 
 	if (menuKind === "context") {
 		return (
 			<ContextMenuSub>
-				<ContextMenuSubTrigger>
+				<ContextMenuSubTrigger disabled={readOnly}>
 					{workspaceItemColorSubmenuTrigger}
 				</ContextMenuSubTrigger>
 				<ContextMenuSubContent className="max-w-[calc(100vw-2rem)] w-fit overflow-x-auto p-2">
@@ -223,7 +240,7 @@ function WorkspaceItemColorSubmenu({
 
 	return (
 		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>
+			<DropdownMenuSubTrigger disabled={readOnly}>
 				{workspaceItemColorSubmenuTrigger}
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="max-w-[calc(100vw-2rem)] w-fit overflow-x-auto p-2">
@@ -235,16 +252,20 @@ function WorkspaceItemColorSubmenu({
 
 function WorkspaceItemMoveMenuItem({
 	item,
+	readOnly,
 	renderer,
 	onMoveItem,
 }: {
 	item: WorkspaceItem;
+	readOnly: boolean;
 	renderer: WorkspaceMenuRenderer;
 	onMoveItem: (item: WorkspaceItem) => void;
 }) {
+	const interaction = workspaceMenuItemInteraction(readOnly, () => onMoveItem(item));
+
 	return renderer.item({
 		id: "move",
-		onClick: () => onMoveItem(item),
+		...interaction,
 		children: (
 			<>
 				<FolderInput className="size-4" />
@@ -256,17 +277,23 @@ function WorkspaceItemMoveMenuItem({
 
 function WorkspaceItemDeleteMenuItem({
 	item,
+	readOnly,
 	renderer,
 	onDeleteItem,
 }: {
 	item: WorkspaceItem;
+	readOnly: boolean;
 	renderer: WorkspaceMenuRenderer;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
+	const interaction = workspaceMenuItemInteraction(readOnly, () =>
+		onDeleteItem(item),
+	);
+
 	return renderer.item({
 		id: "delete",
 		variant: "destructive",
-		onClick: () => onDeleteItem(item),
+		...interaction,
 		children: (
 			<>
 				<Trash2 className="size-4" />

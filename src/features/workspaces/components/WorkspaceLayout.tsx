@@ -21,15 +21,16 @@ import {
 import WorkspaceSplitPresentation from "#/features/workspaces/components/WorkspaceSplitPresentation";
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
+import { WorkspaceMutationAccessProvider } from "#/features/workspaces/components/workspace-mutation-access";
 import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
-	WorkspaceMembershipRole,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { workspaceItemRequiresHeavyViewerRuntime } from "#/features/workspaces/model/workspace-file";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWorkspaceNavigation";
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
@@ -54,7 +55,6 @@ export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;
-	membershipRole: WorkspaceMembershipRole;
 	items: WorkspaceItem[];
 	revision: number;
 	activeTabIdFromUrl?: string;
@@ -63,7 +63,6 @@ interface WorkspaceShellProps {
 
 export function WorkspaceShell({
 	workspace,
-	membershipRole,
 	items,
 	revision,
 	activeTabIdFromUrl,
@@ -159,6 +158,10 @@ export function WorkspaceShell({
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => {
+		if (!getWorkspaceMemberCapabilities(workspace.membershipRole).canMutateContent) {
+			return;
+		}
+
 		createWorkspaceItemMutation.mutate({
 			id: crypto.randomUUID(),
 			workspaceId: workspace.id,
@@ -166,7 +169,6 @@ export function WorkspaceShell({
 			type: input.type,
 		});
 	};
-
 	useEffect(() => {
 		ensureWorkspaceUiSession({
 			workspaceId: workspace.id,
@@ -219,7 +221,6 @@ export function WorkspaceShell({
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}
-							membershipRole={membershipRole}
 							itemsById={itemsById}
 							tabs={session.tabs}
 							activeTab={activeTab}
@@ -297,11 +298,15 @@ export function WorkspaceShell({
 		</WorkspaceFileUploadProvider>
 	);
 
-	return hasHeavyViewerRuntimeItems ? (
-		<WorkspacePdfEngineProvider>
-			{workspaceInteractionContent}
-		</WorkspacePdfEngineProvider>
-	) : (
-		workspaceInteractionContent
+	return (
+		<WorkspaceMutationAccessProvider membershipRole={workspace.membershipRole}>
+			{hasHeavyViewerRuntimeItems ? (
+				<WorkspacePdfEngineProvider>
+					{workspaceInteractionContent}
+				</WorkspacePdfEngineProvider>
+			) : (
+				workspaceInteractionContent
+			)}
+		</WorkspaceMutationAccessProvider>
 	);
 }

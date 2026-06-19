@@ -4,6 +4,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { useState } from "react";
 
 import { Skeleton } from "#/components/ui/skeleton";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { DocumentAskSelectionMenu } from "#/features/workspaces/components/document-editor/DocumentAskSelectionMenu";
 import { DocumentWordCount } from "#/features/workspaces/components/document-editor/DocumentWordCount";
 import { useDocumentEditorToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
@@ -65,10 +66,12 @@ function DocumentEditorInstance({
 	toolbarSlotId?: string;
 	workspaceId: string;
 }) {
+	const { capabilities } = useWorkspaceMutationAccess();
 	const [scrollTarget, setScrollTarget] = useState<HTMLDivElement | null>(null);
 	const editor = useEditor({
 		immediatelyRender: false,
-		autofocus: "start",
+		autofocus: capabilities.canMutateContent ? "start" : false,
+		editable: capabilities.canMutateContent,
 		enableContentCheck: true,
 		onContentError: ({ disableCollaboration }) => {
 			disableCollaboration();
@@ -76,13 +79,18 @@ function DocumentEditorInstance({
 		extensions: getDocumentEditorExtensions(collaborationSession),
 		editorProps: {
 			attributes: {
-				"aria-label": `${item.name} editor`,
+				"aria-label": capabilities.canMutateContent
+					? `${item.name} editor`
+					: `${item.name} document`,
 				class: "workspace-document-prose min-h-full p-4 outline-none",
 			},
 		},
 	});
 
-	useDocumentEditorToolbar(toolbarSlotId ?? item.id, editor);
+	useDocumentEditorToolbar(
+		toolbarSlotId ?? item.id,
+		capabilities.canMutateContent ? editor : null,
+	);
 
 	return (
 		<section className="relative flex h-full min-h-0 flex-col bg-background">

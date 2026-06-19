@@ -5,7 +5,7 @@ import {
 	PointerSensor,
 } from "@dnd-kit/react";
 import type { ReactNode } from "react";
-
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { MoveWorkspaceItemsInput } from "#/features/workspaces/contracts";
 import {
 	type DndDragEndEvent,
@@ -63,6 +63,7 @@ export default function WorkspaceDragProvider({
 	onOpenItemInNewTab,
 	onWorkspaceDragCommand,
 }: WorkspaceDragProviderProps) {
+	const { capabilities } = useWorkspaceMutationAccess();
 	const handleDragEnd = (event: DndDragEndEvent) => {
 		const intent = getWorkspaceDropIntent({
 			event,
@@ -77,6 +78,10 @@ export default function WorkspaceDragProvider({
 
 		switch (intent.kind) {
 			case "workspace-drag-command":
+				if (!capabilities.canMutateContent) {
+					return;
+				}
+
 				onWorkspaceDragCommand(intent.command);
 				break;
 			case "add-items-to-ai-context":
@@ -86,6 +91,10 @@ export default function WorkspaceDragProvider({
 				onOpenItemInNewTab(intent.input);
 				break;
 			case "move-items":
+				if (!capabilities.canMutateContent) {
+					return;
+				}
+
 				onMoveItems(intent.input);
 				break;
 		}

@@ -80,7 +80,7 @@ export function WorkspaceItemTreePickerDialog({
 
 				<DialogFooter
 					className={cn(
-						"items-center px-5 pt-4 pb-5",
+						"mx-0 mb-0 items-center px-5 py-4",
 						hasFooterStart && "sm:justify-between",
 					)}
 				>

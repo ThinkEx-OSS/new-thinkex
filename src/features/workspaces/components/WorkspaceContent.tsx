@@ -34,6 +34,7 @@ import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/co
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -125,6 +126,7 @@ function WorkspaceBrowseContent({
 }: WorkspaceContentProps & {
 	actionDialogs: WorkspaceItemActionDialogsState;
 }) {
+	const { capabilities } = useWorkspaceMutationAccess();
 	const workspaceId = workspace.id;
 	const [deleteSelectedAlertOpen, setDeleteSelectedAlertOpen] = useState(false);
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
@@ -135,9 +137,14 @@ function WorkspaceBrowseContent({
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
 	const handleNativeFileDrop = (files: FileList) => {
+		if (!capabilities.canMutateContent) {
+			return;
+		}
+
 		uploadFiles(Array.from(files), parentId);
 	};
 	useNativeFileDropTarget({
+		enabled: capabilities.canMutateContent,
 		onActiveChange: setIsNativeFileDropTarget,
 		onDrop: handleNativeFileDrop,
 		targetRef: browseSurfaceRef,
@@ -232,7 +239,9 @@ function WorkspaceBrowseContent({
 									</EmptyMedia>
 									<EmptyTitle>No items in this folder</EmptyTitle>
 									<EmptyDescription>
-										Items you add here will appear in this workspace view.
+										{capabilities.canMutateContent
+											? "Items you add here will appear in this workspace view."
+											: "This folder is empty."}
 									</EmptyDescription>
 								</EmptyHeader>
 							</Empty>

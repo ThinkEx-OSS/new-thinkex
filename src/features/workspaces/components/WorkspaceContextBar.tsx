@@ -20,6 +20,7 @@ import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/Works
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import { WorkspaceSearchDialog } from "#/features/workspaces/components/WorkspaceSearchDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { WorkspaceToolbarGroup } from "#/features/workspaces/components/WorkspaceToolbar";
 import type {
 	WorkspaceItemType,
@@ -66,6 +67,7 @@ export default function WorkspaceContextBar({
 	onNavigateToRoot,
 	onNavigateToItem,
 }: WorkspaceContextBarProps) {
+	const { capabilities } = useWorkspaceMutationAccess();
 	const { Icon: WorkspaceIcon, color } = getWorkspaceDisplay(workspace);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const breadcrumbs = getWorkspaceBreadcrumbItems(activeItem, itemsById);
@@ -108,9 +110,10 @@ export default function WorkspaceContextBar({
 									isCurrent={false}
 									onClick={onNavigateToRoot}
 								/>
-							) : (
+							) : capabilities.canMutateContent ? (
 								<WorkspaceSettingsDialog
 									workspace={workspace}
+									capabilities={capabilities}
 									trigger={
 										<button
 											type="button"
@@ -127,6 +130,15 @@ export default function WorkspaceContextBar({
 										</button>
 									}
 								/>
+							) : (
+								<BreadcrumbPage className={breadcrumbCurrentClassName}>
+									<CrumbContent
+										icon={WorkspaceIcon}
+										label={workspace.name}
+										iconClassName={color.text}
+										isCurrent={true}
+									/>
+								</BreadcrumbPage>
 							)}
 						</BreadcrumbItem>
 						{breadcrumbs.map((item) => (

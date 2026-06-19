@@ -2,6 +2,7 @@ import { FolderInput, MessageSquare, Trash2, X } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 
 interface WorkspaceSelectionActionBarProps {
 	selectedCount: number;
@@ -18,9 +19,13 @@ export default function WorkspaceSelectionActionBar({
 	onDelete,
 	onClear,
 }: WorkspaceSelectionActionBarProps) {
+	const { capabilities } = useWorkspaceMutationAccess();
+
 	if (selectedCount === 0) {
 		return null;
 	}
+
+	const canMutateContent = capabilities.canMutateContent;
 
 	return (
 		<div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
@@ -37,19 +42,28 @@ export default function WorkspaceSelectionActionBar({
 					<MessageSquare className="size-4" aria-hidden="true" />
 					Chat
 				</Button>
-				<Button type="button" size="default" variant="outline" onClick={onMove}>
-					<FolderInput className="size-4" aria-hidden="true" />
-					Move
-				</Button>
-				<Button
-					type="button"
-					size="default"
-					variant="destructive"
-					onClick={onDelete}
-				>
-					<Trash2 className="size-4" aria-hidden="true" />
-					Delete
-				</Button>
+				{canMutateContent ? (
+					<>
+						<Button
+							type="button"
+							size="default"
+							variant="outline"
+							onClick={onMove}
+						>
+							<FolderInput className="size-4" aria-hidden="true" />
+							Move
+						</Button>
+						<Button
+							type="button"
+							size="default"
+							variant="destructive"
+							onClick={onDelete}
+						>
+							<Trash2 className="size-4" aria-hidden="true" />
+							Delete
+						</Button>
+					</>
+				) : null}
 				<WorkspaceToolbarIconButton
 					aria-label="Clear selection"
 					onClick={onClear}

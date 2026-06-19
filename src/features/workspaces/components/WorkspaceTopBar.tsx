@@ -18,7 +18,6 @@ import {
 	WorkspaceToolbarTextButton,
 } from "#/features/workspaces/components/WorkspaceToolbar";
 import type {
-	WorkspaceMembershipRole,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -31,7 +30,6 @@ type PresenceStatus = "connecting" | "connected" | "disconnected";
 
 interface WorkspaceTopBarProps {
 	workspace: WorkspaceSummary;
-	membershipRole: WorkspaceMembershipRole;
 	itemsById: Map<string, WorkspaceItem>;
 	tabs: WorkspaceTab[];
 	activeTab: WorkspaceTab;
@@ -51,7 +49,6 @@ interface WorkspaceTopBarProps {
 
 export default function WorkspaceTopBar({
 	workspace,
-	membershipRole,
 	itemsById,
 	tabs,
 	activeTab,
@@ -107,13 +104,13 @@ export default function WorkspaceTopBar({
 					className="flex shrink-0 items-center gap-2"
 					aria-label="Workspace global actions"
 				>
+					<WorkspacePresence status={presence.status} users={presence.users} />
 					<WorkspaceToolbarIconButton
 						aria-label="Share workspace"
 						onClick={() => setShareOpen(true)}
 					>
 						<Share2 />
 					</WorkspaceToolbarIconButton>
-					<WorkspacePresence status={presence.status} users={presence.users} />
 					<UserProfileDropdown />
 					{isCollapsed ? (
 						<Tooltip>
@@ -139,7 +136,7 @@ export default function WorkspaceTopBar({
 			</div>
 			{contextBar}
 			<WorkspaceShareDialog
-				membershipRole={membershipRole}
+				membershipRole={workspace.membershipRole}
 				onOpenChange={setShareOpen}
 				open={shareOpen}
 				workspaceId={workspace.id}
