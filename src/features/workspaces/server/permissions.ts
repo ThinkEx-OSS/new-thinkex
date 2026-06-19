@@ -98,7 +98,6 @@ export async function assertCanGrantWorkspaceRole(
 	db: Db,
 	input: { workspaceId: string; userId: string; role: WorkspaceRole },
 ) {
-	await assertCanReadWorkspace(db, input);
 	const memberRole = await getWorkspaceMemberRole(db, input);
 
 	if (!memberRole || !canGrantRole(memberRole, input.role)) {
