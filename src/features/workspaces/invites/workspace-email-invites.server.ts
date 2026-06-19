@@ -8,6 +8,11 @@ import {
 } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
 import type { WorkspaceEmailInviteSummary } from "#/features/workspaces/contracts";
+import {
+	sendWorkspaceInviteEmails,
+	type WorkspaceInviteEmailDeliveryFailure,
+	type WorkspaceInviteEmailPayload,
+} from "#/features/workspaces/invites/workspace-invite-email";
 import type { WorkspaceRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import {
 	canGrantRole,
@@ -16,11 +21,6 @@ import {
 	isValidInviteEmail,
 	normalizeInviteEmail,
 } from "#/features/workspaces/invites/workspace-invite-rules";
-import {
-	sendWorkspaceInviteEmails,
-	type WorkspaceInviteEmailDeliveryFailure,
-	type WorkspaceInviteEmailPayload,
-} from "#/features/workspaces/invites/workspace-invite-email";
 import { WorkspaceInviteError } from "#/features/workspaces/invites/workspace-invites.server";
 import {
 	assertCanGrantWorkspaceRole,

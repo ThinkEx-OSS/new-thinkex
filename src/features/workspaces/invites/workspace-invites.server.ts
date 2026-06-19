@@ -14,10 +14,8 @@ import {
 	isInviteExpired,
 	resolveRoleAfterAccept,
 } from "#/features/workspaces/invites/workspace-invite-rules";
+import { assertCanGrantWorkspaceRole } from "#/features/workspaces/server/permissions";
 import { buildInvitePath } from "#/lib/client-url";
-import {
-	assertCanGrantWorkspaceRole,
-} from "#/features/workspaces/server/permissions";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 

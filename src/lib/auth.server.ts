@@ -5,10 +5,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 import * as schema from "#/db/schema";
 import { createDbContext } from "#/db/server";
-import {
-	getAppOrigin,
-	getTrustedAppOrigins,
-} from "#/lib/app-origin";
+import { getAppOrigin, getTrustedAppOrigins } from "#/lib/app-origin";
 
 const isProduction = import.meta.env.PROD;
 
