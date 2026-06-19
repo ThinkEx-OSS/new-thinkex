@@ -1,4 +1,7 @@
+import { getAgentByName } from "agents";
+
 import { createDbContext } from "#/db/server";
+import { workspaceKernelAgentName } from "#/features/workspaces/agent-routes";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemsInput,
@@ -348,10 +351,12 @@ export async function getWorkspaceKernel(workspaceId: string) {
 	return getWorkspaceKernelFromEnv(env, workspaceId);
 }
 
-export function getWorkspaceKernelFromEnv(env: Env, workspaceId: string) {
-	const workspaceKernelNamespace = env.WorkspaceKernel as unknown as {
-		getByName(name: string): WorkspaceKernelClient;
-	};
-
-	return workspaceKernelNamespace.getByName(workspaceId);
+export async function getWorkspaceKernelFromEnv(
+	env: Env,
+	workspaceId: string,
+): Promise<WorkspaceKernelClient> {
+	return getAgentByName(
+		env[workspaceKernelAgentName],
+		workspaceId,
+	) as unknown as WorkspaceKernelClient;
 }

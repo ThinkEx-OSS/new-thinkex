@@ -26,7 +26,10 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 		const artifactKey = getExtractionArtifactKey(event.instanceId);
 
 		await step.do("mark extraction processing", async () => {
-			const kernel = getWorkspaceKernelFromEnv(this.env, params.workspaceId);
+			const kernel = await getWorkspaceKernelFromEnv(
+				this.env,
+				params.workspaceId,
+			);
 			await kernel.upsertFileProjection({
 				itemId: params.itemId,
 				format: "markdown",
@@ -49,7 +52,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					timeout: "10 minutes",
 				},
 				async () => {
-					const kernel = getWorkspaceKernelFromEnv(
+					const kernel = await getWorkspaceKernelFromEnv(
 						this.env,
 						params.workspaceId,
 					);
@@ -105,7 +108,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					timeout: "5 minutes",
 				},
 				async () => {
-					const kernel = getWorkspaceKernelFromEnv(
+					const kernel = await getWorkspaceKernelFromEnv(
 						this.env,
 						params.workspaceId,
 					);
@@ -156,7 +159,10 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 			return result;
 		} catch (error) {
 			await step.do("mark extraction failed", async () => {
-				const kernel = getWorkspaceKernelFromEnv(this.env, params.workspaceId);
+				const kernel = await getWorkspaceKernelFromEnv(
+				this.env,
+				params.workspaceId,
+			);
 				const errorMessage = getErrorMessage(error);
 				await kernel.upsertFileProjection({
 					itemId: params.itemId,

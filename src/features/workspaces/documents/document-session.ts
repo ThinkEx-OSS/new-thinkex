@@ -25,27 +25,14 @@ import {
 	getTiptapDocumentSchema,
 	tiptapDocumentYjsField,
 } from "#/features/workspaces/documents/tiptap-schema";
+import {
+	getWorkspaceKernelFromEnv,
+	type WorkspaceKernelClient,
+} from "#/features/workspaces/kernel/workspace-kernel-access";
 
 const persistedYDocUpdateKey = "document-session:yjs-update";
 const checkpointDelayMs = 1_500;
 const checkpointMaxWaitMs = 8_000;
-
-interface WorkspaceKernelClient {
-	readItem(input: { itemId: string }): Promise<{
-		item: { type: string };
-		content: string | null;
-	}>;
-	writeItem(input: {
-		itemId: string;
-		content: string;
-		actorUserId?: string | null;
-		clientMutationId?: string | null;
-	}): Promise<unknown>;
-}
-
-interface WorkspaceKernelNamespace {
-	getByName(name: string): WorkspaceKernelClient;
-}
 
 export interface DocumentSessionApplyMarkdownEditsInput {
 	edits: DocumentMarkdownEdit[];
@@ -70,7 +57,7 @@ export class DocumentSession extends YServer {
 
 	override async onLoad() {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		const kernel = this.getWorkspaceKernel(room.workspaceId);
+		const kernel = await this.getWorkspaceKernel(room.workspaceId);
 		const { item, content } = await kernel.readItem({ itemId: room.itemId });
 
 		if (item.type !== "document") {
@@ -151,7 +138,7 @@ export class DocumentSession extends YServer {
 		const document = tiptapDocumentJsonSchema.parse(
 			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
 		);
-		const kernel = this.getWorkspaceKernel(room.workspaceId);
+		const kernel = await this.getWorkspaceKernel(room.workspaceId);
 
 		await kernel.writeItem({
 			itemId: room.itemId,
@@ -187,12 +174,10 @@ export class DocumentSession extends YServer {
 		);
 	}
 
-	private getWorkspaceKernel(workspaceId: string): WorkspaceKernelClient {
-		// Keep this DO decoupled from the generated WorkspaceKernel RPC type,
-		// which is too deep for tsgo to instantiate through Env.
-		const namespace = this.env
-			.WorkspaceKernel as unknown as WorkspaceKernelNamespace;
-		return namespace.getByName(workspaceId);
+	private async getWorkspaceKernel(
+		workspaceId: string,
+	): Promise<WorkspaceKernelClient> {
+		return getWorkspaceKernelFromEnv(this.env, workspaceId);
 	}
 }
 
