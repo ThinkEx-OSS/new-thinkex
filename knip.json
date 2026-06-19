@@ -17,8 +17,6 @@
 		"@tailwindcss/typography",
 		"@tanstack/devtools-event-client",
 		"@tanstack/router-plugin",
-		"@testing-library/dom",
-		"@testing-library/react",
 		"cloudflare",
 		"shadcn",
 		"tailwindcss",
