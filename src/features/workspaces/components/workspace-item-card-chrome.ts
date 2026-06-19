@@ -38,4 +38,7 @@ export const workspaceItemDocumentPreviewPanelClass =
 export const workspaceItemDocumentPreviewTextClass =
 	"size-full overflow-hidden break-words whitespace-pre-line text-[11px] leading-[1.45] text-muted-foreground/70 line-clamp-[11]";
 
+export const workspaceItemDocumentPreviewEmptyClass =
+	"flex size-full flex-col justify-start gap-1.5 pt-0.5";
+
 export const workspaceItemPreviewIconClass = "size-10";

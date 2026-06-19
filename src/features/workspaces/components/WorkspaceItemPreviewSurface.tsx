@@ -1,6 +1,8 @@
 import { useState } from "react";
 
+import { Skeleton } from "#/components/ui/skeleton";
 import {
+	workspaceItemDocumentPreviewEmptyClass,
 	workspaceItemDocumentPreviewPanelClass,
 	workspaceItemDocumentPreviewTextClass,
 	workspaceItemPreviewContentLayerClass,
@@ -14,9 +16,6 @@ import {
 	resolveWorkspaceFileTypeFromItem,
 } from "#/features/workspaces/model/workspace-file";
 import { cn } from "#/lib/utils";
-
-const DOCUMENT_PREVIEW_PLACEHOLDER =
-	"Outline the main idea first, then expand with supporting details. Notes, drafts, and references can live here as the document grows over time.";
 
 interface WorkspaceItemPreviewSurfaceProps {
 	item: WorkspaceItem;
@@ -40,10 +39,24 @@ function WorkspaceItemDocumentPreview({ item }: { item: WorkspaceItem }) {
 
 	return (
 		<div className={workspaceItemPreviewContentLayerClass}>
-			<div className={workspaceItemDocumentPreviewPanelClass}>
-				<p className={workspaceItemDocumentPreviewTextClass}>
-					{previewText || DOCUMENT_PREVIEW_PLACEHOLDER}
-				</p>
+			{previewText ? (
+				<div className={workspaceItemDocumentPreviewPanelClass}>
+					<p className={workspaceItemDocumentPreviewTextClass}>{previewText}</p>
+				</div>
+			) : (
+				<WorkspaceItemDocumentPreviewEmpty />
+			)}
+		</div>
+	);
+}
+
+function WorkspaceItemDocumentPreviewEmpty() {
+	return (
+		<div className={workspaceItemDocumentPreviewPanelClass} aria-hidden="true">
+			<div className={workspaceItemDocumentPreviewEmptyClass}>
+				<Skeleton className="h-2 w-[42%] rounded-sm bg-muted-foreground/10" />
+				<Skeleton className="h-2 w-full rounded-sm bg-muted-foreground/8" />
+				<Skeleton className="h-2 w-[78%] rounded-sm bg-muted-foreground/8" />
 			</div>
 		</div>
 	);
