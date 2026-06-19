@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, isNotNull, isNull, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
 	user,
@@ -7,20 +7,16 @@ import {
 	workspaces,
 } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
-import type { WorkspaceEmailInviteSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import {
-	canGrantRole,
+	createInviteToken,
 	getDefaultInviteLinkExpiresAt,
 	isInviteExpired,
-	isValidInviteEmail,
-	normalizeInviteEmail,
 	resolveRoleAfterAccept,
 } from "#/features/workspaces/invites/workspace-invite-rules";
+import { buildInvitePath } from "#/lib/client-url";
 import {
-	assertCanReadWorkspace,
-	getWorkspaceMemberRole,
-	WorkspaceForbiddenError,
+	assertCanGrantWorkspaceRole,
 } from "#/features/workspaces/server/permissions";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
@@ -38,28 +34,6 @@ export interface WorkspaceInvitePreview {
 	role: WorkspaceRole;
 	workspaceId: string;
 	workspaceName: string;
-}
-
-function createInviteToken() {
-	return crypto.randomUUID().replaceAll("-", "");
-}
-
-async function assertCanGrantWorkspaceRole(
-	db: Db,
-	input: { workspaceId: string; userId: string; role: WorkspaceRole },
-) {
-	await assertCanReadWorkspace(db, input);
-	const memberRole = await getWorkspaceMemberRole(db, input);
-
-	if (!memberRole || !canGrantRole(memberRole, input.role)) {
-		throw new WorkspaceForbiddenError();
-	}
-
-	return memberRole;
-}
-
-function getInvitePath(token: string) {
-	return `/invite/${token}`;
 }
 
 export async function getWorkspaceInvitePreview(db: Db, token: string) {
@@ -92,14 +66,14 @@ export async function getWorkspaceInvitePreview(db: Db, token: string) {
 		role: row.role,
 		workspaceId: row.workspaceId,
 		workspaceName: row.workspaceName,
-	} satisfies WorkspaceInvitePreview;
+	};
 }
 
 export async function acceptWorkspaceInvite(
 	db: Db,
 	input: { token: string; userId: string },
 ) {
-	const preview = await getWorkspaceInvitePreview(db, input.token);
+	const invite = await getWorkspaceInvitePreview(db, input.token);
 
 	return db.transaction(async (tx) => {
 		const [existingMembership] = await tx
@@ -110,15 +84,15 @@ export async function acceptWorkspaceInvite(
 			.from(workspaceMembers)
 			.where(
 				and(
-					eq(workspaceMembers.workspaceId, preview.workspaceId),
+					eq(workspaceMembers.workspaceId, invite.workspaceId),
 					eq(workspaceMembers.userId, input.userId),
 				),
 			)
 			.limit(1);
 
 		const resolvedRole = existingMembership
-			? resolveRoleAfterAccept(existingMembership.role, preview.role)
-			: preview.role;
+			? resolveRoleAfterAccept(existingMembership.role, invite.role)
+			: invite.role;
 
 		if (existingMembership) {
 			if (resolvedRole !== existingMembership.role) {
@@ -130,7 +104,7 @@ export async function acceptWorkspaceInvite(
 		} else {
 			await tx.insert(workspaceMembers).values({
 				id: crypto.randomUUID(),
-				workspaceId: preview.workspaceId,
+				workspaceId: invite.workspaceId,
 				userId: input.userId,
 				role: resolvedRole,
 			});
@@ -138,7 +112,7 @@ export async function acceptWorkspaceInvite(
 
 		return {
 			role: resolvedRole,
-			workspaceId: preview.workspaceId,
+			workspaceId: invite.workspaceId,
 		};
 	});
 }
@@ -172,7 +146,7 @@ export async function getOrCreateWorkspaceInviteLink(
 	if (existingInvite?.token && !isInviteExpired(existingInvite.expiresAt)) {
 		return {
 			expiresAt: existingInvite.expiresAt,
-			path: getInvitePath(existingInvite.token),
+			path: buildInvitePath(existingInvite.token),
 		};
 	}
 
@@ -206,212 +180,6 @@ export async function getOrCreateWorkspaceInviteLink(
 
 	return {
 		expiresAt,
-		path: getInvitePath(token),
+		path: buildInvitePath(token),
 	};
-}
-
-export async function listWorkspaceEmailInvites(
-	db: Db,
-	input: { workspaceId: string; userId: string },
-): Promise<WorkspaceEmailInviteSummary[]> {
-	await assertCanReadWorkspace(db, input);
-
-	const now = new Date();
-
-	const rows = await db
-		.select({
-			id: workspaceInvites.id,
-			email: workspaceInvites.email,
-			role: workspaceInvites.role,
-			createdAt: workspaceInvites.createdAt,
-		})
-		.from(workspaceInvites)
-		.where(
-			and(
-				eq(workspaceInvites.workspaceId, input.workspaceId),
-				eq(workspaceInvites.type, "email"),
-				eq(workspaceInvites.status, "pending"),
-				isNotNull(workspaceInvites.email),
-				or(
-					isNull(workspaceInvites.expiresAt),
-					gt(workspaceInvites.expiresAt, now),
-				),
-			),
-		)
-		.orderBy(asc(workspaceInvites.createdAt));
-
-	return rows.flatMap((row) => {
-		if (row.email === null) {
-			return [];
-		}
-
-		return [
-			{
-				id: row.id,
-				email: row.email,
-				role: row.role,
-				createdAt: row.createdAt,
-			},
-		];
-	});
-}
-
-export interface CreateWorkspaceEmailInvitesResult {
-	invited: string[];
-	skipped: Array<{
-		email: string;
-		reason: "already_member" | "invalid_email";
-	}>;
-}
-
-export async function createWorkspaceEmailInvites(
-	db: Db,
-	input: {
-		workspaceId: string;
-		userId: string;
-		role: WorkspaceRole;
-		emails: string[];
-	},
-): Promise<CreateWorkspaceEmailInvitesResult> {
-	await assertCanGrantWorkspaceRole(db, input);
-
-	const invited: string[] = [];
-	const skipped: CreateWorkspaceEmailInvitesResult["skipped"] = [];
-	const uniqueEmails = [
-		...new Set(input.emails.map((email) => normalizeInviteEmail(email))),
-	];
-
-	if (uniqueEmails.length === 0) {
-		return { invited, skipped };
-	}
-
-	const validEmails = uniqueEmails.filter((email) => {
-		if (!isValidInviteEmail(email)) {
-			skipped.push({ email, reason: "invalid_email" });
-			return false;
-		}
-
-		return true;
-	});
-
-	if (validEmails.length === 0) {
-		return { invited, skipped };
-	}
-
-	const existingMembers = await db
-		.select({ email: user.email })
-		.from(workspaceMembers)
-		.innerJoin(user, eq(workspaceMembers.userId, user.id))
-		.where(eq(workspaceMembers.workspaceId, input.workspaceId));
-
-	const memberEmails = new Set(
-		existingMembers.map((row) => normalizeInviteEmail(row.email)),
-	);
-
-	const emailsToInvite = validEmails.filter((email) => {
-		if (memberEmails.has(email)) {
-			skipped.push({ email, reason: "already_member" });
-			return false;
-		}
-
-		return true;
-	});
-
-	if (emailsToInvite.length === 0) {
-		return { invited, skipped };
-	}
-
-	const existingInvites = await db
-		.select({
-			id: workspaceInvites.id,
-			email: workspaceInvites.email,
-		})
-		.from(workspaceInvites)
-		.where(
-			and(
-				eq(workspaceInvites.workspaceId, input.workspaceId),
-				eq(workspaceInvites.type, "email"),
-				eq(workspaceInvites.status, "pending"),
-				inArray(workspaceInvites.email, emailsToInvite),
-			),
-		);
-
-	const existingInviteByEmail = new Map(
-		existingInvites.flatMap((row) =>
-			row.email ? [[normalizeInviteEmail(row.email), row.id] as const] : [],
-		),
-	);
-
-	const expiresAt = getDefaultInviteLinkExpiresAt();
-
-	for (const email of emailsToInvite) {
-		const existingInviteId = existingInviteByEmail.get(email);
-
-		if (existingInviteId) {
-			await db
-				.update(workspaceInvites)
-				.set({
-					role: input.role,
-					createdByUserId: input.userId,
-					expiresAt,
-				})
-				.where(eq(workspaceInvites.id, existingInviteId));
-		} else {
-			await db.insert(workspaceInvites).values({
-				id: crypto.randomUUID(),
-				workspaceId: input.workspaceId,
-				role: input.role,
-				type: "email",
-				status: "pending",
-				email,
-				createdByUserId: input.userId,
-				expiresAt,
-			});
-		}
-
-		invited.push(email);
-	}
-
-	return { invited, skipped };
-}
-
-export async function cancelWorkspaceEmailInvite(
-	db: Db,
-	input: {
-		workspaceId: string;
-		userId: string;
-		inviteId: string;
-	},
-) {
-	await assertCanReadWorkspace(db, input);
-	const memberRole = await getWorkspaceMemberRole(db, input);
-
-	const [invite] = await db
-		.select({
-			id: workspaceInvites.id,
-			role: workspaceInvites.role,
-		})
-		.from(workspaceInvites)
-		.where(
-			and(
-				eq(workspaceInvites.id, input.inviteId),
-				eq(workspaceInvites.workspaceId, input.workspaceId),
-				eq(workspaceInvites.type, "email"),
-				eq(workspaceInvites.status, "pending"),
-			),
-		)
-		.limit(1);
-
-	if (!invite) {
-		throw new WorkspaceInviteError("Invite not found.");
-	}
-
-	if (!memberRole || !canGrantRole(memberRole, invite.role)) {
-		throw new WorkspaceForbiddenError();
-	}
-
-	await db
-		.update(workspaceInvites)
-		.set({ status: "revoked" })
-		.where(eq(workspaceInvites.id, invite.id));
 }

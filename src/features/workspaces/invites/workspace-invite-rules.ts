@@ -61,6 +61,10 @@ export function getDefaultInviteLinkExpiresAt(now = new Date()) {
 	return new Date(now.getTime() + defaultInviteLinkExpiryMs);
 }
 
+export function createInviteToken() {
+	return crypto.randomUUID().replaceAll("-", "");
+}
+
 export function getGrantableInviteRoles(inviterRole: WorkspaceRole) {
 	return workspaceRoles.filter((role) => canGrantRole(inviterRole, role));
 }

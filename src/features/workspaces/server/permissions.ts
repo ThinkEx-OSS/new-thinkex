@@ -4,9 +4,11 @@ import { and, eq, isNull } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
+import { canGrantRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import { getSessionFromHeaders } from "#/lib/auth-queries.server";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
+type WorkspaceRole = WorkspaceMembershipRole;
 
 export class WorkspaceAuthError extends Error {
 	constructor() {
@@ -90,4 +92,18 @@ export async function assertCanDeleteWorkspace(
 	if (role !== "owner") {
 		throw new WorkspaceForbiddenError();
 	}
+}
+
+export async function assertCanGrantWorkspaceRole(
+	db: Db,
+	input: { workspaceId: string; userId: string; role: WorkspaceRole },
+) {
+	await assertCanReadWorkspace(db, input);
+	const memberRole = await getWorkspaceMemberRole(db, input);
+
+	if (!memberRole || !canGrantRole(memberRole, input.role)) {
+		throw new WorkspaceForbiddenError();
+	}
+
+	return memberRole;
 }

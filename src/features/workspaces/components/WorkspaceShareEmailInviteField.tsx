@@ -48,20 +48,35 @@ export function WorkspaceShareEmailInviteField({
 				queryKey: getWorkspaceEmailInvitesQueryKey(workspaceId),
 			});
 
-			if (result.invited.length > 0) {
-				const count = result.invited.length;
+			const { delivered, persisted, failedToSend, skipped } = result;
+
+			if (delivered.length > 0) {
 				toast.success(
-					count === 1
-						? "Invite saved for 1 person"
-						: `Invites saved for ${count} people`,
+					delivered.length === 1
+						? "Invite email sent to 1 person"
+						: `Invite emails sent to ${delivered.length} people`,
+				);
+			} else if (persisted.length > 0) {
+				toast.message(
+					persisted.length === 1
+						? "Invite saved, but the email could not be sent"
+						: `Invites saved, but emails could not be sent to ${persisted.length} people`,
 				);
 			}
 
-			if (result.skipped.length > 0) {
-				const alreadyMembers = result.skipped.filter(
+			if (failedToSend.length > 0 && delivered.length > 0) {
+				toast.error(
+					failedToSend.length === 1
+						? "Could not send email to 1 address"
+						: `Could not send email to ${failedToSend.length} addresses`,
+				);
+			}
+
+			if (skipped.length > 0) {
+				const alreadyMembers = skipped.filter(
 					(entry) => entry.reason === "already_member",
 				).length;
-				const invalid = result.skipped.filter(
+				const invalid = skipped.filter(
 					(entry) => entry.reason === "invalid_email",
 				).length;
 
