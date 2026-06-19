@@ -35,6 +35,7 @@ import {
 	getGrantableInviteRoles,
 } from "#/features/workspaces/invites/workspace-invite-rules";
 import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
+import { buildClientAbsoluteUrl } from "#/lib/client-url";
 
 const defaultInviteLinkExpiryDays = defaultInviteLinkExpiryMs / 86_400_000;
 
@@ -44,14 +45,6 @@ interface WorkspaceShareDialogProps {
 	open: boolean;
 	workspaceId: string;
 	workspaceName: string;
-}
-
-function getInviteUrl(path: string) {
-	if (typeof window === "undefined") {
-		return path;
-	}
-
-	return `${window.location.origin}${path}`;
 }
 
 export function WorkspaceShareDialog({
@@ -81,7 +74,7 @@ export function WorkspaceShareDialog({
 			getWorkspaceInviteLinkQueryOptions(workspaceId, role),
 		);
 
-		await copy(getInviteUrl(result.path));
+		await copy(buildClientAbsoluteUrl(result.path));
 	}
 
 	return (

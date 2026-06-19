@@ -8,6 +8,7 @@ import {
 	acceptWorkspaceInviteFn,
 	getWorkspaceInvitePreviewFn,
 } from "#/features/workspaces/invites/workspace-invite-functions";
+import { buildInvitePath } from "#/lib/client-url";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/invite/$token")({
@@ -68,7 +69,7 @@ function InviteScreen({ children }: { children: ReactNode }) {
 function InviteLandingPage() {
 	const { token } = Route.useParams();
 	const preview = Route.useLoaderData();
-	const callbackURL = `/invite/${token}`;
+	const callbackURL = buildInvitePath(token);
 
 	return (
 		<InviteScreen>

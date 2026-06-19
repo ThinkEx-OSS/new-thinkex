@@ -1,3 +1,5 @@
+import { getClientOrigin } from "#/lib/client-url";
+
 export const userAIAgentName = "UserAIStore";
 export const aiThreadAgentName = "AIThread";
 export const userAIPathPrefix = "/user-ai";
@@ -69,13 +71,15 @@ export function getDocumentSessionRoomName(input: {
 }
 
 export function getDocumentSessionBaseUrl(workspaceId: string) {
-	if (typeof window === "undefined") {
+	const origin = getClientOrigin();
+
+	if (!origin) {
 		return "";
 	}
 
 	const url = new URL(
 		`${documentSessionPathPrefix}/${encodeURIComponent(workspaceId)}`,
-		window.location.origin,
+		origin,
 	);
 	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 
