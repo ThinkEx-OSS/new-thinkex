@@ -24,6 +24,7 @@ import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
 import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
+	WorkspaceMembershipRole,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -53,6 +54,7 @@ export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 interface WorkspaceShellProps {
 	workspace: WorkspaceSummary;
+	membershipRole: WorkspaceMembershipRole;
 	items: WorkspaceItem[];
 	revision: number;
 	activeTabIdFromUrl?: string;
@@ -61,6 +63,7 @@ interface WorkspaceShellProps {
 
 export function WorkspaceShell({
 	workspace,
+	membershipRole,
 	items,
 	revision,
 	activeTabIdFromUrl,
@@ -216,6 +219,7 @@ export function WorkspaceShell({
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}
+							membershipRole={membershipRole}
 							itemsById={itemsById}
 							tabs={session.tabs}
 							activeTab={activeTab}
