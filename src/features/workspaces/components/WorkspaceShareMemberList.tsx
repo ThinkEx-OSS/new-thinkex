@@ -118,6 +118,7 @@ export function WorkspaceShareMemberList({
 						member.userId !== currentUserId &&
 						canManageMember(membershipRole, member.role)
 					}
+					isCurrentUser={member.userId === currentUserId}
 					member={member}
 					onRemove={() =>
 						removeMemberMutation.mutate({
@@ -181,12 +182,14 @@ function WorkspaceShareEmailInviteRow({
 function WorkspaceShareMemberRow({
 	assignableRoles,
 	canManage,
+	isCurrentUser,
 	member,
 	onRemove,
 	onRoleChange,
 }: {
 	assignableRoles: WorkspaceMembershipRole[];
 	canManage: boolean;
+	isCurrentUser: boolean;
 	member: WorkspaceMemberSummary;
 	onRemove: () => void;
 	onRoleChange: (role: WorkspaceMembershipRole) => void;
@@ -200,7 +203,12 @@ function WorkspaceShareMemberRow({
 				</AvatarFallback>
 			</Avatar>
 			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm">{member.name}</p>
+				<p className="truncate text-sm">
+					{member.name}
+					{isCurrentUser ? (
+						<span className="text-muted-foreground"> (you)</span>
+					) : null}
+				</p>
 			</div>
 			{canManage ? (
 				<>
