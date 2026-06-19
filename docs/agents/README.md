@@ -1,6 +1,6 @@
 # Agents
 
-Config for [mattpocock/skills](https://github.com/mattpocock/skills). Entry point: `AGENTS.md`.
+Entry point: `AGENTS.md`.
 
 ## Issues
 
@@ -20,13 +20,10 @@ Labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `won
 
 Branch `feat/foo-bar` from `main`. PR: Summary, Test plan, `Closes #N`.
 
-## Workflow
+## Skills
 
-```bash
-npx skills add mattpocock/skills --skill grill-with-docs
-npx skills add mattpocock/skills --skill to-prd --skill to-issues --skill implement --skill tdd
-```
+Auto-loaded from `.agents/skills/`. Which skill to run: `.agents/skills/README.md`.
 
-Feature: grill → PRD → issues → implement/TDD → PR. Issue: triage → implement. `/ask-matt` to route.
+Feature: grill-with-docs → to-prd → to-issues → implement/TDD → PR. Issue: triage → implement.
 
 Vertical slices on GitHub, not chat-only plans.

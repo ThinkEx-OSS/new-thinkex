@@ -1,3 +1,5 @@
-## Agent skills
+## Agents
 
-See `docs/agents/README.md`.
+Repo config: `docs/agents/README.md`
+
+Skills load from `.agents/skills/`. Workflow routing: `.agents/skills/README.md`.
