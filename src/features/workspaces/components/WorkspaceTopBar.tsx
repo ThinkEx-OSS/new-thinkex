@@ -4,32 +4,23 @@ import { type ReactNode, useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
-import { Button } from "#/components/ui/button";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog";
-import { Field, FieldGroup } from "#/components/ui/field";
-import { Input } from "#/components/ui/input";
 import { Kbd } from "#/components/ui/kbd";
-import { Label } from "#/components/ui/label";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
 import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePresence";
+import { WorkspaceShareDialog } from "#/features/workspaces/components/WorkspaceShareDialog";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
 import {
 	WorkspaceToolbarIconButton,
 	WorkspaceToolbarTextButton,
 } from "#/features/workspaces/components/WorkspaceToolbar";
-import type { WorkspaceSummary } from "#/features/workspaces/contracts";
+import type {
+	WorkspaceMembershipRole,
+	WorkspaceSummary,
+} from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
@@ -40,6 +31,7 @@ type PresenceStatus = "connecting" | "connected" | "disconnected";
 
 interface WorkspaceTopBarProps {
 	workspace: WorkspaceSummary;
+	membershipRole: WorkspaceMembershipRole;
 	itemsById: Map<string, WorkspaceItem>;
 	tabs: WorkspaceTab[];
 	activeTab: WorkspaceTab;
@@ -59,6 +51,7 @@ interface WorkspaceTopBarProps {
 
 export default function WorkspaceTopBar({
 	workspace,
+	membershipRole,
 	itemsById,
 	tabs,
 	activeTab,
@@ -145,40 +138,13 @@ export default function WorkspaceTopBar({
 				</nav>
 			</div>
 			{contextBar}
-			<Dialog open={shareOpen} onOpenChange={setShareOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Share workspace</DialogTitle>
-						<DialogDescription>
-							Invite people to collaborate on {workspace.name}.
-						</DialogDescription>
-					</DialogHeader>
-					<FieldGroup className="min-w-0 gap-4">
-						<Field>
-							<Label htmlFor="workspace-share-email">Email address</Label>
-							<Input
-								id="workspace-share-email"
-								type="email"
-								placeholder="teammate@example.com"
-							/>
-						</Field>
-						<div className="min-w-0 rounded-md border bg-muted/30 px-3 py-2 text-sm">
-							<div className="font-medium">Workspace link</div>
-							<div className="truncate text-muted-foreground">
-								thinkex.app/workspaces/{workspace.id}
-							</div>
-						</div>
-					</FieldGroup>
-					<DialogFooter>
-						<DialogClose render={<Button type="button" variant="outline" />}>
-							Cancel
-						</DialogClose>
-						<Button type="button" onClick={() => setShareOpen(false)}>
-							Send invite
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			<WorkspaceShareDialog
+				membershipRole={membershipRole}
+				onOpenChange={setShareOpen}
+				open={shareOpen}
+				workspaceId={workspace.id}
+				workspaceName={workspace.name}
+			/>
 		</header>
 	);
 }

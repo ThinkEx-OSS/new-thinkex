@@ -132,7 +132,8 @@ function WorkspaceImageViewerContent({
 					centerOnInit
 					limitToBounds={false}
 					smooth={false}
-					wheel={{ step: IMAGE_VIEWER_WHEEL_STEP }}
+					wheel={{ step: IMAGE_VIEWER_WHEEL_STEP, wheelDisabled: true }}
+					trackPadPanning={{ disabled: false }}
 					pinch={{ step: IMAGE_VIEWER_PINCH_STEP }}
 					panning={{
 						allowLeftClickPan: !isCaptureActive,

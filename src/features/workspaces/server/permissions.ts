@@ -3,9 +3,12 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
+import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
+import { canGrantRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import { getSessionFromHeaders } from "#/lib/auth-queries.server";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
+type WorkspaceRole = WorkspaceMembershipRole;
 
 export class WorkspaceAuthError extends Error {
 	constructor() {
@@ -32,12 +35,12 @@ export async function getCurrentUserId() {
 	return userId;
 }
 
-export async function canReadWorkspace(
+export async function getWorkspaceMemberRole(
 	db: Db,
 	input: { workspaceId: string; userId: string },
-) {
+): Promise<WorkspaceMembershipRole | null> {
 	const [membership] = await db
-		.select({ id: workspaceMembers.id })
+		.select({ role: workspaceMembers.role })
 		.from(workspaceMembers)
 		.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
 		.where(
@@ -49,7 +52,15 @@ export async function canReadWorkspace(
 		)
 		.limit(1);
 
-	return Boolean(membership);
+	return membership?.role ?? null;
+}
+
+export async function canReadWorkspace(
+	db: Db,
+	input: { workspaceId: string; userId: string },
+) {
+	const role = await getWorkspaceMemberRole(db, input);
+	return role !== null;
 }
 
 export async function assertCanReadWorkspace(
@@ -65,20 +76,9 @@ export async function assertCanMutateWorkspace(
 	db: Db,
 	input: { workspaceId: string; userId: string },
 ) {
-	const [membership] = await db
-		.select({ role: workspaceMembers.role })
-		.from(workspaceMembers)
-		.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
-		.where(
-			and(
-				eq(workspaceMembers.workspaceId, input.workspaceId),
-				eq(workspaceMembers.userId, input.userId),
-				isNull(workspaces.archivedAt),
-			),
-		)
-		.limit(1);
+	const role = await getWorkspaceMemberRole(db, input);
 
-	if (!membership || membership.role === "viewer") {
+	if (!role || role === "viewer") {
 		throw new WorkspaceForbiddenError();
 	}
 }
@@ -87,20 +87,22 @@ export async function assertCanDeleteWorkspace(
 	db: Db,
 	input: { workspaceId: string; userId: string },
 ) {
-	const [membership] = await db
-		.select({ role: workspaceMembers.role })
-		.from(workspaceMembers)
-		.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
-		.where(
-			and(
-				eq(workspaceMembers.workspaceId, input.workspaceId),
-				eq(workspaceMembers.userId, input.userId),
-				isNull(workspaces.archivedAt),
-			),
-		)
-		.limit(1);
+	const role = await getWorkspaceMemberRole(db, input);
 
-	if (membership?.role !== "owner") {
+	if (role !== "owner") {
 		throw new WorkspaceForbiddenError();
 	}
+}
+
+export async function assertCanGrantWorkspaceRole(
+	db: Db,
+	input: { workspaceId: string; userId: string; role: WorkspaceRole },
+) {
+	const memberRole = await getWorkspaceMemberRole(db, input);
+
+	if (!memberRole || !canGrantRole(memberRole, input.role)) {
+		throw new WorkspaceForbiddenError();
+	}
+
+	return memberRole;
 }

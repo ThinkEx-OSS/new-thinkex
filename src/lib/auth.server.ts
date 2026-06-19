@@ -5,36 +5,16 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 import * as schema from "#/db/schema";
 import { createDbContext } from "#/db/server";
+import { getAppOrigin, getTrustedAppOrigins } from "#/lib/app-origin";
 
-const LOCAL_TRUSTED_ORIGINS = [
-	"http://localhost:3000",
-	"http://127.0.0.1:3000",
-];
 const isProduction = import.meta.env.PROD;
 
 type AuthEnvKey =
 	| "BETTER_AUTH_SECRET"
-	| "BETTER_AUTH_URL"
 	| "GOOGLE_CLIENT_ID"
 	| "GOOGLE_CLIENT_SECRET";
 
 type AuthRuntimeEnv = Record<AuthEnvKey, string | undefined>;
-
-function normalizeOrigin(value: string, envName: string) {
-	try {
-		const url = new URL(value);
-
-		if (url.protocol !== "http:" && url.protocol !== "https:") {
-			throw new Error("Auth URLs must use http or https.");
-		}
-
-		return url.origin;
-	} catch (error) {
-		throw new Error(`${envName} must be a valid absolute http(s) URL.`, {
-			cause: error,
-		});
-	}
-}
 
 function getEnvString(name: AuthEnvKey) {
 	const value = workerEnv[name];
@@ -44,7 +24,6 @@ function getEnvString(name: AuthEnvKey) {
 function getAuthRuntimeEnv(): AuthRuntimeEnv {
 	return {
 		BETTER_AUTH_SECRET: getEnvString("BETTER_AUTH_SECRET"),
-		BETTER_AUTH_URL: getEnvString("BETTER_AUTH_URL"),
 		GOOGLE_CLIENT_ID: getEnvString("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: getEnvString("GOOGLE_CLIENT_SECRET"),
 	};
@@ -62,37 +41,11 @@ function getAuthSecret(env: AuthRuntimeEnv) {
 	return secret;
 }
 
-function getAuthUrl(env: AuthRuntimeEnv) {
-	const configuredUrl = env.BETTER_AUTH_URL;
-
-	if (configuredUrl) {
-		const origin = normalizeOrigin(configuredUrl, "BETTER_AUTH_URL");
-
-		if (isProduction && !origin.startsWith("https://")) {
-			throw new Error("BETTER_AUTH_URL must use https in production.");
-		}
-
-		return origin;
-	}
-
-	if (isProduction) {
-		throw new Error("BETTER_AUTH_URL must be configured in production.");
-	}
-
-	throw new Error("BETTER_AUTH_URL is not configured.");
-}
-
-function getTrustedOrigins(authUrl: string) {
-	return Array.from(
-		new Set([authUrl, ...(isProduction ? [] : LOCAL_TRUSTED_ORIGINS)]),
-	);
-}
-
 function createAuth(
 	database: Awaited<ReturnType<typeof createDbContext>>["db"],
 	env: AuthRuntimeEnv,
 ) {
-	const baseURL = getAuthUrl(env);
+	const baseURL = getAppOrigin();
 
 	return betterAuth({
 		database: drizzleAdapter(database, {
@@ -101,7 +54,7 @@ function createAuth(
 		}),
 		secret: getAuthSecret(env),
 		baseURL,
-		trustedOrigins: getTrustedOrigins(baseURL),
+		trustedOrigins: getTrustedAppOrigins(baseURL),
 		session: {
 			expiresIn: 60 * 60 * 24 * 90,
 			updateAge: 60 * 60 * 24,

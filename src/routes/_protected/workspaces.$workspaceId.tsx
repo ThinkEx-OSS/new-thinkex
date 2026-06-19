@@ -20,9 +20,16 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 			throw notFound({ data: { resource: "workspace" } });
 		}
 
-		seedWorkspaceCaches(context.queryClient, page, {
-			listMode: "update-existing",
-		});
+		seedWorkspaceCaches(
+			context.queryClient,
+			{
+				workspace: page.workspace,
+				items: page.items,
+				revision: page.revision,
+				membershipRole: page.membershipRole,
+			},
+			{ listMode: "update-existing" },
+		);
 	},
 	staleTime: 10_000,
 	notFoundComponent: AppNotFoundScreen,

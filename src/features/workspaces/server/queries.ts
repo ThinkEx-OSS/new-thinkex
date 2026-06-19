@@ -70,8 +70,9 @@ export async function getWorkspacePageForCurrentUser(
 	try {
 		const [workspaceRow] = await dbContext.db
 			.select({
-				workspace: workspaces,
 				lastOpenedAt: workspaceMembers.lastOpenedAt,
+				membershipRole: workspaceMembers.role,
+				workspace: workspaces,
 			})
 			.from(workspaceMembers)
 			.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
@@ -93,7 +94,12 @@ export async function getWorkspacePageForCurrentUser(
 			lastOpenedAt: workspaceRow.lastOpenedAt,
 		});
 
-		return await getWorkspaceKernelPage({ workspaceId, userId, workspace });
+		return await getWorkspaceKernelPage({
+			workspaceId,
+			userId,
+			workspace,
+			membershipRole: workspaceRow.membershipRole,
+		});
 	} finally {
 		await dbContext.dispose();
 	}

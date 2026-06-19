@@ -6,24 +6,28 @@ import {
 } from "#/features/workspaces/cache-keys";
 import type {
 	WorkspaceItemSummary,
+	WorkspaceMembershipRole,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 
 type WorkspaceListCacheMode = "upsert" | "update-existing" | "skip";
 
+type SeedWorkspacePageInput = {
+	workspace: WorkspaceSummary;
+	items: WorkspaceItemSummary[];
+	revision?: number;
+	membershipRole: WorkspaceMembershipRole;
+};
+
 export function seedWorkspaceCaches(
 	queryClient: QueryClient,
-	input: {
-		workspace: WorkspaceSummary;
-		items?: WorkspaceItemSummary[];
-		revision?: number;
-	},
+	input: SeedWorkspacePageInput | { workspace: WorkspaceSummary },
 	options: {
 		listMode?: WorkspaceListCacheMode;
 	} = {},
 ) {
-	const { workspace, items } = input;
+	const { workspace } = input;
 	const listMode = options.listMode ?? "upsert";
 
 	if (listMode !== "skip") {
@@ -51,13 +55,42 @@ export function seedWorkspaceCaches(
 
 	queryClient.setQueryData(workspaceQueryKey(workspace.id), workspace);
 
-	if (items) {
-		queryClient.setQueryData(workspacePageQueryKey(workspace.id), {
-			workspace,
-			items,
-			revision: input.revision ?? 0,
-		});
+	if ("items" in input) {
+		const membershipRole =
+			input.membershipRole ??
+			queryClient.getQueryData<WorkspacePage>(
+				workspacePageQueryKey(workspace.id),
+			)?.membershipRole;
+
+		if (!membershipRole) {
+			return;
+		}
+
+		queryClient.setQueryData<WorkspacePage>(
+			workspacePageQueryKey(workspace.id),
+			(current) =>
+				createWorkspacePageCacheEntry({
+					workspace,
+					items: input.items,
+					revision: input.revision ?? current?.revision ?? 0,
+					membershipRole,
+				}),
+		);
 	}
+}
+
+function createWorkspacePageCacheEntry(input: {
+	workspace: WorkspaceSummary;
+	items: WorkspaceItemSummary[];
+	revision: number;
+	membershipRole: WorkspaceMembershipRole;
+}): WorkspacePage {
+	return {
+		workspace: input.workspace,
+		items: input.items,
+		revision: input.revision,
+		membershipRole: input.membershipRole,
+	};
 }
 
 export function restoreWorkspaceListCache(

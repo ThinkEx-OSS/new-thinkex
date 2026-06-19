@@ -1,5 +1,9 @@
-import type { JsonValue } from "#/features/workspaces/contracts";
+import type {
+	JsonValue,
+	WorkspaceItemType,
+} from "#/features/workspaces/contracts";
 import { withDocumentPreviewMetadata } from "#/features/workspaces/documents/document-preview-text";
+import { getInitialWorkspaceKernelContent } from "#/features/workspaces/kernel/workspace-kernel-files";
 import { parseWorkspaceItemMetadataJson } from "#/features/workspaces/kernel/workspace-kernel-metadata";
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 
@@ -8,6 +12,24 @@ export function prepareDocumentItemMetadata(
 	content: string,
 ) {
 	return withDocumentPreviewMetadata(metadataJson, content);
+}
+
+/** Shared create-time content + metadata for kernel writes and optimistic UI. */
+export function buildWorkspaceItemCreateBootstrap(input: {
+	type: WorkspaceItemType;
+	name: string;
+	metadataJson?: Record<string, JsonValue>;
+	initialContent?: string;
+}) {
+	const initialContent =
+		input.initialContent ??
+		getInitialWorkspaceKernelContent(input.type, input.name);
+	const metadataJson =
+		input.type === "document"
+			? prepareDocumentItemMetadata(input.metadataJson ?? {}, initialContent)
+			: (input.metadataJson ?? {});
+
+	return { initialContent, metadataJson };
 }
 
 export function persistDocumentItemContentUpdate(input: {
