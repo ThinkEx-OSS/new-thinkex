@@ -160,9 +160,9 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 		} catch (error) {
 			await step.do("mark extraction failed", async () => {
 				const kernel = await getWorkspaceKernelFromEnv(
-				this.env,
-				params.workspaceId,
-			);
+					this.env,
+					params.workspaceId,
+				);
 				const errorMessage = getErrorMessage(error);
 				await kernel.upsertFileProjection({
 					itemId: params.itemId,
