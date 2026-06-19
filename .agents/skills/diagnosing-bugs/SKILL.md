@@ -3,7 +3,7 @@ name: diagnosing-bugs
 description: Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
 ---
 
-Read `docs/agents/README.md` and `AGENTS.md` for repo config (issue tracker, triage labels, git rules) before running this skill.
+Read `.agents/skills/README.md` (repo config) before running this skill.
 
 # Diagnosing Bugs
 

@@ -17,4 +17,4 @@ Secrets: Infisical locally; sync to Cloudflare for prod (`wrangler.jsonc`). `.in
 
 **Prod:** `https://new-thinkex.chakrabortyurjit.workers.dev` — OAuth callback `/api/auth/callback/google`
 
-**Docs:** [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`agents/README.md`](docs/agents/README.md) · [`references.md`](docs/references.md)
+**Docs:** [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`AGENTS.md`](AGENTS.md) · [`references.md`](docs/references.md)

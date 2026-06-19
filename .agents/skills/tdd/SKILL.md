@@ -3,7 +3,7 @@ name: tdd
 description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
 ---
 
-Read `docs/agents/README.md` and `AGENTS.md` for repo config (issue tracker, triage labels, git rules) before running this skill.
+Read `.agents/skills/README.md` (repo config) before running this skill.
 
 # Test-Driven Development
 

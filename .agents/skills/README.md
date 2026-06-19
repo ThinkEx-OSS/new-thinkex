@@ -1,8 +1,20 @@
 # Skills
 
-Workflow routing for skills in this directory (auto-loaded by the agent harness).
+Auto-loaded from this directory.
 
-Repo config (issues, labels, git): `docs/agents/README.md`.
+## Repo config
+
+**Issues** — GitHub via `gh`. Heredoc for bodies.
+
+Labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`
+
+**Domain** — `CONTEXT.md` + `docs/adr/` at root. Read if present.
+
+**Git** — `type(scope): subject`, commitlint, scope required. Branch `feat/foo-bar` from `main`. PR: Summary, Test plan, `Closes #N`.
+
+## Workflow
+
+Vertical slices on GitHub, not chat-only plans. Skip steps when scope or user direction makes that sensible.
 
 ## Which skill?
 

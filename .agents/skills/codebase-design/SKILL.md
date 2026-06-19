@@ -3,7 +3,7 @@ name: codebase-design
 description: Shared vocabulary for designing deep modules. Use when the user wants to design or improve a module's interface, find deepening opportunities, decide where a seam goes, make code more testable or AI-navigable, or when another skill needs the deep-module vocabulary.
 ---
 
-Read `docs/agents/README.md` and `AGENTS.md` for repo config (issue tracker, triage labels, git rules) before running this skill.
+Read `.agents/skills/README.md` (repo config) before running this skill.
 
 # Codebase Design
 
