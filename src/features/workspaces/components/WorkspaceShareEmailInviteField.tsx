@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Send, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { WorkspaceShareRoleMenu } from "#/features/workspaces/components/WorkspaceShareRoleMenu";
-import { getWorkspaceEmailInvitesQueryKey } from "#/features/workspaces/components/workspace-share-query-keys";
+import { getWorkspaceEmailInvitesQueryKey } from "#/features/workspaces/components/workspace-share-queries";
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
 import { createWorkspaceEmailInvitesFn } from "#/features/workspaces/invites/workspace-invite-functions";
 import {
@@ -28,7 +28,10 @@ export function WorkspaceShareEmailInviteField({
 }) {
 	const queryClient = useQueryClient();
 	const inputRef = useRef<HTMLInputElement>(null);
-	const grantableRoles = getGrantableInviteRoles(membershipRole);
+	const grantableRoles = useMemo(
+		() => getGrantableInviteRoles(membershipRole),
+		[membershipRole],
+	);
 	const [draftEmails, setDraftEmails] = useState<string[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [inviteRole, setInviteRole] = useState<WorkspaceMembershipRole>(() =>
@@ -86,15 +89,23 @@ export function WorkspaceShareEmailInviteField({
 		if (!open) {
 			setDraftEmails([]);
 			setInputValue("");
-			setInviteRole(getDefaultInviteRole(membershipRole));
 		}
-	}, [membershipRole, open]);
+
+		setInviteRole((current) =>
+			grantableRoles.includes(current)
+				? current
+				: getDefaultInviteRole(membershipRole),
+		);
+	}, [grantableRoles, membershipRole, open]);
 
 	function removeDraftEmail(email: string) {
 		setDraftEmails((current) => current.filter((entry) => entry !== email));
 	}
 
-	function addDraftEmail(rawEmail: string) {
+	function addDraftEmail(
+		rawEmail: string,
+		{ showErrors = false }: { showErrors?: boolean } = {},
+	) {
 		const email = normalizeInviteEmail(rawEmail);
 
 		if (!email) {
@@ -102,12 +113,16 @@ export function WorkspaceShareEmailInviteField({
 		}
 
 		if (!isValidInviteEmail(email)) {
-			toast.error("Enter a valid email address");
+			if (showErrors) {
+				toast.error("Enter a valid email address");
+			}
 			return false;
 		}
 
 		if (draftEmails.includes(email)) {
-			toast.message("That email is already in the list");
+			if (showErrors) {
+				toast.message("That email is already in the list");
+			}
 			return false;
 		}
 
@@ -115,12 +130,12 @@ export function WorkspaceShareEmailInviteField({
 		return true;
 	}
 
-	function commitInputValue() {
+	function commitInputValue({ showErrors = false } = {}) {
 		if (!inputValue.trim()) {
 			return;
 		}
 
-		if (addDraftEmail(inputValue)) {
+		if (addDraftEmail(inputValue, { showErrors })) {
 			setInputValue("");
 		}
 	}
@@ -209,7 +224,7 @@ export function WorkspaceShareEmailInviteField({
 									return;
 								}
 
-								commitInputValue();
+								commitInputValue({ showErrors: true });
 								return;
 							}
 
@@ -221,7 +236,7 @@ export function WorkspaceShareEmailInviteField({
 								setDraftEmails((current) => current.slice(0, -1));
 							}
 						}}
-						onBlur={commitInputValue}
+						onBlur={() => commitInputValue()}
 					/>
 				</label>
 			</div>

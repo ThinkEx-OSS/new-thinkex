@@ -30,6 +30,9 @@ export function WorkspaceShareRoleMenu({
 						variant="ghost"
 						size="sm"
 						className="text-muted-foreground hover:text-foreground"
+						onMouseDown={(event) => {
+							event.preventDefault();
+						}}
 					/>
 				}
 			>

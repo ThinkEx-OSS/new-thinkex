@@ -80,15 +80,9 @@ export function getDefaultInviteRole(
 export function getAssignableMemberRoles(
 	actorRole: WorkspaceRole,
 ): WorkspaceRole[] {
-	if (actorRole === "owner") {
-		return ["admin", "editor", "viewer"];
-	}
-
-	if (actorRole === "admin") {
-		return ["editor", "viewer"];
-	}
-
-	return [];
+	return getGrantableInviteRoles(actorRole).filter(
+		(role) => actorRole === "owner" || role !== "admin",
+	);
 }
 
 const inviteEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
