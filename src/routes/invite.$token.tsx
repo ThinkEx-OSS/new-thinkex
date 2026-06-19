@@ -1,6 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
-import { Button } from "#/components/ui/button";
+import AuthPanel from "#/components/AuthPanel";
+import ThinkExLogo from "#/components/ThinkExLogo";
+import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 import {
 	acceptWorkspaceInviteFn,
 	getWorkspaceInvitePreviewFn,
@@ -36,60 +39,72 @@ export const Route = createFileRoute("/invite/$token")({
 			throw new Error("INVITE_UNAVAILABLE");
 		}
 	},
+	head: ({ loaderData }) => ({
+		meta: [
+			{
+				title: loaderData
+					? `Thinkex | Join ${loaderData.workspaceName}`
+					: "Thinkex | Invite unavailable",
+			},
+		],
+	}),
 	component: InviteLandingPage,
 	errorComponent: InviteUnavailablePage,
 });
 
+function InviteScreen({ children }: { children: ReactNode }) {
+	return (
+		<div className="min-h-screen bg-background text-foreground">
+			<main className="flex min-h-screen items-center justify-center p-6 sm:p-10">
+				<div className="flex w-full max-w-md flex-col items-center gap-8 px-8 text-center sm:px-12">
+					<ThinkExLogo size={36} />
+					{children}
+				</div>
+			</main>
+		</div>
+	);
+}
+
 function InviteLandingPage() {
 	const { token } = Route.useParams();
 	const preview = Route.useLoaderData();
+	const callbackURL = `/invite/${token}`;
 
 	return (
-		<main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center gap-6 px-6 py-12">
-			<div className="space-y-2 text-center">
-				<p className="text-sm text-muted-foreground">Workspace invite</p>
-				<h1 className="text-3xl font-semibold tracking-tight">
+		<InviteScreen>
+			<div className="space-y-2">
+				<h1 className="text-2xl font-medium tracking-tight">
 					Join {preview.workspaceName}
 				</h1>
-				<p className="text-muted-foreground">
-					{preview.inviterName} invited you as an{" "}
-					<span className="font-medium text-foreground capitalize">
-						{preview.role}
+				<p className="text-sm leading-6 text-muted-foreground">
+					{preview.inviterName} invited you as{" "}
+					<span className="font-medium text-foreground">
+						{workspaceRoleLabels[preview.role]}
 					</span>
 					.
 				</p>
-				{preview.expiresAt ? (
-					<p className="text-sm text-muted-foreground">
-						Invite expires {new Date(preview.expiresAt).toLocaleString()}.
-					</p>
-				) : null}
 			</div>
-			<Button
-				nativeButton={false}
-				render={<Link to="/login" search={{ redirect: `/invite/${token}` }} />}
-				className="w-full"
-				size="lg"
-			>
-				Continue with Google
-			</Button>
-		</main>
+			<div className="w-full">
+				<AuthPanel callbackURL={callbackURL} mode="signin" />
+			</div>
+		</InviteScreen>
 	);
 }
 
 function InviteUnavailablePage() {
 	return (
-		<main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center gap-4 px-6 py-12 text-center">
-			<h1 className="text-2xl font-semibold">Invite unavailable</h1>
-			<p className="text-muted-foreground">
-				This invite link is invalid, expired, or has been revoked.
-			</p>
-			<Button
-				nativeButton={false}
-				render={<Link to="/login" />}
-				variant="outline"
-			>
-				Sign in
-			</Button>
-		</main>
+		<InviteScreen>
+			<div className="space-y-2">
+				<h1 className="text-2xl font-medium tracking-tight">
+					Invite unavailable
+				</h1>
+				<p className="text-sm leading-6 text-muted-foreground">
+					This invite link is invalid, expired, or has been revoked.
+				</p>
+			</div>
+			<div className="w-full">
+				<AuthPanel callbackURL="/home" mode="signin" />
+			</div>
+		</InviteScreen>
 	);
 }
