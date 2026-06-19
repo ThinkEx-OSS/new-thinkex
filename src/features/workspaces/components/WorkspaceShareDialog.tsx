@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Link2, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
@@ -40,6 +40,7 @@ import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 import { buildClientAbsoluteUrl } from "#/lib/client-url";
 
 const defaultInviteLinkExpiryDays = defaultInviteLinkExpiryMs / 86_400_000;
+const copyLinkFeedbackMs = 2000;
 
 interface WorkspaceShareDialogProps {
 	membershipRole: WorkspaceMembershipRole;
@@ -59,12 +60,15 @@ export function WorkspaceShareDialog({
 	const queryClient = useQueryClient();
 	const [copyingRole, setCopyingRole] =
 		useState<WorkspaceMembershipRole | null>(null);
+	const [copiedRole, setCopiedRole] = useState<WorkspaceMembershipRole | null>(
+		null,
+	);
+	const copyFeedbackTimeoutRef = useRef<number | null>(null);
 	const grantableRoles = useMemo(
 		() => getGrantableInviteRoles(membershipRole),
 		[membershipRole],
 	);
-	const { copied, copy } = useCopyToClipboard({
-		resetTimeoutMs: 2000,
+	const { copy } = useCopyToClipboard({
 		onError: () => toast.error("Could not copy invite link"),
 	});
 	const { emailInvites, isLoading, members } = useWorkspaceShareDialogQueries({
@@ -72,6 +76,42 @@ export function WorkspaceShareDialog({
 		open,
 		workspaceId,
 	});
+
+	useEffect(() => {
+		if (open) {
+			return;
+		}
+
+		setCopiedRole(null);
+		setCopyingRole(null);
+
+		if (copyFeedbackTimeoutRef.current !== null) {
+			window.clearTimeout(copyFeedbackTimeoutRef.current);
+			copyFeedbackTimeoutRef.current = null;
+		}
+	}, [open]);
+
+	useEffect(
+		() => () => {
+			if (copyFeedbackTimeoutRef.current !== null) {
+				window.clearTimeout(copyFeedbackTimeoutRef.current);
+			}
+		},
+		[],
+	);
+
+	function showCopiedLinkFeedback(role: WorkspaceMembershipRole) {
+		setCopiedRole(role);
+
+		if (copyFeedbackTimeoutRef.current !== null) {
+			window.clearTimeout(copyFeedbackTimeoutRef.current);
+		}
+
+		copyFeedbackTimeoutRef.current = window.setTimeout(() => {
+			setCopiedRole(null);
+			copyFeedbackTimeoutRef.current = null;
+		}, copyLinkFeedbackMs);
+	}
 
 	async function copyInviteLinkForRole(role: WorkspaceMembershipRole) {
 		const cached = queryClient.getQueryData(
@@ -90,7 +130,11 @@ export function WorkspaceShareDialog({
 				role,
 			);
 
-			await copy(buildClientAbsoluteUrl(result.path));
+			const didCopy = await copy(buildClientAbsoluteUrl(result.path));
+
+			if (didCopy) {
+				showCopiedLinkFeedback(role);
+			}
 		} catch {
 			toast.error("Could not create invite link");
 		} finally {
@@ -133,23 +177,24 @@ export function WorkspaceShareDialog({
 									type="button"
 									variant="outline"
 									size="sm"
+									className="whitespace-nowrap"
 									disabled={copyingRole !== null}
 								/>
 							}
 						>
 							{copyingRole !== null ? (
 								<Loader2 className="animate-spin" />
-							) : copied ? (
+							) : copiedRole !== null ? (
 								<Check />
 							) : (
 								<Link2 />
 							)}
 							{copyingRole !== null
 								? "Copying…"
-								: copied
-									? "Copied"
+								: copiedRole !== null
+									? `${workspaceRoleLabels[copiedRole]} link copied`
 									: "Copy link"}
-							{copyingRole !== null || copied ? null : (
+							{copyingRole !== null || copiedRole !== null ? null : (
 								<ChevronDown className="size-4 opacity-60" />
 							)}
 						</DropdownMenuTrigger>
