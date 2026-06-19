@@ -169,6 +169,10 @@ export function WorkspaceShareEmailInviteField({
 	}
 
 	function handleInvite() {
+		if (createInvitesMutation.isPending) {
+			return;
+		}
+
 		const emails = collectEmailsToInvite();
 
 		if (emails.length === 0) {

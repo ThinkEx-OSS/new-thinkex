@@ -12,10 +12,8 @@ export type WorkspaceDbContext = {
 export async function withWorkspaceDb<T>(
 	handler: (context: WorkspaceDbContext) => Promise<T>,
 ): Promise<T> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const userId = await getCurrentUserId();
+	const dbContext = await createDbContext();
 
 	try {
 		return await handler({ db: dbContext.db, userId });
