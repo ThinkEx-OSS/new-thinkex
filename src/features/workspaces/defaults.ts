@@ -118,5 +118,6 @@ export function createOptimisticWorkspace(
 		updatedAt: now,
 		lastOpenedAt: now,
 		archivedAt: null,
+		membershipRole: "owner",
 	};
 }

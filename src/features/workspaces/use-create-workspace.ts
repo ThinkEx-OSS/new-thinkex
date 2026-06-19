@@ -47,7 +47,6 @@ export function useCreateWorkspaceMutation() {
 			seedWorkspaceCaches(queryClient, {
 				workspace,
 				items: [],
-				membershipRole: "owner",
 			});
 			void navigate({
 				to: "/workspaces/$workspaceId",
@@ -67,7 +66,6 @@ export function useCreateWorkspaceMutation() {
 			seedWorkspaceCaches(queryClient, {
 				workspace,
 				items: [],
-				membershipRole: "owner",
 			});
 		},
 		onError: (error, _variables, context) => {

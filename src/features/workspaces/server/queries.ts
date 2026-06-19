@@ -38,6 +38,7 @@ export async function listWorkspacesForUser(
 		.select({
 			workspace: workspaces,
 			lastOpenedAt: workspaceMembers.lastOpenedAt,
+			membershipRole: workspaceMembers.role,
 		})
 		.from(workspaceMembers)
 		.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
@@ -52,10 +53,13 @@ export async function listWorkspacesForUser(
 		);
 
 	return rows.map((row) =>
-		mapWorkspaceRow({
-			...row.workspace,
-			lastOpenedAt: row.lastOpenedAt,
-		}),
+		mapWorkspaceRow(
+			{
+				...row.workspace,
+				lastOpenedAt: row.lastOpenedAt,
+			},
+			row.membershipRole,
+		),
 	);
 }
 
@@ -89,16 +93,18 @@ export async function getWorkspacePageForCurrentUser(
 			return null;
 		}
 
-		const workspace = mapWorkspaceDetailRow({
-			...workspaceRow.workspace,
-			lastOpenedAt: workspaceRow.lastOpenedAt,
-		});
+		const workspace = mapWorkspaceDetailRow(
+			{
+				...workspaceRow.workspace,
+				lastOpenedAt: workspaceRow.lastOpenedAt,
+			},
+			workspaceRow.membershipRole,
+		);
 
 		return await getWorkspaceKernelPage({
 			workspaceId,
 			userId,
 			workspace,
-			membershipRole: workspaceRow.membershipRole,
 		});
 	} finally {
 		await dbContext.dispose();

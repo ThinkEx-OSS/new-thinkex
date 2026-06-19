@@ -6,7 +6,6 @@ import {
 } from "#/features/workspaces/cache-keys";
 import type {
 	WorkspaceItemSummary,
-	WorkspaceMembershipRole,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
@@ -17,7 +16,6 @@ type SeedWorkspacePageInput = {
 	workspace: WorkspaceSummary;
 	items: WorkspaceItemSummary[];
 	revision?: number;
-	membershipRole: WorkspaceMembershipRole;
 };
 
 export function seedWorkspaceCaches(
@@ -56,16 +54,6 @@ export function seedWorkspaceCaches(
 	queryClient.setQueryData(workspaceQueryKey(workspace.id), workspace);
 
 	if ("items" in input) {
-		const membershipRole =
-			input.membershipRole ??
-			queryClient.getQueryData<WorkspacePage>(
-				workspacePageQueryKey(workspace.id),
-			)?.membershipRole;
-
-		if (!membershipRole) {
-			return;
-		}
-
 		queryClient.setQueryData<WorkspacePage>(
 			workspacePageQueryKey(workspace.id),
 			(current) =>
@@ -73,7 +61,6 @@ export function seedWorkspaceCaches(
 					workspace,
 					items: input.items,
 					revision: input.revision ?? current?.revision ?? 0,
-					membershipRole,
 				}),
 		);
 	}
@@ -83,13 +70,11 @@ function createWorkspacePageCacheEntry(input: {
 	workspace: WorkspaceSummary;
 	items: WorkspaceItemSummary[];
 	revision: number;
-	membershipRole: WorkspaceMembershipRole;
 }): WorkspacePage {
 	return {
 		workspace: input.workspace,
 		items: input.items,
 		revision: input.revision,
-		membershipRole: input.membershipRole,
 	};
 }
 
