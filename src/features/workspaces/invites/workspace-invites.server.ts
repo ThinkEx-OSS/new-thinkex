@@ -34,13 +34,15 @@ export interface WorkspaceInvitePreview {
 	workspaceName: string;
 }
 
-export async function getWorkspaceInvitePreview(db: Db, token: string) {
+async function getPendingWorkspaceInviteByToken(db: Db, token: string) {
 	const [row] = await db
 		.select({
 			expiresAt: workspaceInvites.expiresAt,
+			id: workspaceInvites.id,
 			inviterName: user.name,
 			role: workspaceInvites.role,
 			status: workspaceInvites.status,
+			type: workspaceInvites.type,
 			workspaceId: workspaces.id,
 			workspaceName: workspaces.name,
 		})
@@ -50,7 +52,7 @@ export async function getWorkspaceInvitePreview(db: Db, token: string) {
 		.where(eq(workspaceInvites.token, token))
 		.limit(1);
 
-	if (!row || row.status !== "pending") {
+	if (row?.status !== "pending") {
 		throw new WorkspaceInviteError("Invite not found.");
 	}
 
@@ -58,12 +60,18 @@ export async function getWorkspaceInvitePreview(db: Db, token: string) {
 		throw new WorkspaceInviteError("Invite expired.");
 	}
 
+	return row;
+}
+
+export async function getWorkspaceInvitePreview(db: Db, token: string) {
+	const invite = await getPendingWorkspaceInviteByToken(db, token);
+
 	return {
-		expiresAt: row.expiresAt,
-		inviterName: row.inviterName,
-		role: row.role,
-		workspaceId: row.workspaceId,
-		workspaceName: row.workspaceName,
+		expiresAt: invite.expiresAt,
+		inviterName: invite.inviterName,
+		role: invite.role,
+		workspaceId: invite.workspaceId,
+		workspaceName: invite.workspaceName,
 	};
 }
 
@@ -71,7 +79,8 @@ export async function acceptWorkspaceInvite(
 	db: Db,
 	input: { token: string; userId: string },
 ) {
-	const invite = await getWorkspaceInvitePreview(db, input.token);
+	// v1: the token is a secret link — any signed-in user may accept; no invitee email check.
+	const invite = await getPendingWorkspaceInviteByToken(db, input.token);
 
 	return db.transaction(async (tx) => {
 		const [existingMembership] = await tx
@@ -106,6 +115,15 @@ export async function acceptWorkspaceInvite(
 				userId: input.userId,
 				role: resolvedRole,
 			});
+		}
+
+		// Email invites are single-use (link invites stay pending/multi-use) so the row
+		// leaves the Invited list and the same address can be re-invited later.
+		if (invite.type === "email") {
+			await tx
+				.update(workspaceInvites)
+				.set({ status: "accepted" })
+				.where(eq(workspaceInvites.id, invite.id));
 		}
 
 		return {

@@ -37,7 +37,7 @@ Pending membership at a role — by email or link token.
 _Avoid_: share, invitation request
 
 **Email Invite**:
-Invite emailed via Worker `EMAIL` binding. Accept through `/invite/{token}`; sign-in required; not locked to the invited address (v1).
+Invite emailed via Worker `EMAIL` binding. Accept through `/invite/{token}`; sign-in required; not locked to the invited address (v1). Single-use token — first accept marks the invite accepted.
 _Avoid_: user invite
 
 **Invite Link**:

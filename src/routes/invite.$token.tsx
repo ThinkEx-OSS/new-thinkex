@@ -18,6 +18,7 @@ export const Route = createFileRoute("/invite/$token")({
 		);
 
 		if (session) {
+			// Signed-in visitors accept immediately — same UX as opening a share link while logged in.
 			const result = await acceptWorkspaceInviteFn({
 				data: { token: params.token },
 			});
