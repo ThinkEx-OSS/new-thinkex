@@ -7,7 +7,6 @@ import { Card, CardHeader, CardTitle } from "#/components/ui/card";
 import { ContextMenu, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { useWorkspaceFolderDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
-import WorkspaceItemPreviewSurface from "#/features/workspaces/components/WorkspaceItemPreviewSurface";
 import {
 	workspaceItemCardBaseClass,
 	workspaceItemCardHoverClass,
@@ -15,10 +14,7 @@ import {
 	workspaceItemCardUnselectedHoverClass,
 } from "#/features/workspaces/components/workspace-item-card-chrome";
 import { WorkspaceItemCardFooter } from "#/features/workspaces/components/workspace-item-card-footer";
-import {
-	WORKSPACE_ITEM_PREVIEW_CONTROL_ROW,
-	WorkspaceItemCardPreviewControls,
-} from "#/features/workspaces/components/workspace-item-card-preview-controls";
+import { WorkspaceItemCardPreviewStage } from "#/features/workspaces/components/workspace-item-card-preview-stage";
 import { workspaceItemSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	createWorkspaceItemDragData,
@@ -27,8 +23,6 @@ import {
 	getWorkspaceItemSortableAccept,
 	getWorkspaceItemSortableGroup,
 } from "#/features/workspaces/model/drag";
-import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
-import { workspaceItemUsesFillPreview } from "#/features/workspaces/model/object-registry";
 import { getWorkspaceItemMeta } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
@@ -158,11 +152,6 @@ export default function WorkspaceItemCard({
 		dragSource?.kind === "workspace-item" &&
 		dragSource.row === "folder";
 	const meta = isFolder ? getWorkspaceItemMeta(item, items) : null;
-	const {
-		Icon: ItemIcon,
-		iconClassName,
-		surfaceClassName,
-	} = getWorkspaceItemDisplay(item);
 
 	const handleOpen = (event: MouseEvent<HTMLElement>) => {
 		if (event.shiftKey) {
@@ -182,7 +171,6 @@ export default function WorkspaceItemCard({
 		event.stopPropagation();
 		onRenameItem(item);
 	};
-	const hasPreviewFill = workspaceItemUsesFillPreview(item);
 
 	const card = (
 		<Card
@@ -211,45 +199,14 @@ export default function WorkspaceItemCard({
 				aria-label={`Open ${item.name}`}
 				onClick={handleOpen}
 			/>
-			<div
-				className={cn(
-					"pointer-events-none relative z-10 grid min-h-20 flex-1 overflow-hidden bg-muted",
-					surfaceClassName,
-				)}
-				style={{
-					gridTemplateRows: `${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW} minmax(0, 1fr) ${WORKSPACE_ITEM_PREVIEW_CONTROL_ROW}`,
-				}}
-			>
-				{hasPreviewFill ? (
-					<WorkspaceItemPreviewSurface
-						item={item}
-						className="absolute inset-0"
-					/>
-				) : null}
-				<WorkspaceItemCardPreviewControls
-					item={item}
-					isSelected={isSelected}
-					onSelectionChange={onSelectionChange}
-					onMoveItem={onMoveItem}
-					onRenameItem={onRenameItem}
-					onDeleteItem={onDeleteItem}
-				/>
-				{hasPreviewFill ? (
-					<div aria-hidden="true" className="relative z-10 min-h-0" />
-				) : (
-					<div
-						className="relative z-10 flex items-center justify-center bg-transparent"
-						aria-hidden="true"
-					>
-						<ItemIcon
-							className={cn("size-10", iconClassName)}
-							strokeWidth={1.75}
-							aria-hidden="true"
-						/>
-					</div>
-				)}
-				<div aria-hidden="true" className="relative z-10" />
-			</div>
+			<WorkspaceItemCardPreviewStage
+				item={item}
+				isSelected={isSelected}
+				onSelectionChange={onSelectionChange}
+				onMoveItem={onMoveItem}
+				onRenameItem={onRenameItem}
+				onDeleteItem={onDeleteItem}
+			/>
 			{showFolderDropAffordance ? (
 				<div
 					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/35 backdrop-blur-[1px]"

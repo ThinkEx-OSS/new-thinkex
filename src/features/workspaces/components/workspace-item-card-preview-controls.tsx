@@ -6,12 +6,11 @@ import WorkspaceItemActionsMenu from "#/features/workspaces/components/Workspace
 import {
 	workspaceItemPreviewControlClass,
 	workspaceItemPreviewControlOverlayClass,
+	workspaceItemPreviewControlRowClass,
 	workspaceItemPreviewControlSelectedClass,
 } from "#/features/workspaces/components/workspace-item-card-chrome";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
-
-export { WORKSPACE_ITEM_PREVIEW_CONTROL_ROW } from "#/features/workspaces/components/workspace-item-card-chrome";
 
 function ItemCardPreviewButton({
 	selected,
@@ -58,7 +57,7 @@ export function WorkspaceItemCardPreviewControls({
 	};
 
 	return (
-		<div className="relative z-10 flex items-center justify-between px-2">
+		<div className={workspaceItemPreviewControlRowClass}>
 			<ItemCardPreviewButton
 				aria-label={`Select ${item.name}`}
 				aria-pressed={isSelected}
