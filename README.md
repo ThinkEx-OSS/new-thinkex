@@ -6,11 +6,45 @@ TanStack Start — React, Better Auth, Drizzle/Postgres, Cloudflare Workers.
 pnpm install && pnpm dev   # http://localhost:3000 via Infisical
 ```
 
-Local DB: Infisical `DATABASE_URL`. Production: Hyperdrive binding.
+Local DB: Infisical `DATABASE_URL` (Neon dev). Production Worker: Hyperdrive → PlanetScale `main`.
+
+### Database layout
+
+| Environment | Provider | How the app connects |
+|-------------|----------|----------------------|
+| Local dev | Neon dev branch | Infisical **dev** `DATABASE_URL` |
+| Production Worker | PlanetScale `main` | `HYPERDRIVE` binding in `wrangler.jsonc` |
+| Prod migrations (CLI only) | PlanetScale `main` | Infisical **prod** `DATABASE_URL` (direct Postgres URL, not Hyperdrive) |
+
+Add PlanetScale’s direct connection string to Infisical **prod** as `DATABASE_URL`. The Worker never reads it; only `pnpm db:migrate:prod` does.
+
+### Schema changes (Drizzle)
+
+One shared `drizzle/` migration folder. Generate once, apply the same SQL files to both databases ([Drizzle multi-env guidance](https://orm.drizzle.team/docs/drizzle-kit-migrate#multiple-configuration-files-in-one-project)).
+
+```bash
+# 1. Edit src/db/schema.ts, then generate SQL (review the new file in drizzle/)
+pnpm db:generate
+pnpm db:check
+
+# 2. Apply to Neon dev, test locally
+pnpm db:migrate
+
+# 3. Apply to PlanetScale prod, then deploy
+pnpm db:migrate:prod
+pnpm deploy
+```
+
+Rules:
+
+- Use **`db:generate` + `db:migrate`** everywhere. Do not use `db:push` on prod (bypasses migration history).
+- Always migrate **dev first**, then **prod**, then deploy.
+- Commit the `drizzle/` folder with schema changes.
+- First-time PlanetScale setup: run `pnpm db:migrate:prod` once to bootstrap `main`.
 
 ```bash
 pnpm check && pnpm typecheck && pnpm build && pnpm deploy
-pnpm db:generate && pnpm db:migrate
+pnpm db:generate && pnpm db:migrate && pnpm db:migrate:prod
 ```
 
 Secrets: Infisical locally; sync to Cloudflare for prod (`wrangler.jsonc`). `.infisical.json` is safe to commit.
