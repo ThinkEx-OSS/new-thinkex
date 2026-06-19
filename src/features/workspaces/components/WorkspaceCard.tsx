@@ -1,19 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 
-import {
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "#/components/ui/card";
+import { Card, CardHeader, CardTitle } from "#/components/ui/card";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
+import { WorkspaceCardFooter } from "#/features/workspaces/components/workspace-card-footer";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
-import {
-	getWorkspaceDisplay,
-	getWorkspaceRecencyLabel,
-} from "#/features/workspaces/model/display";
+import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceCardSearch {
@@ -33,7 +27,7 @@ export default function WorkspaceCard({
 	search,
 }: WorkspaceCardProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
-	const recencyLabel = getWorkspaceRecencyLabel(workspace);
+	const capabilities = getWorkspaceMemberCapabilities(workspace.membershipRole);
 
 	return (
 		<Card
@@ -60,35 +54,34 @@ export default function WorkspaceCard({
 
 				<CardHeader className="gap-2 px-4 py-3">
 					<CardTitle className="truncate">{workspace.name}</CardTitle>
-					{recencyLabel ? (
-						<CardDescription className="truncate text-xs">
-							<span suppressHydrationWarning>{recencyLabel}</span>
-						</CardDescription>
-					) : null}
+					<WorkspaceCardFooter workspace={workspace} />
 				</CardHeader>
 			</Link>
 
-			<div
-				className={cn(
-					"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
-					"group-hover/card:pointer-events-auto group-hover/card:opacity-100",
-					"group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100",
-				)}
-			>
-				<WorkspaceSettingsDialog
-					workspace={workspace}
-					trigger={
-						<WorkspaceToolbarIconButton
-							aria-label={`Open settings for ${workspace.name}`}
-							onClick={(event) => {
-								event.stopPropagation();
-							}}
-						>
-							<Settings />
-						</WorkspaceToolbarIconButton>
-					}
-				/>
-			</div>
+			{capabilities.canMutateContent ? (
+				<div
+					className={cn(
+						"pointer-events-none absolute top-2 right-2 z-10 opacity-0 transition-opacity",
+						"group-hover/card:pointer-events-auto group-hover/card:opacity-100",
+						"group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100",
+					)}
+				>
+					<WorkspaceSettingsDialog
+						capabilities={capabilities}
+						workspace={workspace}
+						trigger={
+							<WorkspaceToolbarIconButton
+								aria-label={`Open settings for ${workspace.name}`}
+								onClick={(event) => {
+									event.stopPropagation();
+								}}
+							>
+								<Settings />
+							</WorkspaceToolbarIconButton>
+						}
+					/>
+				</div>
+			) : null}
 		</Card>
 	);
 }

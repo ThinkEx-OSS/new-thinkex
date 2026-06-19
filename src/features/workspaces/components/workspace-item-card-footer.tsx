@@ -1,3 +1,4 @@
+import { WorkspaceCardMetaRow } from "#/features/workspaces/components/workspace-card-meta-row";
 import { getWorkspaceItemRecencyLabel } from "#/features/workspaces/model/display";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -13,16 +14,18 @@ export function WorkspaceItemCardFooter({
 	const { Icon, iconClassName, label } = getWorkspaceItemDisplay(item);
 
 	return (
-		<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-			<span className="flex min-w-0 items-center gap-1.5">
-				<Icon
-					className={cn("size-3.5 shrink-0", iconClassName)}
-					strokeWidth={1.75}
-					aria-hidden="true"
-				/>
-				<span className="truncate">{label}</span>
-			</span>
-			<span className="shrink-0">{getWorkspaceItemRecencyLabel(item)}</span>
-		</div>
+		<WorkspaceCardMetaRow
+			leading={
+				<span className="flex min-w-0 items-center gap-1.5">
+					<Icon
+						className={cn("size-3.5 shrink-0", iconClassName)}
+						strokeWidth={1.75}
+						aria-hidden="true"
+					/>
+					<span className="truncate">{label}</span>
+				</span>
+			}
+			trailing={getWorkspaceItemRecencyLabel(item)}
+		/>
 	);
 }
