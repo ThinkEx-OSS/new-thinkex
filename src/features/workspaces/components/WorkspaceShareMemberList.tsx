@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, X } from "lucide-react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
@@ -36,6 +37,26 @@ function getInitials(name: string) {
 	return `${first}${second}`.toUpperCase() || fallback.toUpperCase();
 }
 
+function sortMembersWithCurrentUserFirst(
+	members: WorkspaceMemberSummary[],
+	currentUserId: string | undefined,
+) {
+	if (!currentUserId) {
+		return members;
+	}
+
+	const currentUser = members.find((member) => member.userId === currentUserId);
+
+	if (!currentUser) {
+		return members;
+	}
+
+	return [
+		currentUser,
+		...members.filter((member) => member.userId !== currentUserId),
+	];
+}
+
 export function WorkspaceShareMemberList({
 	emailInvites,
 	isLoading,
@@ -53,6 +74,10 @@ export function WorkspaceShareMemberList({
 	const assignableRoles = getAssignableMemberRoles(membershipRole);
 	const sessionQuery = useQuery(getAuthSessionQueryOptions());
 	const currentUserId = sessionQuery.data?.user.id;
+	const sortedMembers = useMemo(
+		() => sortMembersWithCurrentUserFirst(members, currentUserId),
+		[members, currentUserId],
+	);
 
 	const updateRoleMutation = useMutation({
 		mutationFn: updateWorkspaceMemberRoleFn,
@@ -110,7 +135,7 @@ export function WorkspaceShareMemberList({
 					}
 				/>
 			))}
-			{members.map((member) => (
+			{sortedMembers.map((member) => (
 				<WorkspaceShareMemberRow
 					key={member.userId}
 					assignableRoles={assignableRoles}
