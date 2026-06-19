@@ -25,6 +25,30 @@ interface MyRouterContext {
 	session?: AuthSession | null;
 }
 
+const faviconLinks = import.meta.env.DEV
+	? [
+			{
+				rel: "icon",
+				href: "/favicon-dev.svg",
+				type: "image/svg+xml",
+				sizes: "any",
+			},
+		]
+	: [
+			{
+				rel: "icon",
+				href: "/favicon.ico",
+				type: "image/x-icon",
+				sizes: "16x16 32x32 64x64",
+			},
+			{
+				rel: "icon",
+				href: "/favicon.svg",
+				type: "image/svg+xml",
+				sizes: "any",
+			},
+		];
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => ({
 		meta: [
@@ -44,13 +68,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				rel: "stylesheet",
 				href: appCss,
 			},
-			{
-				rel: "icon",
-				href: "/favicon.ico",
-			},
+			...faviconLinks,
 			{
 				rel: "apple-touch-icon",
-				href: "/logo192.png",
+				sizes: "180x180",
+				href: "/apple-touch-icon.png",
 			},
 			{
 				rel: "manifest",
