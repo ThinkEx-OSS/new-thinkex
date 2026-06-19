@@ -16,7 +16,7 @@ Local DB: Infisical `DATABASE_URL` (Neon dev). Production Worker: Hyperdrive →
 | Production Worker | PlanetScale `main` | `HYPERDRIVE` binding in `wrangler.jsonc` |
 | Prod migrations (CLI only) | PlanetScale `main` | Infisical **prod** `DATABASE_URL` (direct Postgres URL, not Hyperdrive) |
 
-Add PlanetScale’s direct connection string to Infisical **prod** as `DATABASE_URL`. The Worker never reads it; only `pnpm db:migrate:prod` does.
+Add PlanetScale’s direct connection string to Infisical **prod** as `DATABASE_URL` for `pnpm db:migrate:prod` only. The deployed Worker connects via the `HYPERDRIVE` binding (not Infisical `DATABASE_URL`).
 
 ### Schema changes (Drizzle)
 
