@@ -38,7 +38,8 @@ const faviconLinks = import.meta.env.DEV
 			{
 				rel: "icon",
 				href: "/favicon.ico",
-				sizes: "any",
+				type: "image/x-icon",
+				sizes: "16x16 32x32 64x64",
 			},
 			{
 				rel: "icon",

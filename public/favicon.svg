@@ -22,18 +22,6 @@
     .dark-rect {
       fill: #2D2E30;
     }
-    .colored-green {
-      fill: #73BF7A;
-    }
-    .colored-red {
-      fill: #DA4944;
-    }
-    .colored-blue {
-      fill: #5C8BD6;
-    }
-    .colored-yellow {
-      fill: #F7B53B;
-    }
   }
 </style>
 <rect class="dark-rect" width="139.636" height="139.636" rx="18.5818"/>
