@@ -30,7 +30,7 @@ import {
 	normalizeThreadErrorMessage,
 	type UserAIStoreState,
 } from "#/features/workspaces/ai/ai-thread-metadata";
-import { getReadableWorkspacePromptScope } from "#/features/workspaces/ai/ai-thread-prompt-scope";
+import { getWorkspacePromptScope } from "#/features/workspaces/ai/ai-thread-prompt-scope";
 
 export type {
 	AIThreadSummary,
@@ -94,7 +94,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			throw new Error("workspaceId is required");
 		}
 
-		await getReadableWorkspacePromptScope({
+		await getWorkspacePromptScope({
 			userId: this.name,
 			workspaceId,
 		});
@@ -162,7 +162,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async getThreadContext(threadId: string): Promise<AIThreadContext | null> {
 		try {
 			const thread = await this._requireThreadMeta(threadId);
-			const promptScope = await getReadableWorkspacePromptScope({
+			const promptScope = await getWorkspacePromptScope({
 				workspaceId: thread.workspace_id,
 				userId: this.name,
 			});
@@ -301,7 +301,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		}
 
 		try {
-			await getReadableWorkspacePromptScope({
+			await getWorkspacePromptScope({
 				userId: this.name,
 				workspaceId: thread.workspace_id,
 			});

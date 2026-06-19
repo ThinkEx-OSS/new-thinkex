@@ -32,6 +32,7 @@ export interface AIThreadContext {
 }
 
 export interface AIThreadPromptScope {
+	canMutate: boolean;
 	workspaceName: string;
 }
 

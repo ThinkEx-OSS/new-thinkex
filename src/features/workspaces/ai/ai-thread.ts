@@ -19,9 +19,9 @@ import type { LanguageModel, ToolSet } from "ai";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AIThreadInspectorRecorder } from "#/features/workspaces/ai/ai-thread-inspector-recorder";
 import {
-	AI_THREAD_ACTIVE_TOOLS,
 	createAIThreadTools,
 	generateAIThreadTitle,
+	getAIThreadActiveTools,
 	getAIThreadSoulPrompt,
 	getAIThreadSystemPromptForWorkspace,
 	getWorkersAiModel,
@@ -130,7 +130,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			});
 
 			return {
-				activeTools: [...AI_THREAD_ACTIVE_TOOLS],
+				activeTools: getAIThreadActiveTools(thread.promptScope.canMutate),
 				model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
 				system,
 			};

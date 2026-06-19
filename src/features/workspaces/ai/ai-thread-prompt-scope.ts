@@ -3,8 +3,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import type { AIThreadPromptScope } from "#/features/workspaces/ai/ai-thread-metadata";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 
-export async function getReadableWorkspacePromptScope({
+export async function getWorkspacePromptScope({
 	userId,
 	workspaceId,
 }: {
@@ -15,7 +16,10 @@ export async function getReadableWorkspacePromptScope({
 
 	try {
 		const [membership] = await dbContext.db
-			.select({ name: workspaces.name })
+			.select({
+				name: workspaces.name,
+				role: workspaceMembers.role,
+			})
 			.from(workspaceMembers)
 			.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
 			.where(
@@ -31,7 +35,10 @@ export async function getReadableWorkspacePromptScope({
 			throw new Error("Forbidden");
 		}
 
-		return { workspaceName: membership.name };
+		return {
+			canMutate: getWorkspaceMemberCapabilities(membership.role).canMutateContent,
+			workspaceName: membership.name,
+		};
 	} finally {
 		await dbContext.dispose();
 	}
