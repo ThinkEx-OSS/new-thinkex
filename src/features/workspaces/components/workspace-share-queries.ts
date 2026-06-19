@@ -41,17 +41,21 @@ export function isWorkspaceInviteLinkCacheValid(
 	return !isInviteExpired(parseInviteExpiresAt(data.expiresAt));
 }
 
-function getInviteLinkStaleTime(data: WorkspaceInviteLinkResult | undefined) {
+function getInviteLinkStaleTime(
+	data: WorkspaceInviteLinkResult | undefined,
+	dataUpdatedAt: number,
+) {
 	if (!isWorkspaceInviteLinkCacheValid(data)) {
 		return 0;
 	}
 
 	const expiresAt = parseInviteExpiresAt(data?.expiresAt);
-	if (!expiresAt) {
+	if (!expiresAt || dataUpdatedAt === 0) {
 		return 0;
 	}
 
-	return Math.max(0, expiresAt.getTime() - Date.now());
+	// Fresh until expiresAt: stale when now - dataUpdatedAt > expiresAt - dataUpdatedAt.
+	return Math.max(0, expiresAt.getTime() - dataUpdatedAt);
 }
 
 export function getWorkspaceMembersQueryKey(workspaceId: string) {
@@ -99,6 +103,7 @@ export function getWorkspaceInviteLinkQueryOptions(
 		staleTime: (query) =>
 			getInviteLinkStaleTime(
 				query.state.data as WorkspaceInviteLinkResult | undefined,
+				query.state.dataUpdatedAt,
 			),
 	});
 }
