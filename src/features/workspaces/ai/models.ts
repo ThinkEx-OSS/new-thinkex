@@ -8,18 +8,18 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 	},
 	{
 		id: "claude-sonnet",
-		name: "Claude Sonnet",
-		workersAiModel: "anthropic/claude-sonnet-4-5",
+		name: "Claude Sonnet 4.6",
+		workersAiModel: "anthropic/claude-sonnet-4.6",
 	},
 	{
 		id: "chatgpt",
-		name: "ChatGPT",
-		workersAiModel: "openai/gpt-5.2",
+		name: "ChatGPT 5.4",
+		workersAiModel: "openai/gpt-5.4",
 	},
 	{
 		id: "gemini",
-		name: "Gemini",
-		workersAiModel: "google-vertex-ai/google/gemini-2.5-pro",
+		name: "Gemini 3 Flash",
+		workersAiModel: "google-vertex-ai/google/gemini-3-flash",
 	},
 ] as const;
 
