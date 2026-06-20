@@ -32,13 +32,13 @@ export default function WorkspaceFrame({
 			return;
 		}
 
-		if (isChatHidden) {
+		if (!isDockedChat) {
 			chatPanelRef.current.collapse();
 			return;
 		}
 
 		chatPanelRef.current.expand();
-	}, [isChatHidden]);
+	}, [isDockedChat]);
 
 	return (
 		<div className="h-screen overflow-hidden bg-background text-foreground">
