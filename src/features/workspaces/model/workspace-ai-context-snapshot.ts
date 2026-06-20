@@ -256,10 +256,6 @@ function getWorkspaceAiContextPaneReference(
 ): WorkspaceAiContextPaneReference {
 	const { context } = buildContext;
 
-	if (pane.kind === "chat") {
-		return { kind: "ai-chat" };
-	}
-
 	if (pane.kind === "root") {
 		return { kind: "workspace-root" };
 	}

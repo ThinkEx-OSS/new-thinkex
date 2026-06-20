@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
 import {
 	isSameWorkspaceItemViewState,
 	normalizeWorkspaceItemViewState,
@@ -17,19 +18,20 @@ import {
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
 	removeWorkspaceAiContextItemSession,
+	restoreChatPanelSession,
 	restoreWorkspacePresentationSession,
-	setAiChatModelSession,
 	setActiveAiChatThreadSession,
+	setAiChatModelSession,
 	splitWorkspacePresentationSession,
 	toggleChatPanelCollapsedSession,
 } from "#/features/workspaces/model/workspace-ui";
-import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
 export type WorkspacePane =
 	| { id: string; kind: "root" }
-	| { id: string; kind: "item"; itemId: string }
-	| { id: string; kind: "chat" };
+	| { id: string; kind: "item"; itemId: string };
+
+export type WorkspaceAiChatSurfaceMode = "hidden" | "docked" | "fullscreen";
 
 export type WorkspacePresentation =
 	| { mode: "standard" }
@@ -54,7 +56,7 @@ export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
 	aiChatModelId: WorkspaceAiChatModelId;
 	aiContextItemIds: string[];
-	chatPanelCollapsed: boolean;
+	chatSurfaceMode: WorkspaceAiChatSurfaceMode;
 	presentation: WorkspacePresentation;
 };
 
@@ -77,6 +79,7 @@ type WorkspaceUiState = {
 	closeChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
 	removeAiContextItem: (workspaceId: string, itemId: string) => void;
+	restoreChatPanel: (workspaceId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
@@ -214,6 +217,14 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							removeWorkspaceAiContextItemSession(session, itemId),
 						),
 					),
+				restoreChatPanel: (workspaceId) =>
+					set((state) =>
+						updateWorkspaceUiSession(
+							state,
+							workspaceId,
+							restoreChatPanelSession,
+						),
+					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, () =>
@@ -311,17 +322,6 @@ export function useWorkspaceUiSession(workspaceId: string) {
 	);
 }
 
-export function useWorkspacePresentation(workspaceId: string) {
-	return useWorkspaceUiStore(
-		useMemo(
-			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
-					.presentation,
-			[workspaceId],
-		),
-	);
-}
-
 export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
@@ -339,6 +339,17 @@ export function useWorkspaceAiChatModelId(workspaceId: string) {
 			() => (state: WorkspaceUiState) =>
 				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
 					.aiChatModelId,
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspaceAiChatSurfaceMode(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
+					.chatSurfaceMode,
 			[workspaceId],
 		),
 	);

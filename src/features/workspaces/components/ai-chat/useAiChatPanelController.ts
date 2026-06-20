@@ -5,7 +5,7 @@ import { useWorkspaceAiChatThreads } from "#/features/workspaces/components/ai-c
 import {
 	useWorkspaceActiveAiChatThreadId,
 	useWorkspaceAiChatModelId,
-	useWorkspacePresentation,
+	useWorkspaceAiChatSurfaceMode,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
 import { getErrorMessage } from "#/lib/error-message";
@@ -22,13 +22,13 @@ type AiChatThreadForDialog = {
 export function useAiChatPanelController({
 	workspaceId,
 }: UseAiChatPanelControllerInput) {
-	const presentation = useWorkspacePresentation(workspaceId);
+	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
 	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const modelId = useWorkspaceAiChatModelId(workspaceId);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
-	const restorePresentation = useWorkspaceUiStore(
-		(state) => state.restorePresentation,
+	const restoreChatPanel = useWorkspaceUiStore(
+		(state) => state.restoreChatPanel,
 	);
 	const setActiveAiChatThread = useWorkspaceUiStore(
 		(state) => state.setActiveAiChatThread,
@@ -49,8 +49,7 @@ export function useAiChatPanelController({
 		threads,
 	} = useWorkspaceAiChatThreads({ workspaceId });
 	const activeThread = threads.find((thread) => thread.id === activeThreadId);
-	const isMaximized =
-		presentation.mode === "maximized" && presentation.pane.kind === "chat";
+	const isMaximized = chatSurfaceMode === "fullscreen";
 
 	const selectThread = (threadId: string | undefined) => {
 		setActiveAiChatThread(workspaceId, threadId);
@@ -156,7 +155,7 @@ export function useAiChatPanelController({
 		onModelChange: (nextModelId: AiChatModelId) =>
 			setAiChatModel(workspaceId, nextModelId),
 		onNewChat: () => void handleNewChat(),
-		onRestore: () => restorePresentation(workspaceId),
+		onRestore: () => restoreChatPanel(workspaceId),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
 			thread.id === activeThreadId

@@ -22,7 +22,6 @@ import WorkspaceSplitPresentation from "#/features/workspaces/components/Workspa
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
 import { WorkspaceMutationAccessProvider } from "#/features/workspaces/components/workspace-mutation-access";
-import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -132,8 +131,7 @@ export function WorkspaceShell({
 		activeViewFromUrl,
 	});
 	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
-	const { chatPanelCollapsed, presentation } = normalizedUiSession;
-	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
+	const { chatSurfaceMode, presentation } = normalizedUiSession;
 	const hasHeavyViewerRuntimeItems = scopedItems.some(
 		workspaceItemRequiresHeavyViewerRuntime,
 	);
@@ -219,6 +217,7 @@ export function WorkspaceShell({
 		) : (
 			<WorkspaceItemToolbarProvider>
 				<WorkspaceFrame
+					chatPanelMode={chatSurfaceMode}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}
@@ -274,11 +273,7 @@ export function WorkspaceShell({
 							/>
 						)
 					}
-					chatPanel={
-						chatPanelCollapsed || presentationHasChat ? undefined : (
-							<AiChatPanel context={aiContextScope} />
-						)
-					}
+					chatPanel={<AiChatPanel context={aiContextScope} />}
 				/>
 			</WorkspaceItemToolbarProvider>
 		);
