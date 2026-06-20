@@ -54,7 +54,7 @@ function WorkspaceImageViewerContent({
 		"loading",
 	);
 	const [isCaptureActive, setIsCaptureActive] = useState(false);
-	const { containerRef, contentStyle, spacePressedRef } =
+	const { containerRef, contentStyle, deferCaptureSelection } =
 		useWorkspaceImageViewerTransform({
 			enabled: status !== "error",
 			isCaptureActive,
@@ -144,7 +144,7 @@ function WorkspaceImageViewerContent({
 					active={isCaptureActive}
 					boundsRef={containerRef}
 					onCapture={handleCapture}
-					shouldDeferPointer={() => isCaptureActive && spacePressedRef.current}
+					deferCaptureSelection={deferCaptureSelection}
 				/>
 			) : null}
 			<WorkspaceCaptureViewerFrame active={isCaptureActive} />

@@ -19,10 +19,9 @@ export interface ImageViewerTransform {
 	y: number;
 }
 
-export interface ImageViewerGesturePolicy {
-	enabled: boolean;
-	allowPrimaryPointerPan: boolean;
-	primaryPointerPanRequiresSpace: boolean;
+export interface ImageViewerGestureState {
+	captureActive: boolean;
+	spacePressed: boolean;
 }
 
 export const DEFAULT_IMAGE_VIEWER_TRANSFORM: ImageViewerTransform = {
@@ -85,20 +84,14 @@ function zoomTowardPoint(
 
 export function setupImageViewerGestures({
 	container,
-	getPolicy,
+	gestureState,
 	getTransform,
-	maxScale,
-	minScale,
 	setTransform,
-	spacePressed = { current: false },
 }: {
 	container: HTMLElement;
-	getPolicy: () => ImageViewerGesturePolicy;
+	gestureState: { current: ImageViewerGestureState };
 	getTransform: () => ImageViewerTransform;
-	maxScale: number;
-	minScale: number;
 	setTransform: (transform: ImageViewerTransform) => void;
-	spacePressed?: { current: boolean };
 }) {
 	let wheelZoomTimeout: ReturnType<typeof setTimeout> | null = null;
 	let wheelGestureStartScale = 1;
@@ -119,30 +112,33 @@ export function setupImageViewerGestures({
 		pointY: number,
 		nextScale: number,
 	) => {
-		const clampedScale = clamp(nextScale, minScale, maxScale);
+		const clampedScale = clamp(
+			nextScale,
+			IMAGE_VIEWER_MIN_SCALE,
+			IMAGE_VIEWER_MAX_SCALE,
+		);
 		setTransform(zoomTowardPoint(getTransform(), pointX, pointY, clampedScale));
 	};
 
 	const canPrimaryPointerPan = () => {
-		const policy = getPolicy();
-		if (!policy.enabled || !policy.allowPrimaryPointerPan) {
-			return false;
-		}
-
-		if (!policy.primaryPointerPanRequiresSpace) {
-			return true;
-		}
-
-		return spacePressed.current;
+		const { captureActive, spacePressed } = gestureState.current;
+		return !captureActive || spacePressed;
 	};
 
-	const canMiddlePointerPan = () => getPolicy().enabled;
-
-	const handleWheel = (event: WheelEvent) => {
-		if (!getPolicy().enabled) {
+	const releaseDrag = (pointerId = dragPointerId) => {
+		if (!isDragging || pointerId === null) {
 			return;
 		}
 
+		if (container.hasPointerCapture(pointerId)) {
+			container.releasePointerCapture(pointerId);
+		}
+
+		isDragging = false;
+		dragPointerId = null;
+	};
+
+	const handleWheel = (event: WheelEvent) => {
 		if (event.ctrlKey || event.metaKey) {
 			event.preventDefault();
 
@@ -155,7 +151,6 @@ export function setupImageViewerGestures({
 				clearTimeout(wheelZoomTimeout);
 			}
 
-			// Exponential factor stays positive for large mouse-wheel deltaY values.
 			const zoomFactor = Math.exp(-event.deltaY * WHEEL_ZOOM_SENSITIVITY);
 			accumulatedWheelScale *= zoomFactor;
 			accumulatedWheelScale = clamp(
@@ -186,29 +181,12 @@ export function setupImageViewerGestures({
 		});
 	};
 
-	const cancelDrag = () => {
-		if (!isDragging || dragPointerId === null) {
-			return;
-		}
-
-		if (container.hasPointerCapture(dragPointerId)) {
-			container.releasePointerCapture(dragPointerId);
-		}
-
-		isDragging = false;
-		dragPointerId = null;
-	};
-
 	const handlePointerDown = (event: PointerEvent) => {
 		if (isPinching) {
 			return;
 		}
 
 		if (event.button === 0 && !canPrimaryPointerPan()) {
-			return;
-		}
-
-		if (event.button === 1 && !canMiddlePointerPan()) {
 			return;
 		}
 
@@ -230,36 +208,28 @@ export function setupImageViewerGestures({
 			return;
 		}
 
-		const deltaX = event.clientX - dragStartClientX;
-		const deltaY = event.clientY - dragStartClientY;
-
 		setTransform({
 			...dragStartTransform,
-			x: dragStartTransform.x + deltaX,
-			y: dragStartTransform.y + deltaY,
+			x: dragStartTransform.x + (event.clientX - dragStartClientX),
+			y: dragStartTransform.y + (event.clientY - dragStartClientY),
 		});
 		event.preventDefault();
 	};
 
-	const endDrag = (event: PointerEvent) => {
+	const handlePointerEnd = (event: PointerEvent) => {
 		if (!isDragging || event.pointerId !== dragPointerId) {
 			return;
 		}
 
-		isDragging = false;
-		dragPointerId = null;
-
-		if (container.hasPointerCapture(event.pointerId)) {
-			container.releasePointerCapture(event.pointerId);
-		}
+		releaseDrag(event.pointerId);
 	};
 
 	const handleTouchStart = (event: TouchEvent) => {
-		if (!getPolicy().enabled || event.touches.length !== 2) {
+		if (event.touches.length !== 2) {
 			return;
 		}
 
-		cancelDrag();
+		releaseDrag();
 		isPinching = true;
 		pinchStartDistance = getTouchDistance(event.touches);
 		pinchStartScale = getTransform().scale;
@@ -267,12 +237,7 @@ export function setupImageViewerGestures({
 	};
 
 	const handleTouchMove = (event: TouchEvent) => {
-		if (
-			!isPinching ||
-			!getPolicy().enabled ||
-			event.touches.length !== 2 ||
-			pinchStartDistance === 0
-		) {
+		if (!isPinching || event.touches.length !== 2 || pinchStartDistance === 0) {
 			return;
 		}
 
@@ -296,18 +261,18 @@ export function setupImageViewerGestures({
 
 	const handleKeyDown = (event: KeyboardEvent) => {
 		if (event.key === " ") {
-			spacePressed.current = true;
+			gestureState.current.spacePressed = true;
 		}
 	};
 
 	const handleKeyUp = (event: KeyboardEvent) => {
 		if (event.key === " ") {
-			spacePressed.current = false;
+			gestureState.current.spacePressed = false;
 		}
 	};
 
 	const handleWindowBlur = () => {
-		spacePressed.current = false;
+		gestureState.current.spacePressed = false;
 	};
 
 	const passiveFalse = { passive: false } as const;
@@ -315,8 +280,8 @@ export function setupImageViewerGestures({
 	container.addEventListener("wheel", handleWheel, passiveFalse);
 	container.addEventListener("pointerdown", handlePointerDown);
 	container.addEventListener("pointermove", handlePointerMove);
-	container.addEventListener("pointerup", endDrag);
-	container.addEventListener("pointercancel", endDrag);
+	container.addEventListener("pointerup", handlePointerEnd);
+	container.addEventListener("pointercancel", handlePointerEnd);
 	container.addEventListener("touchstart", handleTouchStart, passiveFalse);
 	container.addEventListener("touchmove", handleTouchMove, passiveFalse);
 	container.addEventListener("touchend", handleTouchEnd);
@@ -329,8 +294,8 @@ export function setupImageViewerGestures({
 		container.removeEventListener("wheel", handleWheel);
 		container.removeEventListener("pointerdown", handlePointerDown);
 		container.removeEventListener("pointermove", handlePointerMove);
-		container.removeEventListener("pointerup", endDrag);
-		container.removeEventListener("pointercancel", endDrag);
+		container.removeEventListener("pointerup", handlePointerEnd);
+		container.removeEventListener("pointercancel", handlePointerEnd);
 		container.removeEventListener("touchstart", handleTouchStart);
 		container.removeEventListener("touchmove", handleTouchMove);
 		container.removeEventListener("touchend", handleTouchEnd);

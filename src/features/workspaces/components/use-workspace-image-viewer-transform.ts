@@ -1,9 +1,13 @@
-import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type RefObject,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 
 import {
 	DEFAULT_IMAGE_VIEWER_TRANSFORM,
-	IMAGE_VIEWER_MAX_SCALE,
-	IMAGE_VIEWER_MIN_SCALE,
 	type ImageViewerTransform,
 	setupImageViewerGestures,
 } from "#/features/workspaces/components/workspace-image-viewer-gestures";
@@ -20,11 +24,13 @@ export function useWorkspaceImageViewerTransform({
 		DEFAULT_IMAGE_VIEWER_TRANSFORM,
 	);
 	const transformRef = useRef(transform);
-	const isCaptureActiveRef = useRef(isCaptureActive);
-	const spacePressedRef = useRef(false);
+	const gestureStateRef = useRef({
+		captureActive: isCaptureActive,
+		spacePressed: false,
+	});
 
 	transformRef.current = transform;
-	isCaptureActiveRef.current = isCaptureActive;
+	gestureStateRef.current.captureActive = isCaptureActive;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -34,34 +40,27 @@ export function useWorkspaceImageViewerTransform({
 
 		return setupImageViewerGestures({
 			container,
-			getPolicy: () => ({
-				allowPrimaryPointerPan: true,
-				enabled: true,
-				primaryPointerPanRequiresSpace: isCaptureActiveRef.current,
-			}),
+			gestureState: gestureStateRef,
 			getTransform: () => transformRef.current,
-			maxScale: IMAGE_VIEWER_MAX_SCALE,
-			minScale: IMAGE_VIEWER_MIN_SCALE,
 			setTransform,
-			spacePressed: spacePressedRef,
 		});
 	}, [enabled]);
 
-	const contentStyle = useMemo(
-		() => ({
-			height: "100%",
-			transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`,
-			transformOrigin: "0 0",
-			width: "100%",
-		}),
-		[transform.scale, transform.x, transform.y],
+	const deferCaptureSelection = useCallback(
+		() =>
+			gestureStateRef.current.captureActive &&
+			gestureStateRef.current.spacePressed,
+		[],
 	);
 
 	return {
 		containerRef: containerRef as RefObject<HTMLDivElement>,
-		contentStyle,
-		spacePressedRef,
+		contentStyle: {
+			height: "100%",
+			transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`,
+			transformOrigin: "0 0",
+			width: "100%",
+		},
+		deferCaptureSelection,
 	};
 }
-
-export { IMAGE_VIEWER_MAX_SCALE, IMAGE_VIEWER_MIN_SCALE };

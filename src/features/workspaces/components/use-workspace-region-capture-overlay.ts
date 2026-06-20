@@ -16,24 +16,24 @@ export function useWorkspaceRegionCaptureOverlay({
 	active,
 	boundsRef,
 	onCapture,
-	shouldDeferPointer,
+	deferCaptureSelection,
 }: {
 	active: boolean;
 	boundsRef: RefObject<HTMLElement | null>;
 	onCapture: (region: WorkspaceRegionRect) => Promise<void>;
-	shouldDeferPointer?: () => boolean;
+	deferCaptureSelection?: () => boolean;
 }) {
 	const [draft, setDraft] = useState<CaptureDraft | null>(null);
 	const draftRef = useRef(draft);
 	const activeRef = useRef(active);
 	const isCapturingRef = useRef(false);
 	const onCaptureRef = useRef(onCapture);
-	const shouldDeferPointerRef = useRef(shouldDeferPointer);
+	const deferCaptureSelectionRef = useRef(deferCaptureSelection);
 
 	draftRef.current = draft;
 	activeRef.current = active;
 	onCaptureRef.current = onCapture;
-	shouldDeferPointerRef.current = shouldDeferPointer;
+	deferCaptureSelectionRef.current = deferCaptureSelection;
 
 	const visible = active || draft;
 	const selectionRect = draft
@@ -56,7 +56,7 @@ export function useWorkspaceRegionCaptureOverlay({
 				return;
 			}
 
-			if (shouldDeferPointerRef.current?.()) {
+			if (deferCaptureSelectionRef.current?.()) {
 				return;
 			}
 
