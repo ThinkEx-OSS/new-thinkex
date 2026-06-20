@@ -51,13 +51,13 @@ export function WorkspaceItemTreePickerDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="gap-0 p-0 sm:max-w-lg">
-				<DialogHeader className="px-5 pt-5 pr-12 pb-4">
+			<DialogContent className="sm:max-w-lg">
+				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
 				</DialogHeader>
 
 				<ul
-					className="flex max-h-80 flex-col gap-1 overflow-y-auto px-5 pb-3"
+					className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-md border p-1"
 					aria-label={title}
 				>
 					{rows.length > 0 ? (
@@ -79,10 +79,7 @@ export function WorkspaceItemTreePickerDialog({
 				</ul>
 
 				<DialogFooter
-					className={cn(
-						"mx-0 mb-0 items-center px-5 py-4",
-						hasFooterStart && "sm:justify-between",
-					)}
+					className={cn(hasFooterStart && "items-center sm:justify-between")}
 				>
 					{hasFooterStart ? <div className="min-w-0">{footerStart}</div> : null}
 					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
