@@ -10,6 +10,7 @@ import { Button } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import AiChatMessageList from "#/features/workspaces/components/ai-chat/AiChatMessageList";
 import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
+import { aiChatComposerRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type {
 	AiChatModelId,
 	AiChatSendMessage,
@@ -82,7 +83,7 @@ export default function AiChatThreadView({
 			</Conversation>
 
 			<div className="px-4 pb-4">
-				<div className="mx-auto w-full max-w-2xl">
+				<div className={aiChatComposerRailClassName}>
 					{error ? (
 						<Alert variant="destructive" className="mb-3 py-2">
 							<div className="flex flex-col gap-2">
