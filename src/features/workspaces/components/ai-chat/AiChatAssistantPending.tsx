@@ -6,6 +6,7 @@ import { Message, MessageContent } from "#/components/ai-elements/message";
 import { Shimmer } from "#/components/ai-elements/shimmer";
 import { useTheme } from "#/components/theme-provider";
 import type { AssistantPendingKind } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import { buildClientAbsoluteUrl } from "#/lib/client-url";
 
 const THINKING_LOTTIE_BY_THEME = {
 	dark: "/logo.lottie",
@@ -69,9 +70,7 @@ function prewarmAiChatThinkingLoader() {
 function loadDotLottieReact() {
 	dotLottieModulePromise ??= import("@lottiefiles/dotlottie-react").then(
 		(module) => {
-			module.setWasmUrl(
-				new URL(DOTLOTTIE_WASM_SRC, window.location.origin).href,
-			);
+			module.setWasmUrl(buildClientAbsoluteUrl(DOTLOTTIE_WASM_SRC));
 
 			return module;
 		},
@@ -89,7 +88,7 @@ function prefetchStaticAsset({
 	href: string;
 	type?: string;
 }) {
-	const url = new URL(href, window.location.origin).href;
+	const url = buildClientAbsoluteUrl(href);
 
 	if (document.head.querySelector(`link[href="${url}"]`)) {
 		return;

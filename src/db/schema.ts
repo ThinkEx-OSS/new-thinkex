@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
 	index,
@@ -88,6 +88,18 @@ export const workspaceRole = pgEnum("workspace_role", [
 	"viewer",
 ]);
 
+export const workspaceInviteType = pgEnum("workspace_invite_type", [
+	"email",
+	"link",
+]);
+
+export const workspaceInviteStatus = pgEnum("workspace_invite_status", [
+	"pending",
+	"accepted",
+	"revoked",
+	"expired",
+]);
+
 export const workspaces = pgTable(
 	"workspaces",
 	{
@@ -143,6 +155,41 @@ export const workspaceMembers = pgTable(
 	],
 );
 
+export const workspaceInvites = pgTable(
+	"workspace_invites",
+	{
+		id: text("id").primaryKey(),
+		workspaceId: text("workspace_id")
+			.notNull()
+			.references(() => workspaces.id, { onDelete: "cascade" }),
+		role: workspaceRole("role").notNull(),
+		type: workspaceInviteType("type").notNull(),
+		status: workspaceInviteStatus("status").default("pending").notNull(),
+		email: text("email"),
+		token: text("token"),
+		createdByUserId: text("created_by_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		expiresAt: timestamp("expires_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("workspace_invites_token_unique").on(table.token),
+		uniqueIndex("workspace_invites_pending_link_per_role")
+			.on(table.workspaceId, table.role)
+			.where(sql`${table.type} = 'link' and ${table.status} = 'pending'`),
+		uniqueIndex("workspace_invites_pending_email_per_workspace")
+			.on(table.workspaceId, table.email)
+			.where(sql`${table.type} = 'email' and ${table.status} = 'pending'`),
+		index("workspace_invites_workspace_id_idx").on(table.workspaceId),
+		index("workspace_invites_created_by_user_id_idx").on(table.createdByUserId),
+	],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
@@ -170,6 +217,7 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
 		references: [user.id],
 	}),
 	members: many(workspaceMembers),
+	invites: many(workspaceInvites),
 }));
 
 export const workspaceMemberRelations = relations(
@@ -181,6 +229,20 @@ export const workspaceMemberRelations = relations(
 		}),
 		user: one(user, {
 			fields: [workspaceMembers.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const workspaceInviteRelations = relations(
+	workspaceInvites,
+	({ one }) => ({
+		workspace: one(workspaces, {
+			fields: [workspaceInvites.workspaceId],
+			references: [workspaces.id],
+		}),
+		createdBy: one(user, {
+			fields: [workspaceInvites.createdByUserId],
 			references: [user.id],
 		}),
 	}),

@@ -2,6 +2,7 @@ import { PdfEngineProvider, usePdfiumEngine } from "@embedpdf/engines/react";
 import type { ReactNode } from "react";
 
 import { getPdfiumWasmAbsoluteUrl } from "#/features/workspaces/files/pdfium-assets";
+import { getClientOrigin } from "#/lib/client-url";
 
 export function WorkspacePdfEngineProvider({
 	children,
@@ -10,7 +11,7 @@ export function WorkspacePdfEngineProvider({
 }) {
 	const engineState = usePdfiumEngine({
 		fontFallback: null,
-		wasmUrl: getPdfiumWasmAbsoluteUrl(window.location.origin),
+		wasmUrl: getPdfiumWasmAbsoluteUrl(getClientOrigin()),
 	});
 
 	return <PdfEngineProvider {...engineState}>{children}</PdfEngineProvider>;

@@ -44,7 +44,11 @@ export function useCreateWorkspaceMutation() {
 			const previousWorkspaces =
 				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 
-			seedWorkspaceCaches(queryClient, { workspace, items: [] });
+			seedWorkspaceCaches(queryClient, {
+				workspace,
+				items: [],
+				membershipRole: "owner",
+			});
 			void navigate({
 				to: "/workspaces/$workspaceId",
 				params: { workspaceId: id },
@@ -60,7 +64,11 @@ export function useCreateWorkspaceMutation() {
 			};
 		},
 		onSuccess: (workspace) => {
-			seedWorkspaceCaches(queryClient, { workspace, items: [] });
+			seedWorkspaceCaches(queryClient, {
+				workspace,
+				items: [],
+				membershipRole: "owner",
+			});
 		},
 		onError: (error, _variables, context) => {
 			restoreWorkspaceListCache(queryClient, context?.previousWorkspaces);

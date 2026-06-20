@@ -20,7 +20,11 @@ export function useWorkspaceImageViewerTransform({
 		DEFAULT_IMAGE_VIEWER_TRANSFORM,
 	);
 	const transformRef = useRef(transform);
+	const isCaptureActiveRef = useRef(isCaptureActive);
+	const spacePressedRef = useRef(false);
+
 	transformRef.current = transform;
+	isCaptureActiveRef.current = isCaptureActive;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -33,14 +37,15 @@ export function useWorkspaceImageViewerTransform({
 			getPolicy: () => ({
 				allowPrimaryPointerPan: true,
 				enabled: true,
-				primaryPointerPanRequiresSpace: isCaptureActive,
+				primaryPointerPanRequiresSpace: isCaptureActiveRef.current,
 			}),
 			getTransform: () => transformRef.current,
 			maxScale: IMAGE_VIEWER_MAX_SCALE,
 			minScale: IMAGE_VIEWER_MIN_SCALE,
 			setTransform,
+			spacePressed: spacePressedRef,
 		});
-	}, [enabled, isCaptureActive]);
+	}, [enabled]);
 
 	const contentStyle = useMemo(
 		() => ({
@@ -55,6 +60,7 @@ export function useWorkspaceImageViewerTransform({
 	return {
 		containerRef: containerRef as RefObject<HTMLDivElement>,
 		contentStyle,
+		spacePressedRef,
 	};
 }
 

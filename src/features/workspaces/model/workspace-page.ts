@@ -10,6 +10,7 @@ import {
 	getWorkspaceItemTypeMeta,
 	WORKSPACE_ITEM_SORT_STEP,
 } from "#/features/workspaces/defaults";
+import { buildWorkspaceItemCreateBootstrap } from "#/features/workspaces/documents/document-item-content";
 import { getWorkspaceRootItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceRealtimeEvent } from "#/features/workspaces/realtime/messages";
 
@@ -56,6 +57,11 @@ export function createWorkspaceItemInPage(
 		requestedName: input.name,
 	});
 
+	const { metadataJson } = buildWorkspaceItemCreateBootstrap({
+		type: input.type,
+		name,
+	});
+
 	return upsertWorkspaceItemInPage(page, {
 		id: input.id,
 		workspaceId: input.workspaceId,
@@ -65,7 +71,7 @@ export function createWorkspaceItemInPage(
 		name,
 		meta: getWorkspaceItemTypeMeta(input.type),
 		color: input.color ?? null,
-		metadataJson: {},
+		metadataJson,
 		sortOrder: getNextWorkspaceItemSortOrder(page.items, parentId),
 		createdAt: now,
 		updatedAt: now,

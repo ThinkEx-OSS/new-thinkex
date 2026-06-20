@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -38,6 +39,11 @@ const ProtectedRoute = ProtectedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedHomeRoute = ProtectedHomeRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/home': typeof ProtectedHomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/home': typeof ProtectedHomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_protected/home': typeof ProtectedHomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/home'
+    | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/home'
+    | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_protected/home'
+    | '/invite/$token'
     | '/_protected/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRouteWithChildren
 }
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/home': {
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectedRoute: ProtectedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRouteWithChildren,
 }

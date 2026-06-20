@@ -3,8 +3,8 @@ import type { Workspace as ShellWorkspace } from "@cloudflare/shell";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import {
+	buildWorkspaceItemCreateBootstrap,
 	persistDocumentItemContentUpdate,
-	prepareDocumentItemMetadata,
 	touchWorkspaceItemUpdatedAt,
 } from "#/features/workspaces/documents/document-item-content";
 import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
@@ -80,12 +80,12 @@ export class WorkspaceKernelItemCommands {
 			requestedName: input.name,
 		});
 		const shellPath = getWorkspaceKernelShellPath({ id, type });
-		const initialContent =
-			input.initialContent ?? getInitialWorkspaceKernelContent(type, name);
-		const metadataJson =
-			type === "document"
-				? prepareDocumentItemMetadata(input.metadataJson ?? {}, initialContent)
-				: (input.metadataJson ?? {});
+		const { initialContent, metadataJson } = buildWorkspaceItemCreateBootstrap({
+			type,
+			name,
+			metadataJson: input.metadataJson ?? {},
+			initialContent: input.initialContent,
+		});
 
 		await this.createWorkspaceFile({
 			type,

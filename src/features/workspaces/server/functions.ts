@@ -39,31 +39,31 @@ export const listWorkspacesFn = createServerFn({ method: "GET" }).handler(
 );
 
 export const getWorkspacePageFn = createServerFn({ method: "GET" })
-	.inputValidator(workspaceIdInputSchema)
+	.validator(workspaceIdInputSchema)
 	.handler(async ({ data }) =>
 		getWorkspacePageForCurrentUser(data.workspaceId),
 	);
 
 export const createWorkspaceFn = createServerFn({ method: "POST" })
-	.inputValidator(createWorkspaceInputSchema)
+	.validator(createWorkspaceInputSchema)
 	.handler(async ({ data }) => createWorkspaceForCurrentUser(data));
 
 export const recordWorkspaceOpenedFn = createServerFn({ method: "POST" })
-	.inputValidator(workspaceIdInputSchema)
+	.validator(workspaceIdInputSchema)
 	.handler(async ({ data }) =>
 		recordWorkspaceOpenedForCurrentUser(data.workspaceId),
 	);
 
 export const updateWorkspaceFn = createServerFn({ method: "POST" })
-	.inputValidator(updateWorkspaceInputSchema)
+	.validator(updateWorkspaceInputSchema)
 	.handler(async ({ data }) => updateWorkspaceForCurrentUser(data));
 
 export const deleteWorkspaceFn = createServerFn({ method: "POST" })
-	.inputValidator(deleteWorkspaceInputSchema)
+	.validator(deleteWorkspaceInputSchema)
 	.handler(async ({ data }) => deleteWorkspaceForCurrentUser(data));
 
 export const createWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(createWorkspaceItemInputSchema)
+	.validator(createWorkspaceItemInputSchema)
 	.handler(async ({ data }) =>
 		createWorkspaceKernelItem({
 			...data,
@@ -72,7 +72,7 @@ export const createWorkspaceItemFn = createServerFn({ method: "POST" })
 	);
 
 export const renameWorkspaceItemFn = createServerFn({ method: "POST" })
-	.inputValidator(renameWorkspaceItemInputSchema)
+	.validator(renameWorkspaceItemInputSchema)
 	.handler(async ({ data }) =>
 		renameWorkspaceKernelItem({
 			...data,
@@ -81,7 +81,7 @@ export const renameWorkspaceItemFn = createServerFn({ method: "POST" })
 	);
 
 export const moveWorkspaceItemsFn = createServerFn({ method: "POST" })
-	.inputValidator(moveWorkspaceItemsInputSchema)
+	.validator(moveWorkspaceItemsInputSchema)
 	.handler(async ({ data }) =>
 		moveWorkspaceKernelItems({
 			...data,
@@ -90,7 +90,7 @@ export const moveWorkspaceItemsFn = createServerFn({ method: "POST" })
 	);
 
 export const updateWorkspaceItemColorFn = createServerFn({ method: "POST" })
-	.inputValidator(updateWorkspaceItemColorInputSchema)
+	.validator(updateWorkspaceItemColorInputSchema)
 	.handler(async ({ data }) =>
 		updateWorkspaceKernelItemColor({
 			...data,
@@ -99,7 +99,7 @@ export const updateWorkspaceItemColorFn = createServerFn({ method: "POST" })
 	);
 
 export const deleteWorkspaceItemsFn = createServerFn({ method: "POST" })
-	.inputValidator(deleteWorkspaceItemsInputSchema)
+	.validator(deleteWorkspaceItemsInputSchema)
 	.handler(async ({ data }) =>
 		deleteWorkspaceKernelItems({
 			...data,

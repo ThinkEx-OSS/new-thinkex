@@ -90,6 +90,7 @@ export function setupImageViewerGestures({
 	maxScale,
 	minScale,
 	setTransform,
+	spacePressed = { current: false },
 }: {
 	container: HTMLElement;
 	getPolicy: () => ImageViewerGesturePolicy;
@@ -97,6 +98,7 @@ export function setupImageViewerGestures({
 	maxScale: number;
 	minScale: number;
 	setTransform: (transform: ImageViewerTransform) => void;
+	spacePressed?: { current: boolean };
 }) {
 	let wheelZoomTimeout: ReturnType<typeof setTimeout> | null = null;
 	let wheelGestureStartScale = 1;
@@ -111,8 +113,6 @@ export function setupImageViewerGestures({
 	let dragStartClientX = 0;
 	let dragStartClientY = 0;
 	let dragStartTransform: ImageViewerTransform = DEFAULT_IMAGE_VIEWER_TRANSFORM;
-
-	const spacePressed = { current: false };
 
 	const applyScaleAtPoint = (
 		pointX: number,
@@ -155,7 +155,8 @@ export function setupImageViewerGestures({
 				clearTimeout(wheelZoomTimeout);
 			}
 
-			const zoomFactor = 1 - event.deltaY * WHEEL_ZOOM_SENSITIVITY;
+			// Exponential factor stays positive for large mouse-wheel deltaY values.
+			const zoomFactor = Math.exp(-event.deltaY * WHEEL_ZOOM_SENSITIVITY);
 			accumulatedWheelScale *= zoomFactor;
 			accumulatedWheelScale = clamp(
 				accumulatedWheelScale,
@@ -185,7 +186,24 @@ export function setupImageViewerGestures({
 		});
 	};
 
+	const cancelDrag = () => {
+		if (!isDragging || dragPointerId === null) {
+			return;
+		}
+
+		if (container.hasPointerCapture(dragPointerId)) {
+			container.releasePointerCapture(dragPointerId);
+		}
+
+		isDragging = false;
+		dragPointerId = null;
+	};
+
 	const handlePointerDown = (event: PointerEvent) => {
+		if (isPinching) {
+			return;
+		}
+
 		if (event.button === 0 && !canPrimaryPointerPan()) {
 			return;
 		}
@@ -208,7 +226,7 @@ export function setupImageViewerGestures({
 	};
 
 	const handlePointerMove = (event: PointerEvent) => {
-		if (!isDragging || event.pointerId !== dragPointerId) {
+		if (isPinching || !isDragging || event.pointerId !== dragPointerId) {
 			return;
 		}
 
@@ -241,6 +259,7 @@ export function setupImageViewerGestures({
 			return;
 		}
 
+		cancelDrag();
 		isPinching = true;
 		pinchStartDistance = getTouchDistance(event.touches);
 		pinchStartScale = getTransform().scale;
