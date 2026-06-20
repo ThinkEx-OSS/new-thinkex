@@ -9,12 +9,12 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 	{
 		id: "claude-sonnet",
 		name: "Claude Sonnet 4.6",
-		workersAiModel: "anthropic/claude-sonnet-4.6",
+		workersAiModel: "aws-bedrock/anthropic.claude-sonnet-4-6",
 	},
 	{
 		id: "chatgpt",
 		name: "ChatGPT 5.4",
-		workersAiModel: "openai/gpt-5.4",
+		workersAiModel: "azure-openai/gpt-5.4",
 	},
 	{
 		id: "gemini",

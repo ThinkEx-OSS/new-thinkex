@@ -3,10 +3,10 @@ import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
 import { generateText, tool } from "ai";
 import { createAiGateway } from "ai-gateway-provider";
+import { createAzure } from "ai-gateway-provider/providers/azure";
 import { createUnified } from "ai-gateway-provider/providers/unified";
 import { createWorkersAI } from "workers-ai-provider";
 import { anthropic } from "workers-ai-provider/anthropic";
-import { google } from "workers-ai-provider/google";
 import { openai } from "workers-ai-provider/openai";
 import { z } from "zod";
 
@@ -25,6 +25,9 @@ import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/w
 
 const thinkPromptSectionDivider =
 	"══════════════════════════════════════════════";
+
+const AZURE_OPENAI_RESOURCE_NAME = "chakrabortyurjit-7873-resource";
+const AZURE_OPENAI_API_VERSION = "2024-10-21";
 
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
@@ -191,12 +194,28 @@ export function getWorkersAiModel(
 ): LanguageModel {
 	const model = getWorkspaceAiChatModel(modelId);
 
-	if (model.startsWith("google-vertex-ai/")) {
+	if (model.startsWith("azure-openai/")) {
 		const aiGateway = createAiGateway({
 			binding: env.AI.gateway(env.AI_GATEWAY_ID),
 		});
-		// Vertex routes through AI Gateway's unified path, which does not expose
+		// Azure routes through AI Gateway's provider path, which does not expose
 		// Workers AI's sessionAffinity option.
+		const azure = createAzure({
+			apiVersion: AZURE_OPENAI_API_VERSION,
+			resourceName: AZURE_OPENAI_RESOURCE_NAME,
+			useDeploymentBasedUrls: true,
+		});
+		const deploymentName = model.replace(/^azure-openai\//, "");
+
+		return aiGateway(azure.chat(deploymentName));
+	}
+
+	if (model.startsWith("aws-bedrock/") || model.startsWith("google-vertex-ai/")) {
+		const aiGateway = createAiGateway({
+			binding: env.AI.gateway(env.AI_GATEWAY_ID),
+		});
+		// Bedrock and Vertex route through AI Gateway's unified path, which does
+		// not expose Workers AI's sessionAffinity option.
 		const unified = createUnified();
 
 		return aiGateway(unified(model));
@@ -205,7 +224,7 @@ export function getWorkersAiModel(
 	const workersAi = createWorkersAI({
 		binding: env.AI,
 		gateway: { id: env.AI_GATEWAY_ID },
-		providers: [anthropic, google, openai],
+		providers: [anthropic, openai],
 	});
 
 	return workersAi(model, {

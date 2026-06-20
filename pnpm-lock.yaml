@@ -11,9 +11,9 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.85
         version: 3.0.85(zod@4.4.3)
-      '@ai-sdk/google':
-        specifier: ^3.0.83
-        version: 3.0.83(zod@4.4.3)
+      '@ai-sdk/azure':
+        specifier: ^3.0.76
+        version: 3.0.76(zod@4.4.3)
       '@ai-sdk/openai':
         specifier: ^3.0.73
         version: 3.0.73(zod@4.4.3)
@@ -8235,7 +8235,6 @@ snapshots:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
-    optional: true
 
   '@ai-sdk/cerebras@2.0.57(zod@4.4.3)':
     dependencies:
@@ -8264,7 +8263,6 @@ snapshots:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
-    optional: true
 
   '@ai-sdk/elevenlabs@2.0.36(zod@4.4.3)':
     dependencies:
@@ -8306,6 +8304,7 @@ snapshots:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
+    optional: true
 
   '@ai-sdk/groq@3.0.42(zod@4.4.3)':
     dependencies:
