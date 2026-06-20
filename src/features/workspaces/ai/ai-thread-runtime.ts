@@ -196,10 +196,11 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 	thread?: AIThreadContext;
 	tags?: string[];
 }) {
+	const modelId = input?.modelId ?? DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
 	const tags = [
 		"app:thinkex",
 		"feature:workspace-chat",
-		input?.modelId ? `model:${input.modelId}` : undefined,
+		`model:${modelId}`,
 		input?.thread ? `workspace:${input.thread.workspaceId}` : undefined,
 		input?.thread
 			? input.thread.promptScope.canMutate
@@ -212,10 +213,35 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 	return {
 		gateway: {
 			caching: "auto",
+			...getWorkspaceAiGatewayRoutingOptions(modelId),
 			tags,
 			user: input?.thread?.userId,
 		},
 	};
+}
+
+function getWorkspaceAiGatewayRoutingOptions(
+	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
+) {
+	switch (modelId) {
+		case "claude-sonnet":
+			return {
+				models: ["openai/gpt-5.4"],
+				order: ["bedrock", "anthropic", "vertex"],
+			};
+		case "gemini":
+			return {
+				models: ["openai/gpt-5.4-mini"],
+				order: ["vertex", "google"],
+			};
+		case "chatgpt":
+			return {
+				models: ["openai/gpt-5.4-mini"],
+				order: ["openai", "azure"],
+			};
+		default:
+			return {};
+	}
 }
 
 function getVercelAiGatewayApiKey(env: Env) {

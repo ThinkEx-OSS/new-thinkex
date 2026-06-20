@@ -1,11 +1,6 @@
-export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "auto";
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "chatgpt";
 
 export const WORKSPACE_AI_CHAT_MODELS = [
-	{
-		id: "auto",
-		name: "Auto",
-		gatewayModel: "moonshotai/kimi-k2.6",
-	},
 	{
 		id: "claude-sonnet",
 		name: "Claude Sonnet 4.6",
