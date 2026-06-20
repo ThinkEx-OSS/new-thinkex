@@ -77,7 +77,7 @@ export default function WorkspaceFrame({
 							defaultSize="30rem"
 							minSize="26rem"
 							maxSize="60%"
-							collapsible={true}
+							collapsible={!isDockedChat}
 							collapsedSize={0}
 							panelRef={chatPanelRef}
 							className="min-h-0 overflow-hidden"
