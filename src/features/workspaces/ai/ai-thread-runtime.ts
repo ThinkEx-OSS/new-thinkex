@@ -195,6 +195,8 @@ export function getWorkersAiModel(
 		const aiGateway = createAiGateway({
 			binding: env.AI.gateway(env.AI_GATEWAY_ID),
 		});
+		// Vertex routes through AI Gateway's unified path, which does not expose
+		// Workers AI's sessionAffinity option.
 		const unified = createUnified();
 
 		return aiGateway(unified(model));
