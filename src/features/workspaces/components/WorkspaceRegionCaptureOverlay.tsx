@@ -8,15 +8,18 @@ export function WorkspaceImageRegionCaptureOverlay({
 	active,
 	boundsRef,
 	onCapture,
+	deferCaptureSelection,
 }: {
 	active: boolean;
 	boundsRef: RefObject<HTMLElement | null>;
 	onCapture: (region: WorkspaceRegionRect) => Promise<void>;
+	deferCaptureSelection?: () => boolean;
 }) {
 	const { selectionRect, visible } = useWorkspaceRegionCaptureOverlay({
 		active,
 		boundsRef,
 		onCapture,
+		deferCaptureSelection,
 	});
 
 	if (!visible) {
