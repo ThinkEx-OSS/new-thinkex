@@ -3,6 +3,9 @@ import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
 import { generateText, tool } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
+import { anthropic } from "workers-ai-provider/anthropic";
+import { google } from "workers-ai-provider/google";
+import { openai } from "workers-ai-provider/openai";
 import { z } from "zod";
 
 import type {
@@ -187,6 +190,7 @@ export function getWorkersAiModel(
 	const workersAi = createWorkersAI({
 		binding: env.AI,
 		gateway: { id: env.AI_GATEWAY_ID },
+		providers: [anthropic, google, openai],
 	});
 
 	return workersAi(getWorkspaceAiChatModel(modelId), {
