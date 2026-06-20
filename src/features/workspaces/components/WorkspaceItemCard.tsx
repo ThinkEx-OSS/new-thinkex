@@ -15,6 +15,7 @@ import {
 } from "#/features/workspaces/components/workspace-item-card-chrome";
 import { WorkspaceItemCardFooter } from "#/features/workspaces/components/workspace-item-card-footer";
 import { WorkspaceItemCardPreviewStage } from "#/features/workspaces/components/workspace-item-card-preview-stage";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { workspaceItemSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
 import {
 	createWorkspaceItemDragData,
@@ -56,6 +57,8 @@ export default function WorkspaceItemCard({
 	onSelectionChange,
 	onElementChange,
 }: WorkspaceItemCardProps) {
+	const { capabilities, itemSortableDisabled } = useWorkspaceMutationAccess();
+	const { canMutateContent } = capabilities;
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
 	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
@@ -115,6 +118,7 @@ export default function WorkspaceItemCard({
 			parentId: item.parentId,
 			row,
 		}),
+		disabled: itemSortableDisabled,
 		transition: {
 			duration: 180,
 			easing: "cubic-bezier(0.2, 0, 0, 1)",
@@ -131,7 +135,7 @@ export default function WorkspaceItemCard({
 		useWorkspaceFolderDropTarget({
 			folderId: item.id,
 			parentId: item.parentId,
-			disabled: !isFolder,
+			disabled: !isFolder || !canMutateContent,
 			collisionPriority: WORKSPACE_COLLISION_PRIORITY_HIGHEST,
 			collisionDetector: folderDropCollisionDetector,
 		});
@@ -141,11 +145,13 @@ export default function WorkspaceItemCard({
 		onElementChange(item.id, element);
 	};
 	const showFolderDropAffordance =
+		canMutateContent &&
 		isFolder &&
 		isFolderDropTarget &&
 		dragSource?.kind === "workspace-item" &&
 		dragSource.itemId !== item.id;
 	const isFolderSortingTarget =
+		canMutateContent &&
 		isFolder &&
 		isDropTarget &&
 		!isFolderDropTarget &&
@@ -183,7 +189,8 @@ export default function WorkspaceItemCard({
 				workspaceItemCardUnselectedHoverClass,
 				workspaceItemCardSelectedClass,
 				isDragging && "opacity-70 shadow-lg",
-				isDropTarget &&
+				canMutateContent &&
+					isDropTarget &&
 					!showFolderDropAffordance &&
 					!isFolderSortingTarget &&
 					"bg-muted/60",
@@ -220,14 +227,20 @@ export default function WorkspaceItemCard({
 			) : null}
 			<CardHeader className="pointer-events-none relative z-10 shrink-0 gap-1 px-3 py-2">
 				<CardTitle className="min-w-0">
-					<button
-						type="button"
-						className="pointer-events-auto relative z-20 block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-						aria-label={`Rename ${item.name}`}
-						onClick={handleRenameClick}
-					>
-						{item.name}
-					</button>
+					{canMutateContent ? (
+						<button
+							type="button"
+							className="pointer-events-auto relative z-20 block max-w-full cursor-text truncate rounded-sm text-left underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+							aria-label={`Rename ${item.name}`}
+							onClick={handleRenameClick}
+						>
+							{item.name}
+						</button>
+					) : (
+						<span className="relative z-20 block max-w-full truncate">
+							{item.name}
+						</span>
+					)}
 				</CardTitle>
 				{isFolder ? (
 					meta ? (

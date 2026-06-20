@@ -26,7 +26,6 @@ export const Route = createFileRoute("/_protected/workspaces/$workspaceId")({
 				workspace: page.workspace,
 				items: page.items,
 				revision: page.revision,
-				membershipRole: page.membershipRole,
 			},
 			{ listMode: "update-existing" },
 		);

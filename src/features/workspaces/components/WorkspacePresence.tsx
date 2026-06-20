@@ -51,7 +51,7 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 				render={
 					<button
 						type="button"
-						className="flex h-8 cursor-default items-center rounded-full bg-transparent p-0 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						className="flex h-6 cursor-default items-center rounded-full bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						aria-label={label}
 					/>
 				}
@@ -60,15 +60,11 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 					{visibleUsers.map((user) => (
 						<Avatar key={user.connectionId} size="sm">
 							<AvatarImage src={user.image ?? undefined} alt="" />
-							<AvatarFallback className="text-[10px]">
-								{getInitials(user.name)}
-							</AvatarFallback>
+							<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
 						</Avatar>
 					))}
 					{overflowCount > 0 ? (
-						<AvatarGroupCount className="text-xs">
-							+{overflowCount}
-						</AvatarGroupCount>
+						<AvatarGroupCount>+{overflowCount}</AvatarGroupCount>
 					) : null}
 				</AvatarGroup>
 			</HoverCardTrigger>
@@ -81,9 +77,7 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 						>
 							<Avatar size="sm">
 								<AvatarImage src={user.image ?? undefined} alt="" />
-								<AvatarFallback className="text-xs">
-									{getInitials(user.name)}
-								</AvatarFallback>
+								<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
 							</Avatar>
 							<p className="min-w-0 truncate text-sm font-medium">
 								{user.name}

@@ -5,6 +5,7 @@ import { workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
 import { canGrantRole } from "#/features/workspaces/invites/workspace-invite-rules";
+import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { getSessionFromHeaders } from "#/lib/auth-queries.server";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
@@ -78,7 +79,7 @@ export async function assertCanMutateWorkspace(
 ) {
 	const role = await getWorkspaceMemberRole(db, input);
 
-	if (!role || role === "viewer") {
+	if (!role || !getWorkspaceMemberCapabilities(role).canMutateContent) {
 		throw new WorkspaceForbiddenError();
 	}
 }

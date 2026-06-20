@@ -3,6 +3,7 @@ import {
 	prosemirrorJSONToYXmlFragment,
 	yDocToProsemirrorJSON,
 } from "@tiptap/y-tiptap";
+import type { Connection, ConnectionContext } from "partyserver";
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 import type { DocumentSessionRouteParams } from "#/features/workspaces/agent-routes";
@@ -15,6 +16,10 @@ import {
 	type DocumentMarkdownEdit,
 	type DocumentMarkdownEditResultStatus,
 } from "#/features/workspaces/documents/document-markdown-edits";
+import {
+	type DocumentSessionConnectionState,
+	resolveDocumentSessionConnectionAccess,
+} from "#/features/workspaces/documents/document-session-connection-access";
 import {
 	parseTiptapDocumentJson,
 	stringifyTiptapDocumentJson,
@@ -54,6 +59,41 @@ export class DocumentSession extends YServer {
 		debounceWait: checkpointDelayMs,
 		debounceMaxWait: checkpointMaxWaitMs,
 	};
+
+	override async onConnect(
+		connection: Connection<DocumentSessionConnectionState>,
+		context: ConnectionContext,
+	) {
+		const room = getDocumentSessionRoomNameParts(this.name);
+		let access: Awaited<
+			ReturnType<typeof resolveDocumentSessionConnectionAccess>
+		>;
+
+		try {
+			access = await resolveDocumentSessionConnectionAccess(
+				context.request,
+				room.workspaceId,
+			);
+		} catch {
+			connection.close(1011, "Unauthorized");
+			return;
+		}
+
+		if (!access) {
+			connection.close(1011, "Unauthorized");
+			return;
+		}
+
+		connection.setState({
+			canMutate: access.canMutate,
+			userId: access.userId,
+		});
+		super.onConnect(connection, context);
+	}
+
+	override isReadOnly(connection: Connection<DocumentSessionConnectionState>) {
+		return connection.state?.canMutate !== true;
+	}
 
 	override async onLoad() {
 		const room = getDocumentSessionRoomNameParts(this.name);

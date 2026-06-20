@@ -169,6 +169,10 @@ export const workspaceColorSchema = z.enum(workspaceColorValues);
 
 export const workspaceItemColorSchema = workspaceColorSchema;
 
+export const workspaceRoles = ["owner", "admin", "editor", "viewer"] as const;
+
+export const workspaceMembershipRoleSchema = z.enum(workspaceRoles);
+
 export const workspaceSummarySchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -179,6 +183,7 @@ export const workspaceSummarySchema = z.object({
 	updatedAt: z.string(),
 	lastOpenedAt: z.string().nullable(),
 	archivedAt: z.string().nullable(),
+	membershipRole: workspaceMembershipRoleSchema,
 });
 
 export const workspaceItemTypeSchema = z.enum([
@@ -265,10 +270,6 @@ export const deleteWorkspaceInputSchema = z.object({
 	confirmationName: z.string().trim().min(1),
 });
 
-export const workspaceRoles = ["owner", "admin", "editor", "viewer"] as const;
-
-export const workspaceMembershipRoleSchema = z.enum(workspaceRoles);
-
 export const workspaceRoleLabels: Record<
 	(typeof workspaceRoles)[number],
 	string
@@ -287,7 +288,6 @@ export const workspacePageSchema = z.object({
 	workspace: workspaceSummarySchema,
 	items: z.array(workspaceItemSummarySchema),
 	revision: z.number().int().nonnegative(),
-	membershipRole: workspaceMembershipRoleSchema,
 });
 
 export type WorkspaceIcon = z.infer<typeof workspaceIconSchema>;

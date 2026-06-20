@@ -67,6 +67,7 @@
 	--sidebar-accent-foreground: var(--tx-neutral-900);
 	--sidebar-border: var(--tx-neutral-300);
 	--sidebar-ring: oklch(0.708 0 0);
+	--dialog-footer: color-mix(in oklch, var(--muted) 50%, var(--popover));
 }
 
 .dark {
@@ -96,4 +97,5 @@
 		color-mix(in oklch, var(--foreground) 45%, transparent);
 	--sidebar-primary: var(--tx-neutral-900);
 	--sidebar-ring: oklch(0.556 0 0);
+	--dialog-footer: color-mix(in oklch, var(--secondary) 50%, var(--popover));
 }

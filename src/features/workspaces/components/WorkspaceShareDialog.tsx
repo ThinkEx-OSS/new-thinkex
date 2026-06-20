@@ -169,7 +169,7 @@ export function WorkspaceShareDialog({
 					</div>
 				</div>
 
-				<DialogFooter className="flex-row items-center justify-end gap-2 border-t pt-4">
+				<DialogFooter className="flex-row items-center justify-end">
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							render={

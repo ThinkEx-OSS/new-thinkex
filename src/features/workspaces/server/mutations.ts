@@ -59,10 +59,13 @@ export async function createWorkspaceForCurrentUser(
 			return workspace;
 		});
 
-		return mapWorkspaceRow({
-			...row,
-			lastOpenedAt: openedAt,
-		});
+		return mapWorkspaceRow(
+			{
+				...row,
+				lastOpenedAt: openedAt,
+			},
+			"owner",
+		);
 	} finally {
 		await dbContext.dispose();
 	}
@@ -90,7 +93,10 @@ export async function recordWorkspaceOpenedForCurrentUser(
 						eq(workspaceMembers.userId, userId),
 					),
 				)
-				.returning({ lastOpenedAt: workspaceMembers.lastOpenedAt }),
+				.returning({
+					lastOpenedAt: workspaceMembers.lastOpenedAt,
+					role: workspaceMembers.role,
+				}),
 			dbContext.db
 				.select()
 				.from(workspaces)
@@ -104,10 +110,13 @@ export async function recordWorkspaceOpenedForCurrentUser(
 			return null;
 		}
 
-		return mapWorkspaceRow({
-			...workspace,
-			lastOpenedAt: membership.lastOpenedAt,
-		});
+		return mapWorkspaceRow(
+			{
+				...workspace,
+				lastOpenedAt: membership.lastOpenedAt,
+			},
+			membership.role,
+		);
 	} finally {
 		await dbContext.dispose();
 	}
@@ -148,7 +157,10 @@ export async function updateWorkspaceForCurrentUser(
 			}
 
 			const [membership] = await tx
-				.select({ lastOpenedAt: workspaceMembers.lastOpenedAt })
+				.select({
+					lastOpenedAt: workspaceMembers.lastOpenedAt,
+					role: workspaceMembers.role,
+				})
 				.from(workspaceMembers)
 				.where(
 					and(
@@ -158,13 +170,18 @@ export async function updateWorkspaceForCurrentUser(
 				)
 				.limit(1);
 
+			if (!membership) {
+				throw new Error("Workspace membership was not found.");
+			}
+
 			return {
 				...updatedWorkspace,
-				lastOpenedAt: membership?.lastOpenedAt ?? null,
+				lastOpenedAt: membership.lastOpenedAt,
+				membershipRole: membership.role,
 			};
 		});
 
-		return mapWorkspaceRow(workspace);
+		return mapWorkspaceRow(workspace, workspace.membershipRole);
 	} finally {
 		await dbContext.dispose();
 	}

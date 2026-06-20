@@ -2,6 +2,7 @@ import type {
 	WorkspaceItemSummary,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 import {
 	workspaceColorOptions,
 	workspaceColors,
@@ -56,6 +57,14 @@ export function getWorkspaceRecencyLabel(workspace: WorkspaceSummary) {
 	}
 
 	return `Opened ${formatWorkspaceRecency(workspace.lastOpenedAt)}`;
+}
+
+export function getWorkspaceCardRoleLabel(workspace: WorkspaceSummary) {
+	if (workspace.membershipRole === "owner") {
+		return null;
+	}
+
+	return workspaceRoleLabels[workspace.membershipRole];
 }
 
 export function getWorkspaceItemRecencyLabel(

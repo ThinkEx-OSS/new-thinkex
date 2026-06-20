@@ -49,7 +49,10 @@ const timeCalculateRelativeInputSchema = z.object({
 });
 
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
-export const AI_THREAD_ACTIVE_TOOLS = [
+
+const AI_THREAD_WORKSPACE_MUTATION_TOOLS = ["workspace_edit_item"] as const;
+
+const AI_THREAD_BASE_ACTIVE_TOOLS = [
 	"sandbox_read_file",
 	"sandbox_write_file",
 	"sandbox_edit_file",
@@ -63,10 +66,23 @@ export const AI_THREAD_ACTIVE_TOOLS = [
 	"browser_scrape",
 	"workspace_list_items",
 	"workspace_read_items",
-	"workspace_edit_item",
 	"time_get_current",
 	"time_calculate_relative",
 ] as const;
+
+export const AI_THREAD_ACTIVE_TOOLS = [
+	...AI_THREAD_BASE_ACTIVE_TOOLS,
+	...AI_THREAD_WORKSPACE_MUTATION_TOOLS,
+] as const;
+
+export function getAIThreadActiveTools(canMutate: boolean) {
+	return canMutate
+		? [...AI_THREAD_ACTIVE_TOOLS]
+		: [...AI_THREAD_BASE_ACTIVE_TOOLS];
+}
+
+const AI_THREAD_VIEW_ONLY_WORKSPACE_LINE =
+	"- Workspace access: view-only. Do not create, edit, move, or delete workspace items.";
 
 export function createAIThreadTools(input: {
 	env: Env;
@@ -266,10 +282,13 @@ function getThinkExRuntimeScopePrompt(
 		"CURRENT TURN [readonly]",
 		thinkPromptSectionDivider,
 		`- Workspace: ${promptScope.workspaceName}`,
+		promptScope.canMutate ? null : AI_THREAD_VIEW_ONLY_WORKSPACE_LINE,
 		`- Date/time: ${formatPromptDateTime(options.now ?? new Date(), timeZone)}`,
 		"- Actual workspace paths are absolute, such as /.",
 		workspaceAiContext ? `\n${workspaceAiContext}` : "",
-	].join("\n");
+	]
+		.filter(Boolean)
+		.join("\n");
 }
 
 function getPromptTimeZone(value: string | undefined) {

@@ -43,11 +43,13 @@ import {
 } from "#/features/workspaces/model/display";
 import { useDeleteWorkspaceMutation } from "#/features/workspaces/use-delete-workspace";
 import { useUpdateWorkspaceMutation } from "#/features/workspaces/use-update-workspace";
+import type { WorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceSettingsDialogProps {
 	workspace: WorkspaceSummary;
 	trigger: ReactElement;
+	capabilities: WorkspaceMemberCapabilities;
 }
 
 interface WorkspaceSettingsDraft {
@@ -67,11 +69,16 @@ const getWorkspaceSettingsDraft = (
 export default function WorkspaceSettingsDialog({
 	workspace,
 	trigger,
+	capabilities,
 }: WorkspaceSettingsDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [draft, setDraft] = useState(() =>
 		getWorkspaceSettingsDraft(workspace),
 	);
+
+	if (!capabilities.canMutateContent) {
+		return null;
+	}
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) {
@@ -85,6 +92,7 @@ export default function WorkspaceSettingsDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger render={trigger} />
 			<WorkspaceSettingsDialogContent
+				canDelete={capabilities.canDeleteWorkspace}
 				draft={draft}
 				setDraft={setDraft}
 				workspace={workspace}
@@ -95,11 +103,13 @@ export default function WorkspaceSettingsDialog({
 }
 
 function WorkspaceSettingsDialogContent({
+	canDelete,
 	draft,
 	setDraft,
 	workspace,
 	onOpenChange,
 }: {
+	canDelete: boolean;
 	draft: WorkspaceSettingsDraft;
 	setDraft: Dispatch<SetStateAction<WorkspaceSettingsDraft>>;
 	workspace: WorkspaceSummary;
@@ -203,16 +213,20 @@ function WorkspaceSettingsDialogContent({
 			</FieldGroup>
 
 			<DialogFooter className="items-center sm:justify-between">
-				<HoldToDeleteButton
-					workspace={workspace}
-					disabled={deleteWorkspaceMutation.isPending}
-					onDelete={() =>
-						deleteWorkspaceMutation.mutate({
-							workspaceId: workspace.id,
-							confirmationName: workspace.name,
-						})
-					}
-				/>
+				{canDelete ? (
+					<HoldToDeleteButton
+						workspace={workspace}
+						disabled={deleteWorkspaceMutation.isPending}
+						onDelete={() =>
+							deleteWorkspaceMutation.mutate({
+								workspaceId: workspace.id,
+								confirmationName: workspace.name,
+							})
+						}
+					/>
+				) : (
+					<div />
+				)}
 				<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 					<Button
 						type="button"

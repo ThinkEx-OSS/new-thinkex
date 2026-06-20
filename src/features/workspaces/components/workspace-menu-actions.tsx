@@ -68,6 +68,40 @@ export function renderWorkspaceMenuActions(
 	return actions.map((action) => renderWorkspaceMenuAction(action, renderer));
 }
 
+export function applyWorkspaceMenuReadOnly(
+	actions: readonly WorkspaceMenuAction[],
+): WorkspaceMenuAction[] {
+	return actions.map((action) => {
+		if (action.kind === "separator") {
+			return action;
+		}
+
+		if (action.kind === "item") {
+			return {
+				...action,
+				disabled: true,
+				onSelect: undefined,
+			};
+		}
+
+		return {
+			...action,
+			disabled: true,
+			actions: applyWorkspaceMenuReadOnly(action.actions),
+		};
+	});
+}
+
+export function workspaceMenuItemInteraction(
+	readOnly: boolean,
+	onSelect: () => void,
+) {
+	return {
+		disabled: readOnly,
+		onClick: readOnly ? undefined : onSelect,
+	} as const;
+}
+
 function renderWorkspaceMenuAction(
 	action: WorkspaceMenuAction,
 	renderer: WorkspaceMenuRenderer,

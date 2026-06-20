@@ -11,8 +11,16 @@ import {
 	workspaceDropdownMenuRenderer,
 } from "#/features/workspaces/components/WorkspaceMenuRenderers";
 import { WorkspaceToolbarTextButton } from "#/features/workspaces/components/WorkspaceToolbar";
-import type { WorkspaceMenuRenderer } from "#/features/workspaces/components/workspace-menu-actions";
-import { renderWorkspaceMenuActions } from "#/features/workspaces/components/workspace-menu-actions";
+import {
+	applyWorkspaceMenuReadOnly,
+	renderWorkspaceMenuActions,
+	type WorkspaceMenuRenderer,
+} from "#/features/workspaces/components/workspace-menu-actions";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
+import {
+	WorkspaceViewerMenuNotice,
+	WorkspaceViewerRoleBadge,
+} from "#/features/workspaces/components/workspace-viewer-ui";
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 import {
 	workspaceItemAcquisitionActions,
@@ -32,6 +40,12 @@ export default function WorkspaceCreateMenu({
 	parentId,
 	onCreateItem,
 }: WorkspaceCreateMenuProps) {
+	const { capabilities } = useWorkspaceMutationAccess();
+
+	if (!capabilities.canMutateContent) {
+		return <WorkspaceViewerRoleBadge />;
+	}
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger render={<WorkspaceToolbarTextButton />}>
@@ -52,18 +66,26 @@ export function WorkspaceCreateMenuContent({
 	parentId,
 	onCreateItem,
 	renderer = workspaceDropdownMenuRenderer,
+	menuKind = "dropdown",
 }: WorkspaceCreateMenuProps & {
 	renderer?: WorkspaceMenuRenderer;
+	menuKind?: "dropdown" | "context";
 }) {
+	const { capabilities } = useWorkspaceMutationAccess();
+	const readOnly = !capabilities.canMutateContent;
 	const { requestFileUpload } = useWorkspaceFileUpload();
+	const actions = getWorkspaceCreateMenuActions({
+		parentId,
+		onCreateItem,
+		onUploadFile: requestFileUpload,
+	});
+	const menuActions = readOnly ? applyWorkspaceMenuReadOnly(actions) : actions;
 
-	return renderWorkspaceMenuActions(
-		getWorkspaceCreateMenuActions({
-			parentId,
-			onCreateItem,
-			onUploadFile: requestFileUpload,
-		}),
-		renderer,
+	return (
+		<>
+			{readOnly ? <WorkspaceViewerMenuNotice menuKind={menuKind} /> : null}
+			{renderWorkspaceMenuActions(menuActions, renderer)}
+		</>
 	);
 }
 
@@ -73,6 +95,7 @@ export function WorkspaceCreateContextMenuContent(
 	return (
 		<WorkspaceCreateMenuContent
 			{...props}
+			menuKind="context"
 			renderer={workspaceContextMenuRenderer}
 		/>
 	);

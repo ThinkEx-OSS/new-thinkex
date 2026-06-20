@@ -7,7 +7,10 @@ export default function WorkspaceCardSkeleton() {
 			<Skeleton className="absolute top-2 right-2 size-8 rounded-md bg-muted/55" />
 			<div className="space-y-2 px-4 py-3">
 				<Skeleton className="h-5 w-3/4 rounded-sm bg-muted/55" />
-				<Skeleton className="h-3 w-1/2 rounded-sm bg-muted/45" />
+				<div className="flex items-center justify-between gap-2">
+					<Skeleton className="h-3 w-1/4 rounded-sm bg-muted/45" />
+					<Skeleton className="h-3 w-1/3 rounded-sm bg-muted/45" />
+				</div>
 			</div>
 		</div>
 	);

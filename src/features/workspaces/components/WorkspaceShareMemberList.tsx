@@ -36,6 +36,28 @@ function getInitials(name: string) {
 	return `${first}${second}`.toUpperCase() || fallback.toUpperCase();
 }
 
+function sortMembersWithCurrentUserFirst(
+	members: WorkspaceMemberSummary[],
+	currentUserId: string | undefined,
+) {
+	if (!currentUserId) {
+		return members;
+	}
+
+	let currentUser: WorkspaceMemberSummary | undefined;
+	const rest: WorkspaceMemberSummary[] = [];
+
+	for (const member of members) {
+		if (member.userId === currentUserId) {
+			currentUser = member;
+		} else {
+			rest.push(member);
+		}
+	}
+
+	return currentUser ? [currentUser, ...rest] : members;
+}
+
 export function WorkspaceShareMemberList({
 	emailInvites,
 	isLoading,
@@ -51,8 +73,9 @@ export function WorkspaceShareMemberList({
 }) {
 	const queryClient = useQueryClient();
 	const assignableRoles = getAssignableMemberRoles(membershipRole);
-	const sessionQuery = useQuery(getAuthSessionQueryOptions());
-	const currentUserId = sessionQuery.data?.user.id;
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
+	const currentUserId = session?.user.id;
+	const sortedMembers = sortMembersWithCurrentUserFirst(members, currentUserId);
 
 	const updateRoleMutation = useMutation({
 		mutationFn: updateWorkspaceMemberRoleFn,
@@ -110,16 +133,13 @@ export function WorkspaceShareMemberList({
 					}
 				/>
 			))}
-			{members.map((member) => (
+			{sortedMembers.map((member) => (
 				<WorkspaceShareMemberRow
 					key={member.userId}
 					assignableRoles={assignableRoles}
-					canManage={
-						member.userId !== currentUserId &&
-						canManageMember(membershipRole, member.role)
-					}
-					isCurrentUser={member.userId === currentUserId}
+					currentUserId={currentUserId}
 					member={member}
+					membershipRole={membershipRole}
 					onRemove={() =>
 						removeMemberMutation.mutate({
 							data: {
@@ -181,19 +201,23 @@ function WorkspaceShareEmailInviteRow({
 
 function WorkspaceShareMemberRow({
 	assignableRoles,
-	canManage,
-	isCurrentUser,
+	currentUserId,
 	member,
+	membershipRole,
 	onRemove,
 	onRoleChange,
 }: {
 	assignableRoles: WorkspaceMembershipRole[];
-	canManage: boolean;
-	isCurrentUser: boolean;
+	currentUserId: string | undefined;
 	member: WorkspaceMemberSummary;
+	membershipRole: WorkspaceMembershipRole;
 	onRemove: () => void;
 	onRoleChange: (role: WorkspaceMembershipRole) => void;
 }) {
+	const isCurrentUser = member.userId === currentUserId;
+	const canManage =
+		!isCurrentUser && canManageMember(membershipRole, member.role);
+
 	return (
 		<div className="flex items-center gap-2 rounded-md px-1 py-1.5 hover:bg-muted/50">
 			<Avatar size="sm">
