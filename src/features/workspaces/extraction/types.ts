@@ -1,18 +1,13 @@
 import type {
 	WorkspaceFileAssetKind,
-	WorkspaceFileExtractionRoute,
+	WorkspaceFileExtractionMode,
+	WorkspaceFileExtractionProviderId,
 } from "#/features/workspaces/model/workspace-file/types";
-import {
-	type WorkspaceFileExtractionMode,
-	type WorkspaceFileExtractionProviderId,
-	workspaceFileExtractionProviders,
-} from "#/features/workspaces/model/workspace-file/types";
+import { workspaceFileExtractionProviders } from "#/features/workspaces/model/workspace-file/types";
 
 export type MarkdownExtractionProviderId = WorkspaceFileExtractionProviderId;
 
 export type MarkdownExtractionProviderMode = WorkspaceFileExtractionMode;
-
-export type MarkdownExtractionRouteDecision = WorkspaceFileExtractionRoute;
 
 export { workspaceFileExtractionProviders as markdownExtractionProviders };
 

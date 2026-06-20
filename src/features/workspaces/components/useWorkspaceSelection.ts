@@ -11,11 +11,6 @@ interface UseWorkspaceSelectionInput {
 	workspaceId: string;
 }
 
-interface UseWorkspaceSelectedItemsInput {
-	itemsById: ReadonlyMap<string, WorkspaceItem>;
-	workspaceId: string;
-}
-
 export function useWorkspaceSelection({
 	items,
 	workspaceId,
@@ -67,24 +62,6 @@ export function useWorkspaceSelection({
 		setSelectedItemIds,
 		setItemSelected,
 	};
-}
-
-export function useWorkspaceSelectedItems({
-	itemsById,
-	workspaceId,
-}: UseWorkspaceSelectedItemsInput) {
-	const selectedItemIds = useWorkspaceSelectionItemIds(workspaceId);
-	const selectedItems: WorkspaceItem[] = [];
-
-	for (const itemId of selectedItemIds) {
-		const item = itemsById.get(itemId);
-
-		if (item) {
-			selectedItems.push(item);
-		}
-	}
-
-	return selectedItems;
 }
 
 function getWorkspaceSelectionValidItemIds(items: readonly WorkspaceItem[]) {

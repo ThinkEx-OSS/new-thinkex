@@ -320,17 +320,6 @@ export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
 	);
 }
 
-export function useWorkspaceAiContextItemIds(workspaceId: string) {
-	return useWorkspaceUiStore(
-		useMemo(
-			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
-					.aiContextItemIds,
-			[workspaceId],
-		),
-	);
-}
-
 export function useWorkspaceItemViewStates(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(

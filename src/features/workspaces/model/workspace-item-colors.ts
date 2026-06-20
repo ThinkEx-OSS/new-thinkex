@@ -1,7 +1,7 @@
 import {
 	type WorkspaceItemColor,
 	type WorkspaceItemType,
-	workspaceItemColorSchema,
+	workspaceColorSchema,
 } from "#/features/workspaces/contracts";
 import {
 	getRandomWorkspaceColor,
@@ -26,7 +26,7 @@ export function workspaceItemSupportsCustomColor(type: WorkspaceItemType) {
 export function getWorkspaceItemColorValue(
 	color: string | null,
 ): WorkspaceItemColor | null {
-	const parsed = workspaceItemColorSchema.safeParse(color);
+	const parsed = workspaceColorSchema.safeParse(color);
 
 	return parsed.success ? parsed.data : null;
 }

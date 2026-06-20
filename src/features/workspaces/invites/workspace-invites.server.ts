@@ -63,7 +63,10 @@ async function getPendingWorkspaceInviteByToken(db: Db, token: string) {
 	return row;
 }
 
-export async function getWorkspaceInvitePreview(db: Db, token: string) {
+export async function getWorkspaceInvitePreview(
+	db: Db,
+	token: string,
+): Promise<WorkspaceInvitePreview> {
 	const invite = await getPendingWorkspaceInviteByToken(db, token);
 
 	return {

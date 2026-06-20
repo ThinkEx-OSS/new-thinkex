@@ -34,6 +34,3 @@ export function WorkspaceImageRegionCaptureOverlay({
 		</div>
 	);
 }
-
-/** @deprecated Use WorkspaceImageRegionCaptureOverlay */
-export const WorkspaceRegionCaptureOverlay = WorkspaceImageRegionCaptureOverlay;

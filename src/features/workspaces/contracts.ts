@@ -167,8 +167,6 @@ export const workspaceColorValues = [
 
 export const workspaceColorSchema = z.enum(workspaceColorValues);
 
-export const workspaceItemColorSchema = workspaceColorSchema;
-
 export const workspaceRoles = ["owner", "admin", "editor", "viewer"] as const;
 
 export const workspaceMembershipRoleSchema = z.enum(workspaceRoles);
@@ -216,7 +214,7 @@ export const createWorkspaceItemInputSchema = z.object({
 	parentId: z.string().min(1).nullable().optional(),
 	type: workspaceItemTypeSchema,
 	name: z.string().trim().min(1).max(160).optional(),
-	color: workspaceItemColorSchema.optional(),
+	color: workspaceColorSchema.optional(),
 	clientMutationId: z.uuid().optional(),
 });
 
@@ -248,7 +246,7 @@ export const deleteWorkspaceItemsInputSchema = z.object({
 export const updateWorkspaceItemColorInputSchema = z.object({
 	workspaceId: z.string().min(1),
 	itemId: z.string().min(1),
-	color: workspaceItemColorSchema,
+	color: workspaceColorSchema,
 	clientMutationId: z.uuid().optional(),
 });
 
@@ -292,7 +290,7 @@ export const workspacePageSchema = z.object({
 
 export type WorkspaceIcon = z.infer<typeof workspaceIconSchema>;
 export type WorkspaceColor = z.infer<typeof workspaceColorSchema>;
-export type WorkspaceItemColor = z.infer<typeof workspaceItemColorSchema>;
+export type WorkspaceItemColor = z.infer<typeof workspaceColorSchema>;
 export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
 export type WorkspaceDetail = WorkspaceSummary;
 export type WorkspaceItemType = z.infer<typeof workspaceItemTypeSchema>;
