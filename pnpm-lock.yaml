@@ -8,18 +8,21 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^4.0.119
+        version: 4.0.119(zod@4.4.3)
       '@ai-sdk/anthropic':
         specifier: ^3.0.85
         version: 3.0.85(zod@4.4.3)
       '@ai-sdk/azure':
         specifier: ^3.0.76
         version: 3.0.76(zod@4.4.3)
+      '@ai-sdk/google-vertex':
+        specifier: ^4.0.147
+        version: 4.0.147(zod@4.4.3)
       '@ai-sdk/openai':
         specifier: ^3.0.73
         version: 3.0.73(zod@4.4.3)
-      '@ai-sdk/openai-compatible':
-        specifier: ^2.0.51
-        version: 2.0.51(zod@4.4.3)
       '@ai-sdk/react':
         specifier: ^3.0.210
         version: 3.0.210(react@19.2.7)(zod@4.4.3)
@@ -200,9 +203,6 @@ importers:
       ai:
         specifier: ^6.0.208
         version: 6.0.208(zod@4.4.3)
-      ai-gateway-provider:
-        specifier: ^3.1.3
-        version: 3.1.3(@ai-sdk/openai-compatible@2.0.51(zod@4.4.3))(@ai-sdk/provider-utils@4.0.30(zod@4.4.3))(@ai-sdk/provider@3.0.10)(ai@6.0.208(zod@4.4.3))(zod@4.4.3)
       better-auth:
         specifier: ^1.6.19
         version: 1.6.19(@cloudflare/workers-types@4.20260619.1)(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.26(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite@8.0.16(@types/node@22.19.19)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260619.1)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.28.17)(pg@8.22.0)(sql.js@1.14.1))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(solid-js@1.9.12)(svelte@5.56.3(@typescript-eslint/types@8.61.1))(vitest@4.1.9(@opentelemetry/api@1.9.1)(@types/node@22.19.19)(jsdom@28.1.0(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@22.19.19)(typescript@6.0.3))(vite@8.0.16(@types/node@22.19.19)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)))(vue@3.5.38(typescript@6.0.3))
@@ -399,38 +399,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/cerebras@2.0.57':
-    resolution: {integrity: sha512-sf7zWCAKBK0vU3+BuJd3qYNZmEZ5FQHh5swKMaYzJ2pRByjT3xUDa41vxQa4z06SnCdV6k+fTm4swN+kZWdtmQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/cohere@3.0.39':
-    resolution: {integrity: sha512-BLj9ZCwuoXJDRP6UbgM6ufvkcCVRnbS1SyA5j6pgt6exnlfLdo6UmpCX5T99/YdPvySUX8agvjTPC5EZw5mJ3A==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/deepgram@2.0.36':
-    resolution: {integrity: sha512-5pujRV5u1zoY35eBSRjV5m/+dbZnQngpDLOl+4LxzPOL1UCFJyFbLI55+GGowGgHo/3A6PeQjs2khSgL/8fv1g==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
   '@ai-sdk/deepseek@2.0.39':
     resolution: {integrity: sha512-3wUq1cvqSWkRadCSqcDXBLpOwUAe+JqfWQZS0fK0sWiqDeTIEzsse+r7xcN2x5XpJjefT0d7FQTa3u2lZ/yxbg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/elevenlabs@2.0.36':
-    resolution: {integrity: sha512-p9mIRAgA+xLfzShl4ynfDWf6zzMHQCL+btWfxGQbWxOH1pyNq3U/Mo3A2TIVIf2AAvGGTFLsYg/IZy2EA7qFhw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/fireworks@2.0.57':
-    resolution: {integrity: sha512-G7ZNDg31Tl81RTR0dfBhNBMpkPBB1ufGP46o7TYX/FSoz6IqGnRuA23SAzaVJkQ3ag22onsvpNHRPRwYWX6OBg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -453,18 +423,6 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/groq@3.0.42':
-    resolution: {integrity: sha512-3qJSxYTSxCLIxArQSP5hvaRmo4DkqNrFatDzyosCTSCqzWBGP7Xu3zeYzf+HkGuY0gxI9f6C2aHoUXvUmTqEkA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/mistral@3.0.40':
-    resolution: {integrity: sha512-HzCV9jFsb04kpL/N+G7SCjFKJA0Q33p4Hc+1quYGGD8Ta37Pe5bzk9AjxaS8OYd//jmcny16yKhJ+e+h+P0AJg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
   '@ai-sdk/openai-compatible@2.0.51':
     resolution: {integrity: sha512-A6qfyaVs4lxmRxRux6U3ViOa8mMbsSd0OaHghpei2MpiBT6791J4zFH5MN7kaW1tLfQ246rSC2DVTMOavsycjQ==}
     engines: {node: '>=18'}
@@ -473,12 +431,6 @@ packages:
 
   '@ai-sdk/openai@3.0.73':
     resolution: {integrity: sha512-+3x9oxHv9Xp33Iv2L8D+e5hqmZi64jofBKig/9611JKyfV59NdkaDDajtwc0CxOEfARgCVq1BW7dP+526gKOKw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/perplexity@3.0.36':
-    resolution: {integrity: sha512-dtospD+FNzUseO19Knxt7CdhFKHD/FhDJjBAOYmQN/KFHg0rOp0fuVFOJdOY5ZRIOrZeiG3XoQFVGuek4++FFw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -498,12 +450,6 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
-
-  '@ai-sdk/xai@3.0.96':
-    resolution: {integrity: sha512-a24jD29cQ3YocP7B4NUvNTb9s5CYR1ao2yU/QncT7QDwwOp4x/lq+6W+BdXGf1VucG7A0dx9jtyIOm6PE4JPyg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
@@ -2306,13 +2252,6 @@ packages:
 
   '@open-draft/until@2.1.0':
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
-
-  '@openrouter/ai-sdk-provider@2.9.1':
-    resolution: {integrity: sha512-okgq07Vdkro4CB5INbfhwa0e6VR1HS7sidNcfHN/MeXLJvX1JmQCff/vem6tcxwT9r1avyFrXSlfv9B28D/Pag==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      ai: ^6.0.0
-      zod: ^3.25.0 || ^4.0.0
 
   '@opentelemetry/api-logs@0.214.0':
     resolution: {integrity: sha512-40lSJeqYO8Uz2Yj7u94/SJWE/wONa7rmMKjI1ZcIjgf3MHNHv1OZUCrCETGuaRF62d5pQD1wKIW+L4lmSMTzZA==}
@@ -4396,14 +4335,6 @@ packages:
         optional: true
       vite:
         optional: true
-
-  ai-gateway-provider@3.1.3:
-    resolution: {integrity: sha512-QtJ+mh6tNXUh3V1u7zdBdggQLwpqreDeCHcDCPmZzYeEU/UeHsfsja36lQUi5cGqjUUpmV/Cf/w7RCjOw4m6qQ==}
-    peerDependencies:
-      '@ai-sdk/openai-compatible': ^2.0.0
-      '@ai-sdk/provider': ^3.0.0
-      '@ai-sdk/provider-utils': ^4.0.0
-      ai: ^6.0.0
 
   ai@6.0.208:
     resolution: {integrity: sha512-STz+AaZqJ4ZjH7UkpXkbHx+bjgIDOsE8fIUoZjkZ2whoZcfVmG9K/TqEKouJZ03SuZuD7lagntlU3zBhAEkRpQ==}
@@ -8220,7 +8151,6 @@ snapshots:
       '@smithy/util-utf8': 4.4.1
       aws4fetch: 1.0.20
       zod: 4.4.3
-    optional: true
 
   '@ai-sdk/anthropic@3.0.85(zod@4.4.3)':
     dependencies:
@@ -8236,48 +8166,11 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
 
-  '@ai-sdk/cerebras@2.0.57(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.51(zod@4.4.3)
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
-  '@ai-sdk/cohere@3.0.39(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
-  '@ai-sdk/deepgram@2.0.36(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
   '@ai-sdk/deepseek@2.0.39(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
-
-  '@ai-sdk/elevenlabs@2.0.36(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
-  '@ai-sdk/fireworks@2.0.57(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.51(zod@4.4.3)
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
 
   '@ai-sdk/gateway@3.0.133(zod@4.4.3)':
     dependencies:
@@ -8297,28 +8190,12 @@ snapshots:
       zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@ai-sdk/google@3.0.83(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
-    optional: true
-
-  '@ai-sdk/groq@3.0.42(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
-  '@ai-sdk/mistral@3.0.40(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
 
   '@ai-sdk/openai-compatible@2.0.51(zod@4.4.3)':
     dependencies:
@@ -8331,13 +8208,6 @@ snapshots:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
       zod: 4.4.3
-
-  '@ai-sdk/perplexity@3.0.36(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
 
   '@ai-sdk/provider-utils@4.0.30(zod@4.4.3)':
     dependencies:
@@ -8359,14 +8229,6 @@ snapshots:
       throttleit: 2.1.0
     transitivePeerDependencies:
       - zod
-
-  '@ai-sdk/xai@3.0.96(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.51(zod@4.4.3)
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
 
   '@antfu/install-pkg@1.1.0':
     dependencies:
@@ -8402,20 +8264,17 @@ snapshots:
       '@aws-crypto/util': 5.2.0
       '@aws-sdk/types': 3.973.13
       tslib: 2.8.1
-    optional: true
 
   '@aws-crypto/util@5.2.0':
     dependencies:
       '@aws-sdk/types': 3.973.13
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
-    optional: true
 
   '@aws-sdk/types@3.973.13':
     dependencies:
       '@smithy/types': 4.15.0
       tslib: 2.8.1
-    optional: true
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -10105,12 +9964,6 @@ snapshots:
 
   '@open-draft/until@2.1.0': {}
 
-  '@openrouter/ai-sdk-provider@2.9.1(ai@6.0.208(zod@4.4.3))(zod@4.4.3)':
-    dependencies:
-      ai: 6.0.208(zod@4.4.3)
-      zod: 4.4.3
-    optional: true
-
   '@opentelemetry/api-logs@0.214.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
@@ -10703,41 +10556,34 @@ snapshots:
       '@aws-crypto/crc32': 5.2.0
       '@smithy/types': 4.15.0
       tslib: 2.8.1
-    optional: true
 
   '@smithy/eventstream-codec@4.4.1':
     dependencies:
       '@smithy/core': 3.25.1
       tslib: 2.8.1
-    optional: true
 
   '@smithy/is-array-buffer@2.2.0':
     dependencies:
       tslib: 2.8.1
-    optional: true
 
   '@smithy/types@4.15.0':
     dependencies:
       tslib: 2.8.1
-    optional: true
 
   '@smithy/util-buffer-from@2.2.0':
     dependencies:
       '@smithy/is-array-buffer': 2.2.0
       tslib: 2.8.1
-    optional: true
 
   '@smithy/util-utf8@2.3.0':
     dependencies:
       '@smithy/util-buffer-from': 2.2.0
       tslib: 2.8.1
-    optional: true
 
   '@smithy/util-utf8@4.4.1':
     dependencies:
       '@smithy/core': 3.25.1
       tslib: 2.8.1
-    optional: true
 
   '@solid-primitives/event-listener@2.4.5(solid-js@1.9.12)':
     dependencies:
@@ -11962,34 +11808,6 @@ snapshots:
       - rolldown
       - supports-color
 
-  ai-gateway-provider@3.1.3(@ai-sdk/openai-compatible@2.0.51(zod@4.4.3))(@ai-sdk/provider-utils@4.0.30(zod@4.4.3))(@ai-sdk/provider@3.0.10)(ai@6.0.208(zod@4.4.3))(zod@4.4.3):
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.51(zod@4.4.3)
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.30(zod@4.4.3)
-      ai: 6.0.208(zod@4.4.3)
-    optionalDependencies:
-      '@ai-sdk/amazon-bedrock': 4.0.119(zod@4.4.3)
-      '@ai-sdk/anthropic': 3.0.85(zod@4.4.3)
-      '@ai-sdk/azure': 3.0.76(zod@4.4.3)
-      '@ai-sdk/cerebras': 2.0.57(zod@4.4.3)
-      '@ai-sdk/cohere': 3.0.39(zod@4.4.3)
-      '@ai-sdk/deepgram': 2.0.36(zod@4.4.3)
-      '@ai-sdk/deepseek': 2.0.39(zod@4.4.3)
-      '@ai-sdk/elevenlabs': 2.0.36(zod@4.4.3)
-      '@ai-sdk/fireworks': 2.0.57(zod@4.4.3)
-      '@ai-sdk/google': 3.0.83(zod@4.4.3)
-      '@ai-sdk/google-vertex': 4.0.147(zod@4.4.3)
-      '@ai-sdk/groq': 3.0.42(zod@4.4.3)
-      '@ai-sdk/mistral': 3.0.40(zod@4.4.3)
-      '@ai-sdk/openai': 3.0.73(zod@4.4.3)
-      '@ai-sdk/perplexity': 3.0.36(zod@4.4.3)
-      '@ai-sdk/xai': 3.0.96(zod@4.4.3)
-      '@openrouter/ai-sdk-provider': 2.9.1(ai@6.0.208(zod@4.4.3))(zod@4.4.3)
-    transitivePeerDependencies:
-      - supports-color
-      - zod
-
   ai@6.0.208(zod@4.4.3):
     dependencies:
       '@ai-sdk/gateway': 3.0.133(zod@4.4.3)
@@ -12051,8 +11869,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  aws4fetch@1.0.20:
-    optional: true
+  aws4fetch@1.0.20: {}
 
   axobject-query@4.1.0: {}
 
@@ -12132,8 +11949,7 @@ snapshots:
       require-from-string: 2.0.2
     optional: true
 
-  bignumber.js@9.3.1:
-    optional: true
+  bignumber.js@9.3.1: {}
 
   bl@4.1.0:
     dependencies:
@@ -12179,8 +11995,7 @@ snapshots:
       node-releases: 2.0.44
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
-  buffer-equal-constant-time@1.0.1:
-    optional: true
+  buffer-equal-constant-time@1.0.1: {}
 
   buffer-from@1.1.2: {}
 
@@ -12743,7 +12558,6 @@ snapshots:
   ecdsa-sig-formatter@1.0.11:
     dependencies:
       safe-buffer: 5.2.1
-    optional: true
 
   eciesjs@0.4.18:
     dependencies:
@@ -13250,7 +13064,6 @@ snapshots:
       node-fetch: 3.3.2
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   gcp-metadata@8.1.2:
     dependencies:
@@ -13259,7 +13072,6 @@ snapshots:
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   gensync@1.0.0-beta.2: {}
 
@@ -13337,10 +13149,8 @@ snapshots:
       jws: 4.0.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
-  google-logging-utils@1.1.3:
-    optional: true
+  google-logging-utils@1.1.3: {}
 
   gopd@1.2.0: {}
 
@@ -13743,7 +13553,6 @@ snapshots:
   json-bigint@1.0.0:
     dependencies:
       bignumber.js: 9.3.1
-    optional: true
 
   json-buffer@3.0.1: {}
 
@@ -13797,13 +13606,11 @@ snapshots:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
-    optional: true
 
   jws@4.0.1:
     dependencies:
       jwa: 2.0.1
       safe-buffer: 5.2.1
-    optional: true
 
   katex@0.16.46:
     dependencies:

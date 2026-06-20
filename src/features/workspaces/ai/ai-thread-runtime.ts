@@ -1,12 +1,16 @@
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { createAzure } from "@ai-sdk/azure";
+import { createVertex } from "@ai-sdk/google-vertex/edge";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
 import { generateText, tool } from "ai";
-import { createAiGateway } from "ai-gateway-provider";
-import { createAzure } from "ai-gateway-provider/providers/azure";
-import { createUnified } from "ai-gateway-provider/providers/unified";
 import { createWorkersAI } from "workers-ai-provider";
 import { anthropic } from "workers-ai-provider/anthropic";
+import {
+	createGatewayFetch,
+	createGatewayProvider,
+} from "workers-ai-provider/gateway";
 import { openai } from "workers-ai-provider/openai";
 import { z } from "zod";
 
@@ -28,6 +32,9 @@ const thinkPromptSectionDivider =
 
 const AZURE_OPENAI_RESOURCE_NAME = "chakrabortyurjit-7873-resource";
 const AZURE_OPENAI_API_VERSION = "2024-10-21";
+const BEDROCK_REGION = "us-east-1";
+const GOOGLE_VERTEX_PROJECT = "316561201775";
+const GOOGLE_VERTEX_LOCATION = "global";
 
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
@@ -195,30 +202,59 @@ export function getWorkersAiModel(
 	const model = getWorkspaceAiChatModel(modelId);
 
 	if (model.startsWith("azure-openai/")) {
-		const aiGateway = createAiGateway({
-			binding: env.AI.gateway(env.AI_GATEWAY_ID),
-		});
+		const azure = createGatewayProvider(
+			(options) =>
+				createAzure({
+					...options,
+					apiVersion: AZURE_OPENAI_API_VERSION,
+					resourceName: AZURE_OPENAI_RESOURCE_NAME,
+					useDeploymentBasedUrls: true,
+				}),
+			{
+				binding: env.AI,
+				gateway: env.AI_GATEWAY_ID,
+			},
+		);
 		// Azure routes through AI Gateway's provider path, which does not expose
 		// Workers AI's sessionAffinity option.
-		const azure = createAzure({
-			apiVersion: AZURE_OPENAI_API_VERSION,
-			resourceName: AZURE_OPENAI_RESOURCE_NAME,
-			useDeploymentBasedUrls: true,
-		});
 		const deploymentName = model.replace(/^azure-openai\//, "");
 
-		return aiGateway(azure.chat(deploymentName));
+		return azure.chat(deploymentName);
 	}
 
-	if (model.startsWith("aws-bedrock/") || model.startsWith("google-vertex-ai/")) {
-		const aiGateway = createAiGateway({
-			binding: env.AI.gateway(env.AI_GATEWAY_ID),
-		});
-		// Bedrock and Vertex route through AI Gateway's unified path, which does
-		// not expose Workers AI's sessionAffinity option.
-		const unified = createUnified();
+	if (model.startsWith("aws-bedrock/")) {
+		const bedrock = createGatewayProvider(
+			(options) =>
+				createAmazonBedrock({
+					...options,
+					region: BEDROCK_REGION,
+				}),
+			{
+				binding: env.AI,
+				gateway: env.AI_GATEWAY_ID,
+			},
+		);
+		// Bedrock routes through AI Gateway's provider path, which does not expose
+		// Workers AI's sessionAffinity option.
+		const bedrockModel = model.replace(/^aws-bedrock\//, "");
 
-		return aiGateway(unified(model));
+		return bedrock(bedrockModel);
+	}
+
+	if (model.startsWith("google-vertex-ai/")) {
+		const vertex = createVertex({
+			fetch: createGatewayFetch({
+				binding: env.AI,
+				gateway: env.AI_GATEWAY_ID,
+			}),
+			location: GOOGLE_VERTEX_LOCATION,
+			project: GOOGLE_VERTEX_PROJECT,
+		});
+		// Vertex routes through AI Gateway's provider path, which does not expose
+		// Workers AI's sessionAffinity option.
+		const vertexModel = model.replace(/^google-vertex-ai\/google\//, "");
+
+		return vertex(vertexModel);
 	}
 
 	const workersAi = createWorkersAI({
