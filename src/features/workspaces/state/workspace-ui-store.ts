@@ -301,7 +301,7 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 				getSession: (workspaceId) => get().sessionsByWorkspaceId[workspaceId],
 			}),
 			{
-				name: "thinkex.workspace-ui.v2",
+				name: "thinkex.workspace-ui.v3",
 				skipHydration: true,
 				partialize: (state) => ({
 					sessionsByWorkspaceId: state.sessionsByWorkspaceId,
