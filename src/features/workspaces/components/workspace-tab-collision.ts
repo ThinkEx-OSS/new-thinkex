@@ -1,5 +1,5 @@
 const WORKSPACE_TAB_COLLISION_TYPE_HORIZONTAL_CENTER = 3;
-export const WORKSPACE_TAB_COLLISION_PRIORITY_HIGH = 6;
+const WORKSPACE_TAB_COLLISION_PRIORITY = 6;
 const WORKSPACE_TAB_SOURCE_RELEASE_RATIO = 0.58;
 const WORKSPACE_TAB_VERTICAL_COLLISION_OVERSCAN = 12;
 
@@ -84,40 +84,6 @@ export const horizontalTabCollisionDetector = ({
 	return getHorizontalCenterCollision(droppable, center);
 };
 
-export const horizontalTabInsertCollisionDetector = ({
-	dragOperation,
-	droppable,
-}: {
-	dragOperation: {
-		shape?: {
-			current: {
-				center: { x: number; y: number };
-			};
-		} | null;
-		position: {
-			current: { x: number; y: number } | null;
-		};
-	};
-	droppable: WorkspaceTabCollisionDroppable;
-}) => {
-	if (!droppable.shape) {
-		return null;
-	}
-
-	const center =
-		dragOperation.position.current ?? dragOperation.shape?.current.center;
-
-	if (!center) {
-		return null;
-	}
-
-	if (isOutsideVerticalTabBand(center.y, droppable.shape.boundingRectangle)) {
-		return null;
-	}
-
-	return getHorizontalCenterCollision(droppable, center);
-};
-
 function getHorizontalCenterCollision(
 	droppable: WorkspaceTabCollisionDroppable,
 	center: { x: number },
@@ -132,7 +98,7 @@ function getHorizontalCenterCollision(
 		id: droppable.id,
 		value: distance === 0 ? 1 : 1 / distance,
 		type: WORKSPACE_TAB_COLLISION_TYPE_HORIZONTAL_CENTER,
-		priority: WORKSPACE_TAB_COLLISION_PRIORITY_HIGH,
+		priority: WORKSPACE_TAB_COLLISION_PRIORITY,
 	};
 }
 

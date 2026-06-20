@@ -121,7 +121,6 @@ export function WorkspaceShell({
 		duplicateWorkspaceTab,
 		itemsById,
 		openItem,
-		openItemInNewTab,
 		openWorkspaceRoot,
 		scopedItems,
 		session,
@@ -292,7 +291,6 @@ export function WorkspaceShell({
 				workspaceId={workspace.id}
 				onAddItemsToAiContext={addItemIdsToAiContext}
 				onMoveItems={moveWorkspaceItemsMutation.mutate}
-				onOpenItemInNewTab={openItemInNewTab}
 				onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
 			>
 				{presentationContent}

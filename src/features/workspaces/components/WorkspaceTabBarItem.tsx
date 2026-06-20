@@ -6,26 +6,16 @@ import {
 	ContextMenuContent,
 	ContextMenuTrigger,
 } from "#/components/ui/context-menu";
-import { useWorkspaceTabItemInsertDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
-import type { WorkspaceTabLayoutElementHandler } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { workspaceControlledSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
-import {
-	WORKSPACE_TAB_ITEM_CLASS,
-	type WorkspaceTabInsertProjection,
-} from "#/features/workspaces/components/workspace-tab-bar-model";
-import {
-	horizontalTabCollisionDetector,
-	horizontalTabInsertCollisionDetector,
-	WORKSPACE_TAB_COLLISION_PRIORITY_HIGH,
-} from "#/features/workspaces/components/workspace-tab-collision";
+import { WORKSPACE_TAB_ITEM_CLASS } from "#/features/workspaces/components/workspace-tab-bar-model";
+import { horizontalTabCollisionDetector } from "#/features/workspaces/components/workspace-tab-collision";
 import { WORKSPACE_SORTABLE_TAB_TRANSITION } from "#/features/workspaces/components/workspace-tab-motion";
 import {
 	createWorkspaceTabDragData,
 	WORKSPACE_TAB_DRAG_TYPE,
 } from "#/features/workspaces/model/drag";
-import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { cn } from "#/lib/utils";
 
@@ -48,8 +38,6 @@ export function WorkspaceTabDivider({
 export function WorkspaceTabItem({
 	tab,
 	index,
-	layoutKey,
-	setLayoutElement,
 	title,
 	TabIcon,
 	iconClassName,
@@ -64,8 +52,6 @@ export function WorkspaceTabItem({
 }: {
 	tab: WorkspaceTab;
 	index: number;
-	layoutKey: string;
-	setLayoutElement: WorkspaceTabLayoutElementHandler;
 	title: string;
 	TabIcon: LucideIcon;
 	iconClassName?: string;
@@ -84,7 +70,6 @@ export function WorkspaceTabItem({
 	const setTabElement = (nextElement: HTMLDivElement | null) => {
 		elementRef.current = nextElement;
 		setElement(nextElement);
-		setLayoutElement(layoutKey, nextElement);
 	};
 	const handleClose = () => {
 		onBeforeClose(elementRef.current);
@@ -119,8 +104,6 @@ export function WorkspaceTabItem({
 				isDropTarget && "rounded-md bg-muted/50",
 			)}
 		>
-			<WorkspaceTabInsertDropHalf index={index} side="left" />
-			<WorkspaceTabInsertDropHalf index={index + 1} side="right" />
 			{showDivider ? <WorkspaceTabDivider isVisible={showDividerLine} /> : null}
 			<WorkspaceTabShell
 				title={title}
@@ -150,99 +133,5 @@ export function WorkspaceTabItem({
 				{contextMenuContent}
 			</ContextMenuContent>
 		</ContextMenu>
-	);
-}
-
-export function WorkspaceProjectedTabItem({
-	projection,
-	layoutKey,
-	setLayoutElement,
-	showDivider,
-	showDividerLine,
-}: {
-	projection: WorkspaceTabInsertProjection;
-	layoutKey: string;
-	setLayoutElement: WorkspaceTabLayoutElementHandler;
-	showDivider: boolean;
-	showDividerLine: boolean;
-}) {
-	const { Icon, iconClassName } = getWorkspaceItemDisplay(projection.item);
-	const ref = useWorkspaceTabInsertDropTargetRef(
-		projection.insertIndex,
-		"projected",
-	);
-	const setProjectedElement = (nextElement: HTMLDivElement | null) => {
-		ref(nextElement);
-		setLayoutElement(layoutKey, nextElement);
-	};
-
-	return (
-		<div
-			ref={setProjectedElement}
-			className={cn(
-				WORKSPACE_TAB_ITEM_CLASS,
-				"opacity-90 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-100 motion-safe:will-change-transform",
-			)}
-			aria-hidden
-		>
-			{showDivider ? <WorkspaceTabDivider isVisible={showDividerLine} /> : null}
-			<WorkspaceTabShell
-				title={projection.item.name}
-				TabIcon={Icon}
-				iconClassName={iconClassName}
-				variant="projected"
-			/>
-		</div>
-	);
-}
-
-function useWorkspaceTabInsertDropTargetRef(
-	index: number,
-	placement: "left" | "right" | "projected" | "tail",
-) {
-	const { ref } = useWorkspaceTabItemInsertDropTarget({
-		index,
-		placement,
-		collisionDetector: horizontalTabInsertCollisionDetector,
-		collisionPriority: WORKSPACE_TAB_COLLISION_PRIORITY_HIGH,
-	});
-
-	return ref;
-}
-
-function WorkspaceTabInsertDropHalf({
-	index,
-	side,
-}: {
-	index: number;
-	side: "left" | "right";
-}) {
-	const ref = useWorkspaceTabInsertDropTargetRef(index, side);
-
-	return (
-		<span
-			ref={ref}
-			className={cn(
-				"pointer-events-none absolute inset-y-0 z-10",
-				side === "left" ? "left-0 w-1/2" : "right-0 w-1/2",
-			)}
-			aria-hidden="true"
-		/>
-	);
-}
-
-export function WorkspaceTabTailDropZone({
-	children,
-	index,
-}: {
-	children: ReactNode;
-	index: number;
-}) {
-	const ref = useWorkspaceTabInsertDropTargetRef(index, "tail");
-
-	return (
-		<div ref={ref} className="relative flex shrink-0 items-center gap-1">
-			{children}
-		</div>
 	);
 }

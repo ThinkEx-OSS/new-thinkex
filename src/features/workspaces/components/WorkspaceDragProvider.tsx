@@ -46,10 +46,6 @@ interface WorkspaceDragProviderProps {
 		itemIds: string[];
 	}) => void;
 	onMoveItems: (input: MoveWorkspaceItemsInput) => void;
-	onOpenItemInNewTab: (input: {
-		item: WorkspaceItem;
-		insertIndex: number;
-	}) => void;
 	onWorkspaceDragCommand: (command: WorkspaceDragCommand) => void;
 }
 
@@ -60,7 +56,6 @@ export default function WorkspaceDragProvider({
 	workspaceId,
 	onAddItemsToAiContext,
 	onMoveItems,
-	onOpenItemInNewTab,
 	onWorkspaceDragCommand,
 }: WorkspaceDragProviderProps) {
 	const { capabilities } = useWorkspaceMutationAccess();
@@ -86,9 +81,6 @@ export default function WorkspaceDragProvider({
 				break;
 			case "add-items-to-ai-context":
 				onAddItemsToAiContext?.(intent.input);
-				break;
-			case "open-item-in-new-tab":
-				onOpenItemInNewTab(intent.input);
 				break;
 			case "move-items":
 				if (!capabilities.canMutateContent) {

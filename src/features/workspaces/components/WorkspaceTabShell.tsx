@@ -19,7 +19,7 @@ export function WorkspaceTabShell({
 	title: string;
 	TabIcon: LucideIcon;
 	iconClassName?: string;
-	variant: "active-attached" | "active" | "idle" | "projected";
+	variant: "active-attached" | "active" | "idle";
 	buttonRef?: Ref<HTMLButtonElement>;
 	isDragSource?: boolean;
 	showClose?: boolean;
@@ -28,7 +28,6 @@ export function WorkspaceTabShell({
 	onClose?: () => void;
 }) {
 	const isActive = variant === "active" || variant === "active-attached";
-	const isProjected = variant === "projected";
 
 	return (
 		<div
@@ -40,26 +39,21 @@ export function WorkspaceTabShell({
 					"h-8 rounded-md border-transparent bg-background text-foreground",
 				variant === "idle" &&
 					"h-8 rounded-md border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-				isProjected &&
-					"h-8 rounded-md border-foreground/35 bg-muted text-foreground shadow-sm",
 				isDragSource && "cursor-grabbing",
 			)}
 		>
 			<button
 				ref={buttonRef}
 				type="button"
-				tabIndex={isProjected ? -1 : undefined}
 				className={cn(
 					"flex h-full min-w-0 flex-1 touch-none items-center justify-start gap-1.5 bg-transparent py-0 pr-px pl-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
 					isActive && "cursor-default",
 					isDragSource && "cursor-grabbing",
-					isProjected && "pointer-events-none",
 				)}
 				onClick={onActivate}
 			>
 				<TabIcon
 					className={cn("size-3.5 shrink-0", iconClassName)}
-					strokeWidth={isProjected ? 1.75 : undefined}
 					aria-hidden="true"
 				/>
 				<span className="truncate">{title}</span>

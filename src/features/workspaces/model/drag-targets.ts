@@ -9,8 +9,6 @@ import {
 	getWorkspaceFolderDropTargetFolderId,
 	getWorkspaceFolderDropTargetId,
 	getWorkspaceSplitDropTargetInput,
-	getWorkspaceTabItemInsertDropTargetId,
-	getWorkspaceTabItemInsertDropTargetIndex,
 } from "./drag-target-ids";
 import {
 	WORKSPACE_FOLDER_DRAG_TYPE,
@@ -22,11 +20,7 @@ import {
 	type WorkspaceDropTarget,
 } from "./drag-types";
 
-export {
-	getWorkspaceAiContextDropTargetId,
-	getWorkspaceFolderDropTargetId,
-	getWorkspaceTabItemInsertDropTargetId,
-};
+export { getWorkspaceAiContextDropTargetId, getWorkspaceFolderDropTargetId };
 
 export function getWorkspaceDragSource(
 	source: WorkspaceDragEntity | null | undefined,
@@ -100,13 +94,6 @@ export function getWorkspaceDropTarget(
 
 	const dropTargetData = getWorkspaceDropTargetData(target.data);
 
-	if (dropTargetData?.kind === "workspace-tab-item-insert-drop-target") {
-		return {
-			kind: "tab-strip-insert",
-			insertIndex: dropTargetData.index,
-		};
-	}
-
 	if (dropTargetData?.kind === "workspace-folder-drop-target") {
 		return {
 			kind: "workspace-folder",
@@ -134,15 +121,6 @@ export function getWorkspaceDropTarget(
 		return {
 			kind: "tab",
 			tabId: String(target.id),
-		};
-	}
-
-	const insertIndex = getWorkspaceTabItemInsertDropTargetIndex(target.id);
-
-	if (insertIndex != null) {
-		return {
-			kind: "tab-strip-insert",
-			insertIndex,
 		};
 	}
 
@@ -186,31 +164,6 @@ export function getWorkspaceDropTarget(
 		kind: "workspace-item",
 		itemId: String(target.id),
 		row,
-	};
-}
-
-export function getWorkspaceItemTabInsertMatch(input: {
-	source: WorkspaceDragEntity | null | undefined;
-	target: WorkspaceDragEntity | null | undefined;
-}):
-	| {
-			source: Extract<WorkspaceDragSource, { kind: "workspace-item" }>;
-			insertIndex: number;
-	  }
-	| undefined {
-	const source = getWorkspaceDragSource(input.source);
-	const target = getWorkspaceDropTarget(input.target);
-
-	if (
-		source?.kind !== "workspace-item" ||
-		target?.kind !== "tab-strip-insert"
-	) {
-		return undefined;
-	}
-
-	return {
-		source,
-		insertIndex: target.insertIndex,
 	};
 }
 

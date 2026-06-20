@@ -3,13 +3,10 @@ import { type UseDroppableInput, useDroppable } from "@dnd-kit/react";
 import {
 	createWorkspaceAiContextDropTargetData,
 	createWorkspaceFolderDropTargetData,
-	createWorkspaceTabItemInsertDropTargetData,
 	getWorkspaceAiContextDropTargetId,
 	getWorkspaceFolderDropTargetId,
-	getWorkspaceTabItemInsertDropTargetId,
 	WORKSPACE_FOLDER_DRAG_TYPE,
 	WORKSPACE_ITEM_DRAG_TYPES,
-	WORKSPACE_TAB_ITEM_INSERT_DROP_TYPE,
 	type WorkspaceDropTargetData,
 } from "#/features/workspaces/model/drag";
 
@@ -44,24 +41,6 @@ export function useWorkspaceFolderDropTarget(
 			folderId: input.folderId,
 			parentId: input.parentId,
 		}),
-	});
-}
-
-export function useWorkspaceTabItemInsertDropTarget(
-	input: WorkspaceDropTargetBehavior & {
-		index: number;
-		placement?: string;
-	},
-) {
-	return useWorkspaceDropTarget({
-		id: getWorkspaceTabItemInsertDropTargetId(input.index, input.placement),
-		type: WORKSPACE_TAB_ITEM_INSERT_DROP_TYPE,
-		accept: WORKSPACE_ITEM_DRAG_TYPES,
-		collisionDetector: input.collisionDetector,
-		collisionPriority: input.collisionPriority,
-		disabled: input.disabled,
-		element: input.element,
-		data: createWorkspaceTabItemInsertDropTargetData(input.index),
 	});
 }
 

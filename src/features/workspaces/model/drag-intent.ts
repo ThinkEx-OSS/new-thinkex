@@ -4,11 +4,7 @@ import type { DragDropEventHandlers } from "@dnd-kit/react";
 import type { MoveWorkspaceItemsInput } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
-import {
-	getWorkspaceDragSource,
-	getWorkspaceDropTarget,
-	getWorkspaceItemTabInsertMatch,
-} from "./drag-targets";
+import { getWorkspaceDragSource, getWorkspaceDropTarget } from "./drag-targets";
 import type { WorkspaceDragCommand, WorkspaceDragEndEvent } from "./drag-types";
 
 export type DndDragEndEvent = Parameters<
@@ -22,13 +18,6 @@ export type WorkspaceDropIntent =
 			input: {
 				clearSelection: boolean;
 				itemIds: string[];
-			};
-	  }
-	| {
-			kind: "open-item-in-new-tab";
-			input: {
-				item: WorkspaceItem;
-				insertIndex: number;
 			};
 	  }
 	| { kind: "move-items"; input: MoveWorkspaceItemsInput };
@@ -51,15 +40,6 @@ export function getWorkspaceDropIntent(input: {
 		return {
 			kind: "add-items-to-ai-context",
 			input: aiContextDropInput,
-		};
-	}
-
-	const tabInsertInput = getWorkspaceItemTabInsertInput(input);
-
-	if (tabInsertInput) {
-		return {
-			kind: "open-item-in-new-tab",
-			input: tabInsertInput,
 		};
 	}
 
@@ -114,36 +94,6 @@ export function getWorkspaceDragCommand(
 	}
 
 	return undefined;
-}
-
-export function getWorkspaceItemTabInsertInput(input: {
-	event: DndDragEndEvent;
-	items: WorkspaceItem[];
-}):
-	| {
-			item: WorkspaceItem;
-			insertIndex: number;
-	  }
-	| undefined {
-	const { event, items } = input;
-	const { source, target } = event.operation;
-	const canceled = event.canceled ?? event.operation.canceled;
-	const match = getWorkspaceItemTabInsertMatch({ source, target });
-
-	if (canceled || !match) {
-		return undefined;
-	}
-
-	const item = items.find((candidate) => candidate.id === match.source.itemId);
-
-	if (!item) {
-		return undefined;
-	}
-
-	return {
-		item,
-		insertIndex: match.insertIndex,
-	};
 }
 
 export function getWorkspaceItemMoveInput(input: {

@@ -5,8 +5,6 @@ export const WORKSPACE_ITEM_DRAG_TYPES = [
 	WORKSPACE_FOLDER_DRAG_TYPE,
 	WORKSPACE_ITEM_DRAG_TYPE,
 ];
-export const WORKSPACE_TAB_ITEM_INSERT_DROP_TYPE =
-	"workspace-tab-item-insert-drop-target";
 
 export type WorkspaceDragRow = "folder" | "item";
 export type WorkspaceSplitDropSide = "left" | "right" | "top" | "bottom";
@@ -27,10 +25,6 @@ export type WorkspaceDropTarget =
 	| {
 			kind: "tab";
 			tabId: string;
-	  }
-	| {
-			kind: "tab-strip-insert";
-			insertIndex: number;
 	  }
 	| {
 			kind: "workspace-folder";
@@ -70,10 +64,6 @@ export type WorkspaceDropTargetData =
 			kind: "workspace-folder-drop-target";
 			folderId: string;
 			parentId: string | null;
-	  }
-	| {
-			kind: "workspace-tab-item-insert-drop-target";
-			index: number;
 	  }
 	| {
 			kind: "workspace-pane-split-drop-target";

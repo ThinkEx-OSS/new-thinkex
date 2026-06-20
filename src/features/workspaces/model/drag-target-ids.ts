@@ -2,8 +2,6 @@ import { isWorkspaceSplitDropSide } from "#/features/workspaces/model/drag-guard
 import type { WorkspaceSplitDropSide } from "#/features/workspaces/model/drag-types";
 
 const WORKSPACE_FOLDER_DROP_TARGET_ID_PREFIX = "workspace-folder-drop:";
-const WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX =
-	"workspace-tab-item-insert:";
 const WORKSPACE_SPLIT_DROP_TARGET_ID_PREFIX = "workspace-split-drop:";
 const WORKSPACE_AI_CONTEXT_DROP_TARGET_ID_PREFIX = "workspace-ai-context-drop:";
 
@@ -27,30 +25,6 @@ export function getWorkspaceFolderDropTargetFolderId(id: unknown) {
 	const folderId = id.slice(WORKSPACE_FOLDER_DROP_TARGET_ID_PREFIX.length);
 
 	return folderId || undefined;
-}
-
-export function getWorkspaceTabItemInsertDropTargetId(
-	index: number,
-	placement = "default",
-) {
-	return `${WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX}${index}:${placement}`;
-}
-
-export function getWorkspaceTabItemInsertDropTargetIndex(id: unknown) {
-	if (typeof id !== "string") {
-		return undefined;
-	}
-
-	if (!id.startsWith(WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX)) {
-		return undefined;
-	}
-
-	const [indexSegment] = id
-		.slice(WORKSPACE_TAB_ITEM_INSERT_DROP_TARGET_ID_PREFIX.length)
-		.split(":");
-	const index = Number(indexSegment);
-
-	return Number.isInteger(index) && index >= 0 ? index : undefined;
 }
 
 export function getWorkspaceSplitDropTargetInput(id: unknown):

@@ -1,25 +1,15 @@
-import { useDragOperation } from "@dnd-kit/react";
 import { FileQuestion, Plus } from "lucide-react";
 
 import { useWorkspaceTabCloseResizeLock } from "#/features/workspaces/components/useWorkspaceTabCloseResizeLock";
-import { useWorkspaceTabLayoutAnimation } from "#/features/workspaces/components/useWorkspaceTabLayoutAnimation";
 import { WorkspaceTabContextMenuContent } from "#/features/workspaces/components/WorkspaceTabActionsMenu";
 import {
-	WorkspaceProjectedTabItem,
 	WorkspaceTabDivider,
 	WorkspaceTabItem,
-	WorkspaceTabTailDropZone,
 } from "#/features/workspaces/components/WorkspaceTabBarItem";
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
-import {
-	getWorkspaceTabGridStyle,
-	getWorkspaceTabRenderItemKey,
-	getWorkspaceTabRenderItems,
-	isWorkspaceTabRenderItemActive,
-} from "#/features/workspaces/components/workspace-tab-bar-model";
+import { getWorkspaceTabGridStyle } from "#/features/workspaces/components/workspace-tab-bar-model";
 import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
-import { getWorkspaceDragProjection } from "#/features/workspaces/model/drag-projection";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { findItemForTab } from "#/features/workspaces/model/tabs";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -54,29 +44,12 @@ export default function WorkspaceTabBar({
 	onDuplicateTab,
 }: WorkspaceTabBarProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
-	const dragOperation = useDragOperation();
-	const projection = getWorkspaceDragProjection({
-		source: dragOperation.source,
-		target: dragOperation.target,
-		itemsById,
-	});
-	const tabProjection =
-		projection?.kind === "tab-insert" ? projection : undefined;
-	const renderItems = getWorkspaceTabRenderItems({
-		tabs,
-		projection: tabProjection,
-	});
-	const closeResizeLock = useWorkspaceTabCloseResizeLock(renderItems.length);
-	const renderItemKeys = renderItems.map(getWorkspaceTabRenderItemKey);
-	const setLayoutElement = useWorkspaceTabLayoutAnimation({
-		itemKeys: renderItemKeys,
-		enabled: Boolean(tabProjection),
-	});
+	const closeResizeLock = useWorkspaceTabCloseResizeLock(tabs.length);
 	const gridStyle = getWorkspaceTabGridStyle({
-		tabCount: renderItems.length,
+		tabCount: tabs.length,
 		lockedTabWidth: closeResizeLock.lockedTabWidth,
 	});
-	const lastRenderItem = renderItems[renderItems.length - 1];
+	const lastTab = tabs[tabs.length - 1];
 
 	return (
 		<nav
@@ -92,29 +65,13 @@ export default function WorkspaceTabBar({
 				)}
 				style={gridStyle}
 			>
-				{renderItems.map((renderItem, visualIndex) => {
-					const renderItemKey = getWorkspaceTabRenderItemKey(renderItem);
-					const previousRenderItem = renderItems[visualIndex - 1];
-					const showDivider = visualIndex > 0;
+				{tabs.map((tab, tabIndex) => {
+					const previousTab = tabs[tabIndex - 1];
+					const showDivider = tabIndex > 0;
 					const showDividerLine =
 						showDivider &&
-						!isWorkspaceTabRenderItemActive(renderItem, activeTab.id) &&
-						!isWorkspaceTabRenderItemActive(previousRenderItem, activeTab.id);
-
-					if (renderItem.kind === "projected-tab") {
-						return (
-							<WorkspaceProjectedTabItem
-								key={renderItemKey}
-								projection={renderItem.projection}
-								layoutKey={renderItemKey}
-								setLayoutElement={setLayoutElement}
-								showDivider={showDivider}
-								showDividerLine={showDividerLine}
-							/>
-						);
-					}
-
-					const { tab, tabIndex } = renderItem;
+						tab.id !== activeTab.id &&
+						previousTab?.id !== activeTab.id;
 					const item = findItemForTab(tab, itemsById);
 					const isRootTab = !tab.viewItemId;
 					const itemDisplay = item ? getWorkspaceItemDisplay(item) : null;
@@ -126,13 +83,12 @@ export default function WorkspaceTabBar({
 						? color.text
 						: (itemDisplay?.iconClassName ?? "text-muted-foreground");
 					const isActive = tab.id === activeTab.id;
+
 					return (
 						<WorkspaceTabItem
-							key={renderItemKey}
+							key={tab.id}
 							tab={tab}
 							index={tabIndex}
-							layoutKey={renderItemKey}
-							setLayoutElement={setLayoutElement}
 							title={title}
 							TabIcon={TabIcon}
 							iconClassName={iconClassName}
@@ -159,12 +115,8 @@ export default function WorkspaceTabBar({
 					);
 				})}
 			</div>
-			<WorkspaceTabTailDropZone index={tabs.length}>
-				<WorkspaceTabDivider
-					isVisible={
-						!isWorkspaceTabRenderItemActive(lastRenderItem, activeTab.id)
-					}
-				/>
+			<div className="relative flex shrink-0 items-center gap-1">
+				<WorkspaceTabDivider isVisible={lastTab?.id !== activeTab.id} />
 				<WorkspaceToolbarIconButton
 					className="shrink-0"
 					aria-label="Open new workspace tab"
@@ -172,7 +124,7 @@ export default function WorkspaceTabBar({
 				>
 					<Plus />
 				</WorkspaceToolbarIconButton>
-			</WorkspaceTabTailDropZone>
+			</div>
 		</nav>
 	);
 }

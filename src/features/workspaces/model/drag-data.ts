@@ -38,15 +38,6 @@ export function createWorkspaceFolderDropTargetData(input: {
 	};
 }
 
-export function createWorkspaceTabItemInsertDropTargetData(
-	index: number,
-): WorkspaceDropTargetData {
-	return {
-		kind: "workspace-tab-item-insert-drop-target",
-		index,
-	};
-}
-
 export function createWorkspaceAiContextDropTargetData(
 	workspaceId: string,
 ): WorkspaceDropTargetData {
@@ -107,18 +98,6 @@ export function getWorkspaceDropTargetData(
 			kind: "workspace-folder-drop-target",
 			folderId: data.folderId,
 			parentId: typeof data.parentId === "string" ? data.parentId : null,
-		};
-	}
-
-	if (
-		data.kind === "workspace-tab-item-insert-drop-target" &&
-		typeof data.index === "number" &&
-		Number.isInteger(data.index) &&
-		data.index >= 0
-	) {
-		return {
-			kind: "workspace-tab-item-insert-drop-target",
-			index: data.index,
 		};
 	}
 

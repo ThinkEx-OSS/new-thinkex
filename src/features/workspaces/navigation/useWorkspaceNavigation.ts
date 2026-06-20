@@ -262,7 +262,6 @@ export function useWorkspaceNavigation({
 		duplicateWorkspaceTab,
 		itemsById,
 		openItem,
-		openItemInNewTab,
 		openWorkspaceRoot,
 		scopedItems,
 		session,
