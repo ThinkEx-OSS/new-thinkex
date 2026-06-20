@@ -19,7 +19,7 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 	{
 		id: "gemini",
 		name: "Gemini",
-		workersAiModel: "google/gemini-2.5-pro",
+		workersAiModel: "google-vertex-ai/google/gemini-2.5-pro",
 	},
 ] as const;
 

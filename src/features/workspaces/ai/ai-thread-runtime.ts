@@ -2,6 +2,8 @@ import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
 import { generateText, tool } from "ai";
+import { createAiGateway } from "ai-gateway-provider";
+import { createUnified } from "ai-gateway-provider/providers/unified";
 import { createWorkersAI } from "workers-ai-provider";
 import { anthropic } from "workers-ai-provider/anthropic";
 import { google } from "workers-ai-provider/google";
@@ -187,13 +189,24 @@ export function getWorkersAiModel(
 	env: Env,
 	sessionAffinity: string,
 ): LanguageModel {
+	const model = getWorkspaceAiChatModel(modelId);
+
+	if (model.startsWith("google-vertex-ai/")) {
+		const aiGateway = createAiGateway({
+			binding: env.AI.gateway(env.AI_GATEWAY_ID),
+		});
+		const unified = createUnified();
+
+		return aiGateway(unified(model));
+	}
+
 	const workersAi = createWorkersAI({
 		binding: env.AI,
 		gateway: { id: env.AI_GATEWAY_ID },
 		providers: [anthropic, google, openai],
 	});
 
-	return workersAi(getWorkspaceAiChatModel(modelId), {
+	return workersAi(model, {
 		sessionAffinity,
 	});
 }
