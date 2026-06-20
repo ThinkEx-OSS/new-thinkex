@@ -219,10 +219,10 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 			caching: "auto",
 			providerTimeouts: {
 				byok: {
-					azure: 6000,
-					bedrock: 5000,
+					azure: 8000,
+					bedrock: 8000,
 					openai: 8000,
-					vertex: 4000,
+					vertex: 8000,
 				},
 			},
 			...getWorkspaceAiGatewayRoutingOptions(modelId),
@@ -239,14 +239,14 @@ function getWorkspaceAiGatewayRoutingOptions(
 	switch (modelId) {
 		case "claude-sonnet":
 			return {
-				order: ["anthropic", "bedrock", "vertex"],
+				order: ["bedrock", "vertex"],
 				models: ["google/gemini-3-flash", "openai/gpt-5.4-mini"],
 				sort: "ttft",
 			};
 		case "gemini":
 			return {
 				order: ["google", "vertex"],
-				models: ["openai/gpt-5.4-mini", "anthropic/claude-sonnet-4.6"],
+				models: ["openai/gpt-5.4-mini"],
 				sort: "ttft",
 			};
 		case "chatgpt":
@@ -266,9 +266,6 @@ function getWorkspaceAiReasoningOptions(
 	switch (modelId) {
 		case "claude-sonnet":
 			return {
-				anthropic: {
-					thinking: { type: "adaptive", effort: "low" },
-				},
 				bedrock: {
 					reasoningConfig: { type: "adaptive", maxReasoningEffort: "low" },
 				},
