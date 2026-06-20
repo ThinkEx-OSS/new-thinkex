@@ -184,7 +184,10 @@ export function getWorkersAiModel(
 	env: Env,
 	sessionAffinity: string,
 ): LanguageModel {
-	const workersAi = createWorkersAI({ binding: env.AI });
+	const workersAi = createWorkersAI({
+		binding: env.AI,
+		gateway: { id: env.AI_GATEWAY_ID },
+	});
 
 	return workersAi(getWorkspaceAiChatModel(modelId), {
 		sessionAffinity,

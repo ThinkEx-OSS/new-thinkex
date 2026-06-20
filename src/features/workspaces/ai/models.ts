@@ -1,10 +1,25 @@
-export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "kimi-k2.6";
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "auto";
 
 export const WORKSPACE_AI_CHAT_MODELS = [
 	{
-		id: "kimi-k2.6",
-		name: "Kimi K2.6",
+		id: "auto",
+		name: "Auto",
 		workersAiModel: "@cf/moonshotai/kimi-k2.6",
+	},
+	{
+		id: "claude-sonnet",
+		name: "Claude Sonnet",
+		workersAiModel: "anthropic/claude-sonnet-4-5",
+	},
+	{
+		id: "chatgpt",
+		name: "ChatGPT",
+		workersAiModel: "openai/gpt-5.2",
+	},
+	{
+		id: "gemini",
+		name: "Gemini",
+		workersAiModel: "google/gemini-2.5-pro",
 	},
 ] as const;
 
