@@ -20,6 +20,10 @@ import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/w
 const thinkPromptSectionDivider =
 	"══════════════════════════════════════════════";
 
+type WorkspaceAiProviderOptions = NonNullable<
+	Parameters<typeof generateText>[0]["providerOptions"]
+>;
+
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
 		.number()
@@ -195,7 +199,7 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 	modelId?: ReturnType<typeof resolveWorkspaceAiChatModelId>;
 	thread?: AIThreadContext;
 	tags?: string[];
-}) {
+}): WorkspaceAiProviderOptions {
 	const modelId = input?.modelId ?? DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
 	const tags = [
 		"app:thinkex",
@@ -213,11 +217,20 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 	return {
 		gateway: {
 			caching: "auto",
+			providerTimeouts: {
+				byok: {
+					azure: 6000,
+					bedrock: 5000,
+					openai: 8000,
+					vertex: 4000,
+				},
+			},
 			...getWorkspaceAiGatewayRoutingOptions(modelId),
 			tags,
 			user: input?.thread?.userId,
 		},
-	};
+		...getWorkspaceAiReasoningOptions(modelId),
+	} as unknown as WorkspaceAiProviderOptions;
 }
 
 function getWorkspaceAiGatewayRoutingOptions(
@@ -226,18 +239,54 @@ function getWorkspaceAiGatewayRoutingOptions(
 	switch (modelId) {
 		case "claude-sonnet":
 			return {
-				models: ["openai/gpt-5.4"],
-				order: ["bedrock", "anthropic", "vertex"],
+				order: ["anthropic", "bedrock", "vertex"],
+				models: ["google/gemini-3-flash", "openai/gpt-5.4-mini"],
+				sort: "ttft",
 			};
 		case "gemini":
 			return {
-				models: ["openai/gpt-5.4-mini"],
-				order: ["vertex", "google"],
+				order: ["google", "vertex"],
+				models: ["openai/gpt-5.4-mini", "anthropic/claude-sonnet-4.6"],
+				sort: "ttft",
 			};
 		case "chatgpt":
 			return {
-				models: ["openai/gpt-5.4-mini"],
 				order: ["openai", "azure"],
+				models: ["google/gemini-3-flash", "openai/gpt-5.4-mini"],
+				sort: "ttft",
+			};
+		default:
+			return {};
+	}
+}
+
+function getWorkspaceAiReasoningOptions(
+	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
+) {
+	switch (modelId) {
+		case "claude-sonnet":
+			return {
+				anthropic: {
+					thinking: { type: "adaptive", effort: "low" },
+				},
+				bedrock: {
+					reasoningConfig: { type: "adaptive", maxReasoningEffort: "low" },
+				},
+			};
+		case "gemini":
+			return {
+				google: {
+					thinkingConfig: { thinkingLevel: "low" },
+				},
+				vertex: {
+					thinkingConfig: { thinkingLevel: "low" },
+				},
+			};
+		case "chatgpt":
+			return {
+				openai: {
+					reasoningEffort: "none",
+				},
 			};
 		default:
 			return {};

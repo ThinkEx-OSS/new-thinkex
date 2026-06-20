@@ -3,6 +3,10 @@ import type {
 	WorkspacePresentation,
 	WorkspaceUiSession,
 } from "#/features/workspaces/state/workspace-ui-store";
+import {
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	resolveWorkspaceAiChatModelId,
+} from "#/features/workspaces/ai/models";
 
 type RestorableWorkspacePresentation = Exclude<
 	WorkspacePresentation,
@@ -15,6 +19,7 @@ export const standardPresentation: RestorableWorkspacePresentation = {
 
 export const defaultWorkspaceUiSession: WorkspaceUiSession = {
 	aiContextItemIds: [],
+	aiChatModelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	chatPanelCollapsed: false,
 	presentation: standardPresentation,
 };
@@ -26,7 +31,26 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 		return defaultWorkspaceUiSession;
 	}
 
-	return session;
+	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
+
+	if (
+		aiChatModelId === session.aiChatModelId &&
+		session.aiContextItemIds &&
+		typeof session.chatPanelCollapsed === "boolean" &&
+		session.presentation
+	) {
+		return session;
+	}
+
+	return {
+		...defaultWorkspaceUiSession,
+		...session,
+		aiChatModelId,
+		aiContextItemIds:
+			session.aiContextItemIds ?? defaultWorkspaceUiSession.aiContextItemIds,
+		presentation:
+			session.presentation ?? defaultWorkspaceUiSession.presentation,
+	};
 }
 
 export function normalizeWorkspaceUiSession(
@@ -45,11 +69,13 @@ export function normalizeWorkspaceUiSession(
 		session.aiContextItemIds,
 		validItemIds,
 	);
+	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
 
 	return presentation === session.presentation &&
-		aiContextItemIds === session.aiContextItemIds
+		aiContextItemIds === session.aiContextItemIds &&
+		aiChatModelId === session.aiChatModelId
 		? session
-		: { ...session, aiContextItemIds, presentation };
+		: { ...session, aiChatModelId, aiContextItemIds, presentation };
 }
 
 export function getUpdatedWorkspaceUiSession(
@@ -115,6 +141,12 @@ export function setActiveAiChatThreadSession(threadId: string | undefined) {
 	return {
 		activeAiChatThreadId: threadId,
 		chatPanelCollapsed: false,
+	};
+}
+
+export function setAiChatModelSession(modelId: unknown) {
+	return {
+		aiChatModelId: resolveWorkspaceAiChatModelId(modelId),
 	};
 }
 
@@ -275,6 +307,7 @@ function isSameWorkspaceUiSession(
 ) {
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
+		session.aiChatModelId === nextSession.aiChatModelId &&
 		isSameStringArray(session.aiContextItemIds, nextSession.aiContextItemIds) &&
 		session.chatPanelCollapsed === nextSession.chatPanelCollapsed &&
 		session.presentation === nextSession.presentation

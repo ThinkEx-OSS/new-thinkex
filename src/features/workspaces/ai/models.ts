@@ -1,4 +1,4 @@
-export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "chatgpt";
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "gemini";
 
 export const WORKSPACE_AI_CHAT_MODELS = [
 	{

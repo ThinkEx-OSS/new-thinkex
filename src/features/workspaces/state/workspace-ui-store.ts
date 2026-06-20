@@ -18,10 +18,12 @@ import {
 	openChatPanelSession,
 	removeWorkspaceAiContextItemSession,
 	restoreWorkspacePresentationSession,
+	setAiChatModelSession,
 	setActiveAiChatThreadSession,
 	splitWorkspacePresentationSession,
 	toggleChatPanelCollapsedSession,
 } from "#/features/workspaces/model/workspace-ui";
+import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
 export type WorkspacePane =
@@ -50,6 +52,7 @@ type RestorableWorkspacePresentation = Exclude<
 
 export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
+	aiChatModelId: WorkspaceAiChatModelId;
 	aiContextItemIds: string[];
 	chatPanelCollapsed: boolean;
 	presentation: WorkspacePresentation;
@@ -77,6 +80,10 @@ type WorkspaceUiState = {
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
+	) => void;
+	setAiChatModel: (
+		workspaceId: string,
+		modelId: WorkspaceAiChatModelId,
 	) => void;
 	setItemViewState: (
 		workspaceId: string,
@@ -213,6 +220,12 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							setActiveAiChatThreadSession(threadId),
 						),
 					),
+				setAiChatModel: (workspaceId, modelId) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, () =>
+							setAiChatModelSession(modelId),
+						),
+					),
 				setItemViewState: (workspaceId, viewState) =>
 					set((state) => {
 						const normalized = normalizeWorkspaceItemViewState(viewState);
@@ -315,6 +328,17 @@ export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
 			() => (state: WorkspaceUiState) =>
 				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
 					.activeAiChatThreadId,
+			[workspaceId],
+		),
+	);
+}
+
+export function useWorkspaceAiChatModelId(workspaceId: string) {
+	return useWorkspaceUiStore(
+		useMemo(
+			() => (state: WorkspaceUiState) =>
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
+					.aiChatModelId,
 			[workspaceId],
 		),
 	);
