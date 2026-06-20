@@ -6,25 +6,26 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "#/components/ui/resizable";
+import type { WorkspaceAiChatSurfaceMode } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
 interface WorkspaceFrameProps {
 	chrome: ReactNode;
 	content: ReactNode;
 	chatPanel?: ReactElement;
-	chatPanelMode?: "hidden" | "docked" | "fullscreen";
+	chatSurfaceMode?: WorkspaceAiChatSurfaceMode;
 }
 
 export default function WorkspaceFrame({
 	chrome,
 	content,
 	chatPanel,
-	chatPanelMode = "docked",
+	chatSurfaceMode = "docked",
 }: WorkspaceFrameProps) {
 	const chatPanelRef = useRef<PanelImperativeHandle | null>(null);
-	const isChatHidden = chatPanelMode === "hidden";
-	const isChatFullscreen = chatPanelMode === "fullscreen";
-	const isDockedChat = chatPanelMode === "docked";
+	const isChatHidden = chatSurfaceMode === "hidden";
+	const isChatFullscreen = chatSurfaceMode === "fullscreen";
+	const isDockedChat = chatSurfaceMode === "docked";
 
 	useEffect(() => {
 		if (!chatPanelRef.current) {

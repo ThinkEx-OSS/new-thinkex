@@ -3,6 +3,7 @@ import {
 	resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
 import type {
+	WorkspaceAiChatSurfaceMode,
 	WorkspacePane,
 	WorkspacePresentation,
 	WorkspaceUiSession,
@@ -30,12 +31,20 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 	}
 
 	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
+	const aiContextItemIds = Array.isArray(session.aiContextItemIds)
+		? session.aiContextItemIds
+		: defaultWorkspaceUiSession.aiContextItemIds;
+	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(
+		session.chatSurfaceMode,
+	);
+	const presentation =
+		session.presentation ?? defaultWorkspaceUiSession.presentation;
 
 	if (
 		aiChatModelId === session.aiChatModelId &&
-		Array.isArray(session.aiContextItemIds) &&
-		session.chatSurfaceMode &&
-		session.presentation
+		aiContextItemIds === session.aiContextItemIds &&
+		chatSurfaceMode === session.chatSurfaceMode &&
+		presentation === session.presentation
 	) {
 		return session;
 	}
@@ -44,12 +53,9 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 		...defaultWorkspaceUiSession,
 		...session,
 		aiChatModelId,
-		aiContextItemIds:
-			session.aiContextItemIds ?? defaultWorkspaceUiSession.aiContextItemIds,
-		chatSurfaceMode:
-			session.chatSurfaceMode ?? defaultWorkspaceUiSession.chatSurfaceMode,
-		presentation:
-			session.presentation ?? defaultWorkspaceUiSession.presentation,
+		aiContextItemIds,
+		chatSurfaceMode,
+		presentation,
 	};
 }
 
@@ -57,32 +63,22 @@ export function normalizeWorkspaceUiSession(
 	session: WorkspaceUiSession | undefined,
 	validItemIds?: ReadonlySet<string>,
 ): WorkspaceUiSession {
-	if (!session) {
-		return getWorkspaceUiSession(session);
-	}
-
+	const normalizedSession = getWorkspaceUiSession(session);
 	const presentation = normalizePresentation(
-		session.presentation,
+		normalizedSession.presentation,
 		validItemIds,
 	);
 	const aiContextItemIds = normalizeAiContextItemIds(
-		session.aiContextItemIds,
+		normalizedSession.aiContextItemIds,
 		validItemIds,
 	);
-	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
-	const chatSurfaceMode =
-		session.chatSurfaceMode ?? defaultWorkspaceUiSession.chatSurfaceMode;
 
-	return presentation === session.presentation &&
-		aiContextItemIds === session.aiContextItemIds &&
-		aiChatModelId === session.aiChatModelId &&
-		chatSurfaceMode === session.chatSurfaceMode
-		? session
+	return presentation === normalizedSession.presentation &&
+		aiContextItemIds === normalizedSession.aiContextItemIds
+		? normalizedSession
 		: {
-				...session,
-				aiChatModelId,
+				...normalizedSession,
 				aiContextItemIds,
-				chatSurfaceMode,
 				presentation,
 			};
 }
@@ -112,7 +108,7 @@ export function openChatPanelSession(session: WorkspaceUiSession) {
 	};
 }
 
-export function restoreChatPanelSession() {
+export function dockChatPanelSession() {
 	return {
 		chatSurfaceMode: "docked" as const,
 	};
@@ -159,7 +155,7 @@ export function setAiChatModelSession(modelId: unknown) {
 	};
 }
 
-export function toggleChatPanelCollapsedSession(session: WorkspaceUiSession) {
+export function toggleChatPanelSession(session: WorkspaceUiSession) {
 	return {
 		chatSurfaceMode:
 			session.chatSurfaceMode === "hidden"
@@ -267,6 +263,19 @@ function normalizePresentation(
 
 function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
 	return pane.kind !== "item" || validItemIds.has(pane.itemId);
+}
+
+function resolveWorkspaceAiChatSurfaceMode(
+	mode: unknown,
+): WorkspaceAiChatSurfaceMode {
+	switch (mode) {
+		case "hidden":
+		case "docked":
+		case "fullscreen":
+			return mode;
+		default:
+			return defaultWorkspaceUiSession.chatSurfaceMode;
+	}
 }
 
 function getVisibleWorkspaceAiChatSurfaceMode(session: WorkspaceUiSession) {

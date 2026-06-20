@@ -26,10 +26,8 @@ export function useAiChatPanelController({
 	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const modelId = useWorkspaceAiChatModelId(workspaceId);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
+	const dockChatPanel = useWorkspaceUiStore((state) => state.dockChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
-	const restoreChatPanel = useWorkspaceUiStore(
-		(state) => state.restoreChatPanel,
-	);
 	const setActiveAiChatThread = useWorkspaceUiStore(
 		(state) => state.setActiveAiChatThread,
 	);
@@ -155,7 +153,7 @@ export function useAiChatPanelController({
 		onModelChange: (nextModelId: AiChatModelId) =>
 			setAiChatModel(workspaceId, nextModelId),
 		onNewChat: () => void handleNewChat(),
-		onRestore: () => restoreChatPanel(workspaceId),
+		onRestore: () => dockChatPanel(workspaceId),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
 			thread.id === activeThreadId

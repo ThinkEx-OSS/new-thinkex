@@ -83,9 +83,7 @@ export function WorkspaceShell({
 		(state) => state.clearSelection,
 	);
 	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
-	const toggleChatPanelCollapsed = useWorkspaceUiStore(
-		(state) => state.toggleChatPanelCollapsed,
-	);
+	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
 		lastSeenRevision: revision,
@@ -175,7 +173,7 @@ export function WorkspaceShell({
 		});
 	}, [ensureWorkspaceUiSession, validItemIds, workspace.id]);
 	useAppHotkey("workspace.aiChat.toggle", () => {
-		toggleChatPanelCollapsed(workspace.id);
+		toggleChatPanel(workspace.id);
 	});
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
@@ -217,7 +215,7 @@ export function WorkspaceShell({
 		) : (
 			<WorkspaceItemToolbarProvider>
 				<WorkspaceFrame
-					chatPanelMode={chatSurfaceMode}
+					chatSurfaceMode={chatSurfaceMode}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}

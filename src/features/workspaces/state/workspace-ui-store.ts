@@ -11,6 +11,7 @@ import {
 	addWorkspaceAiContextItemsSession,
 	closeChatPanelSession,
 	defaultWorkspaceUiSession,
+	dockChatPanelSession,
 	getUpdatedWorkspaceUiSession,
 	getWorkspaceUiSession,
 	maximizeChatSession,
@@ -18,12 +19,11 @@ import {
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
 	removeWorkspaceAiContextItemSession,
-	restoreChatPanelSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
 	setAiChatModelSession,
 	splitWorkspacePresentationSession,
-	toggleChatPanelCollapsedSession,
+	toggleChatPanelSession,
 } from "#/features/workspaces/model/workspace-ui";
 import { zustandDevtoolsOptions } from "#/lib/zustand-devtools";
 
@@ -77,9 +77,9 @@ type WorkspaceUiState = {
 	addAiContextItems: (workspaceId: string, itemIds: string[]) => void;
 	clearItemViewState: (workspaceId: string, itemId?: string) => void;
 	closeChatPanel: (workspaceId: string) => void;
+	dockChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
 	removeAiContextItem: (workspaceId: string, itemId: string) => void;
-	restoreChatPanel: (workspaceId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
@@ -92,7 +92,7 @@ type WorkspaceUiState = {
 		workspaceId: string,
 		viewState: WorkspaceItemViewState,
 	) => void;
-	toggleChatPanelCollapsed: (workspaceId: string) => void;
+	toggleChatPanel: (workspaceId: string) => void;
 	maximizeChat: (workspaceId: string) => void;
 	maximizeItem: (workspaceId: string, itemId: string) => void;
 	restorePresentation: (workspaceId: string) => void;
@@ -207,6 +207,10 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, closeChatPanelSession),
 					),
+				dockChatPanel: (workspaceId) =>
+					set((state) =>
+						updateWorkspaceUiSession(state, workspaceId, dockChatPanelSession),
+					),
 				openChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, openChatPanelSession),
@@ -215,14 +219,6 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, (session) =>
 							removeWorkspaceAiContextItemSession(session, itemId),
-						),
-					),
-				restoreChatPanel: (workspaceId) =>
-					set((state) =>
-						updateWorkspaceUiSession(
-							state,
-							workspaceId,
-							restoreChatPanelSession,
 						),
 					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
@@ -259,12 +255,12 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							},
 						};
 					}),
-				toggleChatPanelCollapsed: (workspaceId) =>
+				toggleChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(
 							state,
 							workspaceId,
-							toggleChatPanelCollapsedSession,
+							toggleChatPanelSession,
 						),
 					),
 				maximizeChat: (workspaceId) =>
