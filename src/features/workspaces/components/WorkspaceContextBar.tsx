@@ -98,7 +98,7 @@ export default function WorkspaceContextBar({
 
 	return (
 		<>
-			<div className="flex h-11 items-center gap-3 bg-background px-4 text-sm">
+			<div className="relative z-10 flex h-11 items-center gap-3 bg-background px-4 text-sm">
 				<Breadcrumb className="min-w-0 flex-1">
 					<BreadcrumbList className="flex-nowrap gap-1.5 overflow-hidden sm:gap-1.5">
 						<BreadcrumbItem className="min-w-0">
