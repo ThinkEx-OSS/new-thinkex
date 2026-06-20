@@ -6,11 +6,11 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 		name: "Auto",
 		workersAiModel: "@cf/moonshotai/kimi-k2.6",
 	},
-	{
-		id: "claude-sonnet",
-		name: "Claude Sonnet 4.6",
-		workersAiModel: "aws-bedrock/anthropic.claude-sonnet-4-6",
-	},
+		{
+			id: "claude-sonnet",
+			name: "Claude Sonnet 4.6",
+			workersAiModel: "aws-bedrock/global.anthropic.claude-sonnet-4-6",
+		},
 	{
 		id: "chatgpt",
 		name: "ChatGPT 5.4",
