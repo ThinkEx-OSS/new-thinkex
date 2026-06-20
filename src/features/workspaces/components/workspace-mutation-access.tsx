@@ -1,3 +1,4 @@
+import type { SortableDisabled } from "@dnd-kit/dom/sortable";
 import { createContext, type ReactNode, useContext } from "react";
 
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
@@ -6,8 +7,17 @@ import {
 	type WorkspaceMemberCapabilities,
 } from "#/features/workspaces/workspace-member-capabilities";
 
+const readOnlyItemSortableDisabled: SortableDisabled = { droppable: true };
+
+function getWorkspaceItemSortableDisabled(
+	canMutateContent: boolean,
+): boolean | SortableDisabled {
+	return canMutateContent ? false : readOnlyItemSortableDisabled;
+}
+
 interface WorkspaceMutationAccessContextValue {
 	capabilities: WorkspaceMemberCapabilities;
+	itemSortableDisabled: boolean | SortableDisabled;
 }
 
 const WorkspaceMutationAccessContext =
@@ -20,8 +30,12 @@ export function WorkspaceMutationAccessProvider({
 	membershipRole: WorkspaceMembershipRole;
 	children: ReactNode;
 }) {
+	const capabilities = getWorkspaceMemberCapabilities(membershipRole);
 	const value = {
-		capabilities: getWorkspaceMemberCapabilities(membershipRole),
+		capabilities,
+		itemSortableDisabled: getWorkspaceItemSortableDisabled(
+			capabilities.canMutateContent,
+		),
 	};
 
 	return (

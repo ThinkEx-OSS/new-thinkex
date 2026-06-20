@@ -65,10 +65,19 @@ export class DocumentSession extends YServer {
 		context: ConnectionContext,
 	) {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		const access = await resolveDocumentSessionConnectionAccess(
-			context.request,
-			room.workspaceId,
-		);
+		let access: Awaited<
+			ReturnType<typeof resolveDocumentSessionConnectionAccess>
+		>;
+
+		try {
+			access = await resolveDocumentSessionConnectionAccess(
+				context.request,
+				room.workspaceId,
+			);
+		} catch {
+			connection.close(1011, "Unauthorized");
+			return;
+		}
 
 		if (!access) {
 			connection.close(1011, "Unauthorized");

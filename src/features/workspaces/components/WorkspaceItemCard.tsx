@@ -57,8 +57,8 @@ export default function WorkspaceItemCard({
 	onSelectionChange,
 	onElementChange,
 }: WorkspaceItemCardProps) {
-	const { capabilities } = useWorkspaceMutationAccess();
-	const { canMutateContent, itemSortableDisabled } = capabilities;
+	const { capabilities, itemSortableDisabled } = useWorkspaceMutationAccess();
+	const { canMutateContent } = capabilities;
 	const isFolder = item.type === "folder";
 	const row = isFolder ? "folder" : "item";
 	const sortableDragType = getWorkspaceItemDragTypeForRow(row);
