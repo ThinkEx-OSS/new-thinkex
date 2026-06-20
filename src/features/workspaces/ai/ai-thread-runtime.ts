@@ -1,17 +1,7 @@
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
-import { createAzure } from "@ai-sdk/azure";
-import { createVertex } from "@ai-sdk/google-vertex/edge";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
-import { generateText, tool } from "ai";
-import { createWorkersAI } from "workers-ai-provider";
-import { anthropic } from "workers-ai-provider/anthropic";
-import {
-	createGatewayFetch,
-	createGatewayProvider,
-} from "workers-ai-provider/gateway";
-import { openai } from "workers-ai-provider/openai";
+import { createGateway, generateText, tool } from "ai";
 import { z } from "zod";
 
 import type {
@@ -29,12 +19,6 @@ import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/w
 
 const thinkPromptSectionDivider =
 	"══════════════════════════════════════════════";
-
-const AZURE_OPENAI_RESOURCE_NAME = "chakrabortyurjit-7873-resource";
-const AZURE_OPENAI_API_VERSION = "2024-10-21";
-const BEDROCK_REGION = "us-east-1";
-const GOOGLE_VERTEX_PROJECT = "316561201775";
-const GOOGLE_VERTEX_LOCATION = "global";
 
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
@@ -194,78 +178,56 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 	};
 }
 
-export function getWorkersAiModel(
+export function getWorkspaceAiLanguageModel(
 	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
 	env: Env,
-	sessionAffinity: string,
+	_sessionAffinity: string,
 ): LanguageModel {
 	const model = getWorkspaceAiChatModel(modelId);
-
-	if (model.startsWith("azure-openai/")) {
-		const azure = createGatewayProvider(
-			(options) =>
-				createAzure({
-					...options,
-					apiVersion: AZURE_OPENAI_API_VERSION,
-					resourceName: AZURE_OPENAI_RESOURCE_NAME,
-					useDeploymentBasedUrls: true,
-				}),
-			{
-				binding: env.AI,
-				gateway: env.AI_GATEWAY_ID,
-			},
-		);
-		// Azure routes through AI Gateway's provider path, which does not expose
-		// Workers AI's sessionAffinity option.
-		const deploymentName = model.replace(/^azure-openai\//, "");
-
-		return azure.chat(deploymentName);
-	}
-
-	if (model.startsWith("aws-bedrock/")) {
-		const bedrock = createGatewayProvider(
-			(options) =>
-				createAmazonBedrock({
-					...options,
-					region: BEDROCK_REGION,
-				}),
-			{
-				binding: env.AI,
-				gateway: env.AI_GATEWAY_ID,
-			},
-		);
-		// Bedrock routes through AI Gateway's provider path, which does not expose
-		// Workers AI's sessionAffinity option.
-		const bedrockModel = model.replace(/^aws-bedrock\//, "");
-
-		return bedrock(bedrockModel);
-	}
-
-	if (model.startsWith("google-vertex-ai/")) {
-		const vertex = createVertex({
-			fetch: createGatewayFetch({
-				binding: env.AI,
-				gateway: env.AI_GATEWAY_ID,
-			}),
-			location: GOOGLE_VERTEX_LOCATION,
-			project: GOOGLE_VERTEX_PROJECT,
-		});
-		// Vertex routes through AI Gateway's provider path, which does not expose
-		// Workers AI's sessionAffinity option.
-		const vertexModel = model.replace(/^google-vertex-ai\/google\//, "");
-
-		return vertex(vertexModel);
-	}
-
-	const workersAi = createWorkersAI({
-		binding: env.AI,
-		gateway: { id: env.AI_GATEWAY_ID },
-		providers: [anthropic, openai],
+	const gateway = createGateway({
+		apiKey: getVercelAiGatewayApiKey(env),
 	});
 
-	return workersAi(model, {
-		sessionAffinity,
-	});
+	return gateway(model);
+}
+
+export function getWorkspaceAiGatewayProviderOptions(input?: {
+	modelId?: ReturnType<typeof resolveWorkspaceAiChatModelId>;
+	thread?: AIThreadContext;
+	tags?: string[];
+}) {
+	const tags = [
+		"app:thinkex",
+		"feature:workspace-chat",
+		input?.modelId ? `model:${input.modelId}` : undefined,
+		input?.thread ? `workspace:${input.thread.workspaceId}` : undefined,
+		input?.thread
+			? input.thread.promptScope.canMutate
+				? "mode:mutate"
+				: "mode:view"
+			: undefined,
+		...(input?.tags ?? []),
+	].filter((tag): tag is string => Boolean(tag));
+
+	return {
+		gateway: {
+			caching: "auto",
+			tags,
+			user: input?.thread?.userId,
+		},
+	};
+}
+
+function getVercelAiGatewayApiKey(env: Env) {
+	const apiKey =
+		(env as { AI_GATEWAY_API_KEY?: string }).AI_GATEWAY_API_KEY ??
+		process.env.AI_GATEWAY_API_KEY;
+
+	if (!apiKey) {
+		throw new Error("AI_GATEWAY_API_KEY is required to use Vercel AI Gateway.");
+	}
+
+	return apiKey;
 }
 
 export async function generateAIThreadTitle(input: {
@@ -280,11 +242,15 @@ export async function generateAIThreadTitle(input: {
 	}
 
 	const result = await generateText({
-		model: getWorkersAiModel(
+		model: getWorkspaceAiLanguageModel(
 			DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 			input.env,
 			input.sessionAffinity,
 		),
+		providerOptions: getWorkspaceAiGatewayProviderOptions({
+			modelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+			tags: ["task:title-generation"],
+		}),
 		prompt: [
 			"Write a concise chat title for this first user message.",
 			"Return only the title. No quotes. No punctuation at the end.",

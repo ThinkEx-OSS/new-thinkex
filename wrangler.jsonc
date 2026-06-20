@@ -17,7 +17,6 @@
 		"binding": "BROWSER"
 	},
 	"vars": {
-		"AI_GATEWAY_ID": "default",
 		"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
 		"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app"
 	},
@@ -39,7 +38,8 @@
 			"BETTER_AUTH_SECRET",
 			"GOOGLE_CLIENT_ID",
 			"GOOGLE_CLIENT_SECRET",
-			"FIRECRAWL_API_KEY"
+			"FIRECRAWL_API_KEY",
+			"AI_GATEWAY_API_KEY"
 		]
 	},
 	"workflows": [
