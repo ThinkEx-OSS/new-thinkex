@@ -28,7 +28,7 @@ export function WorkspaceHomePage() {
 			 * main's 1.5rem padding, plus ~9rem so the footer logo peeks a
 			 * teaser at the fold) for the grid so the footer flows just below it.
 			 */}
-			<div className="min-h-[calc(100vh-13.5rem)] space-y-4">
+			<div className="min-h-[calc(100vh-14rem)] space-y-4">
 				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
 					<CreateWorkspaceCard
 						disabled={createWorkspaceMutation.isPending}
