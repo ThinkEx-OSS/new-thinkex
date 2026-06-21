@@ -1,8 +1,7 @@
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
-import { generateText, tool } from "ai";
-import { createWorkersAI } from "workers-ai-provider";
+import { createGateway, generateText, tool } from "ai";
 import { z } from "zod";
 
 import type {
@@ -20,6 +19,10 @@ import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/w
 
 const thinkPromptSectionDivider =
 	"══════════════════════════════════════════════";
+
+type WorkspaceAiProviderOptions = NonNullable<
+	Parameters<typeof generateText>[0]["providerOptions"]
+>;
 
 const timeCalculateRelativeInputSchema = z.object({
 	days_ago: z
@@ -179,16 +182,124 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 	};
 }
 
-export function getWorkersAiModel(
+export function getWorkspaceAiLanguageModel(
 	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
 	env: Env,
-	sessionAffinity: string,
+	_sessionAffinity: string,
 ): LanguageModel {
-	const workersAi = createWorkersAI({ binding: env.AI });
-
-	return workersAi(getWorkspaceAiChatModel(modelId), {
-		sessionAffinity,
+	const model = getWorkspaceAiChatModel(modelId);
+	const gateway = createGateway({
+		apiKey: getVercelAiGatewayApiKey(env),
 	});
+
+	return gateway(model);
+}
+
+export function getWorkspaceAiGatewayProviderOptions(input?: {
+	modelId?: ReturnType<typeof resolveWorkspaceAiChatModelId>;
+	thread?: AIThreadContext;
+	tags?: string[];
+}): WorkspaceAiProviderOptions {
+	const modelId = input?.modelId ?? DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
+	const tags = [
+		"app:thinkex",
+		"feature:workspace-chat",
+		`model:${modelId}`,
+		input?.thread ? `workspace:${input.thread.workspaceId}` : undefined,
+		input?.thread
+			? input.thread.promptScope.canMutate
+				? "mode:mutate"
+				: "mode:view"
+			: undefined,
+		...(input?.tags ?? []),
+	].filter((tag): tag is string => Boolean(tag));
+
+	return {
+		gateway: {
+			caching: "auto",
+			providerTimeouts: {
+				byok: {
+					azure: 8000,
+					bedrock: 8000,
+					openai: 8000,
+					vertex: 8000,
+				},
+			},
+			...getWorkspaceAiGatewayRoutingOptions(modelId),
+			tags,
+			user: input?.thread?.userId,
+		},
+		...getWorkspaceAiReasoningOptions(modelId),
+	} as unknown as WorkspaceAiProviderOptions;
+}
+
+function getWorkspaceAiGatewayRoutingOptions(
+	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
+) {
+	switch (modelId) {
+		case "claude-sonnet":
+			return {
+				order: ["bedrock", "vertex"],
+				models: ["google/gemini-3-flash", "openai/gpt-5.4-mini"],
+				sort: "ttft",
+			};
+		case "gemini":
+			return {
+				order: ["google", "vertex"],
+				models: ["openai/gpt-5.4-mini"],
+				sort: "ttft",
+			};
+		case "chatgpt":
+			return {
+				order: ["openai", "azure"],
+				models: ["google/gemini-3-flash", "openai/gpt-5.4-mini"],
+				sort: "ttft",
+			};
+		default:
+			return {};
+	}
+}
+
+function getWorkspaceAiReasoningOptions(
+	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
+) {
+	switch (modelId) {
+		case "claude-sonnet":
+			return {
+				bedrock: {
+					reasoningConfig: { type: "adaptive", maxReasoningEffort: "low" },
+				},
+			};
+		case "gemini":
+			return {
+				google: {
+					thinkingConfig: { thinkingLevel: "low" },
+				},
+				vertex: {
+					thinkingConfig: { thinkingLevel: "low" },
+				},
+			};
+		case "chatgpt":
+			return {
+				openai: {
+					reasoningEffort: "none",
+				},
+			};
+		default:
+			return {};
+	}
+}
+
+function getVercelAiGatewayApiKey(env: Env) {
+	const apiKey =
+		(env as { AI_GATEWAY_API_KEY?: string }).AI_GATEWAY_API_KEY ??
+		process.env.AI_GATEWAY_API_KEY;
+
+	if (!apiKey) {
+		throw new Error("AI_GATEWAY_API_KEY is required to use Vercel AI Gateway.");
+	}
+
+	return apiKey;
 }
 
 export async function generateAIThreadTitle(input: {
@@ -203,11 +314,15 @@ export async function generateAIThreadTitle(input: {
 	}
 
 	const result = await generateText({
-		model: getWorkersAiModel(
+		model: getWorkspaceAiLanguageModel(
 			DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 			input.env,
 			input.sessionAffinity,
 		),
+		providerOptions: getWorkspaceAiGatewayProviderOptions({
+			modelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+			tags: ["task:title-generation"],
+		}),
 		prompt: [
 			"Write a concise chat title for this first user message.",
 			"Return only the title. No quotes. No punctuation at the end.",

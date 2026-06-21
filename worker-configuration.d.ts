@@ -7,6 +7,7 @@ interface __BaseEnv_Env {
 	EMAIL: SendEmail;
 	BROWSER: BrowserRun;
 	AI: Ai;
+	AI_GATEWAY_ID: "default";
 	FIRECRAWL_API_URL: "https://api.firecrawl.dev";
 	WORKSPACE_INVITE_FROM_EMAIL: "invites@thinkex.app";
 	BETTER_AUTH_URL: string;
@@ -31,7 +32,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "FIRECRAWL_API_URL" | "WORKSPACE_INVITE_FROM_EMAIL" | "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "FIRECRAWL_API_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "AI_GATEWAY_ID" | "FIRECRAWL_API_URL" | "WORKSPACE_INVITE_FROM_EMAIL" | "BETTER_AUTH_URL" | "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "FIRECRAWL_API_KEY">> {}
 }
 
 // Begin runtime types

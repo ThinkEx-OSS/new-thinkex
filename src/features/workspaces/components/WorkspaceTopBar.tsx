@@ -21,7 +21,10 @@ import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+import {
+	useWorkspaceAiChatSurfaceMode,
+	useWorkspaceUiStore,
+} from "#/features/workspaces/state/workspace-ui-store";
 import { formatAppHotkey, getAppHotkey } from "#/lib/hotkeys-core";
 
 type PresenceStatus = "connecting" | "connected" | "disconnected";
@@ -60,10 +63,7 @@ export default function WorkspaceTopBar({
 	onCreateRootTabAfter,
 	onDuplicateTab,
 }: WorkspaceTopBarProps) {
-	const isCollapsed = useWorkspaceUiStore(
-		(state) =>
-			state.sessionsByWorkspaceId[workspace.id]?.chatPanelCollapsed ?? false,
-	);
+	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspace.id);
 	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
 	const [shareOpen, setShareOpen] = useState(false);
 	const aiChatHotkey = formatAppHotkey(
@@ -110,7 +110,7 @@ export default function WorkspaceTopBar({
 						<Share2 />
 					</WorkspaceToolbarIconButton>
 					<UserProfileDropdown />
-					{isCollapsed ? (
+					{chatSurfaceMode === "hidden" ? (
 						<Tooltip>
 							<TooltipTrigger
 								render={

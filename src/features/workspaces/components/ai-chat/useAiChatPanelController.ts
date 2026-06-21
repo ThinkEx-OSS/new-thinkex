@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChatThreads } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
 import {
 	useWorkspaceActiveAiChatThreadId,
-	useWorkspacePresentation,
+	useWorkspaceAiChatModelId,
+	useWorkspaceAiChatSurfaceMode,
 	useWorkspaceUiStore,
 } from "#/features/workspaces/state/workspace-ui-store";
 import { getErrorMessage } from "#/lib/error-message";
@@ -22,19 +22,16 @@ type AiChatThreadForDialog = {
 export function useAiChatPanelController({
 	workspaceId,
 }: UseAiChatPanelControllerInput) {
-	const presentation = useWorkspacePresentation(workspaceId);
+	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
 	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
+	const modelId = useWorkspaceAiChatModelId(workspaceId);
 	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
+	const dockChatPanel = useWorkspaceUiStore((state) => state.dockChatPanel);
 	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
-	const restorePresentation = useWorkspaceUiStore(
-		(state) => state.restorePresentation,
-	);
 	const setActiveAiChatThread = useWorkspaceUiStore(
 		(state) => state.setActiveAiChatThread,
 	);
-	const [modelId, setModelId] = useState<AiChatModelId>(
-		DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-	);
+	const setAiChatModel = useWorkspaceUiStore((state) => state.setAiChatModel);
 	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] =
 		useState(false);
 	const [threadPendingDeletion, setThreadPendingDeletion] =
@@ -50,8 +47,7 @@ export function useAiChatPanelController({
 		threads,
 	} = useWorkspaceAiChatThreads({ workspaceId });
 	const activeThread = threads.find((thread) => thread.id === activeThreadId);
-	const isMaximized =
-		presentation.mode === "maximized" && presentation.pane.kind === "chat";
+	const isMaximized = chatSurfaceMode === "fullscreen";
 
 	const selectThread = (threadId: string | undefined) => {
 		setActiveAiChatThread(workspaceId, threadId);
@@ -154,9 +150,10 @@ export function useAiChatPanelController({
 			setIsDeleteThreadDialogOpen(true);
 		},
 		onMaximize: () => maximizeChat(workspaceId),
-		onModelChange: setModelId,
+		onModelChange: (nextModelId: AiChatModelId) =>
+			setAiChatModel(workspaceId, nextModelId),
 		onNewChat: () => void handleNewChat(),
-		onRestore: () => restorePresentation(workspaceId),
+		onRestore: () => dockChatPanel(workspaceId),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
 			thread.id === activeThreadId

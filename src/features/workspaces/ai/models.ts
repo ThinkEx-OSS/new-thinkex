@@ -1,35 +1,20 @@
-export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "glm-4.7-flash";
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "gemini";
 
 export const WORKSPACE_AI_CHAT_MODELS = [
 	{
-		id: "glm-4.7-flash",
-		name: "GLM 4.7 Flash",
-		workersAiModel: "@cf/zai-org/glm-4.7-flash",
+		id: "claude-sonnet",
+		name: "Claude Sonnet 4.6",
+		gatewayModel: "anthropic/claude-sonnet-4.6",
 	},
 	{
-		id: "kimi-k2.6",
-		name: "Kimi K2.6",
-		workersAiModel: "@cf/moonshotai/kimi-k2.6",
+		id: "chatgpt",
+		name: "ChatGPT 5.4",
+		gatewayModel: "openai/gpt-5.4",
 	},
 	{
-		id: "gemma-4-26b",
-		name: "Gemma 4 26B",
-		workersAiModel: "@cf/google/gemma-4-26b-a4b-it",
-	},
-	{
-		id: "llama-4-scout",
-		name: "Llama 4 Scout 17B",
-		workersAiModel: "@cf/meta/llama-4-scout-17b-16e-instruct",
-	},
-	{
-		id: "nemotron-3-120b",
-		name: "Nemotron 3 120B",
-		workersAiModel: "@cf/nvidia/nemotron-3-120b-a12b",
-	},
-	{
-		id: "gpt-oss-120b",
-		name: "GPT-OSS 120B",
-		workersAiModel: "@cf/openai/gpt-oss-120b",
+		id: "gemini",
+		name: "Gemini 3 Flash",
+		gatewayModel: "google/gemini-3-flash",
 	},
 ] as const;
 
@@ -56,5 +41,5 @@ export function getWorkspaceAiChatModel(modelId: WorkspaceAiChatModelId) {
 			(model) => model.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 		) ??
 		WORKSPACE_AI_CHAT_MODELS[0]
-	).workersAiModel;
+	).gatewayModel;
 }

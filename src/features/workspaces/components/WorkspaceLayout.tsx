@@ -22,7 +22,6 @@ import WorkspaceSplitPresentation from "#/features/workspaces/components/Workspa
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
 import { WorkspaceMutationAccessProvider } from "#/features/workspaces/components/workspace-mutation-access";
-import { hasWorkspacePaneKind } from "#/features/workspaces/components/workspace-presentation-model";
 import type {
 	WorkspaceItemType,
 	WorkspaceSummary,
@@ -84,9 +83,7 @@ export function WorkspaceShell({
 		(state) => state.clearSelection,
 	);
 	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
-	const toggleChatPanelCollapsed = useWorkspaceUiStore(
-		(state) => state.toggleChatPanelCollapsed,
-	);
+	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
 		lastSeenRevision: revision,
@@ -132,8 +129,7 @@ export function WorkspaceShell({
 		activeViewFromUrl,
 	});
 	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
-	const { chatPanelCollapsed, presentation } = normalizedUiSession;
-	const presentationHasChat = hasWorkspacePaneKind(presentation, "chat");
+	const { chatSurfaceMode, presentation } = normalizedUiSession;
 	const hasHeavyViewerRuntimeItems = scopedItems.some(
 		workspaceItemRequiresHeavyViewerRuntime,
 	);
@@ -177,7 +173,7 @@ export function WorkspaceShell({
 		});
 	}, [ensureWorkspaceUiSession, validItemIds, workspace.id]);
 	useAppHotkey("workspace.aiChat.toggle", () => {
-		toggleChatPanelCollapsed(workspace.id);
+		toggleChatPanel(workspace.id);
 	});
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
@@ -219,6 +215,7 @@ export function WorkspaceShell({
 		) : (
 			<WorkspaceItemToolbarProvider>
 				<WorkspaceFrame
+					chatSurfaceMode={chatSurfaceMode}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}
@@ -274,11 +271,7 @@ export function WorkspaceShell({
 							/>
 						)
 					}
-					chatPanel={
-						chatPanelCollapsed || presentationHasChat ? undefined : (
-							<AiChatPanel context={aiContextScope} />
-						)
-					}
+					chatPanel={<AiChatPanel context={aiContextScope} />}
 				/>
 			</WorkspaceItemToolbarProvider>
 		);

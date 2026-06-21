@@ -13,6 +13,7 @@ import {
 	getAssistantRowDisplay,
 	isAiChatStreamActive,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import { aiChatMessageRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
@@ -102,7 +103,7 @@ export default function AiChatMessageList({
 							return (
 								<div
 									key="assistant-pending"
-									className="pb-5"
+									className={`${aiChatMessageRailClassName} pb-5`}
 									style={tailSpacerStyle}
 								>
 									<AiChatAssistantPending pending={row.pending} />
@@ -123,7 +124,7 @@ export default function AiChatMessageList({
 										? measurePinnedUserRow
 										: undefined
 								}
-								className="pb-5"
+								className={`${aiChatMessageRailClassName} pb-5`}
 								style={applyTailSpacer ? tailSpacerStyle : undefined}
 							>
 								<AiChatMessageRow
@@ -164,7 +165,11 @@ export default function AiChatMessageList({
 }
 
 function AiChatMessageListFallback({ children }: { children: ReactNode }) {
-	return <div className="min-h-0 flex-1 px-4 pt-5 pb-5">{children}</div>;
+	return (
+		<div className="min-h-0 flex-1 px-4 pt-5 pb-5">
+			<div className={aiChatMessageRailClassName}>{children}</div>
+		</div>
+	);
 }
 
 function getAiChatListRows(

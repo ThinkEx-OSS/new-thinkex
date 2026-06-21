@@ -1,4 +1,9 @@
+import {
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	resolveWorkspaceAiChatModelId,
+} from "#/features/workspaces/ai/models";
 import type {
+	WorkspaceAiChatSurfaceMode,
 	WorkspacePane,
 	WorkspacePresentation,
 	WorkspaceUiSession,
@@ -15,41 +20,67 @@ export const standardPresentation: RestorableWorkspacePresentation = {
 
 export const defaultWorkspaceUiSession: WorkspaceUiSession = {
 	aiContextItemIds: [],
-	chatPanelCollapsed: false,
+	aiChatModelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	chatSurfaceMode: "docked",
 	presentation: standardPresentation,
 };
-
-const chatPane: WorkspacePane = { id: "chat", kind: "chat" };
 
 export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 	if (!session) {
 		return defaultWorkspaceUiSession;
 	}
 
-	return session;
+	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
+	const aiContextItemIds = Array.isArray(session.aiContextItemIds)
+		? session.aiContextItemIds
+		: defaultWorkspaceUiSession.aiContextItemIds;
+	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(
+		session.chatSurfaceMode,
+	);
+	const presentation =
+		session.presentation ?? defaultWorkspaceUiSession.presentation;
+
+	if (
+		aiChatModelId === session.aiChatModelId &&
+		aiContextItemIds === session.aiContextItemIds &&
+		chatSurfaceMode === session.chatSurfaceMode &&
+		presentation === session.presentation
+	) {
+		return session;
+	}
+
+	return {
+		...defaultWorkspaceUiSession,
+		...session,
+		aiChatModelId,
+		aiContextItemIds,
+		chatSurfaceMode,
+		presentation,
+	};
 }
 
 export function normalizeWorkspaceUiSession(
 	session: WorkspaceUiSession | undefined,
 	validItemIds?: ReadonlySet<string>,
 ): WorkspaceUiSession {
-	if (!session) {
-		return getWorkspaceUiSession(session);
-	}
-
+	const normalizedSession = getWorkspaceUiSession(session);
 	const presentation = normalizePresentation(
-		session.presentation,
+		normalizedSession.presentation,
 		validItemIds,
 	);
 	const aiContextItemIds = normalizeAiContextItemIds(
-		session.aiContextItemIds,
+		normalizedSession.aiContextItemIds,
 		validItemIds,
 	);
 
-	return presentation === session.presentation &&
-		aiContextItemIds === session.aiContextItemIds
-		? session
-		: { ...session, aiContextItemIds, presentation };
+	return presentation === normalizedSession.presentation &&
+		aiContextItemIds === normalizedSession.aiContextItemIds
+		? normalizedSession
+		: {
+				...normalizedSession,
+				aiContextItemIds,
+				presentation,
+			};
 }
 
 export function getUpdatedWorkspaceUiSession(
@@ -65,20 +96,21 @@ export function getUpdatedWorkspaceUiSession(
 	return isSameWorkspaceUiSession(session, nextSession) ? session : nextSession;
 }
 
-export function closeChatPanelSession(session: WorkspaceUiSession) {
+export function closeChatPanelSession() {
 	return {
-		chatPanelCollapsed: true,
-		presentation:
-			session.presentation.mode === "maximized" &&
-			session.presentation.pane.kind === "chat"
-				? session.presentation.restorePresentation
-				: session.presentation,
+		chatSurfaceMode: "hidden" as const,
 	};
 }
 
-export function openChatPanelSession() {
+export function openChatPanelSession(session: WorkspaceUiSession) {
 	return {
-		chatPanelCollapsed: false,
+		chatSurfaceMode: getVisibleWorkspaceAiChatSurfaceMode(session),
+	};
+}
+
+export function dockChatPanelSession() {
+	return {
+		chatSurfaceMode: "docked" as const,
 	};
 }
 
@@ -94,7 +126,7 @@ export function addWorkspaceAiContextItemsSession(
 	return {
 		aiContextItemIds:
 			nextIds === session.aiContextItemIds ? session.aiContextItemIds : nextIds,
-		chatPanelCollapsed: false,
+		chatSurfaceMode: getVisibleWorkspaceAiChatSurfaceMode(session),
 	};
 }
 
@@ -114,29 +146,27 @@ export function removeWorkspaceAiContextItemSession(
 export function setActiveAiChatThreadSession(threadId: string | undefined) {
 	return {
 		activeAiChatThreadId: threadId,
-		chatPanelCollapsed: false,
 	};
 }
 
-export function toggleChatPanelCollapsedSession(session: WorkspaceUiSession) {
+export function setAiChatModelSession(modelId: unknown) {
 	return {
-		chatPanelCollapsed: !session.chatPanelCollapsed,
-		presentation:
-			session.presentation.mode === "maximized" &&
-			session.presentation.pane.kind === "chat"
-				? session.presentation.restorePresentation
-				: session.presentation,
+		aiChatModelId: resolveWorkspaceAiChatModelId(modelId),
 	};
 }
 
-export function maximizeChatSession(session: WorkspaceUiSession) {
+export function toggleChatPanelSession(session: WorkspaceUiSession) {
 	return {
-		chatPanelCollapsed: false,
-		presentation: {
-			mode: "maximized" as const,
-			pane: chatPane,
-			restorePresentation: getRestorablePresentation(session.presentation),
-		},
+		chatSurfaceMode:
+			session.chatSurfaceMode === "hidden"
+				? ("docked" as const)
+				: ("hidden" as const),
+	};
+}
+
+export function maximizeChatSession() {
+	return {
+		chatSurfaceMode: "fullscreen" as const,
 	};
 }
 
@@ -235,6 +265,25 @@ function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
 	return pane.kind !== "item" || validItemIds.has(pane.itemId);
 }
 
+function resolveWorkspaceAiChatSurfaceMode(
+	mode: unknown,
+): WorkspaceAiChatSurfaceMode {
+	switch (mode) {
+		case "hidden":
+		case "docked":
+		case "fullscreen":
+			return mode;
+		default:
+			return defaultWorkspaceUiSession.chatSurfaceMode;
+	}
+}
+
+function getVisibleWorkspaceAiChatSurfaceMode(session: WorkspaceUiSession) {
+	return session.chatSurfaceMode === "hidden"
+		? ("docked" as const)
+		: session.chatSurfaceMode;
+}
+
 function normalizeAiContextItemIds(
 	itemIds: string[] | undefined,
 	validItemIds?: ReadonlySet<string>,
@@ -275,8 +324,9 @@ function isSameWorkspaceUiSession(
 ) {
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
+		session.aiChatModelId === nextSession.aiChatModelId &&
 		isSameStringArray(session.aiContextItemIds, nextSession.aiContextItemIds) &&
-		session.chatPanelCollapsed === nextSession.chatPanelCollapsed &&
+		session.chatSurfaceMode === nextSession.chatSurfaceMode &&
 		session.presentation === nextSession.presentation
 	);
 }

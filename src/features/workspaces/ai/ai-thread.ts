@@ -24,7 +24,8 @@ import {
 	getAIThreadActiveTools,
 	getAIThreadSoulPrompt,
 	getAIThreadSystemPromptForWorkspace,
-	getWorkersAiModel,
+	getWorkspaceAiGatewayProviderOptions,
+	getWorkspaceAiLanguageModel,
 } from "#/features/workspaces/ai/ai-thread-runtime";
 import {
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
@@ -59,7 +60,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		getModel(): LanguageModel {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
 			// override this per request with the selected model from `ctx.body.modelId`.
-			return getWorkersAiModel(
+			return getWorkspaceAiLanguageModel(
 				DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 				this.env,
 				this.sessionAffinity,
@@ -131,7 +132,15 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 			return {
 				activeTools: getAIThreadActiveTools(thread.promptScope.canMutate),
-				model: getWorkersAiModel(modelId, this.env, this.sessionAffinity),
+				model: getWorkspaceAiLanguageModel(
+					modelId,
+					this.env,
+					this.sessionAffinity,
+				),
+				providerOptions: getWorkspaceAiGatewayProviderOptions({
+					modelId,
+					thread,
+				}),
 				system,
 			};
 		}
