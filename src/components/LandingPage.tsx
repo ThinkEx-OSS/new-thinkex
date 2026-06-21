@@ -42,7 +42,10 @@ export default function LandingPage() {
 						</span>
 					</Link>
 
-					<nav className="flex flex-1 items-center justify-end gap-2" aria-label="Site">
+					<nav
+						className="flex flex-1 items-center justify-end gap-2"
+						aria-label="Site"
+					>
 						<Button
 							variant="ghost"
 							size="default"
@@ -88,8 +91,8 @@ export default function LandingPage() {
 									The workspace that thinks with you
 								</h1>
 								<p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-									ThinkEx lets you organize and work across documents, media, and
-									AI in one place.
+									ThinkEx lets you organize and work across documents, media,
+									and AI in one place.
 								</p>
 							</div>
 
