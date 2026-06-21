@@ -7,7 +7,7 @@ export const workspaceItemPreviewControlOverlayClass =
 	"pointer-events-none opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:opacity-100 data-popup-open:pointer-events-auto data-popup-open:opacity-100";
 
 export const workspaceItemPreviewControlSelectedClass =
-	"pointer-events-auto border-foreground/45 bg-secondary text-foreground opacity-100 dark:border-white/40 dark:bg-secondary dark:text-foreground";
+	"pointer-events-auto border-info bg-info text-white opacity-100 dark:border-info dark:bg-info dark:text-white";
 
 export const workspaceItemPreviewControlRowClass =
 	"relative z-10 flex h-10 items-center justify-between px-2";
@@ -22,7 +22,7 @@ export const workspaceItemCardUnselectedHoverClass =
 	"not-data-[selected=true]:hover:shadow-md not-data-[selected=true]:hover:ring-foreground/15 dark:not-data-[selected=true]:hover:ring-foreground/18";
 
 export const workspaceItemCardSelectedClass =
-	"data-[selected=true]:ring-2 data-[selected=true]:ring-white data-[selected=true]:ring-offset-2 data-[selected=true]:ring-offset-background data-[selected=true]:shadow-[0_0_0_2px_rgba(15,23,42,0.34),0_0_0_5px_rgba(15,23,42,0.08),0_16px_36px_rgba(15,23,42,0.20)] dark:data-[selected=true]:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_0_5px_rgba(255,255,255,0.08),0_16px_36px_rgba(0,0,0,0.45)]";
+	"data-[selected=true]:ring-2 data-[selected=true]:ring-info";
 
 export const workspaceItemPreviewStageClass =
 	"pointer-events-none relative z-10 min-h-20 flex-1 overflow-hidden bg-muted";
