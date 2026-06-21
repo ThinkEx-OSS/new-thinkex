@@ -4,7 +4,10 @@ export function smoothScrollViewportTop() {
 	const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	const behavior: ScrollBehavior = reduced ? "auto" : "smooth";
 	requestAnimationFrame(() => {
-		const root = document.scrollingElement ?? document.documentElement;
+		const root =
+			document.querySelector("[data-scroll-root]") ??
+			document.scrollingElement ??
+			document.documentElement;
 		root.scrollTo({ top: 0, left: 0, behavior });
 	});
 }

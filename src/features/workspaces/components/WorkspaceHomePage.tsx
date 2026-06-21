@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import AppShell from "#/components/AppShell";
+import SiteFooter from "#/components/SiteFooter";
 import CreateWorkspaceCard from "#/features/workspaces/components/CreateWorkspaceCard";
 import WorkspaceCard from "#/features/workspaces/components/WorkspaceCard";
 import {
@@ -22,7 +23,12 @@ export function WorkspaceHomePage() {
 
 	return (
 		<AppShell>
-			<div className="space-y-4">
+			{/*
+			 * Reserve the available viewport (100vh minus the 3rem header and
+			 * main's 1.5rem padding, plus ~9rem so the footer logo peeks a
+			 * teaser at the fold) for the grid so the footer flows just below it.
+			 */}
+			<div className="min-h-[calc(100vh-13.5rem)] space-y-4">
 				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
 					<CreateWorkspaceCard
 						disabled={createWorkspaceMutation.isPending}
@@ -42,6 +48,7 @@ export function WorkspaceHomePage() {
 					))}
 				</section>
 			</div>
+			<SiteFooter />
 		</AppShell>
 	);
 }

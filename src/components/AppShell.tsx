@@ -17,8 +17,8 @@ export default function AppShell({
 	children,
 }: AppShellProps) {
 	return (
-		<div className="min-h-screen bg-background text-foreground">
-			<header className="sticky top-0 z-40 bg-muted">
+		<div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+			<header className="z-40 shrink-0 bg-muted">
 				<div className="flex h-12 w-full items-center gap-3 px-4">
 					<Link
 						to="/home"
@@ -43,7 +43,10 @@ export default function AppShell({
 				</div>
 			</header>
 
-			<div className="flex min-h-[calc(100vh-3rem)] w-full flex-col">
+			<div
+				data-scroll-root
+				className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto"
+			>
 				<main className="flex-1 min-h-0 p-3">
 					{title || subtitle ? (
 						<section className="space-y-2">
