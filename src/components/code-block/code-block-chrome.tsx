@@ -1,6 +1,7 @@
 import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes } from "react";
 
+import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import {
 	Select,
@@ -129,7 +130,11 @@ export const CodeBlockCopyButton = ({
 			variant="ghost"
 			{...props}
 		>
-			{children ?? <Icon size={14} />}
+			{children ?? (
+				<AnimatedIconSwap swapKey={isCopied}>
+					<Icon size={14} />
+				</AnimatedIconSwap>
+			)}
 		</Button>
 	);
 };

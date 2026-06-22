@@ -1,7 +1,8 @@
 import { Check, Mail } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
+import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
+import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 
 function DiscordIcon(props: React.SVGProps<SVGSVGElement>) {
 	return (
@@ -70,41 +71,19 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
 const CONTACT_EMAIL = "hello@thinkex.app";
 
 function FooterEmailLink() {
-	const [copied, setCopied] = useState(false);
-
-	useEffect(() => {
-		if (!copied) return;
-		const id = window.setTimeout(() => setCopied(false), 2000);
-		return () => window.clearTimeout(id);
-	}, [copied]);
-
-	async function handleCopy() {
-		try {
-			await navigator.clipboard.writeText(CONTACT_EMAIL);
-			setCopied(true);
-		} catch {
-			// Clipboard API unavailable; leave label unchanged.
-		}
-	}
+	const { copied, copy } = useCopyToClipboard({ resetTimeoutMs: 2000 });
 
 	return (
 		<button
 			type="button"
-			onClick={handleCopy}
+			onClick={() => void copy(CONTACT_EMAIL)}
 			className="flex items-center gap-3 transition-colors hover:text-foreground"
 			aria-label={copied ? "Email copied" : `Copy ${CONTACT_EMAIL}`}
 		>
-			{copied ? (
-				<>
-					<Check className="size-5" />
-					<span>Copied</span>
-				</>
-			) : (
-				<>
-					<Mail className="size-5" />
-					<span>Email</span>
-				</>
-			)}
+			<AnimatedIconSwap swapKey={copied} className="size-5">
+				{copied ? <Check className="size-5" /> : <Mail className="size-5" />}
+			</AnimatedIconSwap>
+			<span>{copied ? "Copied" : "Email"}</span>
 		</button>
 	);
 }

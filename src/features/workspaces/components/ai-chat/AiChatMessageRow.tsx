@@ -8,6 +8,7 @@ import {
 	MessageContent,
 	MessageToolbar,
 } from "#/components/ai-elements/message";
+import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
 import {
@@ -195,7 +196,9 @@ function CopyResponseAction({ text }: { text: string }) {
 				void copy(text);
 			}}
 		>
-			{copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+			<AnimatedIconSwap swapKey={copied} className="size-4">
+				{copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+			</AnimatedIconSwap>
 		</MessageAction>
 	);
 }

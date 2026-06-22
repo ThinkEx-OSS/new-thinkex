@@ -3,6 +3,7 @@ import { Check, ChevronDown, Link2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import {
 	Dialog,
@@ -182,13 +183,23 @@ export function WorkspaceShareDialog({
 								/>
 							}
 						>
-							{copyingRole !== null ? (
-								<Loader2 className="animate-spin" />
-							) : copiedRole !== null ? (
-								<Check />
-							) : (
-								<Link2 />
-							)}
+							<AnimatedIconSwap
+								swapKey={
+									copyingRole !== null
+										? "copying"
+										: copiedRole !== null
+											? "copied"
+											: "idle"
+								}
+							>
+								{copyingRole !== null ? (
+									<Loader2 className="animate-spin" />
+								) : copiedRole !== null ? (
+									<Check />
+								) : (
+									<Link2 />
+								)}
+							</AnimatedIconSwap>
 							{copyingRole !== null
 								? "Copying…"
 								: copiedRole !== null
