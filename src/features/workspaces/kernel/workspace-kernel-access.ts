@@ -5,6 +5,7 @@ import { workspaceKernelAgentName } from "#/features/workspaces/agent-routes";
 import type {
 	CreateWorkspaceItemInput,
 	DeleteWorkspaceItemsInput,
+	JsonValue,
 	MoveWorkspaceItemsInput,
 	RenameWorkspaceItemInput,
 	UpdateWorkspaceItemColorInput,
@@ -21,6 +22,7 @@ import type {
 	ReadWorkspaceKernelFilePreviewResult,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileProjectionResult,
+	WorkspaceKernelNameConflictPolicy,
 	UpsertWorkspaceKernelFileProjectionArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
 import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file";
@@ -55,7 +57,10 @@ export interface WorkspaceKernelClient {
 		parentId?: string | null;
 		type: CreateWorkspaceItemInput["type"];
 		name?: string;
+		onNameConflict?: WorkspaceKernelNameConflictPolicy;
 		color?: CreateWorkspaceItemInput["color"];
+		metadataJson?: Record<string, JsonValue>;
+		initialContent?: string;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
@@ -72,6 +77,7 @@ export interface WorkspaceKernelClient {
 	renameItem(input: {
 		itemId: string;
 		name: string;
+		onNameConflict?: WorkspaceKernelNameConflictPolicy;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
@@ -81,6 +87,7 @@ export interface WorkspaceKernelClient {
 			sortOrder?: number;
 		}>;
 		parentId?: string | null;
+		onNameConflict?: WorkspaceKernelNameConflictPolicy;
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>>;

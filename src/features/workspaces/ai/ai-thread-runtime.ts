@@ -54,6 +54,9 @@ const timeCalculateRelativeInputSchema = z.object({
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
 
 const AI_THREAD_WORKSPACE_MUTATION_TOOLS = [
+	"workspace_create_items",
+	"workspace_move_items",
+	"workspace_delete_items",
 	"workspace_rename_items",
 	"workspace_edit_item",
 ] as const;

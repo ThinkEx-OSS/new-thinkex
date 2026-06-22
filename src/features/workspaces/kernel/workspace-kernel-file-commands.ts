@@ -93,7 +93,8 @@ export class WorkspaceKernelFileCommands {
 			input.fileName,
 			descriptor,
 		);
-		const name = this.store.getAvailableItemName({
+		const name = this.store.resolveItemName({
+			itemId,
 			type: "file",
 			parentId,
 			requestedName,
