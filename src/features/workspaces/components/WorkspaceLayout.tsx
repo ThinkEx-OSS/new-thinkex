@@ -5,10 +5,10 @@ import {
 	workspacePageQueryKey,
 } from "#/features/workspaces/cache";
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
+import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import { WorkspaceFileUploadProvider } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
-import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
 import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
 import { WorkspacePdfEngineProvider } from "#/features/workspaces/components/WorkspacePdfEngineProvider";
@@ -73,6 +73,7 @@ export function WorkspaceShell({
 	);
 	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
 	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
+	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
 	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
@@ -153,7 +154,7 @@ export function WorkspaceShell({
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
 		return (
-			<WorkspaceFrame
+			<WorkspaceChatLayout
 				chrome={<WorkspaceSkeletonChrome />}
 				content={<WorkspaceSkeletonContent />}
 				chatPanel={<WorkspaceSkeletonAiChatPanel />}
@@ -188,8 +189,9 @@ export function WorkspaceShell({
 			</WorkspaceMaximizedPresentation>
 		) : (
 			<WorkspaceItemToolbarProvider>
-				<WorkspaceFrame
+				<WorkspaceChatLayout
 					chatSurfaceMode={chatSurfaceMode}
+					onCloseDockedChat={() => closeChatPanel(workspace.id)}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}

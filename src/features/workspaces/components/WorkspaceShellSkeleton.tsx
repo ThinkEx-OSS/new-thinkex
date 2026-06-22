@@ -4,7 +4,7 @@ import ThinkExLogo from "#/components/ThinkExLogo";
 import { Skeleton } from "#/components/ui/skeleton";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
-import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
+import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { cn } from "#/lib/utils";
 
@@ -20,7 +20,7 @@ const workspaceSkeletonCardKeys = [
 
 export default function WorkspaceShellSkeleton() {
 	return (
-		<WorkspaceFrame
+		<WorkspaceChatLayout
 			chrome={<WorkspaceSkeletonChrome />}
 			content={<WorkspaceSkeletonContent />}
 			chatPanel={<WorkspaceSkeletonAiChatPanel />}
