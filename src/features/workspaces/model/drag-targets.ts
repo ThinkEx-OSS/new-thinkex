@@ -4,8 +4,6 @@ import {
 	getWorkspaceItemDragRow,
 } from "./drag-data";
 import {
-	getWorkspaceAiContextDropTargetId,
-	getWorkspaceAiContextDropTargetWorkspaceId,
 	getWorkspaceFolderDropTargetFolderId,
 	getWorkspaceFolderDropTargetId,
 	getWorkspaceSplitDropTargetInput,
@@ -20,7 +18,7 @@ import {
 	type WorkspaceDropTarget,
 } from "./drag-types";
 
-export { getWorkspaceAiContextDropTargetId, getWorkspaceFolderDropTargetId };
+export { getWorkspaceFolderDropTargetId };
 
 export function getWorkspaceDragSource(
 	source: WorkspaceDragEntity | null | undefined,
@@ -110,13 +108,6 @@ export function getWorkspaceDropTarget(
 		};
 	}
 
-	if (dropTargetData?.kind === "workspace-ai-context-drop-target") {
-		return {
-			kind: "ai-context",
-			workspaceId: dropTargetData.workspaceId,
-		};
-	}
-
 	if (target.type === WORKSPACE_TAB_DRAG_TYPE) {
 		return {
 			kind: "tab",
@@ -140,17 +131,6 @@ export function getWorkspaceDropTarget(
 			kind: "pane-split",
 			paneId: splitInput.paneId,
 			side: splitInput.side,
-		};
-	}
-
-	const aiContextWorkspaceId = getWorkspaceAiContextDropTargetWorkspaceId(
-		target.id,
-	);
-
-	if (aiContextWorkspaceId) {
-		return {
-			kind: "ai-context",
-			workspaceId: aiContextWorkspaceId,
 		};
 	}
 

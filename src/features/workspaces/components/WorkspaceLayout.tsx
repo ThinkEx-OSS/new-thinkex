@@ -34,10 +34,6 @@ import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspa
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import { useWorkspaceAiComposerDraftQuotes } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
 import {
-	useWorkspaceSelectionItemIds,
-	useWorkspaceSelectionStore,
-} from "#/features/workspaces/state/workspace-selection-store";
-import {
 	useWorkspaceItemViewStates,
 	useWorkspaceUiSession,
 	useWorkspaceUiStore,
@@ -79,10 +75,6 @@ export function WorkspaceShell({
 	);
 	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
 	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
-	const clearSelection = useWorkspaceSelectionStore(
-		(state) => state.clearSelection,
-	);
-	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
 	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
@@ -138,16 +130,6 @@ export function WorkspaceShell({
 			workspace.id,
 			itemsToAdd.map((item) => item.id),
 		);
-	};
-	const addItemIdsToAiContext = (input: {
-		clearSelection: boolean;
-		itemIds: string[];
-	}) => {
-		addAiContextItems(workspace.id, input.itemIds);
-
-		if (input.clearSelection) {
-			clearSelection({ workspaceId: workspace.id });
-		}
 	};
 	const createWorkspaceItem = (input: {
 		type: WorkspaceItemType;
@@ -280,9 +262,7 @@ export function WorkspaceShell({
 		<WorkspaceFileUploadProvider workspaceId={workspace.id}>
 			<WorkspaceDragProvider
 				items={scopedItems}
-				selectedItemIds={new Set(selectedItemIds)}
 				workspaceId={workspace.id}
-				onAddItemsToAiContext={addItemIdsToAiContext}
 				onMoveItems={moveWorkspaceItemsMutation.mutate}
 				onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
 			>

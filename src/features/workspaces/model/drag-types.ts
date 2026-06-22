@@ -41,10 +41,6 @@ export type WorkspaceDropTarget =
 			kind: "pane-split";
 			paneId: string;
 			side: WorkspaceSplitDropSide;
-	  }
-	| {
-			kind: "ai-context";
-			workspaceId: string;
 	  };
 
 export type WorkspaceDragData =
@@ -69,10 +65,6 @@ export type WorkspaceDropTargetData =
 			kind: "workspace-pane-split-drop-target";
 			paneId: string;
 			side: WorkspaceSplitDropSide;
-	  }
-	| {
-			kind: "workspace-ai-context-drop-target";
-			workspaceId: string;
 	  };
 
 export type WorkspaceDragCommand =

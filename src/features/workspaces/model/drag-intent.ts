@@ -13,34 +13,17 @@ export type DndDragEndEvent = Parameters<
 
 export type WorkspaceDropIntent =
 	| { kind: "workspace-drag-command"; command: WorkspaceDragCommand }
-	| {
-			kind: "add-items-to-ai-context";
-			input: {
-				clearSelection: boolean;
-				itemIds: string[];
-			};
-	  }
 	| { kind: "move-items"; input: MoveWorkspaceItemsInput };
 
 export function getWorkspaceDropIntent(input: {
 	event: DndDragEndEvent;
 	items: WorkspaceItem[];
-	selectedItemIds?: ReadonlySet<string>;
 	workspaceId: string;
 }): WorkspaceDropIntent | undefined {
 	const command = getWorkspaceDragCommand(input.event);
 
 	if (command) {
 		return { kind: "workspace-drag-command", command };
-	}
-
-	const aiContextDropInput = getWorkspaceItemAiContextDropInput(input);
-
-	if (aiContextDropInput) {
-		return {
-			kind: "add-items-to-ai-context",
-			input: aiContextDropInput,
-		};
 	}
 
 	const moveInput = getWorkspaceItemMoveInput(input);
@@ -180,57 +163,6 @@ export function getWorkspaceItemMoveInput(input: {
 		workspaceId,
 		items: [{ itemId: movedItem.id, sortOrder }],
 		parentId: movedItem.parentId,
-	};
-}
-
-export function getWorkspaceItemAiContextDropInput(input: {
-	event: DndDragEndEvent;
-	items: WorkspaceItem[];
-	selectedItemIds?: ReadonlySet<string>;
-	workspaceId: string;
-}):
-	| {
-			clearSelection: boolean;
-			itemIds: string[];
-	  }
-	| undefined {
-	const { event, items, selectedItemIds, workspaceId } = input;
-	const { source, target } = event.operation;
-	const canceled = event.canceled ?? event.operation.canceled;
-	const dragSource = getWorkspaceDragSource(source);
-	const dropTarget = getWorkspaceDropTarget(target);
-
-	if (
-		canceled ||
-		dragSource?.kind !== "workspace-item" ||
-		dropTarget?.kind !== "ai-context" ||
-		dropTarget.workspaceId !== workspaceId
-	) {
-		return undefined;
-	}
-
-	const itemIds = new Set(items.map((item) => item.id));
-
-	if (!itemIds.has(dragSource.itemId)) {
-		return undefined;
-	}
-
-	if (selectedItemIds?.has(dragSource.itemId)) {
-		const selectedIds = Array.from(selectedItemIds).filter((itemId) =>
-			itemIds.has(itemId),
-		);
-
-		return selectedIds.length > 0
-			? {
-					clearSelection: true,
-					itemIds: selectedIds,
-				}
-			: undefined;
-	}
-
-	return {
-		clearSelection: false,
-		itemIds: [dragSource.itemId],
 	};
 }
 
