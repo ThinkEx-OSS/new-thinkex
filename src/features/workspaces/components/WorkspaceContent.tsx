@@ -216,7 +216,6 @@ function WorkspaceBrowseContent({
 							<WorkspaceEmptyBrowseState
 								workspace={workspace}
 								parentId={parentId}
-								isRoot={parentId === null}
 								onCreateItem={onCreateItem}
 							/>
 						) : null}

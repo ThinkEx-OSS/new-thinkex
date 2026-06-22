@@ -22,7 +22,6 @@ import { cn } from "#/lib/utils";
 interface WorkspaceEmptyBrowseStateProps {
 	workspace: WorkspaceSummary;
 	parentId: string | null;
-	isRoot: boolean;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
@@ -62,11 +61,11 @@ const comingSoonCapabilities: {
 export default function WorkspaceEmptyBrowseState({
 	workspace,
 	parentId,
-	isRoot,
 	onCreateItem,
 }: WorkspaceEmptyBrowseStateProps) {
 	const { capabilities } = useWorkspaceMutationAccess();
 	const { requestFileUpload } = useWorkspaceFileUpload();
+	const isRoot = parentId === null;
 
 	if (!capabilities.canMutateContent) {
 		return <WorkspaceEmptyViewerState isRoot={isRoot} />;
