@@ -26,6 +26,9 @@ import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/w
 const thinkPromptSectionDivider =
 	"══════════════════════════════════════════════";
 
+const AI_THREAD_TITLE_GATEWAY_MODEL = "google/gemini-2.5-flash-lite";
+const AI_THREAD_TITLE_FALLBACK_MODELS = ["openai/gpt-4.1-nano"] as const;
+
 type WorkspaceAiProviderOptions = NonNullable<
 	Parameters<typeof generateText>[0]["providerOptions"]
 >;
@@ -272,16 +275,40 @@ export function getWorkspaceAiLanguageModel(
 	env: Env,
 	_sessionAffinity: string,
 ): LanguageModel {
+	return getWorkspaceAiLanguageModelForGatewayModel(
+		getWorkspaceAiChatModel(modelId),
+		env,
+	);
+}
+
+function getWorkspaceAiLanguageModelForGatewayModel(
+	gatewayModel: string,
+	env: Env,
+): LanguageModel {
 	const gateway = createGateway({
 		apiKey: getVercelAiGatewayApiKey(env),
 	});
 
 	return wrapLanguageModel({
-		model: gateway(getWorkspaceAiChatModel(modelId)),
+		model: gateway(gatewayModel),
 		middleware: addToolInputExamplesMiddleware({
 			prefix: "Valid input examples:",
 		}),
 	});
+}
+
+function getWorkspaceAiGatewayTransportOptions() {
+	return {
+		caching: "auto" as const,
+		providerTimeouts: {
+			byok: {
+				azure: 8000,
+				bedrock: 8000,
+				openai: 8000,
+				vertex: 8000,
+			},
+		},
+	};
 }
 
 export function getWorkspaceAiGatewayProviderOptions(input?: {
@@ -305,15 +332,7 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 
 	return {
 		gateway: {
-			caching: "auto",
-			providerTimeouts: {
-				byok: {
-					azure: 8000,
-					bedrock: 8000,
-					openai: 8000,
-					vertex: 8000,
-				},
-			},
+			...getWorkspaceAiGatewayTransportOptions(),
 			...getWorkspaceAiGatewayRoutingOptions(modelId),
 			tags,
 			user: input?.thread?.userId,
@@ -394,7 +413,6 @@ function getVercelAiGatewayApiKey(env: Env) {
 export async function generateAIThreadTitle(input: {
 	env: Env;
 	messages: UIMessage[];
-	sessionAffinity: string;
 }) {
 	const firstUserMessage = getFirstUserMessageText(input.messages);
 
@@ -403,15 +421,30 @@ export async function generateAIThreadTitle(input: {
 	}
 
 	const result = await generateText({
-		model: getWorkspaceAiLanguageModel(
-			DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+		model: getWorkspaceAiLanguageModelForGatewayModel(
+			AI_THREAD_TITLE_GATEWAY_MODEL,
 			input.env,
-			input.sessionAffinity,
 		),
-		providerOptions: getWorkspaceAiGatewayProviderOptions({
-			modelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-			tags: ["task:title-generation"],
-		}),
+		providerOptions: {
+			gateway: {
+				...getWorkspaceAiGatewayTransportOptions(),
+				order: ["google", "vertex"],
+				models: [...AI_THREAD_TITLE_FALLBACK_MODELS],
+				sort: "ttft",
+				tags: [
+					"app:thinkex",
+					"feature:workspace-chat",
+					"task:title-generation",
+					`model:${AI_THREAD_TITLE_GATEWAY_MODEL}`,
+				],
+			},
+			google: {
+				thinkingConfig: { thinkingLevel: "low" },
+			},
+			vertex: {
+				thinkingConfig: { thinkingLevel: "low" },
+			},
+		} as WorkspaceAiProviderOptions,
 		prompt: [
 			"Write a concise chat title for this first user message.",
 			"Return only the title. No quotes. No punctuation at the end.",

@@ -84,21 +84,11 @@ export function getUpdatedWorkspaceUiSession(
 	return isSameWorkspaceUiSession(session, nextSession) ? session : nextSession;
 }
 
-export function closeChatPanelSession() {
+export function setChatSurfaceModeSession(
+	chatSurfaceMode: WorkspaceAiChatSurfaceMode,
+) {
 	return {
-		chatSurfaceMode: "hidden" as const,
-	};
-}
-
-export function openChatPanelSession(session: WorkspaceUiSession) {
-	return {
-		chatSurfaceMode: getVisibleWorkspaceAiChatSurfaceMode(session),
-	};
-}
-
-export function dockChatPanelSession() {
-	return {
-		chatSurfaceMode: "docked" as const,
+		chatSurfaceMode,
 	};
 }
 
@@ -120,12 +110,6 @@ export function toggleChatPanelSession(session: WorkspaceUiSession) {
 			session.chatSurfaceMode === "hidden"
 				? ("docked" as const)
 				: ("hidden" as const),
-	};
-}
-
-export function maximizeChatSession() {
-	return {
-		chatSurfaceMode: "fullscreen" as const,
 	};
 }
 
@@ -235,12 +219,6 @@ function resolveWorkspaceAiChatSurfaceMode(
 		default:
 			return defaultWorkspaceUiSession.chatSurfaceMode;
 	}
-}
-
-function getVisibleWorkspaceAiChatSurfaceMode(session: WorkspaceUiSession) {
-	return session.chatSurfaceMode === "hidden"
-		? ("docked" as const)
-		: session.chatSurfaceMode;
 }
 
 function isSameWorkspaceUiSession(

@@ -33,4 +33,16 @@ export function ensureChatMetaColumns(store: ChatMetaSqlStore) {
 	if (!existingColumns.has("last_error_message")) {
 		store.sql`ALTER TABLE chat_meta ADD COLUMN last_error_message TEXT`;
 	}
+
+	if (!existingColumns.has("last_visible_update_at")) {
+		store.sql`ALTER TABLE chat_meta ADD COLUMN last_visible_update_at INTEGER`;
+	}
+
+	if (!existingColumns.has("last_error_classification")) {
+		store.sql`ALTER TABLE chat_meta ADD COLUMN last_error_classification TEXT`;
+	}
+
+	if (!existingColumns.has("last_error_stage")) {
+		store.sql`ALTER TABLE chat_meta ADD COLUMN last_error_stage TEXT`;
+	}
 }

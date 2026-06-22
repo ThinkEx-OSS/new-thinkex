@@ -1,19 +1,21 @@
-import { RotateCcw } from "lucide-react";
+import { useEffect } from "react";
 
 import {
 	Conversation,
 	ConversationContent,
 } from "#/components/ai-elements/conversation";
 import type { PromptInputMessage } from "#/components/ai-elements/prompt-input";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import { Button } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
-import AiChatMessageList from "#/features/workspaces/components/ai-chat/AiChatMessageList";
+import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
+import AiChatMessageList, {
+	type AiChatAssistantErrorState,
+} from "#/features/workspaces/components/ai-chat/AiChatMessageList";
 import AiChatPromptInput from "#/features/workspaces/components/ai-chat/AiChatPromptInput";
 import { aiChatComposerRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type {
 	AiChatModelId,
 	AiChatSendMessage,
+	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
@@ -25,12 +27,16 @@ export default function AiChatThreadView({
 	getInspectorSnapshot,
 	modelId,
 	onModelChange,
+	onRecoveringChange,
+	threadSummary,
 	threadId,
 }: {
 	context: WorkspaceAiContextScope;
 	getInspectorSnapshot?: (threadId: string) => Promise<AIInspectorSnapshot>;
 	modelId: AiChatModelId;
 	onModelChange: (modelId: AiChatModelId) => void;
+	onRecoveringChange?: (isRecovering: boolean) => void;
+	threadSummary?: AIThreadSummary;
 	threadId: string;
 }) {
 	const chat = useWorkspaceAiChat({ modelId, threadId });
@@ -46,6 +52,24 @@ export default function AiChatThreadView({
 	const clearDraftArtifacts = useWorkspaceAiComposerDraftStore(
 		(state) => state.clearDraftArtifacts,
 	);
+
+	useEffect(() => {
+		onRecoveringChange?.(presentation.isRecovering);
+		if (!presentation.isRecovering) {
+			return;
+		}
+
+		return () => {
+			onRecoveringChange?.(false);
+		};
+	}, [onRecoveringChange, presentation.isRecovering]);
+
+	const assistantError = getAssistantErrorState({
+		hasLiveError: Boolean(error),
+		inputStatus,
+		threadSummary,
+	});
+
 	const sendMessage = (message: PromptInputMessage) => {
 		const chatMessage = getChatMessageFromPrompt(message);
 
@@ -74,6 +98,7 @@ export default function AiChatThreadView({
 					className="p-0"
 				>
 					<AiChatMessageList
+						assistantError={assistantError}
 						messages={messages}
 						presentation={presentation}
 						workspaceId={context.workspaceId}
@@ -84,25 +109,6 @@ export default function AiChatThreadView({
 
 			<div className="px-4 pb-4">
 				<div className={aiChatComposerRailClassName}>
-					{error ? (
-						<Alert variant="destructive" className="mb-3 py-2">
-							<div className="flex flex-col gap-2">
-								<AlertDescription className="min-w-0 text-destructive/90">
-									{error.message}
-								</AlertDescription>
-								<Button
-									type="button"
-									variant="outline"
-									size="xs"
-									className="self-end gap-1.5 border-border bg-background text-foreground hover:bg-muted hover:text-foreground"
-									onClick={regenerate}
-								>
-									<RotateCcw className="size-3" />
-									Try again
-								</Button>
-							</div>
-						</Alert>
-					) : null}
 					<AiChatPromptInput
 						activeThreadId={threadId}
 						context={context}
@@ -133,4 +139,30 @@ function getChatMessageFromPrompt(
 	}
 
 	return { role: "user", parts };
+}
+
+function getAssistantErrorState(input: {
+	hasLiveError: boolean;
+	inputStatus: AiChatStatus;
+	threadSummary?: AIThreadSummary;
+}): AiChatAssistantErrorState | null {
+	if (input.inputStatus !== "ready") {
+		return null;
+	}
+
+	if (input.hasLiveError) {
+		return {
+			classification: input.threadSummary?.lastErrorClassification,
+			stage: input.threadSummary?.lastErrorStage,
+		};
+	}
+
+	if (input.threadSummary?.lastRunResult === "error") {
+		return {
+			classification: input.threadSummary.lastErrorClassification,
+			stage: input.threadSummary.lastErrorStage,
+		};
+	}
+
+	return null;
 }

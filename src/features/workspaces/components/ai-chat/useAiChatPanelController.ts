@@ -25,9 +25,9 @@ export function useAiChatPanelController({
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
 	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const modelId = useWorkspaceAiChatModelId(workspaceId);
-	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
-	const dockChatPanel = useWorkspaceUiStore((state) => state.dockChatPanel);
-	const maximizeChat = useWorkspaceUiStore((state) => state.maximizeChat);
+	const setChatSurfaceMode = useWorkspaceUiStore(
+		(state) => state.setChatSurfaceMode,
+	);
 	const setActiveAiChatThread = useWorkspaceUiStore(
 		(state) => state.setActiveAiChatThread,
 	);
@@ -111,7 +111,7 @@ export function useAiChatPanelController({
 	]);
 
 	useEffect(() => {
-		if (!activeThread?.hasUnreadCompletion) {
+		if (!activeThread?.hasUnreadUpdate) {
 			return;
 		}
 
@@ -124,7 +124,7 @@ export function useAiChatPanelController({
 			markingViewedThreadIds.delete(activeThread.id);
 		});
 	}, [
-		activeThread?.hasUnreadCompletion,
+		activeThread?.hasUnreadUpdate,
 		activeThread?.id,
 		markingViewedThreadIds,
 		markThreadViewed,
@@ -144,20 +144,20 @@ export function useAiChatPanelController({
 		isCreatingThread,
 		isMaximized,
 		modelId,
-		onClose: () => closeChatPanel(workspaceId),
+		onClose: () => setChatSurfaceMode(workspaceId, "hidden"),
 		onDeleteThread: (thread: AiChatThreadForDialog) => {
 			setThreadPendingDeletion(thread);
 			setIsDeleteThreadDialogOpen(true);
 		},
-		onMaximize: () => maximizeChat(workspaceId),
+		onMaximize: () => setChatSurfaceMode(workspaceId, "fullscreen"),
 		onModelChange: (nextModelId: AiChatModelId) =>
 			setAiChatModel(workspaceId, nextModelId),
 		onNewChat: () => void handleNewChat(),
-		onRestore: () => dockChatPanel(workspaceId),
+		onRestore: () => setChatSurfaceMode(workspaceId, "docked"),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
 			thread.id === activeThreadId
-				? { ...thread, hasUnreadCompletion: false }
+				? { ...thread, hasUnreadUpdate: false }
 				: thread,
 		),
 	};

@@ -261,6 +261,13 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return thread.title_generated_at === null;
 	}
 
+	async getThreadRunStartedAt(threadId: string): Promise<number | undefined> {
+		const thread = await this._requireThreadMeta(threadId);
+		return thread.status === "running"
+			? (thread.last_run_started_at ?? undefined)
+			: undefined;
+	}
+
 	async recordThreadRunStarted(
 		threadId: string,
 		input: { isUserMessage: boolean },
@@ -291,11 +298,14 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			startedAt: options.startedAt,
 			lastAssistantMessageAt:
 				result.status === "completed" ? now : thread.last_assistant_message_at,
+			lastVisibleUpdateAt: now,
 			lastViewedAt: options.viewed ? now : thread.last_viewed_at,
 			errorMessage:
 				result.status === "error"
 					? normalizeThreadErrorMessage(options.errorMessage)
 					: null,
+			errorClassification: null,
+			errorStage: null,
 		});
 		this._refreshState();
 	}
@@ -321,15 +331,25 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	async recordThreadRunFailed(
 		threadId: string,
 		error: unknown = undefined,
-		options: { startedAt?: number } = {},
+		options: {
+			errorClassification?: AIThreadMetaRow["last_error_classification"];
+			errorStage?: AIThreadMetaRow["last_error_stage"];
+			startedAt?: number;
+			viewed?: boolean;
+		} = {},
 	): Promise<void> {
 		const now = Date.now();
 		const errorMessage = normalizeThreadErrorMessage(error);
+		const thread = await this._requireThreadMeta(threadId);
 
 		markThreadRunFailed(this, {
 			threadId,
 			errorMessage,
+			errorClassification: options.errorClassification ?? null,
+			errorStage: options.errorStage ?? null,
 			now,
+			lastViewedAt: options.viewed ? now : thread.last_viewed_at,
+			lastVisibleUpdateAt: now,
 			startedAt: options.startedAt,
 		});
 		this._refreshState();

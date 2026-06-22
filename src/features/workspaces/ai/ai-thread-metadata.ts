@@ -1,3 +1,8 @@
+import type {
+	ChatErrorClassification,
+	ChatErrorContext,
+} from "@cloudflare/think";
+
 export type AIThreadRunState = "idle" | "running";
 export type AIThreadRunResult = "completed" | "skipped" | "aborted" | "error";
 
@@ -5,13 +10,16 @@ export interface AIThreadSummary {
 	id: string;
 	workspaceId: string;
 	title: string;
-	hasUnreadCompletion: boolean;
+	hasUnreadUpdate: boolean;
 	isRunning: boolean;
 	lastRunResult: AIThreadRunResult | null;
 	lastErrorMessage: string | null;
+	lastErrorClassification: ChatErrorClassification | null;
+	lastErrorStage: ChatErrorContext["stage"] | null;
 	lastActivityAt: string;
 	lastUserMessageAt: string | null;
 	lastAssistantMessageAt: string | null;
+	lastVisibleUpdateAt: string | null;
 	lastViewedAt: string;
 	lastRunStartedAt: string | null;
 	lastRunFinishedAt: string | null;
@@ -45,10 +53,13 @@ export interface AIThreadMetaRow {
 	last_activity_at: number;
 	last_user_message_at: number | null;
 	last_assistant_message_at: number | null;
+	last_visible_update_at: number | null;
 	last_viewed_at: number;
 	last_run_started_at: number | null;
 	last_run_finished_at: number | null;
 	last_error_message: string | null;
+	last_error_classification: ChatErrorClassification | null;
+	last_error_stage: ChatErrorContext["stage"] | null;
 	title_generated_at: number | null;
 	created_at: number;
 	updated_at: number;
@@ -91,20 +102,25 @@ export function normalizeThreadErrorMessage(error: unknown) {
 }
 
 export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
+	const lastVisibleUpdateAt =
+		row.last_visible_update_at ?? row.last_assistant_message_at;
+
 	return {
 		id: row.id,
 		workspaceId: row.workspace_id,
 		title: row.title,
-		hasUnreadCompletion: Boolean(
-			row.last_assistant_message_at &&
-				row.last_assistant_message_at > row.last_viewed_at,
+		hasUnreadUpdate: Boolean(
+			lastVisibleUpdateAt && lastVisibleUpdateAt > row.last_viewed_at,
 		),
 		isRunning: row.status === "running",
 		lastRunResult: row.last_run_result,
 		lastErrorMessage: row.last_error_message,
+		lastErrorClassification: row.last_error_classification,
+		lastErrorStage: row.last_error_stage,
 		lastActivityAt: toIsoString(row.last_activity_at),
 		lastUserMessageAt: toNullableIsoString(row.last_user_message_at),
 		lastAssistantMessageAt: toNullableIsoString(row.last_assistant_message_at),
+		lastVisibleUpdateAt: toNullableIsoString(row.last_visible_update_at),
 		lastViewedAt: toIsoString(row.last_viewed_at),
 		lastRunStartedAt: toNullableIsoString(row.last_run_started_at),
 		lastRunFinishedAt: toNullableIsoString(row.last_run_finished_at),

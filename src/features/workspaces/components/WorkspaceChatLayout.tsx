@@ -23,7 +23,7 @@ interface WorkspaceChatLayoutProps {
 	content: ReactNode;
 	chatPanel?: ReactElement;
 	chatSurfaceMode?: WorkspaceAiChatSurfaceMode;
-	onCloseDockedChat?: () => void;
+	onDockedChatCollapse?: () => void;
 }
 
 export default function WorkspaceChatLayout({
@@ -31,7 +31,7 @@ export default function WorkspaceChatLayout({
 	content,
 	chatPanel,
 	chatSurfaceMode = "hidden",
-	onCloseDockedChat,
+	onDockedChatCollapse,
 }: WorkspaceChatLayoutProps) {
 	const chatPanelRef = useRef<PanelImperativeHandle | null>(null);
 	const isChatHidden = chatSurfaceMode === "hidden";
@@ -39,7 +39,7 @@ export default function WorkspaceChatLayout({
 	const isDockedChat = chatSurfaceMode === "docked";
 
 	useLayoutEffect(() => {
-		if (!chatPanelRef.current) {
+		if (!chatPanel || !chatPanelRef.current) {
 			return;
 		}
 
@@ -49,21 +49,15 @@ export default function WorkspaceChatLayout({
 		}
 
 		chatPanelRef.current.collapse();
-	}, [isDockedChat]);
+	}, [chatPanel, isDockedChat]);
 
-	const handleChatResize: OnPanelResize | undefined =
-		onCloseDockedChat && chatPanel
-			? () => {
-					// onResize also fires for our imperative collapse() call after mode
-					// flips to hidden/fullscreen, so only treat a collapsed docked rail as
-					// a user-driven close action.
-					if (!isDockedChat || !chatPanelRef.current?.isCollapsed()) {
-						return;
-					}
+	const handleChatResize: OnPanelResize = () => {
+		if (!isDockedChat || !chatPanelRef.current?.isCollapsed()) {
+			return;
+		}
 
-					onCloseDockedChat();
-				}
-			: undefined;
+		onDockedChatCollapse?.();
+	};
 
 	return (
 		<div className="h-screen overflow-hidden bg-background text-foreground">
@@ -101,8 +95,8 @@ export default function WorkspaceChatLayout({
 							maxSize="60%"
 							collapsible={true}
 							collapsedSize={0}
-							panelRef={chatPanelRef}
 							onResize={handleChatResize}
+							panelRef={chatPanelRef}
 							className="min-h-0 overflow-hidden"
 						>
 							<div

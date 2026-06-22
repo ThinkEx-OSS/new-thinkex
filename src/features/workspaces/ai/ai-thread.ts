@@ -1,6 +1,8 @@
 import type {
+	ChatErrorClassification,
 	ChatErrorContext,
 	ChatRecoveryConfig,
+	ChatRecoveryExhaustedContext,
 	ChatResponseResult,
 	ChunkContext,
 	PrepareStepContext,
@@ -13,8 +15,9 @@ import type {
 	TurnConfig,
 	TurnContext,
 } from "@cloudflare/think";
-import { Think } from "@cloudflare/think";
-import type { LanguageModel, ToolSet } from "ai";
+import { defaultContextOverflowClassifier, Think } from "@cloudflare/think";
+import { createCompactFunction } from "agents/experimental/memory/utils";
+import { generateText, type LanguageModel, type ToolSet } from "ai";
 
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AIThreadInspectorRecorder } from "#/features/workspaces/ai/ai-thread-inspector-recorder";
@@ -33,25 +36,44 @@ import {
 } from "#/features/workspaces/ai/models";
 import type { UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
 
-const aiThreadChatRecovery = {
-	noProgressTimeoutMs: 90_000,
-	terminalMessage:
-		"The assistant was interrupted and could not recover this turn.",
-	onExhausted: (ctx) => {
-		console.warn("[AIThread] Chat recovery exhausted", {
-			incidentId: ctx.incidentId,
-			reason: ctx.reason,
-			recoveryKind: ctx.recoveryKind,
-			requestId: ctx.requestId,
-		});
-	},
-} satisfies ChatRecoveryConfig;
+const AI_THREAD_CHAT_RECOVERY_NO_PROGRESS_TIMEOUT_MS = 90_000;
+const AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE =
+	"The assistant was interrupted and could not recover this turn.";
+
+type AIThreadRunSettlement =
+	| {
+			kind: "finished";
+			result: ChatResponseResult;
+	  }
+	| {
+			error: unknown;
+			errorClassification?: ChatErrorClassification;
+			errorStage?: ChatErrorContext["stage"];
+			kind: "failed";
+	  };
 
 export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 	return class AIThread extends Think<Env> {
 		override maxSteps = 5;
-		override chatRecovery = aiThreadChatRecovery;
+		override chatRecovery = {
+			noProgressTimeoutMs: AI_THREAD_CHAT_RECOVERY_NO_PROGRESS_TIMEOUT_MS,
+			terminalMessage: AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE,
+			onExhausted: (ctx: ChatRecoveryExhaustedContext) => {
+				console.warn("[AIThread] Chat recovery exhausted", {
+					incidentId: ctx.incidentId,
+					reason: ctx.reason,
+					recoveryKind: ctx.recoveryKind,
+					requestId: ctx.requestId,
+				});
+
+				return this.keepAliveWhile(() =>
+					this._handleChatRecoveryExhausted(ctx),
+				);
+			},
+		} satisfies Exclude<ChatRecoveryConfig, boolean>;
 		override chatStreamStallTimeoutMs = 90_000;
+		override contextOverflow = { reactive: true } as const;
+		override classifyChatError = defaultContextOverflowClassifier;
 		override sendReasoning = false;
 		private shouldRefreshSessionPrompt = false;
 		private activeRunStartedAt: number | undefined;
@@ -82,6 +104,23 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					description:
 						"Short durable facts about this user, workspace, thread goals, preferences, and decisions that should help future turns. Keep this concise. Do not store source-of-truth workspace content here.",
 					maxTokens: 1500,
+				})
+				.onCompaction(
+					createCompactFunction({
+						summarize: (prompt) =>
+							generateText({
+								model: getWorkspaceAiLanguageModel(
+									DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+									this.env,
+									this.sessionAffinity,
+								),
+								prompt,
+							}).then((result) => result.text),
+					}),
+				)
+				.compactAfter(100_000)
+				.onCompactionError((error) => {
+					console.warn("[AIThread] Session compaction failed", error);
 				})
 				.withCachedPrompt();
 		}
@@ -159,56 +198,33 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		override async onChatResponse(result: ChatResponseResult) {
 			this.inspector.recordTurnFinished(result);
-			const hasActiveConnections = Array.from(this.getConnections()).length > 0;
-			const startedAt = this.activeRunStartedAt;
-			const isTerminalTurn = !result.continuation;
-			const shouldCloseRun =
-				startedAt !== undefined &&
-				(isTerminalTurn ||
-					result.status === "error" ||
-					result.status === "aborted");
-
-			try {
-				const directory = await this.parentAgent(getUserAIStore());
-
-				if (shouldCloseRun) {
-					await directory.recordThreadRunFinished(this.name, result, {
-						startedAt,
-						viewed: hasActiveConnections,
-						errorMessage: result.error,
-					});
-					this.activeRunStartedAt = undefined;
-				}
-			} catch (error) {
-				console.warn("[AIThread] Failed to update directory", error);
-			} finally {
+			if (!this._shouldSettleRunAfterResponse(result)) {
 				await this._refreshSessionPromptIfNeeded();
+				return;
 			}
+
+			await this._settleActiveRun({ kind: "finished", result }, (error) => {
+				console.warn("[AIThread] Failed to update directory", error);
+			});
 		}
 
 		override onChatError(error: unknown, ctx?: ChatErrorContext) {
 			this.inspector.recordTurnError(error);
-			const startedAt =
-				ctx?.messagesPersisted && this.activeRunStartedAt !== undefined
-					? this.activeRunStartedAt
-					: undefined;
 			void this.keepAliveWhile(async () => {
-				try {
-					if (startedAt !== undefined) {
-						const directory = await this.parentAgent(getUserAIStore());
-						await directory.recordThreadRunFailed(this.name, error, {
-							startedAt,
-						});
-						this.activeRunStartedAt = undefined;
-					}
-				} catch (metadataError) {
-					console.warn(
-						"[AIThread] Failed to clear directory run status",
-						metadataError,
-					);
-				}
-
-				await this._refreshSessionPromptIfNeeded();
+				await this._settleActiveRun(
+					{
+						error,
+						errorClassification: ctx?.classification,
+						errorStage: ctx?.stage,
+						kind: "failed",
+					},
+					(metadataError) => {
+						console.warn(
+							"[AIThread] Failed to clear directory run status",
+							metadataError,
+						);
+					},
+				);
 			});
 
 			return super.onChatError(error, ctx);
@@ -239,6 +255,94 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			return directory.getThreadContext(this.name);
 		}
 
+		private _shouldSettleRunAfterResponse(result: ChatResponseResult) {
+			return (
+				!result.continuation ||
+				result.status === "error" ||
+				result.status === "aborted"
+			);
+		}
+
+		private _hasActiveConnections() {
+			return Array.from(this.getConnections()).length > 0;
+		}
+
+		private async _getActiveRunStartedAt() {
+			if (this.activeRunStartedAt !== undefined) {
+				return this.activeRunStartedAt;
+			}
+
+			const directory = await this.parentAgent(getUserAIStore());
+			const startedAt = await directory.getThreadRunStartedAt(this.name);
+			this.activeRunStartedAt = startedAt;
+			return startedAt;
+		}
+
+		private async _settleActiveRun(
+			settlement: AIThreadRunSettlement,
+			onError: (error: unknown) => void,
+		) {
+			try {
+				const startedAt = await this._getActiveRunStartedAt();
+
+				if (startedAt === undefined) {
+					return;
+				}
+
+				const directory = await this.parentAgent(getUserAIStore());
+				const viewed = this._hasActiveConnections();
+
+				if (settlement.kind === "finished") {
+					await directory.recordThreadRunFinished(
+						this.name,
+						settlement.result,
+						{
+							startedAt,
+							viewed,
+							errorMessage: settlement.result.error,
+						},
+					);
+				} else {
+					await directory.recordThreadRunFailed(this.name, settlement.error, {
+						errorClassification: settlement.errorClassification,
+						errorStage: settlement.errorStage,
+						startedAt,
+						viewed,
+					});
+				}
+
+				this.activeRunStartedAt = undefined;
+			} catch (error) {
+				onError(error);
+			} finally {
+				await this._refreshSessionPromptIfNeeded();
+			}
+		}
+
+		private async _handleChatRecoveryExhausted(
+			ctx: ChatRecoveryExhaustedContext,
+		) {
+			await this._settleActiveRun(
+				{
+					error: AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE,
+					errorStage: "recovery",
+					kind: "failed",
+				},
+				(error) => {
+					console.warn(
+						"[AIThread] Failed to record recovery exhaustion",
+						error,
+						{
+							incidentId: ctx.incidentId,
+							reason: ctx.reason,
+							recoveryKind: ctx.recoveryKind,
+							requestId: ctx.requestId,
+						},
+					);
+				},
+			);
+		}
+
 		private async _maybeGenerateThreadTitle() {
 			const directory = await this.parentAgent(getUserAIStore());
 
@@ -252,7 +356,6 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					await generateAIThreadTitle({
 						env: this.env,
 						messages: await this.getMessages(),
-						sessionAffinity: this.sessionAffinity,
 					}),
 				);
 			} catch (error) {
