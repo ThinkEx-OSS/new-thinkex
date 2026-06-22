@@ -67,7 +67,7 @@ export default function AiChatModelPicker({
 			open={open}
 			onOpenChange={(nextOpen) => {
 				setOpen(nextOpen);
-				if (!nextOpen) {
+				if (nextOpen) {
 					setPreviewId(null);
 				}
 			}}

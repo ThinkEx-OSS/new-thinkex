@@ -100,7 +100,8 @@ export default function AiChatPromptInput({
 	const attachmentsReady =
 		draftFiles.length === 0 ||
 		draftFiles.every((file) => file.status === "ready");
-	const composerReady = status === "ready" && attachmentsReady;
+	const canType = status !== "submitted" && attachmentsReady;
+	const canSend = status === "ready" && attachmentsReady;
 	const addDraftFiles = useWorkspaceAiComposerDraftStore(
 		(state) => state.addFiles,
 	);
@@ -111,7 +112,7 @@ export default function AiChatPromptInput({
 		(state) => state.clearFiles,
 	);
 	useTypeToFocusPrompt({
-		enabled: composerReady,
+		enabled: canType,
 		setInput,
 		textareaRef,
 	});
@@ -123,17 +124,14 @@ export default function AiChatPromptInput({
 				onError: (error) => toast.error(error.message),
 			});
 		},
-		composerReady,
+		composerReady: canType,
 		clear: () => clearDraftFiles(context.workspaceId),
 		files: draftFiles,
 		remove: (fileId) => removeDraftFile(context.workspaceId, fileId),
 	};
 
 	const handleSubmit = async (message: PromptInputMessage) => {
-		if (
-			!composerReady ||
-			(!message.text.trim() && message.files.length === 0)
-		) {
+		if (!canSend || (!message.text.trim() && message.files.length === 0)) {
 			return false;
 		}
 
