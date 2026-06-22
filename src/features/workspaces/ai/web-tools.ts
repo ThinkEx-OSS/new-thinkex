@@ -17,6 +17,14 @@ const browserPageInputSchema = z.object({
 		.describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
 });
 
+const browserPageInputExamples = [
+	{
+		input: {
+			url: "https://example.com",
+		},
+	},
+];
+
 export function createAIThreadWebTools(env: Env): ToolSet {
 	const browser = env.BROWSER as unknown as QuickActionBinding;
 
@@ -25,6 +33,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 			description:
 				"Load a public webpage and return its rendered content as Markdown.",
 			inputSchema: browserPageInputSchema,
+			inputExamples: browserPageInputExamples,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
 				return truncateText(
@@ -37,6 +46,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 		web_links: tool({
 			description: "Load a public webpage and return its rendered links.",
 			inputSchema: browserPageInputSchema,
+			inputExamples: browserPageInputExamples,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
 				return boundJsonResult(

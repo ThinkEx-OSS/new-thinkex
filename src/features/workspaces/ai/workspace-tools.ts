@@ -162,6 +162,74 @@ const workspaceDeleteItemsInputSchema = z.object({
 		),
 });
 
+function createInputExamples<T>(...inputs: T[]) {
+	return inputs.map((input) => ({ input }));
+}
+
+const workspaceListItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceItemListInputSchema>
+>({
+	path: "/",
+	limit: 50,
+	recursive: false,
+});
+const workspaceReadItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceReadItemsInputSchema>
+>({
+	paths: ["/Demo Folder/Demo Document.md"],
+	contentLimit: 200,
+});
+const workspaceRenameItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceRenameItemsInputSchema>
+>({
+	items: [
+		{
+			path: "/Demo Folder/Demo Document.md",
+			name: "Tool Demo.md",
+		},
+	],
+});
+const workspaceMoveItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceMoveItemsInputSchema>
+>({
+	destinationPath: "/Archive",
+	paths: ["/Demo Folder/Demo Document.md"],
+});
+const workspaceCreateItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceCreateItemsInputSchema>
+>({
+	items: [
+		{
+			type: "folder",
+			path: "/Demo Folder",
+		},
+		{
+			type: "document",
+			path: "/Demo Folder/Demo Document.md",
+			initialContent:
+				"# Demo Document\nThis document was created as part of a tool demo.",
+		},
+	],
+});
+const workspaceDeleteItemsInputExamples = createInputExamples<
+	z.input<typeof workspaceDeleteItemsInputSchema>
+>({
+	paths: ["/Demo Folder/Demo Document.md"],
+});
+const workspaceEditItemInputExamples = createInputExamples<
+	z.input<typeof workspaceEditItemInputSchema>
+>({
+	path: "/Demo Folder/Demo Document.md",
+	description: "Replace the document with updated demo content.",
+	edits: [
+		{
+			type: "overwrite",
+			content:
+				"# Demo Document\nThis document was updated as part of the demo.",
+		},
+	],
+});
+
 export function createAIThreadWorkspaceTools(input: {
 	getThreadContext: () => Promise<AIThreadContext | null>;
 }): ToolSet {
@@ -170,6 +238,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"List items in the actual ThinkEx workspace by absolute path.",
 			inputSchema: workspaceItemListInputSchema,
+			inputExamples: workspaceListItemsInputExamples,
 			execute: async ({ limit, path, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -186,6 +255,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Other files return extracted text when available or a status result. Use contentOffset to continue when page.next is present.",
 			inputSchema: workspaceReadItemsInputSchema,
+			inputExamples: workspaceReadItemsInputExamples,
 			execute: async ({ contentLimit, contentOffset, paths, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -203,6 +273,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Rename one or more actual ThinkEx workspace items by absolute path. If the requested final path already exists, that rename fails instead of auto-renaming.",
 			inputSchema: workspaceRenameItemsInputSchema,
+			inputExamples: workspaceRenameItemsInputExamples,
 			execute: async ({ items }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -217,6 +288,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Move one or more actual ThinkEx workspace items into an existing folder or the workspace root. If the destination already has the same name, that move fails instead of auto-renaming.",
 			inputSchema: workspaceMoveItemsInputSchema,
+			inputExamples: workspaceMoveItemsInputExamples,
 			execute: async ({ destinationPath, paths }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -232,6 +304,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Create one or more folders or documents at exact absolute paths. If a path already exists, creation fails instead of renaming.",
 			inputSchema: workspaceCreateItemsInputSchema,
+			inputExamples: workspaceCreateItemsInputExamples,
 			execute: async ({ items }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -246,6 +319,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Delete one or more actual ThinkEx workspace items by absolute path.",
 			inputSchema: workspaceDeleteItemsInputSchema,
+			inputExamples: workspaceDeleteItemsInputExamples,
 			execute: async ({ paths }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
@@ -260,6 +334,7 @@ export function createAIThreadWorkspaceTools(input: {
 			description:
 				"Edit one actual ThinkEx workspace document by absolute path. Read before editing unless the user requested a simple append or prepend.",
 			inputSchema: workspaceEditItemInputSchema,
+			inputExamples: workspaceEditItemInputExamples,
 			execute: async ({ path, edits }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 

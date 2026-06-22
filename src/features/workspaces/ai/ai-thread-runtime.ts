@@ -1,7 +1,13 @@
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
-import { createGateway, generateText, tool } from "ai";
+import {
+	addToolInputExamplesMiddleware,
+	createGateway,
+	generateText,
+	tool,
+	wrapLanguageModel,
+} from "ai";
 import { z } from "zod";
 
 import type {
@@ -50,6 +56,72 @@ const timeCalculateRelativeInputSchema = z.object({
 		.optional()
 		.describe("Calendar years to subtract from now."),
 });
+
+const emptyToolInputExamples = [{ input: {} }];
+const timeCalculateRelativeInputExamples = [
+	{
+		input: {
+			days_ago: 7,
+		},
+	},
+];
+const sandboxReadFileInputExamples = [
+	{
+		input: {
+			path: "/scratch/notes.md",
+			offset: 1,
+			limit: 40,
+		},
+	},
+];
+const sandboxWriteFileInputExamples = [
+	{
+		input: {
+			path: "/scratch/notes.md",
+			content: "# Scratch Notes\nTemporary assistant work goes here.",
+		},
+	},
+];
+const sandboxEditFileInputExamples = [
+	{
+		input: {
+			path: "/scratch/notes.md",
+			old_string: "# Scratch Notes",
+			new_string: "# Updated Scratch Notes",
+		},
+	},
+];
+const sandboxListFilesInputExamples = [
+	{
+		input: {
+			path: "/",
+			limit: 50,
+		},
+	},
+];
+const sandboxFindFilesInputExamples = [
+	{
+		input: {
+			pattern: "**/*.md",
+		},
+	},
+];
+const sandboxSearchFilesInputExamples = [
+	{
+		input: {
+			query: "TODO",
+			include: "**/*.md",
+			fixedString: true,
+		},
+	},
+];
+const sandboxDeleteFileInputExamples = [
+	{
+		input: {
+			path: "/scratch/notes.md",
+		},
+	},
+];
 
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
 
@@ -114,12 +186,14 @@ function createAIThreadTimeTools(): ToolSet {
 			description:
 				"Return the current UTC time as ISO 8601 plus Unix timestamps.",
 			inputSchema: z.object({}),
+			inputExamples: emptyToolInputExamples,
 			execute: async () => formatTimeToolResult(new Date()),
 		}),
 		time_calculate_relative: tool({
 			description:
 				"Return a past UTC time relative to now. Use for date filters like yesterday, last week, or 3 months ago.",
 			inputSchema: timeCalculateRelativeInputSchema,
+			inputExamples: timeCalculateRelativeInputExamples,
 			execute: async ({ days_ago, months_ago, weeks_ago, years_ago }) => {
 				const current = new Date();
 				const calculated = subtractRelativeUtcDate(current, {
@@ -152,36 +226,43 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 			...tools.read,
 			description:
 				"Read a private sandbox file. This does not read the actual ThinkEx workspace.",
+			inputExamples: sandboxReadFileInputExamples,
 		},
 		sandbox_write_file: {
 			...tools.write,
 			description:
 				"Write a private sandbox file for assistant scratch work. This does not change actual ThinkEx workspace items.",
+			inputExamples: sandboxWriteFileInputExamples,
 		},
 		sandbox_edit_file: {
 			...tools.edit,
 			description:
 				"Edit a private sandbox file by exact string replacement. This does not edit actual ThinkEx workspace items.",
+			inputExamples: sandboxEditFileInputExamples,
 		},
 		sandbox_list_files: {
 			...tools.list,
 			description:
 				"List private sandbox files and directories. This does not list the actual ThinkEx workspace.",
+			inputExamples: sandboxListFilesInputExamples,
 		},
 		sandbox_find_files: {
 			...tools.find,
 			description:
 				"Find private sandbox files by glob pattern. This does not search the actual ThinkEx workspace.",
+			inputExamples: sandboxFindFilesInputExamples,
 		},
 		sandbox_search_files: {
 			...tools.grep,
 			description:
 				"Search private sandbox file contents. This does not search actual ThinkEx workspace items.",
+			inputExamples: sandboxSearchFilesInputExamples,
 		},
 		sandbox_delete_file: {
 			...tools.delete,
 			description:
 				"Delete a private sandbox file or directory. This does not delete actual ThinkEx workspace items.",
+			inputExamples: sandboxDeleteFileInputExamples,
 		},
 	};
 }
@@ -191,12 +272,16 @@ export function getWorkspaceAiLanguageModel(
 	env: Env,
 	_sessionAffinity: string,
 ): LanguageModel {
-	const model = getWorkspaceAiChatModel(modelId);
 	const gateway = createGateway({
 		apiKey: getVercelAiGatewayApiKey(env),
 	});
 
-	return gateway(model);
+	return wrapLanguageModel({
+		model: gateway(getWorkspaceAiChatModel(modelId)),
+		middleware: addToolInputExamplesMiddleware({
+			prefix: "Valid input examples:",
+		}),
+	});
 }
 
 export function getWorkspaceAiGatewayProviderOptions(input?: {
