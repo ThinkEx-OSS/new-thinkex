@@ -1,5 +1,13 @@
-import { type ReactElement, type ReactNode, useLayoutEffect, useRef } from "react";
-import type { OnPanelResize, PanelImperativeHandle } from "react-resizable-panels";
+import {
+	type ReactElement,
+	type ReactNode,
+	useLayoutEffect,
+	useRef,
+} from "react";
+import type {
+	OnPanelResize,
+	PanelImperativeHandle,
+} from "react-resizable-panels";
 
 import {
 	ResizableHandle,

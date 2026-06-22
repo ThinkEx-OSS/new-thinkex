@@ -119,9 +119,7 @@ export default function WorkspaceTopBar({
 									<WorkspaceToolbarTextButton
 										variant="outline"
 										className="border-border bg-background shadow-xs hover:bg-muted"
-										onClick={() =>
-											setChatSurfaceMode(workspace.id, "docked")
-										}
+										onClick={() => setChatSurfaceMode(workspace.id, "docked")}
 									>
 										<MessageSquare />
 										<span>Chat</span>
