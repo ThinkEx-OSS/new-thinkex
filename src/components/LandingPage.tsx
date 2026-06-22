@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 
-import { ModeToggle } from "#/components/mode-toggle";
 import SiteFooter from "#/components/SiteFooter";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
@@ -43,41 +42,24 @@ export default function LandingPage() {
 					</Link>
 
 					<nav
-						className="flex flex-1 items-center justify-end gap-2"
+						className="flex flex-1 items-center justify-end gap-3"
 						aria-label="Site"
 					>
 						<Button
-							variant="ghost"
+							nativeButton={false}
+							render={<Link to="/login" />}
+							variant="outline"
 							size="default"
-							className="hidden text-muted-foreground md:inline-flex"
 						>
-							Pricing
+							Sign in
 						</Button>
 						<Button
-							variant="ghost"
+							nativeButton={false}
+							render={<Link to="/signup" />}
 							size="default"
-							className="hidden text-muted-foreground md:inline-flex"
 						>
-							Blog
+							Get started
 						</Button>
-						<ModeToggle className="shrink-0" />
-						<div className="flex items-center gap-2">
-							<Button
-								nativeButton={false}
-								render={<Link to="/login" />}
-								variant="outline"
-								size="default"
-							>
-								Sign in
-							</Button>
-							<Button
-								nativeButton={false}
-								render={<Link to="/signup" />}
-								size="default"
-							>
-								Get started
-							</Button>
-						</div>
 					</nav>
 				</div>
 			</header>
