@@ -7,16 +7,6 @@ import {
 	useState,
 } from "react";
 
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
 import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
 import {
@@ -81,14 +71,20 @@ export default function WorkspaceSettingsDialog({
 	const [draft, setDraft] = useState(() =>
 		getWorkspaceSettingsDraft(workspace),
 	);
+	const deleteWorkspaceMutation = useDeleteWorkspaceMutation();
 
 	if (!capabilities.canMutateContent) {
 		return null;
 	}
 
 	const handleOpenChange = (nextOpen: boolean) => {
+		if (deleteWorkspaceMutation.isPending) {
+			return;
+		}
+
 		if (nextOpen) {
 			setDraft(getWorkspaceSettingsDraft(workspace));
+			deleteWorkspaceMutation.reset();
 		}
 
 		setOpen(nextOpen);
@@ -99,6 +95,7 @@ export default function WorkspaceSettingsDialog({
 			<DialogTrigger render={trigger} />
 			<WorkspaceSettingsDialogContent
 				canDelete={capabilities.canDeleteWorkspace}
+				deleteWorkspaceMutation={deleteWorkspaceMutation}
 				draft={draft}
 				setDraft={setDraft}
 				workspace={workspace}
@@ -110,12 +107,14 @@ export default function WorkspaceSettingsDialog({
 
 function WorkspaceSettingsDialogContent({
 	canDelete,
+	deleteWorkspaceMutation,
 	draft,
 	setDraft,
 	workspace,
 	onOpenChange,
 }: {
 	canDelete: boolean;
+	deleteWorkspaceMutation: ReturnType<typeof useDeleteWorkspaceMutation>;
 	draft: WorkspaceSettingsDraft;
 	setDraft: Dispatch<SetStateAction<WorkspaceSettingsDraft>>;
 	workspace: WorkspaceSummary;
@@ -125,7 +124,6 @@ function WorkspaceSettingsDialogContent({
 	const [iconPickerOpen, setIconPickerOpen] = useState(false);
 	const [colorPickerOpen, setColorPickerOpen] = useState(false);
 	const updateWorkspaceMutation = useUpdateWorkspaceMutation();
-	const deleteWorkspaceMutation = useDeleteWorkspaceMutation();
 	const workspaceDraft = getWorkspaceSettingsDraft(workspace);
 	const normalizedName = draft.name.trim();
 	const canSave =
@@ -158,7 +156,10 @@ function WorkspaceSettingsDialogContent({
 	};
 
 	return (
-		<DialogContent className="sm:max-w-lg">
+		<DialogContent
+			className="sm:max-w-lg"
+			showCloseButton={!deleteWorkspaceMutation.isPending}
+		>
 			<DialogHeader>
 				<DialogTitle>Workspace settings</DialogTitle>
 				<DialogDescription>
@@ -219,7 +220,6 @@ function WorkspaceSettingsDialogContent({
 			<DialogFooter className="items-center sm:justify-between">
 				{canDelete ? (
 					<DeleteWorkspaceButton
-						workspace={workspace}
 						disabled={deleteWorkspaceMutation.isPending}
 						errorMessage={deleteError}
 						onResetError={() => deleteWorkspaceMutation.reset()}
@@ -237,11 +237,16 @@ function WorkspaceSettingsDialogContent({
 					<Button
 						type="button"
 						variant="outline"
+						disabled={deleteWorkspaceMutation.isPending}
 						onClick={() => onOpenChange(false)}
 					>
 						Cancel
 					</Button>
-					<Button type="button" disabled={!canSave} onClick={handleSave}>
+					<Button
+						type="button"
+						disabled={!canSave || deleteWorkspaceMutation.isPending}
+						onClick={handleSave}
+					>
 						Save
 					</Button>
 				</div>
@@ -405,71 +410,63 @@ function WorkspaceColorDropdown({
 }
 
 function DeleteWorkspaceButton({
-	workspace,
 	disabled,
 	errorMessage,
 	onResetError,
 	onDelete,
 }: {
-	workspace: WorkspaceSummary;
 	disabled: boolean;
 	errorMessage: string | null;
 	onResetError: () => void;
 	onDelete: () => void;
 }) {
-	const [confirmOpen, setConfirmOpen] = useState(false);
-	const handleOpenChange = (nextOpen: boolean) => {
+	const [isConfirming, setIsConfirming] = useState(false);
+
+	const beginConfirm = () => {
+		onResetError();
+		setIsConfirming(true);
+	};
+
+	const cancelConfirm = () => {
 		if (disabled) {
 			return;
 		}
 
-		if (nextOpen) {
-			onResetError();
-		} else if (errorMessage) {
-			onResetError();
-		}
-
-		setConfirmOpen(nextOpen);
+		onResetError();
+		setIsConfirming(false);
 	};
 
 	return (
-		<>
-			<Button
-				type="button"
-				variant="destructive"
-				disabled={disabled}
-				onClick={() => handleOpenChange(true)}
-			>
-				<Trash2 className="size-4" />
-				Delete workspace
-			</Button>
-			<AlertDialog open={confirmOpen} onOpenChange={handleOpenChange}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
-						<AlertDialogDescription>
-							This cannot be undone. "{workspace.name}" will be permanently
-							deleted.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					{errorMessage ? (
-						<p className="text-destructive text-sm">{errorMessage}</p>
-					) : null}
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							variant="destructive"
-							disabled={disabled}
-							onClick={(event) => {
-								event.preventDefault();
-								onDelete();
-							}}
-						>
-							Delete workspace
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</>
+		<div className="flex flex-col gap-2">
+			{errorMessage ? (
+				<p className="text-destructive text-sm">{errorMessage}</p>
+			) : null}
+			{isConfirming ? (
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						disabled={disabled}
+						onClick={cancelConfirm}
+					>
+						Keep workspace
+					</Button>
+					<Button
+						type="button"
+						variant="destructive"
+						disabled={disabled}
+						onClick={onDelete}
+					>
+						<Trash2 className="size-4" />
+						Delete workspace
+					</Button>
+				</div>
+			) : (
+				<Button type="button" variant="destructive" onClick={beginConfirm}>
+					<Trash2 className="size-4" />
+					Delete workspace
+				</Button>
+			)}
+		</div>
 	);
 }
