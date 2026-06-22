@@ -17,11 +17,14 @@ export interface ListWorkspaceKernelItemsArgs {
 	limit?: number;
 }
 
+export type WorkspaceKernelNameConflictPolicy = "rename" | "error";
+
 export interface CreateWorkspaceKernelItemArgs {
 	id?: string;
 	parentId?: string | null;
 	type: WorkspaceItemType;
 	name?: string;
+	onNameConflict?: WorkspaceKernelNameConflictPolicy;
 	color?: WorkspaceItemColor;
 	metadataJson?: Record<string, JsonValue>;
 	initialContent?: string;
@@ -32,6 +35,7 @@ export interface CreateWorkspaceKernelItemArgs {
 export interface RenameWorkspaceKernelItemArgs {
 	itemId: string;
 	name: string;
+	onNameConflict?: WorkspaceKernelNameConflictPolicy;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }
@@ -42,6 +46,7 @@ export interface MoveWorkspaceKernelItemsArgs {
 		sortOrder?: number;
 	}>;
 	parentId?: string | null;
+	onNameConflict?: WorkspaceKernelNameConflictPolicy;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
 }

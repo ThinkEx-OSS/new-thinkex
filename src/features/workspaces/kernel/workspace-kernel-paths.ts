@@ -125,6 +125,49 @@ export function joinWorkspacePathSegment(parentPath: string, name: string) {
 	return parentPath ? `${parentPath}/${segment}` : segment;
 }
 
+export function getParentWorkspacePath(path: string) {
+	const lastSlashIndex = path.lastIndexOf("/");
+
+	if (lastSlashIndex <= 0) {
+		return "/";
+	}
+
+	return path.slice(0, lastSlashIndex);
+}
+
+export function getWorkspacePathName(path: string) {
+	return path.split("/").filter(Boolean).at(-1) ?? "";
+}
+
+export function joinWorkspaceItemPath(parentPath: string, name: string) {
+	const relativePath = joinWorkspacePathSegment("", name);
+
+	if (parentPath === "/") {
+		return `/${relativePath}`;
+	}
+
+	return `${parentPath}/${relativePath}`;
+}
+
+export function buildWorkspaceKernelItemPathIndex(
+	items: WorkspaceItemSummary[],
+) {
+	const tree = buildWorkspaceKernelTree(items);
+	const paths = new Map<string, string>();
+
+	const visit = (parentId: string | null, parentPath: string) => {
+		for (const child of tree.childrenByParentId.get(parentId) ?? []) {
+			const path = joinWorkspaceItemPath(parentPath, child.name);
+			paths.set(child.id, path);
+			visit(child.id, path);
+		}
+	};
+
+	visit(null, "/");
+
+	return paths;
+}
+
 export function toWorkspacePathSegment(name: string) {
 	return normalizeWorkspaceItemName(name);
 }

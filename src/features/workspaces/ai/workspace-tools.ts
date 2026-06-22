@@ -3,11 +3,12 @@ import { tool } from "ai";
 import { z } from "zod";
 
 import type { AIThreadContext } from "#/features/workspaces/ai/ai-thread-metadata";
-import {
-	editWorkspaceKernelAiItem,
-	readWorkspaceKernelAiItems,
-	renameWorkspaceKernelAiItems,
-} from "#/features/workspaces/ai/workspace-kernel-ai-access";
+import { createWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-create";
+import { deleteWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-delete";
+import { editWorkspaceKernelAiItem } from "#/features/workspaces/ai/workspace-kernel-ai-edit";
+import { moveWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-move";
+import { readWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-read";
+import { renameWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-rename";
 import { documentMarkdownEditSchema } from "#/features/workspaces/documents/document-markdown-edits";
 import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
 
@@ -92,13 +93,72 @@ const workspaceRenameItemsInputSchema = z.object({
 				path: z
 					.string()
 					.min(1)
-					.describe("Absolute path of one actual ThinkEx workspace item to rename."),
+					.describe(
+						"Absolute path of one actual ThinkEx workspace item to rename.",
+					),
 			}),
 		)
 		.min(1)
 		.max(20)
 		.describe(
 			"One or more actual ThinkEx workspace items to rename. Use a single array entry for a one-off rename.",
+		),
+});
+
+const workspaceMoveItemsInputSchema = z.object({
+	destinationPath: z
+		.string()
+		.min(1)
+		.describe(
+			"Absolute path of the destination folder. Use / for the workspace root.",
+		),
+	paths: z
+		.array(z.string().min(1))
+		.min(1)
+		.max(20)
+		.describe(
+			"Absolute paths of one or more actual ThinkEx workspace items to move.",
+		),
+});
+
+const workspaceCreateItemsInputSchema = z.object({
+	items: z
+		.array(
+			z.discriminatedUnion("type", [
+				z.object({
+					type: z.literal("folder"),
+					path: z
+						.string()
+						.min(1)
+						.describe("Final absolute path for the folder to create."),
+				}),
+				z.object({
+					type: z.literal("document"),
+					path: z
+						.string()
+						.min(1)
+						.describe("Final absolute path for the document to create."),
+					initialContent: z
+						.string()
+						.describe("Optional initial Markdown content for the document.")
+						.optional(),
+				}),
+			]),
+		)
+		.min(1)
+		.max(20)
+		.describe(
+			"One or more folders or documents to create in order. Parent folders must already exist or be created earlier in the same request.",
+		),
+});
+
+const workspaceDeleteItemsInputSchema = z.object({
+	paths: z
+		.array(z.string().min(1))
+		.min(1)
+		.max(20)
+		.describe(
+			"Absolute paths of one or more actual ThinkEx workspace items to delete.",
 		),
 });
 
@@ -141,13 +201,56 @@ export function createAIThreadWorkspaceTools(input: {
 		}),
 		workspace_rename_items: tool({
 			description:
-				"Rename one or more actual ThinkEx workspace items by absolute path. Returns updated absolute paths.",
+				"Rename one or more actual ThinkEx workspace items by absolute path. If the requested final path already exists, that rename fails instead of auto-renaming.",
 			inputSchema: workspaceRenameItemsInputSchema,
 			execute: async ({ items }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
 
 				return await renameWorkspaceKernelAiItems({
 					items,
+					workspaceId: thread.workspaceId,
+					userId: thread.userId,
+				});
+			},
+		}),
+		workspace_move_items: tool({
+			description:
+				"Move one or more actual ThinkEx workspace items into an existing folder or the workspace root. If the destination already has the same name, that move fails instead of auto-renaming.",
+			inputSchema: workspaceMoveItemsInputSchema,
+			execute: async ({ destinationPath, paths }) => {
+				const thread = await requireThreadContext(input.getThreadContext);
+
+				return await moveWorkspaceKernelAiItems({
+					destinationPath,
+					paths,
+					workspaceId: thread.workspaceId,
+					userId: thread.userId,
+				});
+			},
+		}),
+		workspace_create_items: tool({
+			description:
+				"Create one or more folders or documents at exact absolute paths. If a path already exists, creation fails instead of renaming.",
+			inputSchema: workspaceCreateItemsInputSchema,
+			execute: async ({ items }) => {
+				const thread = await requireThreadContext(input.getThreadContext);
+
+				return await createWorkspaceKernelAiItems({
+					items,
+					workspaceId: thread.workspaceId,
+					userId: thread.userId,
+				});
+			},
+		}),
+		workspace_delete_items: tool({
+			description:
+				"Delete one or more actual ThinkEx workspace items by absolute path.",
+			inputSchema: workspaceDeleteItemsInputSchema,
+			execute: async ({ paths }) => {
+				const thread = await requireThreadContext(input.getThreadContext);
+
+				return await deleteWorkspaceKernelAiItems({
+					paths,
 					workspaceId: thread.workspaceId,
 					userId: thread.userId,
 				});

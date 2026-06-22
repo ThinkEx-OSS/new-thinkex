@@ -74,10 +74,12 @@ export class WorkspaceKernelItemCommands {
 		}
 
 		this.store.assertParentIsValid(parentId);
-		const name = this.store.getAvailableItemName({
+		const name = this.store.resolveItemName({
+			itemId: id,
 			type,
 			parentId,
 			requestedName: input.name,
+			onNameConflict: input.onNameConflict,
 		});
 		const shellPath = getWorkspaceKernelShellPath({ id, type });
 		const { initialContent, metadataJson } = buildWorkspaceItemCreateBootstrap({
@@ -143,11 +145,13 @@ export class WorkspaceKernelItemCommands {
 
 		const existingItem = this.store.assertActiveItem(input.itemId);
 		const type = workspaceItemTypeSchema.parse(existingItem.type);
-		const name = this.store.getAvailableItemName({
+		const name = this.store.resolveItemName({
+			itemId: existingItem.id,
 			type,
 			parentId: existingItem.parent_id,
 			requestedName: input.name,
 			excludeItemId: existingItem.id,
+			onNameConflict: input.onNameConflict,
 		});
 
 		this.sql`
@@ -182,12 +186,20 @@ export class WorkspaceKernelItemCommands {
 			this.store.assertNotMovingIntoDescendant(row.id, parentId);
 		}
 
-		for (const row of roots) {
+		const plannedMoves = this.planMoveRows({
+			movesByItemId,
+			onNameConflict: input.onNameConflict,
+			parentId,
+			rows: roots,
+		});
+
+		for (const plannedMove of plannedMoves) {
 			movedItems.push(
 				this.moveItemRow({
-					row,
+					name: plannedMove.name,
 					parentId,
-					sortOrder: movesByItemId.get(row.id)?.sortOrder,
+					row: plannedMove.row,
+					sortOrder: plannedMove.sortOrder,
 				}),
 			);
 		}
@@ -351,29 +363,58 @@ export class WorkspaceKernelItemCommands {
 	}
 
 	private moveItemRow(input: {
+		name: string;
 		row: KernelItemRow;
 		parentId: string | null;
 		sortOrder?: number;
 	}) {
-		const type = workspaceItemTypeSchema.parse(input.row.type);
-		const name = this.store.getAvailableItemName({
-			type,
-			parentId: input.parentId,
-			requestedName: input.row.name,
-			excludeItemId: input.row.id,
-		});
-
 		this.sql`
 			UPDATE kernel_items
 			SET
 				parent_id = ${input.parentId},
-				name = ${name},
+				name = ${input.name},
 				sort_order = ${input.sortOrder ?? this.store.getNextSortOrder(input.parentId)},
 				updated_at = ${Date.now()}
 			WHERE id = ${input.row.id} AND deleted_at IS NULL
 		`;
 
 		return this.store.requireItem(input.row.id);
+	}
+
+	private planMoveRows(input: {
+		movesByItemId: ReadonlyMap<
+			string,
+			{
+				itemId: string;
+				sortOrder?: number;
+			}
+		>;
+		onNameConflict?: "rename" | "error";
+		parentId: string | null;
+		rows: KernelItemRow[];
+	}) {
+		const reservedNames: string[] = [];
+
+		return input.rows.map((row) => {
+			const type = workspaceItemTypeSchema.parse(row.type);
+			const name = this.store.resolveItemName({
+				itemId: row.id,
+				type,
+				parentId: input.parentId,
+				requestedName: row.name,
+				excludeItemId: row.id,
+				onNameConflict: input.onNameConflict,
+				reservedNames,
+			});
+
+			reservedNames.push(name);
+
+			return {
+				name,
+				row,
+				sortOrder: input.movesByItemId.get(row.id)?.sortOrder,
+			};
+		});
 	}
 
 	private getUniqueRootRows(itemIds: string[]) {

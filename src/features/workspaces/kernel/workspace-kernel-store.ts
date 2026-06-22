@@ -2,16 +2,30 @@ import type {
 	WorkspaceItemSummary,
 	WorkspaceItemType,
 } from "#/features/workspaces/contracts";
-import { getAvailableWorkspaceItemName } from "#/features/workspaces/defaults";
+import {
+	getAvailableWorkspaceItemName,
+	normalizeWorkspaceItemName,
+} from "#/features/workspaces/defaults";
 import {
 	type KernelItemRow,
 	mapKernelItemRow,
 } from "#/features/workspaces/kernel/workspace-kernel-rows";
+import type { WorkspaceKernelNameConflictPolicy } from "#/features/workspaces/kernel/workspace-kernel-types";
 import {
 	type WorkspaceKernelSql,
 	workspaceItemSortStep,
 	workspaceRevisionKey,
 } from "#/features/workspaces/kernel/workspace-kernel-schema";
+
+export class WorkspaceKernelNameConflictError extends Error {
+	constructor(
+		readonly itemId?: string,
+		readonly requestedName?: string,
+	) {
+		super("Workspace item name already exists.");
+		this.name = "WorkspaceKernelNameConflictError";
+	}
+}
 
 export class WorkspaceKernelStore {
 	private readonly sql: WorkspaceKernelSql;
@@ -152,19 +166,35 @@ export class WorkspaceKernelStore {
 		}
 	}
 
-	getAvailableItemName(input: {
+	resolveItemName(input: {
+		itemId?: string;
 		type: WorkspaceItemType;
 		parentId: string | null;
 		requestedName?: string;
 		excludeItemId?: string;
+		onNameConflict?: WorkspaceKernelNameConflictPolicy;
+		reservedNames?: string[];
 	}) {
+		const existingNames = [
+			...this.getActiveSiblingNames(input.parentId, input.excludeItemId),
+			...(input.reservedNames ?? []),
+		];
+		const requestedName = input.requestedName
+			? normalizeWorkspaceItemName(input.requestedName, "")
+			: "";
+
+		if (input.onNameConflict === "error" && requestedName) {
+			if (existingNames.includes(requestedName)) {
+				throw new WorkspaceKernelNameConflictError(input.itemId, requestedName);
+			}
+
+			return requestedName;
+		}
+
 		return getAvailableWorkspaceItemName({
 			type: input.type,
 			requestedName: input.requestedName,
-			existingNames: this.getActiveSiblingNames(
-				input.parentId,
-				input.excludeItemId,
-			),
+			existingNames,
 		});
 	}
 
