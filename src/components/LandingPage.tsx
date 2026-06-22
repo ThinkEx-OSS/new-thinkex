@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 
+import { ModeToggle } from "#/components/mode-toggle";
 import SiteFooter from "#/components/SiteFooter";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
@@ -46,6 +47,7 @@ export default function LandingPage() {
 						className="flex flex-1 items-center justify-end gap-3"
 						aria-label="Site"
 					>
+						<ModeToggle className="size-9" />
 						<Button
 							nativeButton={false}
 							render={<Link to="/login" />}
