@@ -3,6 +3,7 @@ import {
 	type Dispatch,
 	type ReactElement,
 	type SetStateAction,
+	useEffect,
 	useId,
 	useState,
 } from "react";
@@ -421,6 +422,8 @@ function DeleteWorkspaceButton({
 	onDelete: () => void;
 }) {
 	const [isConfirming, setIsConfirming] = useState(false);
+	const [isDeleteRequested, setIsDeleteRequested] = useState(false);
+	const controlsDisabled = disabled || isDeleteRequested;
 
 	const beginConfirm = () => {
 		onResetError();
@@ -428,12 +431,27 @@ function DeleteWorkspaceButton({
 	};
 
 	const cancelConfirm = () => {
-		if (disabled) {
+		if (controlsDisabled) {
 			return;
 		}
 
 		onResetError();
 		setIsConfirming(false);
+	};
+
+	useEffect(() => {
+		if (!disabled) {
+			setIsDeleteRequested(false);
+		}
+	}, [disabled]);
+
+	const handleDelete = () => {
+		if (controlsDisabled) {
+			return;
+		}
+
+		setIsDeleteRequested(true);
+		onDelete();
 	};
 
 	return (
@@ -446,7 +464,7 @@ function DeleteWorkspaceButton({
 					<Button
 						type="button"
 						variant="outline"
-						disabled={disabled}
+						disabled={controlsDisabled}
 						onClick={cancelConfirm}
 					>
 						Keep workspace
@@ -454,8 +472,8 @@ function DeleteWorkspaceButton({
 					<Button
 						type="button"
 						variant="destructive"
-						disabled={disabled}
-						onClick={onDelete}
+						disabled={controlsDisabled}
+						onClick={handleDelete}
 					>
 						<Trash2 className="size-4" />
 						Delete workspace
