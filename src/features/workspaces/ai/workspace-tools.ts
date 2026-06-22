@@ -6,6 +6,7 @@ import type { AIThreadContext } from "#/features/workspaces/ai/ai-thread-metadat
 import {
 	editWorkspaceKernelAiItem,
 	readWorkspaceKernelAiItems,
+	renameWorkspaceKernelAiItems,
 } from "#/features/workspaces/ai/workspace-kernel-ai-access";
 import { documentMarkdownEditSchema } from "#/features/workspaces/documents/document-markdown-edits";
 import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
@@ -78,13 +79,36 @@ const workspaceEditItemInputSchema = z.object({
 		.describe("Ordered text edits to apply to the item projection."),
 });
 
+const workspaceRenameItemsInputSchema = z.object({
+	items: z
+		.array(
+			z.object({
+				name: z
+					.string()
+					.trim()
+					.min(1)
+					.max(160)
+					.describe("New user-visible item name."),
+				path: z
+					.string()
+					.min(1)
+					.describe("Absolute path of one actual ThinkEx workspace item to rename."),
+			}),
+		)
+		.min(1)
+		.max(20)
+		.describe(
+			"One or more actual ThinkEx workspace items to rename. Use a single array entry for a one-off rename.",
+		),
+});
+
 export function createAIThreadWorkspaceTools(input: {
 	getThreadContext: () => Promise<AIThreadContext | null>;
 }): ToolSet {
 	return {
 		workspace_list_items: tool({
 			description:
-				"List items in the actual ThinkEx workspace. Use this for user-visible workspace structure; use absolute paths such as /.",
+				"List items in the actual ThinkEx workspace by absolute path.",
 			inputSchema: workspaceItemListInputSchema,
 			execute: async ({ limit, path, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
@@ -100,7 +124,7 @@ export function createAIThreadWorkspaceTools(input: {
 		}),
 		workspace_read_items: tool({
 			description:
-				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Ready PDF and image files return extracted Markdown; files still queued, processing, or failed return concise extraction status. Files without text projections return metadata and an explicit no-text-projection reason. A page object is included only when content is truncated or a non-default offset was requested; if page.next is present, use contentOffset=page.next to continue. Unsupported item types are reported explicitly.",
+				"Read actual ThinkEx workspace items by absolute path. Documents return Markdown. Folders return listings. Other files return extracted text when available or a status result. Use contentOffset to continue when page.next is present.",
 			inputSchema: workspaceReadItemsInputSchema,
 			execute: async ({ contentLimit, contentOffset, paths, recursive }) => {
 				const thread = await requireThreadContext(input.getThreadContext);
@@ -115,9 +139,23 @@ export function createAIThreadWorkspaceTools(input: {
 				});
 			},
 		}),
+		workspace_rename_items: tool({
+			description:
+				"Rename one or more actual ThinkEx workspace items by absolute path. Returns updated absolute paths.",
+			inputSchema: workspaceRenameItemsInputSchema,
+			execute: async ({ items }) => {
+				const thread = await requireThreadContext(input.getThreadContext);
+
+				return await renameWorkspaceKernelAiItems({
+					items,
+					workspaceId: thread.workspaceId,
+					userId: thread.userId,
+				});
+			},
+		}),
 		workspace_edit_item: tool({
 			description:
-				"Edit one actual ThinkEx workspace document by absolute path. Read before editing unless the user requested a simple append or prepend. Edits affect the real user-visible workspace, not the private sandbox.",
+				"Edit one actual ThinkEx workspace document by absolute path. Read before editing unless the user requested a simple append or prepend.",
 			inputSchema: workspaceEditItemInputSchema,
 			execute: async ({ path, edits }) => {
 				const thread = await requireThreadContext(input.getThreadContext);

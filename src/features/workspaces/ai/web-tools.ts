@@ -23,7 +23,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 	return {
 		web_markdown: tool({
 			description:
-				"Load a public webpage in Cloudflare Browser Run and return its rendered content as Markdown. Best for articles, docs, and JavaScript-heavy pages.",
+				"Load a public webpage and return its rendered content as Markdown.",
 			inputSchema: browserPageInputSchema,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
@@ -36,7 +36,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 		}),
 		web_links: tool({
 			description:
-				"Load a public webpage in Cloudflare Browser Run and return its rendered links.",
+				"Load a public webpage and return its rendered links.",
 			inputSchema: browserPageInputSchema,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);

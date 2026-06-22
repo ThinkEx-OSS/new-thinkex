@@ -53,7 +53,10 @@ const timeCalculateRelativeInputSchema = z.object({
 
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
 
-const AI_THREAD_WORKSPACE_MUTATION_TOOLS = ["workspace_edit_item"] as const;
+const AI_THREAD_WORKSPACE_MUTATION_TOOLS = [
+	"workspace_rename_items",
+	"workspace_edit_item",
+] as const;
 
 const AI_THREAD_BASE_ACTIVE_TOOLS = [
 	"sandbox_read_file",
@@ -83,7 +86,7 @@ export function getAIThreadActiveTools(canMutate: boolean) {
 }
 
 const AI_THREAD_VIEW_ONLY_WORKSPACE_LINE =
-	"- Workspace access: view-only. Do not create, edit, move, or delete workspace items.";
+	"- Workspace access: view-only. Do not create, rename, edit, move, or delete workspace items.";
 
 export function createAIThreadTools(input: {
 	env: Env;
@@ -145,37 +148,37 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 		sandbox_read_file: {
 			...tools.read,
 			description:
-				"Read a private sandbox file. Text files return line-numbered content; images and PDFs are passed through when supported. Use offset and limit for large text files. This does not read the actual ThinkEx workspace.",
+				"Read a private sandbox file. This does not read the actual ThinkEx workspace.",
 		},
 		sandbox_write_file: {
 			...tools.write,
 			description:
-				"Write content to a private sandbox file for assistant scratch work. Creates parent directories automatically and overwrites existing files. This does not create or change actual ThinkEx workspace items.",
+				"Write a private sandbox file for assistant scratch work. This does not change actual ThinkEx workspace items.",
 		},
 		sandbox_edit_file: {
 			...tools.edit,
 			description:
-				"Edit a private sandbox file by replacing an exact string. The old_string must match exactly, including whitespace and indentation. This does not edit actual ThinkEx workspace items.",
+				"Edit a private sandbox file by exact string replacement. This does not edit actual ThinkEx workspace items.",
 		},
 		sandbox_list_files: {
 			...tools.list,
 			description:
-				"List private sandbox files and directories at a path. Returns names, types, and sizes. This does not list the actual ThinkEx workspace.",
+				"List private sandbox files and directories. This does not list the actual ThinkEx workspace.",
 		},
 		sandbox_find_files: {
 			...tools.find,
 			description:
-				"Find private sandbox files by glob pattern. Supports *, **, and ?. Returns matching paths with types and sizes. This does not search the actual ThinkEx workspace.",
+				"Find private sandbox files by glob pattern. This does not search the actual ThinkEx workspace.",
 		},
 		sandbox_search_files: {
 			...tools.grep,
 			description:
-				"Search private sandbox file contents using a regex or fixed string. Returns matching lines with file paths and line numbers. This does not search actual ThinkEx workspace items.",
+				"Search private sandbox file contents. This does not search actual ThinkEx workspace items.",
 		},
 		sandbox_delete_file: {
 			...tools.delete,
 			description:
-				"Delete a private sandbox file or directory. Set recursive to true for non-empty directories. This does not delete actual ThinkEx workspace items.",
+				"Delete a private sandbox file or directory. This does not delete actual ThinkEx workspace items.",
 		},
 	};
 }
