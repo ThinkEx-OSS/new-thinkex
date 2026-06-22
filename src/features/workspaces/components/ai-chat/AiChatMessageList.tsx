@@ -7,6 +7,7 @@ import {
 	type AiChatPresentation,
 	type AssistantRowDisplay,
 	getAssistantRowDisplay,
+	isAiChatStreamActive,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import { aiChatMessageRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
@@ -112,7 +113,7 @@ export default function AiChatMessageList({
 								}
 								isStreaming={
 									message.id === lastAssistantMessageId &&
-									status === "streaming"
+									isAiChatStreamActive(status)
 								}
 								message={message}
 								onRegenerate={onRegenerateLastResponse}
