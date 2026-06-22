@@ -18,12 +18,11 @@ export default function WorkspaceSelectionActionBar({
 	onClear,
 }: WorkspaceSelectionActionBarProps) {
 	const { capabilities } = useWorkspaceMutationAccess();
+	const canMutateContent = capabilities.canMutateContent;
 
-	if (selectedCount === 0) {
+	if (selectedCount === 0 || !canMutateContent) {
 		return null;
 	}
-
-	const canMutateContent = capabilities.canMutateContent;
 
 	return (
 		<div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
