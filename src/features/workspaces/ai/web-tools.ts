@@ -35,8 +35,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 			},
 		}),
 		web_links: tool({
-			description:
-				"Load a public webpage and return its rendered links.",
+			description: "Load a public webpage and return its rendered links.",
 			inputSchema: browserPageInputSchema,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);

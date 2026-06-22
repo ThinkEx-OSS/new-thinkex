@@ -1,10 +1,10 @@
-import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
-import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import {
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
+import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
+import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import type { ListWorkspaceKernelItemsResult } from "#/features/workspaces/kernel/workspace-kernel-list";
 import { listWorkspaceKernelPageItems } from "#/features/workspaces/kernel/workspace-kernel-list";

@@ -1,11 +1,11 @@
-import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { parseMarkdownToTiptapDocument } from "#/features/workspaces/documents/document-markdown";
-import { stringifyTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import {
 	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
+import { parseMarkdownToTiptapDocument } from "#/features/workspaces/documents/document-markdown";
+import { stringifyTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	getParentWorkspacePath,
