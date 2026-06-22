@@ -1,4 +1,4 @@
-import { Check, ChevronUp } from "lucide-react";
+import { Check, ChevronUp, Waypoints } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
@@ -79,11 +79,11 @@ export default function AiChatModelPicker({
 			<PopoverContent
 				side="top"
 				align="start"
-				alignOffset={-120}
-				className="flex w-[34rem] max-w-[calc(100vw-1.5rem)] flex-row gap-0 overflow-hidden p-0"
+				alignOffset={-140}
+				className="grid h-[22rem] max-h-[calc(100vh-1.5rem)] w-[30rem] max-w-[calc(100vw-1.5rem)] grid-cols-2 gap-0 overflow-hidden p-0"
 			>
 				{/* Left: grouped, scrollable model list */}
-				<div className="max-h-80 w-[15rem] shrink-0 overflow-y-auto border-r border-border/70 p-1.5">
+				<div className="h-full min-w-0 overflow-y-auto border-r border-border/70 p-1.5">
 					{autoModel ? (
 						<>
 							<button
@@ -157,16 +157,16 @@ export default function AiChatModelPicker({
 
 function ModelDetails({ model }: { model: WorkspaceAiChatModel }) {
 	return (
-		<div className="flex flex-1 flex-col gap-3 p-4">
-			<div className="flex items-start gap-2.5">
+		<div className="flex min-w-0 flex-col gap-3 p-4">
+			<div className="flex items-center gap-2.5">
+				{model.provider === "auto" ? (
+					<Waypoints className="size-4 shrink-0 text-muted-foreground" />
+				) : null}
 				{model.provider !== "auto" ? (
-					<span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-						<ProviderLogo provider={model.provider} className="size-4.5" />
-					</span>
+					<ProviderLogo provider={model.provider} className="size-4 shrink-0" />
 				) : null}
 				<div className="min-w-0">
 					<div className="font-medium text-foreground">{model.name}</div>
-					<div className="text-xs text-muted-foreground">{model.tagline}</div>
 				</div>
 			</div>
 
@@ -174,12 +174,11 @@ function ModelDetails({ model }: { model: WorkspaceAiChatModel }) {
 				{model.description}
 			</p>
 
-			<div className="rounded-md bg-muted/60 px-2.5 py-1.5 text-xs">
-				<span className="text-muted-foreground">Great for </span>
-				<span className="font-medium text-foreground">{model.bestFor}</span>
-			</div>
-
-			<div className="flex flex-col gap-2 pt-0.5">
+			<div className="mt-auto flex flex-col gap-2 pt-3">
+				<div className="rounded-md border border-border/70 bg-muted/60 px-2.5 py-1.5 text-xs dark:border-white/10 dark:bg-input/40">
+					<span className="text-muted-foreground">Great for </span>
+					<span className="font-medium text-foreground">{model.bestFor}</span>
+				</div>
 				<StatBar label="Intelligence" value={model.intelligence} />
 				<StatBar label="Speed" value={model.speed} />
 				<StatBar label="Cost" value={model.cost} />
