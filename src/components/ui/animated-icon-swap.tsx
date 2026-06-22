@@ -41,9 +41,12 @@ export function AnimatedIconSwap({
 }: AnimatedIconSwapProps) {
 	return (
 		<span
-			className={cn("grid place-items-center *:[grid-area:1/1]", className)}
+			className={cn(
+				"relative grid place-items-center *:[grid-area:1/1]",
+				className,
+			)}
 		>
-			<AnimatePresence initial={false} mode="popLayout">
+			<AnimatePresence initial={false}>
 				<motion.span
 					key={String(swapKey)}
 					className="inline-flex"
