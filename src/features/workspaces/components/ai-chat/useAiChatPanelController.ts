@@ -111,7 +111,7 @@ export function useAiChatPanelController({
 	]);
 
 	useEffect(() => {
-		if (!activeThread?.hasUnreadCompletion) {
+		if (!activeThread?.hasUnreadUpdate) {
 			return;
 		}
 
@@ -124,7 +124,7 @@ export function useAiChatPanelController({
 			markingViewedThreadIds.delete(activeThread.id);
 		});
 	}, [
-		activeThread?.hasUnreadCompletion,
+		activeThread?.hasUnreadUpdate,
 		activeThread?.id,
 		markingViewedThreadIds,
 		markThreadViewed,
@@ -157,7 +157,7 @@ export function useAiChatPanelController({
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
 			thread.id === activeThreadId
-				? { ...thread, hasUnreadCompletion: false }
+				? { ...thread, hasUnreadUpdate: false }
 				: thread,
 		),
 	};

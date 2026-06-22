@@ -55,14 +55,16 @@ export function useWorkspaceAiChat({
 		isStreaming,
 		isToolContinuation,
 	});
-	const canSend = status === "ready" && !presentation.isBusy;
 	const canStop = status === "submitted" || presentation.isBusy;
 	const inputStatus: AiChatStatus =
 		presentation.tailPending || presentation.isRecovering
 			? "submitted"
 			: presentation.isBusy
 				? "streaming"
-				: status;
+				: status === "error"
+					? "ready"
+					: status;
+	const canSend = inputStatus === "ready" && !presentation.isBusy;
 
 	const sendMessage = (
 		message: AiChatSendMessage,

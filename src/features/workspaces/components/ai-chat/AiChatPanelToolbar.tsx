@@ -6,6 +6,7 @@ import {
 	Maximize2,
 	Minimize2,
 	Plus,
+	RefreshCw,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import { cn } from "#/lib/utils";
 
 interface AiChatPanelToolbarProps {
 	activeThreadId?: string;
+	activeThreadIsRecovering?: boolean;
 	isMaximized: boolean;
 	isNewChatDisabled?: boolean;
 	onClose: () => void;
@@ -44,6 +46,7 @@ interface AiChatPanelToolbarProps {
 
 export default function AiChatPanelToolbar({
 	activeThreadId,
+	activeThreadIsRecovering = false,
 	isMaximized,
 	isNewChatDisabled = false,
 	onClose,
@@ -120,7 +123,14 @@ export default function AiChatPanelToolbar({
 																		thread.lastActivityAt,
 																	)}
 																</span>
-																<ThreadStatusBadge thread={thread} />
+																<ThreadStatusBadge
+																	thread={thread}
+																	isActive={thread.id === activeThreadId}
+																	isRecovering={
+																		thread.id === activeThreadId &&
+																		activeThreadIsRecovering
+																	}
+																/>
 															</span>
 														</span>
 													</DropdownMenuItem>
@@ -161,7 +171,27 @@ export default function AiChatPanelToolbar({
 	);
 }
 
-function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
+function ThreadStatusBadge({
+	isActive,
+	isRecovering,
+	thread,
+}: {
+	isActive: boolean;
+	isRecovering: boolean;
+	thread: AIThreadSummary;
+}) {
+	if (isActive && isRecovering) {
+		return (
+			<Badge
+				variant="secondary"
+				className="h-4 shrink-0 gap-1 rounded-full px-1.5 font-normal text-[10px] leading-none"
+			>
+				<RefreshCw className="size-2.5 animate-spin" aria-hidden="true" />
+				Recovering
+			</Badge>
+		);
+	}
+
 	if (thread.isRunning) {
 		return (
 			<Badge
@@ -185,12 +215,12 @@ function ThreadStatusBadge({ thread }: { thread: AIThreadSummary }) {
 				title={thread.lastErrorMessage ?? undefined}
 			>
 				<AlertCircle className="size-2.5" aria-hidden="true" />
-				Error
+				{thread.hasUnreadUpdate ? "Needs attention" : "Error"}
 			</Badge>
 		);
 	}
 
-	if (thread.hasUnreadCompletion) {
+	if (thread.hasUnreadUpdate) {
 		return (
 			<Badge
 				variant="outline"

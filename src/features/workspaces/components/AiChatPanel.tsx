@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
@@ -40,6 +40,8 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 }
 
 function AiChatPanelLayout({ context }: AiChatPanelProps) {
+	const [activeThreadIsRecovering, setActiveThreadIsRecovering] =
+		useState(false);
 	const {
 		activeThreadId,
 		areThreadsReady,
@@ -76,6 +78,7 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 		>
 			<AiChatPanelToolbar
 				activeThreadId={activeThreadId}
+				activeThreadIsRecovering={activeThreadIsRecovering}
 				isMaximized={isMaximized}
 				onClose={onClose}
 				onDeleteThread={onDeleteThread}
@@ -104,6 +107,10 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 						getInspectorSnapshot={getThreadInspectorSnapshot}
 						modelId={modelId}
 						onModelChange={onModelChange}
+						onRecoveringChange={setActiveThreadIsRecovering}
+						threadSummary={threads.find(
+							(thread) => thread.id === panelBodyPhase.threadId,
+						)}
 						threadId={panelBodyPhase.threadId}
 					/>
 				</Suspense>

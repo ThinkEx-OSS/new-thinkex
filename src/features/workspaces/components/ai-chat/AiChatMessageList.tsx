@@ -1,6 +1,12 @@
+import type {
+	ChatErrorClassification,
+	ChatErrorContext,
+} from "@cloudflare/think";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-
 import { ConversationEmptyState } from "#/components/ai-elements/conversation";
+import { Message, MessageContent } from "#/components/ai-elements/message";
+import { Button } from "#/components/ui/button";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
 import {
@@ -24,6 +30,11 @@ type SelectedText = {
 	text: string;
 };
 
+export interface AiChatAssistantErrorState {
+	classification?: ChatErrorClassification | null;
+	stage?: ChatErrorContext["stage"] | null;
+}
+
 type AiChatListRow =
 	| {
 			display: AssistantRowDisplay | null;
@@ -36,6 +47,7 @@ type AiChatListRow =
 	  };
 
 interface AiChatMessageListProps {
+	assistantError?: AiChatAssistantErrorState | null;
 	messages: AiChatMessage[];
 	onRegenerateLastResponse?: () => void;
 	presentation: AiChatPresentation;
@@ -43,6 +55,7 @@ interface AiChatMessageListProps {
 }
 
 export default function AiChatMessageList({
+	assistantError,
 	messages,
 	onRegenerateLastResponse,
 	presentation,
@@ -50,6 +63,13 @@ export default function AiChatMessageList({
 }: AiChatMessageListProps) {
 	const { lastAssistantMessageId, status, tailPending } = presentation;
 	const rows = getAiChatListRows(messages, presentation);
+	const hasAssistantContent = rows.some(
+		(row) =>
+			row.type === "message" &&
+			row.message.role === "assistant" &&
+			row.display?.kind === "content" &&
+			row.display.parts.length > 0,
+	);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
 
@@ -65,7 +85,7 @@ export default function AiChatMessageList({
 		};
 	}, []);
 
-	if (messages.length === 0) {
+	if (messages.length === 0 && !assistantError) {
 		if (tailPending) {
 			return (
 				<AiChatMessageListFallback>
@@ -121,6 +141,16 @@ export default function AiChatMessageList({
 						</div>
 					);
 				})}
+				{assistantError ? (
+					<div className={`${aiChatMessageRailClassName} pb-5`}>
+						<AiChatAssistantError
+							canRetry={Boolean(onRegenerateLastResponse)}
+							errorState={assistantError}
+							hasAssistantContent={hasAssistantContent}
+							onRetry={onRegenerateLastResponse}
+						/>
+					</div>
+				) : null}
 			</div>
 			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
@@ -147,6 +177,51 @@ function AiChatMessageListFallback({ children }: { children: ReactNode }) {
 		<div className="min-h-0 flex-1 px-4 pt-5 pb-5">
 			<div className={aiChatMessageRailClassName}>{children}</div>
 		</div>
+	);
+}
+
+function AiChatAssistantError({
+	canRetry,
+	errorState,
+	hasAssistantContent,
+	onRetry,
+}: {
+	canRetry: boolean;
+	errorState: AiChatAssistantErrorState;
+	hasAssistantContent: boolean;
+	onRetry?: () => void;
+}) {
+	return (
+		<Message from="assistant" className="max-w-full">
+			<MessageContent>
+				<div className="flex flex-col items-start gap-3 rounded-md border border-destructive/25 bg-destructive/8 p-4">
+					<div className="flex items-start gap-2">
+						<AlertCircle
+							className="mt-0.5 size-4 shrink-0 text-destructive"
+							aria-hidden="true"
+						/>
+						<p className="text-sm text-foreground">
+							{getChatErrorMessage({
+								errorState,
+								hasAssistantContent,
+							})}
+						</p>
+					</div>
+					{canRetry ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="xs"
+							className="gap-1.5"
+							onClick={onRetry}
+						>
+							<RotateCcw className="size-3" />
+							Try again
+						</Button>
+					) : null}
+				</div>
+			</MessageContent>
+		</Message>
 	);
 }
 
@@ -196,4 +271,26 @@ function getSelectedText(root: HTMLElement | null): SelectedText | null {
 
 	const rect = getRangeClientRect(selection.getRangeAt(0), null);
 	return rect ? { rect, text } : null;
+}
+
+function getChatErrorMessage({
+	errorState,
+	hasAssistantContent,
+}: {
+	errorState: AiChatAssistantErrorState;
+	hasAssistantContent: boolean;
+}) {
+	if (errorState.classification === "context_overflow") {
+		return "This chat got too large to finish. Try again or start a new chat.";
+	}
+
+	if (errorState.stage === "recovery") {
+		return hasAssistantContent
+			? "The response was interrupted before it finished."
+			: "The response was interrupted before it could start.";
+	}
+
+	return hasAssistantContent
+		? "Something went wrong before the response could finish."
+		: "Something went wrong before the response could be generated.";
 }
