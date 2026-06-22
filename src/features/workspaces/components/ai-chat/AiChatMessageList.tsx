@@ -4,14 +4,9 @@ import { ConversationEmptyState } from "#/components/ai-elements/conversation";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
 import {
-	AiChatVirtuaList,
-	deriveAiChatListScrollTarget,
-} from "#/features/workspaces/components/ai-chat/AiChatVirtuaList";
-import {
 	type AiChatPresentation,
 	type AssistantRowDisplay,
 	getAssistantRowDisplay,
-	isAiChatStreamActive,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import { aiChatMessageRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
@@ -54,10 +49,8 @@ export default function AiChatMessageList({
 }: AiChatMessageListProps) {
 	const { lastAssistantMessageId, status, tailPending } = presentation;
 	const rows = getAiChatListRows(messages, presentation);
-	const hasPendingTail = tailPending !== null;
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
-	const scrollTarget = deriveAiChatListScrollTarget(rows, messages);
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -93,57 +86,41 @@ export default function AiChatMessageList({
 
 	return (
 		<div ref={listRef} className="contents">
-			<AiChatVirtuaList
-				{...scrollTarget}
-				pinActive={isAiChatStreamActive(status)}
-			>
-				{({ measurePinnedUserRow, tailSpacerStyle }) =>
-					rows.map((row, index) => {
-						if (row.type === "pending") {
-							return (
-								<div
-									key="assistant-pending"
-									className={`${aiChatMessageRailClassName} pb-5`}
-									style={tailSpacerStyle}
-								>
-									<AiChatAssistantPending pending={row.pending} />
-								</div>
-							);
-						}
-
-						const { display, message } = row;
-						const isLastMessage = index === rows.length - 1;
-						const applyTailSpacer =
-							!hasPendingTail && isLastMessage && message.role === "assistant";
-
+			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-5 pb-5">
+				{rows.map((row) => {
+					if (row.type === "pending") {
 						return (
 							<div
-								key={message.id}
-								ref={
-									message.id === scrollTarget.latestUserMessageId
-										? measurePinnedUserRow
-										: undefined
-								}
+								key="assistant-pending"
 								className={`${aiChatMessageRailClassName} pb-5`}
-								style={applyTailSpacer ? tailSpacerStyle : undefined}
 							>
-								<AiChatMessageRow
-									display={display}
-									isRegenerable={
-										message.id === lastAssistantMessageId && status === "ready"
-									}
-									isStreaming={
-										message.id === lastAssistantMessageId &&
-										status === "streaming"
-									}
-									message={message}
-									onRegenerate={onRegenerateLastResponse}
-								/>
+								<AiChatAssistantPending pending={row.pending} />
 							</div>
 						);
-					})
-				}
-			</AiChatVirtuaList>
+					}
+
+					const { display, message } = row;
+					return (
+						<div
+							key={message.id}
+							className={`${aiChatMessageRailClassName} pb-5`}
+						>
+							<AiChatMessageRow
+								display={display}
+								isRegenerable={
+									message.id === lastAssistantMessageId && status === "ready"
+								}
+								isStreaming={
+									message.id === lastAssistantMessageId &&
+									status === "streaming"
+								}
+								message={message}
+								onRegenerate={onRegenerateLastResponse}
+							/>
+						</div>
+					);
+				})}
+			</div>
 			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
 					rect={selectedText.rect}
