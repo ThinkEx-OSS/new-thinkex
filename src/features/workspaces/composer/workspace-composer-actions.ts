@@ -26,7 +26,7 @@ export function stageComposerQuote(
 	useWorkspaceAiComposerDraftStore.getState().addQuote(workspaceId, quote);
 
 	if (revealChat) {
-		useWorkspaceUiStore.getState().openChatPanel(workspaceId);
+		useWorkspaceUiStore.getState().setChatSurfaceMode(workspaceId, "docked");
 	}
 }
 
@@ -43,7 +43,7 @@ export function stageComposerFiles(
 	});
 
 	if (revealChat) {
-		useWorkspaceUiStore.getState().openChatPanel(workspaceId);
+		useWorkspaceUiStore.getState().setChatSurfaceMode(workspaceId, "docked");
 	}
 }
 

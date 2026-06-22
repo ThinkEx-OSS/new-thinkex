@@ -73,7 +73,9 @@ export function WorkspaceShell({
 	);
 	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
 	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
-	const closeChatPanel = useWorkspaceUiStore((state) => state.closeChatPanel);
+	const setChatSurfaceMode = useWorkspaceUiStore(
+		(state) => state.setChatSurfaceMode,
+	);
 	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
@@ -192,7 +194,9 @@ export function WorkspaceShell({
 			<WorkspaceItemToolbarProvider>
 				<WorkspaceChatLayout
 					chatSurfaceMode={chatSurfaceMode}
-					onCloseDockedChat={() => closeChatPanel(workspace.id)}
+					onDockedChatCollapse={() =>
+						setChatSurfaceMode(workspace.id, "hidden")
+					}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}

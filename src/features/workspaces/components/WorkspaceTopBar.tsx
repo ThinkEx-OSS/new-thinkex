@@ -64,7 +64,9 @@ export default function WorkspaceTopBar({
 	onDuplicateTab,
 }: WorkspaceTopBarProps) {
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspace.id);
-	const openAiChat = useWorkspaceUiStore((state) => state.openChatPanel);
+	const setChatSurfaceMode = useWorkspaceUiStore(
+		(state) => state.setChatSurfaceMode,
+	);
 	const [shareOpen, setShareOpen] = useState(false);
 	const aiChatHotkey = formatAppHotkey(
 		getAppHotkey("workspace.aiChat.toggle").hotkey,
@@ -117,7 +119,9 @@ export default function WorkspaceTopBar({
 									<WorkspaceToolbarTextButton
 										variant="outline"
 										className="border-border bg-background shadow-xs hover:bg-muted"
-										onClick={() => openAiChat(workspace.id)}
+										onClick={() =>
+											setChatSurfaceMode(workspace.id, "docked")
+										}
 									>
 										<MessageSquare />
 										<span>Chat</span>
