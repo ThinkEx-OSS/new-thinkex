@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
+import { ensureWorkspaceStarterThreadForUser } from "#/features/workspaces/ai/workspace-starter-thread.server";
 import type {
 	CreateWorkspaceInput,
 	DeleteWorkspaceInput,
@@ -30,6 +31,7 @@ export async function createWorkspaceForCurrentUser(
 	]);
 	const workspaceId = input.id ?? crypto.randomUUID();
 	const openedAt = new Date();
+	let workspace: WorkspaceSummary;
 
 	try {
 		const [insertedWorkspaces] = await dbContext.db.batch([
@@ -58,7 +60,7 @@ export async function createWorkspaceForCurrentUser(
 			throw new Error("Workspace was not created.");
 		}
 
-		return mapWorkspaceRow(
+		workspace = mapWorkspaceRow(
 			{
 				...row,
 				lastOpenedAt: openedAt,
@@ -68,6 +70,13 @@ export async function createWorkspaceForCurrentUser(
 	} finally {
 		await dbContext.dispose();
 	}
+
+	await ensureWorkspaceStarterThreadForUser({
+		userId,
+		workspaceId,
+	});
+
+	return workspace;
 }
 
 export async function recordWorkspaceOpenedForCurrentUser(

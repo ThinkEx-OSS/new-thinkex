@@ -85,6 +85,31 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return this._createThread(input);
 	}
 
+	async ensureWorkspaceStarterThread(input: {
+		workspaceId: string;
+	}): Promise<AIThreadSummary> {
+		const workspaceId = input.workspaceId.trim();
+
+		if (!workspaceId) {
+			throw new Error("workspaceId is required");
+		}
+
+		await getWorkspacePromptScope({
+			userId: this.name,
+			workspaceId,
+		});
+
+		const existing = getActiveThreadMetaRows(this).find(
+			(thread) => thread.workspace_id === workspaceId,
+		);
+
+		if (existing) {
+			return mapThreadMetaRow(existing);
+		}
+
+		return this._createThread({ workspaceId });
+	}
+
 	private async _createThread(input: {
 		workspaceId: string;
 	}): Promise<AIThreadSummary> {

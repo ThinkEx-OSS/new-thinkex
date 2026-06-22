@@ -10,10 +10,7 @@ import {
 import { workspacesQueryOptions } from "#/features/workspaces/query-options";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import { useWorkspaceTabsStore } from "#/features/workspaces/state/workspace-tabs-store";
-import {
-	createWorkspaceMutationInput,
-	useCreateWorkspaceMutation,
-} from "#/features/workspaces/use-create-workspace";
+import { useCreateWorkspaceMutation } from "#/features/workspaces/use-create-workspace";
 
 export function WorkspaceHomePage() {
 	const { data: workspaces } = useSuspenseQuery(workspacesQueryOptions());
@@ -25,10 +22,8 @@ export function WorkspaceHomePage() {
 			<div className="space-y-4">
 				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
 					<CreateWorkspaceCard
-						disabled={createWorkspaceMutation.isPending}
-						onCreate={() =>
-							createWorkspaceMutation.mutate(createWorkspaceMutationInput())
-						}
+						onCreate={() => createWorkspaceMutation.mutate()}
+						pending={createWorkspaceMutation.isPending}
 					/>
 					{workspaces.map((workspace) => (
 						<WorkspaceCard

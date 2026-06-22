@@ -4,25 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import {
-	removeWorkspaceDetailCaches,
 	restoreWorkspaceListCache,
 	seedWorkspaceCaches,
-	workspacePageQueryKey,
-	workspaceQueryKey,
 	workspacesQueryKey,
 } from "#/features/workspaces/cache";
-import type {
-	CreateWorkspaceInput,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
-import { createOptimisticWorkspace } from "#/features/workspaces/defaults";
+import type { WorkspaceSummary } from "#/features/workspaces/contracts";
 import { WORKSPACE_ROOT_VIEW } from "#/features/workspaces/model/tabs";
 import { createWorkspaceFn } from "#/features/workspaces/server/functions";
 import { getErrorMessage } from "#/lib/error-message";
-
-interface CreateWorkspaceVariables {
-	id: NonNullable<CreateWorkspaceInput["id"]>;
-}
 
 export function useCreateWorkspaceMutation() {
 	const createWorkspace = useServerFn(createWorkspaceFn);
@@ -30,35 +19,14 @@ export function useCreateWorkspaceMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id }: CreateWorkspaceVariables) =>
-			createWorkspace({ data: { id } }),
-		onMutate: async ({ id }) => {
-			const workspace = createOptimisticWorkspace(id);
-
-			await Promise.all([
-				queryClient.cancelQueries({ queryKey: workspacesQueryKey }),
-				queryClient.cancelQueries({ queryKey: workspaceQueryKey(id) }),
-				queryClient.cancelQueries({ queryKey: workspacePageQueryKey(id) }),
-			]);
+		mutationFn: () => createWorkspace({ data: {} }),
+		onMutate: async () => {
+			await queryClient.cancelQueries({ queryKey: workspacesQueryKey });
 
 			const previousWorkspaces =
 				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 
-			seedWorkspaceCaches(queryClient, {
-				workspace,
-				items: [],
-			});
-			void navigate({
-				to: "/workspaces/$workspaceId",
-				params: { workspaceId: id },
-				search: {
-					tab: undefined,
-					view: WORKSPACE_ROOT_VIEW,
-				},
-			});
-
 			return {
-				workspaceId: id,
 				previousWorkspaces,
 			};
 		},
@@ -67,13 +35,18 @@ export function useCreateWorkspaceMutation() {
 				workspace,
 				items: [],
 			});
+
+			void navigate({
+				to: "/workspaces/$workspaceId",
+				params: { workspaceId: workspace.id },
+				search: {
+					tab: undefined,
+					view: WORKSPACE_ROOT_VIEW,
+				},
+			});
 		},
 		onError: (error, _variables, context) => {
 			restoreWorkspaceListCache(queryClient, context?.previousWorkspaces);
-
-			if (context?.workspaceId) {
-				removeWorkspaceDetailCaches(queryClient, context.workspaceId);
-			}
 
 			void navigate({ to: "/home" });
 			toast.error(
@@ -81,10 +54,4 @@ export function useCreateWorkspaceMutation() {
 			);
 		},
 	});
-}
-
-export function createWorkspaceMutationInput(): CreateWorkspaceVariables {
-	return {
-		id: crypto.randomUUID() as NonNullable<CreateWorkspaceInput["id"]>,
-	};
 }

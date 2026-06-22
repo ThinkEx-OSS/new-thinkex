@@ -6,19 +6,24 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import { Spinner } from "#/components/ui/spinner";
 import { cn } from "#/lib/utils";
 
 interface CreateWorkspaceCardProps {
 	className?: string;
 	disabled?: boolean;
 	onCreate?: () => void;
+	pending?: boolean;
 }
 
 export default function CreateWorkspaceCard({
 	className,
 	disabled = false,
 	onCreate,
+	pending = false,
 }: CreateWorkspaceCardProps) {
+	const isDisabled = disabled || pending;
+
 	return (
 		<Card
 			className={cn(
@@ -29,20 +34,24 @@ export default function CreateWorkspaceCard({
 			<button
 				type="button"
 				className="flex w-full cursor-pointer flex-col rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-				disabled={disabled}
+				disabled={isDisabled}
 				onClick={onCreate}
 			>
 				<div className="flex aspect-[5/2] items-center justify-center">
-					<Plus
-						className="size-11 text-muted-foreground transition-colors group-hover/card:text-foreground"
-						strokeWidth={1.75}
-					/>
+					{pending ? (
+						<Spinner className="size-11 text-muted-foreground" />
+					) : (
+						<Plus
+							className="size-11 text-muted-foreground transition-colors group-hover/card:text-foreground"
+							strokeWidth={1.75}
+						/>
+					)}
 				</div>
 
 				<CardHeader className="gap-2 px-4 py-3">
 					<CardTitle>Create workspace</CardTitle>
 					<CardDescription className="text-xs">
-						Start something new
+						{pending ? "Creating workspace..." : "Start something new"}
 					</CardDescription>
 				</CardHeader>
 			</button>
