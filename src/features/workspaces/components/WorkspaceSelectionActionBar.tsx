@@ -1,4 +1,4 @@
-import { FolderInput, MessageSquare, Trash2, X } from "lucide-react";
+import { FolderInput, Trash2, X } from "lucide-react";
 
 import { Button } from "#/components/ui/button";
 import { WorkspaceToolbarIconButton } from "#/features/workspaces/components/WorkspaceToolbar";
@@ -6,7 +6,6 @@ import { useWorkspaceMutationAccess } from "#/features/workspaces/components/wor
 
 interface WorkspaceSelectionActionBarProps {
 	selectedCount: number;
-	onAskAi: () => void;
 	onMove: () => void;
 	onDelete: () => void;
 	onClear: () => void;
@@ -14,7 +13,6 @@ interface WorkspaceSelectionActionBarProps {
 
 export default function WorkspaceSelectionActionBar({
 	selectedCount,
-	onAskAi,
 	onMove,
 	onDelete,
 	onClear,
@@ -33,15 +31,6 @@ export default function WorkspaceSelectionActionBar({
 				<div className="min-w-0 px-2.5 text-sm font-medium whitespace-nowrap">
 					{selectedCount} selected
 				</div>
-				<Button
-					type="button"
-					size="default"
-					variant="outline"
-					onClick={onAskAi}
-				>
-					<MessageSquare className="size-4" aria-hidden="true" />
-					Chat
-				</Button>
 				{canMutateContent ? (
 					<>
 						<Button

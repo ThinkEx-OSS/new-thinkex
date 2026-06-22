@@ -16,7 +16,7 @@ import {
 } from "#/features/workspaces/model/workspace-ai-context";
 import type { WorkspaceSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
 import { useWorkspaceAiComposerDraftStore } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
-import { useWorkspaceUiStore } from "#/features/workspaces/state/workspace-ui-store";
+import { useWorkspaceSelectionStore } from "#/features/workspaces/state/workspace-selection-store";
 import { cn } from "#/lib/utils";
 
 const CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME =
@@ -27,8 +27,8 @@ export default function WorkspaceAiChatContextChips({
 }: {
 	context: WorkspaceAiContextScope;
 }) {
-	const removeAiContextItem = useWorkspaceUiStore(
-		(state) => state.removeAiContextItem,
+	const setSelectionItem = useWorkspaceSelectionStore(
+		(state) => state.setItemSelected,
 	);
 	const removeQuote = useWorkspaceAiComposerDraftStore(
 		(state) => state.removeQuote,
@@ -48,7 +48,13 @@ export default function WorkspaceAiChatContextChips({
 				<WorkspaceAiChatContextChipRenderer
 					key={chip.id}
 					chip={chip}
-					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
+					onRemove={() =>
+						setSelectionItem({
+							workspaceId: context.workspaceId,
+							itemId: chip.id,
+							selected: false,
+						})
+					}
 				/>
 			))}
 			{quoteChips.map((quote) => (
@@ -62,7 +68,13 @@ export default function WorkspaceAiChatContextChips({
 				<WorkspaceAiChatContextChipRenderer
 					key={chip.id}
 					chip={chip}
-					onRemove={() => removeAiContextItem(context.workspaceId, chip.id)}
+					onRemove={() =>
+						setSelectionItem({
+							workspaceId: context.workspaceId,
+							itemId: chip.id,
+							selected: false,
+						})
+					}
 				/>
 			))}
 		</div>
@@ -78,7 +90,7 @@ function WorkspaceAiChatContextChipRenderer({
 }) {
 	return (
 		<WorkspaceAiChatContextChip
-			canRemove={chip.isMarkedForAiContext}
+			canRemove={chip.isSelected}
 			isActiveVisible={chip.isActiveVisible}
 			item={chip.item}
 			label={chip.label}
@@ -123,7 +135,7 @@ function WorkspaceAiChatContextChip({
 					variant="ghost"
 					size="icon-xs"
 					className={CONTEXT_CHIP_REMOVE_BUTTON_CLASSNAME}
-					aria-label={`Remove ${label} from AI context`}
+					aria-label={`Remove ${label} from selection`}
 					onClick={onRemove}
 				>
 					<X className="size-3" />

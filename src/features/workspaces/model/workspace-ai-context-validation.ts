@@ -1,8 +1,8 @@
 import type {
 	WorkspaceAiContextItemReference,
-	WorkspaceAiContextMarkedItem,
 	WorkspaceAiContextPaneReference,
 	WorkspaceAiContextPresentationReference,
+	WorkspaceAiContextSelectedItem,
 	WorkspaceAiContextSnapshot,
 	WorkspaceAiContextSnapshotSelectedQuote,
 	WorkspaceAiContextTabReference,
@@ -18,7 +18,7 @@ export function isWorkspaceAiContextSnapshot(
 	return (
 		isRecord(value.workspace) &&
 		typeof value.workspace.name === "string" &&
-		Array.isArray(value.markedItems) &&
+		Array.isArray(value.selectedItems) &&
 		Array.isArray(value.openTabs) &&
 		Array.isArray(value.selectedQuotes) &&
 		value.contentIncluded === false &&
@@ -27,20 +27,20 @@ export function isWorkspaceAiContextSnapshot(
 	);
 }
 
-export function isWorkspaceAiContextMarkedItem(
+export function isWorkspaceAiContextSelectedItem(
 	value: unknown,
-): value is WorkspaceAiContextMarkedItem {
+): value is WorkspaceAiContextSelectedItem {
 	if (!isRecord(value) || !isWorkspaceAiContextItemReference(value)) {
 		return false;
 	}
 
-	const markedItem = value as WorkspaceAiContextMarkedItem;
+	const selectedItem = value as WorkspaceAiContextSelectedItem;
 
 	return (
-		markedItem.availableToAi === true &&
-		markedItem.markedForAiContext === true &&
-		typeof markedItem.order === "number" &&
-		Number.isInteger(markedItem.order)
+		selectedItem.availableToAi === true &&
+		selectedItem.selectedForAiContext === true &&
+		typeof selectedItem.order === "number" &&
+		Number.isInteger(selectedItem.order)
 	);
 }
 

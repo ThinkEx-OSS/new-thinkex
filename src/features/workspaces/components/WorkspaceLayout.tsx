@@ -33,6 +33,7 @@ import { useWorkspaceNavigation } from "#/features/workspaces/navigation/useWork
 import { useWorkspaceRealtime } from "#/features/workspaces/realtime/use-workspace-presence";
 import { useWorkspacePersistedStoresHydrated } from "#/features/workspaces/state/persisted-store-hydration";
 import { useWorkspaceAiComposerDraftQuotes } from "#/features/workspaces/state/workspace-ai-composer-draft-store";
+import { useWorkspaceSelectionItemIds } from "#/features/workspaces/state/workspace-selection-store";
 import {
 	useWorkspaceItemViewStates,
 	useWorkspaceUiSession,
@@ -69,9 +70,6 @@ export function WorkspaceShell({
 	const persistedStoresHydrated = useWorkspacePersistedStoresHydrated();
 	const ensureWorkspaceUiSession = useWorkspaceUiStore(
 		(state) => state.ensureWorkspaceSession,
-	);
-	const addAiContextItems = useWorkspaceUiStore(
-		(state) => state.addAiContextItems,
 	);
 	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
 	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
@@ -121,16 +119,11 @@ export function WorkspaceShell({
 		activeViewFromUrl,
 	});
 	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
+	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
 	const { chatSurfaceMode, presentation } = normalizedUiSession;
 	const hasHeavyViewerRuntimeItems = scopedItems.some(
 		workspaceItemRequiresHeavyViewerRuntime,
 	);
-	const addItemsToAiContext = (itemsToAdd: WorkspaceItem[]) => {
-		addAiContextItems(
-			workspace.id,
-			itemsToAdd.map((item) => item.id),
-		);
-	};
 	const createWorkspaceItem = (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
@@ -172,9 +165,9 @@ export function WorkspaceShell({
 		activeItem: isWorkspaceItemView(activeItem) ? activeItem : undefined,
 		activeTabId: activeTab.id,
 		itemViewStatesByItemId,
-		aiContextItemIds: normalizedUiSession.aiContextItemIds,
 		itemsById,
 		presentation,
+		selectedItemIds,
 		selectedQuotes,
 		tabs: session.tabs,
 		workspaceId: workspace.id,
@@ -189,7 +182,6 @@ export function WorkspaceShell({
 					pane={presentation.pane}
 					scopedItems={scopedItems}
 					workspace={workspace}
-					onAddItemsToAiContext={addItemsToAiContext}
 					onCreateItem={createWorkspaceItem}
 					onOpenItem={openItem}
 				/>
@@ -236,7 +228,6 @@ export function WorkspaceShell({
 								direction={presentation.direction}
 								scopedItems={scopedItems}
 								workspace={workspace}
-								onAddItemsToAiContext={addItemsToAiContext}
 								onCreateItem={createWorkspaceItem}
 								onOpenItem={openItem}
 							/>
@@ -247,7 +238,6 @@ export function WorkspaceShell({
 								scopedItems={scopedItems}
 								tabs={session.tabs}
 								workspace={workspace}
-								onAddItemsToAiContext={addItemsToAiContext}
 								onCreateItem={createWorkspaceItem}
 								onOpenItem={openItem}
 							/>

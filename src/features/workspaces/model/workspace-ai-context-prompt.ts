@@ -5,7 +5,7 @@ import type {
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
 import {
-	isWorkspaceAiContextMarkedItem,
+	isWorkspaceAiContextSelectedItem,
 	isWorkspaceAiContextSelectedQuote,
 	isWorkspaceAiContextSnapshot,
 	isWorkspaceAiContextTabReference,
@@ -24,15 +24,17 @@ export function formatWorkspaceAiContextForPrompt(value: unknown) {
 		"- Item bodies are not included unless fetched with tools. Quotes are user-selected excerpts.",
 		`- User active view: ${formatWorkspaceAiContextPresentation(value.view.presentation)}`,
 	];
-	const markedItems = value.markedItems.filter(isWorkspaceAiContextMarkedItem);
+	const selectedItems = value.selectedItems.filter(
+		isWorkspaceAiContextSelectedItem,
+	);
 	const openTabs = value.openTabs.filter(isWorkspaceAiContextTabReference);
 	const selectedQuotes = value.selectedQuotes.filter(
 		isWorkspaceAiContextSelectedQuote,
 	);
 
-	if (markedItems.length > 0) {
-		lines.push("- Items marked for context:");
-		for (const item of markedItems) {
+	if (selectedItems.length > 0) {
+		lines.push("- User-selected workspace items:");
+		for (const item of selectedItems) {
 			const state = [
 				item.state.activeVisible ? "active visible" : "",
 				formatWorkspaceAiContextItemViewState(item.state.viewState),

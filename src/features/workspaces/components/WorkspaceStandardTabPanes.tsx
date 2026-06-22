@@ -14,7 +14,6 @@ export default function WorkspaceStandardTabPanes({
 	scopedItems,
 	tabs,
 	workspace,
-	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: {
@@ -23,7 +22,6 @@ export default function WorkspaceStandardTabPanes({
 	scopedItems: WorkspaceItem[];
 	tabs: WorkspaceTab[];
 	workspace: WorkspaceSummary;
-	onAddItemsToAiContext: (items: WorkspaceItem[]) => void;
 	onCreateItem: (input: {
 		type: WorkspaceItemType;
 		parentId: string | null;
@@ -55,7 +53,6 @@ export default function WorkspaceStandardTabPanes({
 									tab.viewItemId ? itemsById.get(tab.viewItemId) : undefined
 								}
 								workspace={workspace}
-								onAddItemsToAiContext={onAddItemsToAiContext}
 								onCreateItem={onCreateItem}
 								onOpenItem={onOpenItem}
 							/>

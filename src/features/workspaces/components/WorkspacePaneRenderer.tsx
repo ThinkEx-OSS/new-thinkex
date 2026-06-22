@@ -6,7 +6,6 @@ export default function WorkspacePaneRenderer({
 	pane,
 	scopedItems,
 	workspace,
-	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: WorkspacePaneRendererProps) {
@@ -19,7 +18,6 @@ export default function WorkspacePaneRenderer({
 					workspace={workspace}
 					items={scopedItems}
 					activeItem={item}
-					onAddItemsToAiContext={onAddItemsToAiContext}
 					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
@@ -31,7 +29,6 @@ export default function WorkspacePaneRenderer({
 					workspace={workspace}
 					items={scopedItems}
 					activeItem={undefined}
-					onAddItemsToAiContext={onAddItemsToAiContext}
 					onCreateItem={onCreateItem}
 					onOpenItem={onOpenItem}
 				/>
