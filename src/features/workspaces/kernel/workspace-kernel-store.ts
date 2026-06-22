@@ -10,12 +10,12 @@ import {
 	type KernelItemRow,
 	mapKernelItemRow,
 } from "#/features/workspaces/kernel/workspace-kernel-rows";
-import type { WorkspaceKernelNameConflictPolicy } from "#/features/workspaces/kernel/workspace-kernel-types";
 import {
 	type WorkspaceKernelSql,
 	workspaceItemSortStep,
 	workspaceRevisionKey,
 } from "#/features/workspaces/kernel/workspace-kernel-schema";
+import type { WorkspaceKernelNameConflictPolicy } from "#/features/workspaces/kernel/workspace-kernel-types";
 
 export class WorkspaceKernelNameConflictError extends Error {
 	constructor(

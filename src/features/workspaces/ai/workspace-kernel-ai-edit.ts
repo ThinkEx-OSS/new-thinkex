@@ -1,10 +1,10 @@
 import { getDocumentSessionRoomName } from "#/features/workspaces/agent-routes";
-import type { DocumentMarkdownEdit } from "#/features/workspaces/documents/document-markdown-edits";
-import type { DocumentSessionApplyMarkdownEditsResult } from "#/features/workspaces/documents/document-session";
 import {
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
+import type { DocumentMarkdownEdit } from "#/features/workspaces/documents/document-markdown-edits";
+import type { DocumentSessionApplyMarkdownEditsResult } from "#/features/workspaces/documents/document-session";
 
 interface DocumentSessionClient {
 	applyMarkdownEdits(input: {

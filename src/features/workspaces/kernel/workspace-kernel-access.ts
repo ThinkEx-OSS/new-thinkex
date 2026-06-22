@@ -22,8 +22,8 @@ import type {
 	ReadWorkspaceKernelFilePreviewResult,
 	ReadWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileProjectionResult,
-	WorkspaceKernelNameConflictPolicy,
 	UpsertWorkspaceKernelFileProjectionArgs,
+	WorkspaceKernelNameConflictPolicy,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
 import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";

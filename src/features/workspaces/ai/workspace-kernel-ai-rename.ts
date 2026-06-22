@@ -1,9 +1,9 @@
-import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
 	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
+import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
 	getParentWorkspacePath,
 	joinWorkspaceItemPath,
