@@ -38,7 +38,7 @@ export function WorkspaceTabShell({
 				variant === "active" &&
 					"h-8 rounded-md border-transparent bg-background text-foreground",
 				variant === "idle" &&
-					"h-8 rounded-md border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+					"h-8 rounded-md border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 				isDragSource && "cursor-grabbing",
 			)}
 		>
