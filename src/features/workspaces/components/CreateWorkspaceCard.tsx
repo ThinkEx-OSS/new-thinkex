@@ -22,7 +22,7 @@ export default function CreateWorkspaceCard({
 	return (
 		<Card
 			className={cn(
-				"group/card gap-0 overflow-hidden border-2 border-dashed border-muted-foreground/35 bg-muted/10 py-0 shadow-none ring-0 transition-all hover:border-foreground/35 hover:bg-muted/20 dark:border-muted-foreground/30 dark:bg-muted/5 dark:hover:bg-muted/10",
+				"group/card gap-0 overflow-hidden border-2 border-dashed border-muted-foreground/35 bg-muted/10 py-0 shadow-none ring-0 transition-[border-color,background-color] hover:border-foreground/35 hover:bg-muted/20 dark:border-muted-foreground/30 dark:bg-muted/5 dark:hover:bg-muted/10",
 				className,
 			)}
 		>
@@ -32,7 +32,7 @@ export default function CreateWorkspaceCard({
 				disabled={disabled}
 				onClick={onCreate}
 			>
-				<div className="flex aspect-[5/2] items-center justify-center transition-all duration-200">
+				<div className="flex aspect-[5/2] items-center justify-center">
 					<Plus
 						className="size-11 text-muted-foreground transition-colors group-hover/card:text-foreground"
 						strokeWidth={1.75}

@@ -13,7 +13,7 @@ export const workspaceItemPreviewControlRowClass =
 	"relative z-10 flex h-10 items-center justify-between px-2";
 
 export const workspaceItemCardBaseClass =
-	"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-all active:cursor-grabbing";
+	"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-[background-color,box-shadow] active:cursor-grabbing";
 
 export const workspaceItemCardHoverClass =
 	"hover:bg-secondary dark:hover:bg-accent/75";

@@ -32,7 +32,7 @@ export default function WorkspaceCard({
 	return (
 		<Card
 			className={cn(
-				"group/card relative gap-0 overflow-hidden py-0 transition-all hover:bg-accent hover:shadow-md dark:hover:bg-accent/60",
+				"group/card relative gap-0 overflow-hidden py-0 transition-[background-color,box-shadow] hover:bg-accent hover:shadow-md dark:hover:bg-accent/60",
 				className,
 			)}
 		>
@@ -45,7 +45,7 @@ export default function WorkspaceCard({
 			>
 				<div
 					className={cn(
-						"flex aspect-[5/2] items-center justify-center transition-all duration-200 group-hover/card:brightness-90",
+						"flex aspect-[5/2] items-center justify-center transition-[filter] duration-200 group-hover/card:brightness-90",
 						color.bg,
 					)}
 				>

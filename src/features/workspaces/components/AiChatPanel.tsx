@@ -72,7 +72,7 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 	return (
 		<aside
 			ref={mergePanelRef}
-			className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow"
+			className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background"
 		>
 			<AiChatPanelToolbar
 				activeThreadId={activeThreadId}
