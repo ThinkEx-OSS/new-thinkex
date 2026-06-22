@@ -105,9 +105,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			return existing;
 		}
 
-		return this._createThreadRecord(workspaceId, {
-			reuseExistingWorkspaceThread: true,
-		});
+		return this._ensureWorkspaceThreadRecord(workspaceId);
 	}
 
 	private async _createThread(input: {
@@ -129,7 +127,6 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 	private async _createThreadRecord(
 		workspaceId: string,
-		options: { reuseExistingWorkspaceThread?: boolean } = {},
 	): Promise<AIThreadSummary> {
 		const id = nanoid(12);
 		const now = Date.now();
@@ -137,29 +134,59 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 		await this.subAgent(AIThread, id);
 
-		if (options.reuseExistingWorkspaceThread) {
-			const existing = this._getWorkspaceThreadSummary(workspaceId);
+		return this._insertThreadRecord({
+			id,
+			workspaceId,
+			title,
+			now,
+		});
+	}
 
-			if (existing) {
-				await this.deleteSubAgent(AIThread, id);
-				return existing;
-			}
+	private async _ensureWorkspaceThreadRecord(
+		workspaceId: string,
+	): Promise<AIThreadSummary> {
+		const existing = this._getWorkspaceThreadSummary(workspaceId);
+
+		if (existing) {
+			return existing;
 		}
 
-		try {
-			insertThreadMeta(this, {
-				id,
-				workspaceId,
-				title,
-				now,
-			});
-		} catch (error) {
+		const id = nanoid(12);
+		const now = Date.now();
+		const title = getThreadTitle();
+
+		await this.subAgent(AIThread, id);
+
+		const competingThread = this._getWorkspaceThreadSummary(workspaceId);
+
+		if (competingThread) {
 			await this.deleteSubAgent(AIThread, id);
+			return competingThread;
+		}
+
+		return this._insertThreadRecord({
+			id,
+			workspaceId,
+			title,
+			now,
+		});
+	}
+
+	private async _insertThreadRecord(input: {
+		id: string;
+		workspaceId: string;
+		title: string;
+		now: number;
+	}): Promise<AIThreadSummary> {
+		try {
+			insertThreadMeta(this, input);
+		} catch (error) {
+			await this.deleteSubAgent(AIThread, input.id);
 			throw error;
 		}
 
 		this._refreshState();
-		const created = this._getThreadSummary(id);
+		const created = this._getThreadSummary(input.id);
 
 		if (!created) {
 			throw new Error("Failed to create chat thread");
