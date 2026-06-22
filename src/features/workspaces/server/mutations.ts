@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
+import { ensureWorkspaceStarterThreadForUser } from "#/features/workspaces/ai/workspace-starter-thread.server";
 import type {
 	CreateWorkspaceInput,
 	DeleteWorkspaceInput,
@@ -24,10 +25,22 @@ import {
 export async function createWorkspaceForCurrentUser(
 	input: CreateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const userId = await getCurrentUserId();
+	const workspace = await insertWorkspaceForUser(input, userId);
+
+	await ensureWorkspaceStarterThreadForUser({
+		userId,
+		workspaceId: workspace.id,
+	});
+
+	return workspace;
+}
+
+async function insertWorkspaceForUser(
+	input: CreateWorkspaceInput,
+	userId: string,
+): Promise<WorkspaceSummary> {
+	const dbContext = await createDbContext();
 	const workspaceId = input.id ?? crypto.randomUUID();
 	const openedAt = new Date();
 

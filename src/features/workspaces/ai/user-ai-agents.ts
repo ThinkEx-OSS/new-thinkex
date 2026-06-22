@@ -85,6 +85,29 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return this._createThread(input);
 	}
 
+	async ensureWorkspaceStarterThread(input: {
+		workspaceId: string;
+	}): Promise<AIThreadSummary> {
+		const workspaceId = input.workspaceId.trim();
+
+		if (!workspaceId) {
+			throw new Error("workspaceId is required");
+		}
+
+		await getWorkspacePromptScope({
+			userId: this.name,
+			workspaceId,
+		});
+
+		const existing = this._getWorkspaceThreadSummary(workspaceId);
+
+		if (existing) {
+			return existing;
+		}
+
+		return this._ensureWorkspaceThreadRecord(workspaceId);
+	}
+
 	private async _createThread(input: {
 		workspaceId: string;
 	}): Promise<AIThreadSummary> {
@@ -99,32 +122,87 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			workspaceId,
 		});
 
+		return this._createThreadRecord(workspaceId);
+	}
+
+	private async _createThreadRecord(
+		workspaceId: string,
+	): Promise<AIThreadSummary> {
 		const id = nanoid(12);
 		const now = Date.now();
 		const title = getThreadTitle();
 
 		await this.subAgent(AIThread, id);
 
-		try {
-			insertThreadMeta(this, {
-				id,
-				workspaceId,
-				title,
-				now,
-			});
-		} catch (error) {
+		return this._insertThreadRecord({
+			id,
+			workspaceId,
+			title,
+			now,
+		});
+	}
+
+	private async _ensureWorkspaceThreadRecord(
+		workspaceId: string,
+	): Promise<AIThreadSummary> {
+		const existing = this._getWorkspaceThreadSummary(workspaceId);
+
+		if (existing) {
+			return existing;
+		}
+
+		const id = nanoid(12);
+		const now = Date.now();
+		const title = getThreadTitle();
+
+		await this.subAgent(AIThread, id);
+
+		const competingThread = this._getWorkspaceThreadSummary(workspaceId);
+
+		if (competingThread) {
 			await this.deleteSubAgent(AIThread, id);
+			return competingThread;
+		}
+
+		return this._insertThreadRecord({
+			id,
+			workspaceId,
+			title,
+			now,
+		});
+	}
+
+	private async _insertThreadRecord(input: {
+		id: string;
+		workspaceId: string;
+		title: string;
+		now: number;
+	}): Promise<AIThreadSummary> {
+		try {
+			insertThreadMeta(this, input);
+		} catch (error) {
+			await this.deleteSubAgent(AIThread, input.id);
 			throw error;
 		}
 
 		this._refreshState();
-		const created = this._getThreadSummary(id);
+		const created = this._getThreadSummary(input.id);
 
 		if (!created) {
 			throw new Error("Failed to create chat thread");
 		}
 
 		return created;
+	}
+
+	private _getWorkspaceThreadSummary(
+		workspaceId: string,
+	): AIThreadSummary | null {
+		const row = getActiveThreadMetaRows(this).find(
+			(thread) => thread.workspace_id === workspaceId,
+		);
+
+		return row ? mapThreadMetaRow(row) : null;
 	}
 
 	@callable()
