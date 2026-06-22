@@ -14,7 +14,6 @@ export interface WorkspacePresentationProps {
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => void;
-	onAddItemsToAiContext: (items: WorkspaceItem[]) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 

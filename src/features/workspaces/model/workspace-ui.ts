@@ -19,7 +19,6 @@ export const standardPresentation: RestorableWorkspacePresentation = {
 };
 
 export const defaultWorkspaceUiSession: WorkspaceUiSession = {
-	aiContextItemIds: [],
 	aiChatModelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	chatSurfaceMode: "docked",
 	presentation: standardPresentation,
@@ -31,9 +30,6 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 	}
 
 	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
-	const aiContextItemIds = Array.isArray(session.aiContextItemIds)
-		? session.aiContextItemIds
-		: defaultWorkspaceUiSession.aiContextItemIds;
 	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(
 		session.chatSurfaceMode,
 	);
@@ -42,7 +38,6 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 
 	if (
 		aiChatModelId === session.aiChatModelId &&
-		aiContextItemIds === session.aiContextItemIds &&
 		chatSurfaceMode === session.chatSurfaceMode &&
 		presentation === session.presentation
 	) {
@@ -53,7 +48,6 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 		...defaultWorkspaceUiSession,
 		...session,
 		aiChatModelId,
-		aiContextItemIds,
 		chatSurfaceMode,
 		presentation,
 	};
@@ -68,17 +62,11 @@ export function normalizeWorkspaceUiSession(
 		normalizedSession.presentation,
 		validItemIds,
 	);
-	const aiContextItemIds = normalizeAiContextItemIds(
-		normalizedSession.aiContextItemIds,
-		validItemIds,
-	);
 
-	return presentation === normalizedSession.presentation &&
-		aiContextItemIds === normalizedSession.aiContextItemIds
+	return presentation === normalizedSession.presentation
 		? normalizedSession
 		: {
 				...normalizedSession,
-				aiContextItemIds,
 				presentation,
 			};
 }
@@ -111,35 +99,6 @@ export function openChatPanelSession(session: WorkspaceUiSession) {
 export function dockChatPanelSession() {
 	return {
 		chatSurfaceMode: "docked" as const,
-	};
-}
-
-export function addWorkspaceAiContextItemsSession(
-	session: WorkspaceUiSession,
-	itemIds: string[],
-) {
-	const nextIds = normalizeAiContextItemIds([
-		...session.aiContextItemIds,
-		...itemIds,
-	]);
-
-	return {
-		aiContextItemIds:
-			nextIds === session.aiContextItemIds ? session.aiContextItemIds : nextIds,
-		chatSurfaceMode: getVisibleWorkspaceAiChatSurfaceMode(session),
-	};
-}
-
-export function removeWorkspaceAiContextItemSession(
-	session: WorkspaceUiSession,
-	itemId: string,
-) {
-	if (!session.aiContextItemIds.includes(itemId)) {
-		return {};
-	}
-
-	return {
-		aiContextItemIds: session.aiContextItemIds.filter((id) => id !== itemId),
 	};
 }
 
@@ -284,40 +243,6 @@ function getVisibleWorkspaceAiChatSurfaceMode(session: WorkspaceUiSession) {
 		: session.chatSurfaceMode;
 }
 
-function normalizeAiContextItemIds(
-	itemIds: string[] | undefined,
-	validItemIds?: ReadonlySet<string>,
-) {
-	if (!itemIds?.length) {
-		return defaultWorkspaceUiSession.aiContextItemIds;
-	}
-
-	const seen = new Set<string>();
-	const normalizedIds: string[] = [];
-
-	for (const itemId of itemIds) {
-		if (
-			!itemId ||
-			seen.has(itemId) ||
-			(validItemIds && !validItemIds.has(itemId))
-		) {
-			continue;
-		}
-
-		seen.add(itemId);
-		normalizedIds.push(itemId);
-	}
-
-	if (
-		normalizedIds.length === itemIds.length &&
-		normalizedIds.every((id, index) => id === itemIds[index])
-	) {
-		return itemIds;
-	}
-
-	return normalizedIds;
-}
-
 function isSameWorkspaceUiSession(
 	session: WorkspaceUiSession,
 	nextSession: WorkspaceUiSession,
@@ -325,15 +250,7 @@ function isSameWorkspaceUiSession(
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
 		session.aiChatModelId === nextSession.aiChatModelId &&
-		isSameStringArray(session.aiContextItemIds, nextSession.aiContextItemIds) &&
 		session.chatSurfaceMode === nextSession.chatSurfaceMode &&
 		session.presentation === nextSession.presentation
-	);
-}
-
-function isSameStringArray(left: readonly string[], right: readonly string[]) {
-	return (
-		left.length === right.length &&
-		left.every((value, index) => value === right[index])
 	);
 }

@@ -56,7 +56,7 @@ export function buildWorkspaceAiContextSnapshot(
 				buildContext,
 			),
 		},
-		markedItems: context.aiContextItemIds.flatMap((itemId, index) => {
+		selectedItems: context.selectedItemIds.flatMap((itemId, index) => {
 			const item = context.itemsById.get(itemId);
 
 			if (!item) {
@@ -70,7 +70,7 @@ export function buildWorkspaceAiContextSnapshot(
 						item,
 					}),
 					availableToAi: true as const,
-					markedForAiContext: true as const,
+					selectedForAiContext: true as const,
 					order: index + 1,
 				},
 			];

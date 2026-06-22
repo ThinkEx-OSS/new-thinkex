@@ -8,7 +8,6 @@ import {
 	type WorkspaceItemViewState,
 } from "#/features/workspaces/model/workspace-item-view-state";
 import {
-	addWorkspaceAiContextItemsSession,
 	closeChatPanelSession,
 	defaultWorkspaceUiSession,
 	dockChatPanelSession,
@@ -18,7 +17,6 @@ import {
 	maximizeItemSession,
 	normalizeWorkspaceUiSession,
 	openChatPanelSession,
-	removeWorkspaceAiContextItemSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
 	setAiChatModelSession,
@@ -55,7 +53,6 @@ type RestorableWorkspacePresentation = Exclude<
 export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
 	aiChatModelId: WorkspaceAiChatModelId;
-	aiContextItemIds: string[];
 	chatSurfaceMode: WorkspaceAiChatSurfaceMode;
 	presentation: WorkspacePresentation;
 };
@@ -74,12 +71,10 @@ type WorkspaceUiState = {
 	ensureWorkspaceSession: (
 		input: EnsureWorkspaceUiSessionInput,
 	) => WorkspaceUiSession;
-	addAiContextItems: (workspaceId: string, itemIds: string[]) => void;
 	clearItemViewState: (workspaceId: string, itemId?: string) => void;
 	closeChatPanel: (workspaceId: string) => void;
 	dockChatPanel: (workspaceId: string) => void;
 	openChatPanel: (workspaceId: string) => void;
-	removeAiContextItem: (workspaceId: string, itemId: string) => void;
 	setActiveAiChatThread: (
 		workspaceId: string,
 		threadId: string | undefined,
@@ -166,12 +161,6 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 
 					return nextSession;
 				},
-				addAiContextItems: (workspaceId, itemIds) =>
-					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) =>
-							addWorkspaceAiContextItemsSession(session, itemIds),
-						),
-					),
 				clearItemViewState: (workspaceId, itemId) =>
 					set((state) => {
 						const currentDetails =
@@ -214,12 +203,6 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 				openChatPanel: (workspaceId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, openChatPanelSession),
-					),
-				removeAiContextItem: (workspaceId, itemId) =>
-					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, (session) =>
-							removeWorkspaceAiContextItemSession(session, itemId),
-						),
 					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>

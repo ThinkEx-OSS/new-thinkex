@@ -62,7 +62,6 @@ interface WorkspaceContentProps {
 		type: WorkspaceItemType;
 		parentId: string | null;
 	}) => void;
-	onAddItemsToAiContext?: (items: WorkspaceItem[]) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 
@@ -75,7 +74,6 @@ export default function WorkspaceContent({
 	items,
 	activeItem,
 	workspace,
-	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: WorkspaceContentProps) {
@@ -108,7 +106,6 @@ export default function WorkspaceContent({
 			activeItem={activeItem}
 			items={items}
 			workspace={workspace}
-			onAddItemsToAiContext={onAddItemsToAiContext}
 			onCreateItem={onCreateItem}
 			onOpenItem={onOpenItem}
 		/>
@@ -120,7 +117,6 @@ function WorkspaceBrowseContent({
 	activeItem,
 	items,
 	workspace,
-	onAddItemsToAiContext,
 	onCreateItem,
 	onOpenItem,
 }: WorkspaceContentProps & {
@@ -167,14 +163,6 @@ function WorkspaceBrowseContent({
 		selectedItemIds,
 		setSelectedItemIds,
 	});
-	const handleAskAi = () => {
-		if (selectedItems.length === 0) {
-			return;
-		}
-
-		onAddItemsToAiContext?.(selectedItems);
-		clearSelection();
-	};
 	const openDeleteSelectedAlert = () => {
 		if (selectedItems.length === 0) {
 			return;
@@ -256,7 +244,6 @@ function WorkspaceBrowseContent({
 				</ContextMenu>
 				<WorkspaceSelectionActionBar
 					selectedCount={selectedItems.length}
-					onAskAi={handleAskAi}
 					onMove={openMoveSelectedDialog}
 					onDelete={openDeleteSelectedAlert}
 					onClear={clearSelection}

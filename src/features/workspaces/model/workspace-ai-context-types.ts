@@ -13,9 +13,9 @@ export type WorkspaceAiContextScope = {
 	itemViewStatesByItemId: Readonly<
 		Record<string, WorkspaceItemViewState | undefined>
 	>;
-	aiContextItemIds: string[];
 	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	presentation: WorkspacePresentation;
+	selectedItemIds: readonly string[];
 	selectedQuotes: WorkspaceSelectedQuote[];
 	tabs: WorkspaceTab[];
 	workspaceId: string;
@@ -31,7 +31,7 @@ export type WorkspaceAiContextSnapshot = {
 		activeTab?: WorkspaceAiContextTabReference;
 		presentation: WorkspaceAiContextPresentationReference;
 	};
-	markedItems: WorkspaceAiContextMarkedItem[];
+	selectedItems: WorkspaceAiContextSelectedItem[];
 	openTabs: WorkspaceAiContextTabReference[];
 	selectedQuotes: WorkspaceAiContextSnapshotSelectedQuote[];
 	contentIncluded: false;
@@ -56,9 +56,9 @@ export type WorkspaceAiContextSnapshotSelectedQuote = {
 	text: string;
 };
 
-export type WorkspaceAiContextMarkedItem = WorkspaceAiContextItemReference & {
+export type WorkspaceAiContextSelectedItem = WorkspaceAiContextItemReference & {
 	availableToAi: true;
-	markedForAiContext: true;
+	selectedForAiContext: true;
 	order: number;
 };
 
@@ -112,7 +112,7 @@ export type WorkspaceAiContextChip = {
 	id: string;
 	item: WorkspaceItem;
 	isActiveVisible: boolean;
-	isMarkedForAiContext: boolean;
+	isSelected: boolean;
 	label: string;
 	path: string;
 	viewStateLabel?: string;

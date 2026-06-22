@@ -14,9 +14,6 @@ type SortableIndices = Map<UniqueIdentifier, number>;
 
 const DEFAULT_GROUP = "__default__";
 
-// Forked from @dnd-kit/dom@0.5.0 OptimisticSortingPlugin.
-// Intentional deviation: dragend rolls back optimistic DOM ordering when a
-// sortable is dropped on a non-sortable target such as the AI context panel.
 export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 	constructor(manager: DragDropManager) {
 		super(manager);

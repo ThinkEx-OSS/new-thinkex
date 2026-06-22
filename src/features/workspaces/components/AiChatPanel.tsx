@@ -24,40 +24,22 @@ import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiCha
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import { getAiChatPanelBodyPhase } from "#/features/workspaces/components/ai-chat/ai-chat-panel-phase";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
-import { useWorkspaceAiContextDropTarget } from "#/features/workspaces/components/useWorkspaceDropTarget";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
-import {
-	WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
-	workspaceAiContextCollisionDetector,
-} from "#/features/workspaces/components/workspace-ai-context-collision";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
-import { interactionHighlightClassName } from "#/lib/design-system-colors";
-import { cn } from "#/lib/utils";
 
 interface AiChatPanelProps {
 	context: WorkspaceAiContextScope;
 }
 
 export default function AiChatPanel({ context }: AiChatPanelProps) {
-	const workspaceDrop = useWorkspaceAiContextDropTarget({
-		workspaceId: context.workspaceId,
-		collisionDetector: workspaceAiContextCollisionDetector,
-		collisionPriority: WORKSPACE_AI_CONTEXT_COLLISION_PRIORITY,
-	});
-
 	return (
 		<AiChatAttachmentDropProvider>
-			<AiChatPanelLayout context={context} workspaceDrop={workspaceDrop} />
+			<AiChatPanelLayout context={context} />
 		</AiChatAttachmentDropProvider>
 	);
 }
 
-function AiChatPanelLayout({
-	context,
-	workspaceDrop,
-}: AiChatPanelProps & {
-	workspaceDrop: ReturnType<typeof useWorkspaceAiContextDropTarget>;
-}) {
+function AiChatPanelLayout({ context }: AiChatPanelProps) {
 	const {
 		activeThreadId,
 		areThreadsReady,
@@ -76,10 +58,6 @@ function AiChatPanelLayout({
 		threads,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
-	const setPanelRef = (element: HTMLElement | null) => {
-		mergePanelRef(element);
-		workspaceDrop.ref(element);
-	};
 
 	useEffect(() => {
 		return scheduleAiChatThinkingLoaderPrewarm();
@@ -93,11 +71,8 @@ function AiChatPanelLayout({
 
 	return (
 		<aside
-			ref={setPanelRef}
-			className={cn(
-				"relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow",
-				workspaceDrop.isDropTarget && interactionHighlightClassName.ringInset,
-			)}
+			ref={mergePanelRef}
+			className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background transition-shadow"
 		>
 			<AiChatPanelToolbar
 				activeThreadId={activeThreadId}

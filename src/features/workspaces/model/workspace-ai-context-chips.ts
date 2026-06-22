@@ -13,7 +13,7 @@ export function getWorkspaceAiContextChips(
 	context: WorkspaceAiContextScope,
 ): WorkspaceAiContextChip[] {
 	const openTabItemIds = getOpenTabItemIds(context.tabs);
-	const markedItemIds = new Set(context.aiContextItemIds);
+	const selectedItemIds = new Set(context.selectedItemIds);
 	const visibleItemIds = getWorkspaceAiContextVisibleItemIds(context);
 	const chips: WorkspaceAiContextChip[] = [];
 	const pushItemChip = (itemId: string) => {
@@ -37,7 +37,7 @@ export function getWorkspaceAiContextChips(
 			id: item.id,
 			item,
 			isActiveVisible: reference.state.activeVisible,
-			isMarkedForAiContext: markedItemIds.has(item.id),
+			isSelected: selectedItemIds.has(item.id),
 			label: reference.name,
 			path: reference.path,
 		});
@@ -47,7 +47,7 @@ export function getWorkspaceAiContextChips(
 		pushItemChip(itemId);
 	}
 
-	for (const itemId of context.aiContextItemIds) {
+	for (const itemId of context.selectedItemIds) {
 		if (!visibleItemIds.has(itemId)) {
 			pushItemChip(itemId);
 		}

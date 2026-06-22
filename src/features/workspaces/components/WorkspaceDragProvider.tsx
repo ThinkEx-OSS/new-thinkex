@@ -39,12 +39,7 @@ const workspaceDragSensors = [
 interface WorkspaceDragProviderProps {
 	children: ReactNode;
 	items: WorkspaceItem[];
-	selectedItemIds?: ReadonlySet<string>;
 	workspaceId: string;
-	onAddItemsToAiContext?: (input: {
-		clearSelection: boolean;
-		itemIds: string[];
-	}) => void;
 	onMoveItems: (input: MoveWorkspaceItemsInput) => void;
 	onWorkspaceDragCommand: (command: WorkspaceDragCommand) => void;
 }
@@ -52,9 +47,7 @@ interface WorkspaceDragProviderProps {
 export default function WorkspaceDragProvider({
 	children,
 	items,
-	selectedItemIds,
 	workspaceId,
-	onAddItemsToAiContext,
 	onMoveItems,
 	onWorkspaceDragCommand,
 }: WorkspaceDragProviderProps) {
@@ -63,7 +56,6 @@ export default function WorkspaceDragProvider({
 		const intent = getWorkspaceDropIntent({
 			event,
 			items,
-			selectedItemIds,
 			workspaceId,
 		});
 
@@ -78,9 +70,6 @@ export default function WorkspaceDragProvider({
 				}
 
 				onWorkspaceDragCommand(intent.command);
-				break;
-			case "add-items-to-ai-context":
-				onAddItemsToAiContext?.(intent.input);
 				break;
 			case "move-items":
 				if (!capabilities.canMutateContent) {
