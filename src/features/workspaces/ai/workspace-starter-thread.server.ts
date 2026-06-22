@@ -17,6 +17,7 @@ export async function ensureWorkspaceStarterThreadForUser(input: {
 			workspaceId: input.workspaceId,
 		});
 	} catch (error) {
+		// Workspace creation should survive AI directory failures; this helper is safe to retry.
 		console.warn("[Workspaces] Failed to create starter chat thread", error);
 	}
 }

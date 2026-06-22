@@ -99,15 +99,15 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			workspaceId,
 		});
 
-		const existing = getActiveThreadMetaRows(this).find(
-			(thread) => thread.workspace_id === workspaceId,
-		);
+		const existing = this._getWorkspaceThreadSummary(workspaceId);
 
 		if (existing) {
-			return mapThreadMetaRow(existing);
+			return existing;
 		}
 
-		return this._createThread({ workspaceId });
+		return this._createThreadRecord(workspaceId, {
+			reuseExistingWorkspaceThread: true,
+		});
 	}
 
 	private async _createThread(input: {
@@ -124,11 +124,27 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			workspaceId,
 		});
 
+		return this._createThreadRecord(workspaceId);
+	}
+
+	private async _createThreadRecord(
+		workspaceId: string,
+		options: { reuseExistingWorkspaceThread?: boolean } = {},
+	): Promise<AIThreadSummary> {
 		const id = nanoid(12);
 		const now = Date.now();
 		const title = getThreadTitle();
 
 		await this.subAgent(AIThread, id);
+
+		if (options.reuseExistingWorkspaceThread) {
+			const existing = this._getWorkspaceThreadSummary(workspaceId);
+
+			if (existing) {
+				await this.deleteSubAgent(AIThread, id);
+				return existing;
+			}
+		}
 
 		try {
 			insertThreadMeta(this, {
@@ -150,6 +166,16 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		}
 
 		return created;
+	}
+
+	private _getWorkspaceThreadSummary(
+		workspaceId: string,
+	): AIThreadSummary | null {
+		const row = getActiveThreadMetaRows(this).find(
+			(thread) => thread.workspace_id === workspaceId,
+		);
+
+		return row ? mapThreadMetaRow(row) : null;
 	}
 
 	@callable()

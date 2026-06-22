@@ -25,13 +25,24 @@ import {
 export async function createWorkspaceForCurrentUser(
 	input: CreateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const userId = await getCurrentUserId();
+	const workspace = await insertWorkspaceForUser(input, userId);
+
+	await ensureWorkspaceStarterThreadForUser({
+		userId,
+		workspaceId: workspace.id,
+	});
+
+	return workspace;
+}
+
+async function insertWorkspaceForUser(
+	input: CreateWorkspaceInput,
+	userId: string,
+): Promise<WorkspaceSummary> {
+	const dbContext = await createDbContext();
 	const workspaceId = input.id ?? crypto.randomUUID();
 	const openedAt = new Date();
-	let workspace: WorkspaceSummary;
 
 	try {
 		const [insertedWorkspaces] = await dbContext.db.batch([
@@ -60,7 +71,7 @@ export async function createWorkspaceForCurrentUser(
 			throw new Error("Workspace was not created.");
 		}
 
-		workspace = mapWorkspaceRow(
+		return mapWorkspaceRow(
 			{
 				...row,
 				lastOpenedAt: openedAt,
@@ -70,13 +81,6 @@ export async function createWorkspaceForCurrentUser(
 	} finally {
 		await dbContext.dispose();
 	}
-
-	await ensureWorkspaceStarterThreadForUser({
-		userId,
-		workspaceId,
-	});
-
-	return workspace;
 }
 
 export async function recordWorkspaceOpenedForCurrentUser(

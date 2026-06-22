@@ -35,6 +35,7 @@ export default function CreateWorkspaceCard({
 				type="button"
 				className="flex w-full cursor-pointer flex-col rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 				disabled={isDisabled}
+				aria-busy={pending}
 				onClick={onCreate}
 			>
 				<div className="flex aspect-[5/2] items-center justify-center">
