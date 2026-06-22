@@ -1,16 +1,22 @@
 import { ChevronDown, Search, Trash2 } from "lucide-react";
 import {
 	type Dispatch,
-	type KeyboardEvent,
-	type PointerEvent,
 	type ReactElement,
 	type SetStateAction,
-	useEffect,
 	useId,
-	useRef,
 	useState,
 } from "react";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
 import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
 import {
@@ -205,18 +211,17 @@ function WorkspaceSettingsDialogContent({
 					</Field>
 				</div>
 
-				{updateError || deleteError ? (
-					<p className="text-destructive text-sm">
-						{deleteError ?? updateError}
-					</p>
+				{updateError ? (
+					<p className="text-destructive text-sm">{updateError}</p>
 				) : null}
 			</FieldGroup>
 
 			<DialogFooter className="items-center sm:justify-between">
 				{canDelete ? (
-					<HoldToDeleteButton
+					<DeleteWorkspaceButton
 						workspace={workspace}
 						disabled={deleteWorkspaceMutation.isPending}
+						errorMessage={deleteError}
 						onDelete={() =>
 							deleteWorkspaceMutation.mutate({
 								workspaceId: workspace.id,
@@ -398,124 +403,57 @@ function WorkspaceColorDropdown({
 	);
 }
 
-function HoldToDeleteButton({
+function DeleteWorkspaceButton({
 	workspace,
 	disabled,
+	errorMessage,
 	onDelete,
 }: {
 	workspace: WorkspaceSummary;
 	disabled: boolean;
+	errorMessage: string | null;
 	onDelete: () => void;
 }) {
-	const holdDurationMs = 1400;
-	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const completedRef = useRef(false);
-	const [isHolding, setIsHolding] = useState(false);
-
-	const resetHold = () => {
-		if (timeoutRef.current !== null) {
-			clearTimeout(timeoutRef.current);
-			timeoutRef.current = null;
-		}
-
-		completedRef.current = false;
-		setIsHolding(false);
-	};
-
-	const completeHold = () => {
-		timeoutRef.current = null;
-		completedRef.current = true;
-		onDelete();
-		setIsHolding(false);
-	};
-
-	const beginHold = () => {
-		if (timeoutRef.current !== null) {
-			return;
-		}
-
-		completedRef.current = false;
-		setIsHolding(true);
-		timeoutRef.current = setTimeout(() => {
-			completedRef.current = true;
-			completeHold();
-		}, holdDurationMs);
-	};
-
-	useEffect(
-		() => () => {
-			if (timeoutRef.current !== null) {
-				clearTimeout(timeoutRef.current);
-			}
-		},
-		[],
-	);
-
-	const startHold = (event: PointerEvent<HTMLButtonElement>) => {
-		if (disabled) {
-			return;
-		}
-
-		event.currentTarget.setPointerCapture(event.pointerId);
-		beginHold();
-	};
-
-	const cancelHold = () => {
-		if (!completedRef.current) {
-			resetHold();
-		}
-	};
-
-	const startKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
-		if (event.key !== " " && event.key !== "Enter") {
-			return;
-		}
-
-		if (disabled || timeoutRef.current !== null) {
-			return;
-		}
-
-		event.preventDefault();
-		beginHold();
-	};
-
-	const cancelKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
-		if (event.key !== " " && event.key !== "Enter") {
-			return;
-		}
-
-		event.preventDefault();
-		cancelHold();
-	};
+	const [confirmOpen, setConfirmOpen] = useState(false);
 
 	return (
-		<button
-			type="button"
-			className={cn(
-				"relative h-9 overflow-hidden rounded-md border border-destructive/30 px-2.5 text-sm font-medium text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:ring-3 focus-visible:ring-destructive/20 disabled:pointer-events-none disabled:opacity-50",
-				isHolding && "bg-destructive/10",
-			)}
-			disabled={disabled}
-			aria-label={`Hold to delete ${workspace.name}`}
-			onPointerDown={startHold}
-			onPointerUp={cancelHold}
-			onPointerCancel={cancelHold}
-			onPointerLeave={cancelHold}
-			onKeyDown={startKeyboardHold}
-			onKeyUp={cancelKeyboardHold}
-		>
-			<span
-				className="absolute inset-y-0 left-0 w-full origin-left bg-destructive/20 transition-transform ease-linear"
-				style={{
-					transform: isHolding ? "scaleX(1)" : "scaleX(0)",
-					transitionDuration: `${holdDurationMs}ms`,
-				}}
-				aria-hidden="true"
-			/>
-			<span className="relative flex items-center gap-1.5">
+		<>
+			<Button
+				type="button"
+				variant="destructive"
+				disabled={disabled}
+				onClick={() => setConfirmOpen(true)}
+			>
 				<Trash2 className="size-4" />
-				{isHolding ? "Keep holding" : "Hold to delete"}
-			</span>
-		</button>
+				Delete workspace
+			</Button>
+			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This cannot be undone. "{workspace.name}" will be permanently
+							deleted.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{errorMessage ? (
+						<p className="text-destructive text-sm">{errorMessage}</p>
+					) : null}
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							disabled={disabled}
+							onClick={(event) => {
+								event.preventDefault();
+								onDelete();
+							}}
+						>
+							Delete workspace
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }
