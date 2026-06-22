@@ -63,13 +63,7 @@ export default function AiChatMessageList({
 }: AiChatMessageListProps) {
 	const { lastAssistantMessageId, status, tailPending } = presentation;
 	const rows = getAiChatListRows(messages, presentation);
-	const hasAssistantContent = rows.some(
-		(row) =>
-			row.type === "message" &&
-			row.message.role === "assistant" &&
-			row.display?.kind === "content" &&
-			row.display.parts.length > 0,
-	);
+	const hasAssistantContent = hasLatestAssistantContent(rows);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
 
@@ -253,6 +247,20 @@ function getAiChatListRows(
 	}
 
 	return rows;
+}
+
+function hasLatestAssistantContent(rows: AiChatListRow[]) {
+	for (let i = rows.length - 1; i >= 0; i -= 1) {
+		const row = rows[i];
+
+		if (row.type !== "message" || row.message.role !== "assistant") {
+			continue;
+		}
+
+		return row.display?.kind === "content" && row.display.parts.length > 0;
+	}
+
+	return false;
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {

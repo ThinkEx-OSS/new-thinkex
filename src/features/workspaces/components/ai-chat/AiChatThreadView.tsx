@@ -54,6 +54,13 @@ export default function AiChatThreadView({
 
 	useEffect(() => {
 		onRecoveringChange?.(presentation.isRecovering);
+		if (!presentation.isRecovering) {
+			return;
+		}
+
+		return () => {
+			onRecoveringChange?.(false);
+		};
 	}, [onRecoveringChange, presentation.isRecovering]);
 
 	const assistantError = getAssistantErrorState({
@@ -138,6 +145,10 @@ function getAssistantErrorState(input: {
 	isBusy: boolean;
 	threadSummary?: AIThreadSummary;
 }): AiChatAssistantErrorState | null {
+	if (input.isBusy) {
+		return null;
+	}
+
 	if (input.hasLiveError) {
 		return {
 			classification: input.threadSummary?.lastErrorClassification,

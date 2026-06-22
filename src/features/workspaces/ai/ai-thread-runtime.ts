@@ -297,6 +297,20 @@ function getWorkspaceAiLanguageModelForGatewayModel(
 	});
 }
 
+function getWorkspaceAiGatewayTransportOptions() {
+	return {
+		caching: "auto" as const,
+		providerTimeouts: {
+			byok: {
+				azure: 8000,
+				bedrock: 8000,
+				openai: 8000,
+				vertex: 8000,
+			},
+		},
+	};
+}
+
 export function getWorkspaceAiGatewayProviderOptions(input?: {
 	modelId?: ReturnType<typeof resolveWorkspaceAiChatModelId>;
 	thread?: AIThreadContext;
@@ -318,15 +332,7 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 
 	return {
 		gateway: {
-			caching: "auto",
-			providerTimeouts: {
-				byok: {
-					azure: 8000,
-					bedrock: 8000,
-					openai: 8000,
-					vertex: 8000,
-				},
-			},
+			...getWorkspaceAiGatewayTransportOptions(),
 			...getWorkspaceAiGatewayRoutingOptions(modelId),
 			tags,
 			user: input?.thread?.userId,
@@ -422,15 +428,7 @@ export async function generateAIThreadTitle(input: {
 		),
 		providerOptions: {
 			gateway: {
-				caching: "auto",
-				providerTimeouts: {
-					byok: {
-						azure: 8000,
-						bedrock: 8000,
-						openai: 8000,
-						vertex: 8000,
-					},
-				},
+				...getWorkspaceAiGatewayTransportOptions(),
 				order: ["google", "vertex"],
 				models: [...AI_THREAD_TITLE_FALLBACK_MODELS],
 				sort: "ttft",

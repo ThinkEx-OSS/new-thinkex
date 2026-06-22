@@ -1,6 +1,8 @@
 import type {
 	ChatErrorClassification,
 	ChatErrorContext,
+	ChatRecoveryConfig,
+	ChatRecoveryExhaustedContext,
 	ChatResponseResult,
 	ChunkContext,
 	PrepareStepContext,
@@ -37,12 +39,6 @@ import type { UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
 const AI_THREAD_CHAT_RECOVERY_NO_PROGRESS_TIMEOUT_MS = 90_000;
 const AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE =
 	"The assistant was interrupted and could not recover this turn.";
-type AIThreadChatRecoveryExhaustedContext = {
-	incidentId?: string;
-	reason?: string;
-	recoveryKind?: string;
-	requestId?: string;
-};
 
 type AIThreadRunSettlement =
 	| {
@@ -59,10 +55,10 @@ type AIThreadRunSettlement =
 export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 	return class AIThread extends Think<Env> {
 		override maxSteps = 5;
-		override chatRecovery = {
+		override chatRecovery: Exclude<ChatRecoveryConfig, boolean> = {
 			noProgressTimeoutMs: AI_THREAD_CHAT_RECOVERY_NO_PROGRESS_TIMEOUT_MS,
 			terminalMessage: AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE,
-			onExhausted: (ctx: AIThreadChatRecoveryExhaustedContext) => {
+			onExhausted: (ctx: ChatRecoveryExhaustedContext) => {
 				console.warn("[AIThread] Chat recovery exhausted", {
 					incidentId: ctx.incidentId,
 					reason: ctx.reason,
@@ -286,9 +282,9 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			settlement: AIThreadRunSettlement,
 			onError: (error: unknown) => void,
 		) {
-			const startedAt = await this._getActiveRunStartedAt();
-
 			try {
+				const startedAt = await this._getActiveRunStartedAt();
+
 				if (startedAt === undefined) {
 					return;
 				}
@@ -324,7 +320,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		}
 
 		private async _handleChatRecoveryExhausted(
-			ctx: AIThreadChatRecoveryExhaustedContext,
+			ctx: ChatRecoveryExhaustedContext,
 		) {
 			await this._settleActiveRun(
 				{
@@ -339,6 +335,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 						{
 							incidentId: ctx.incidentId,
 							reason: ctx.reason,
+							recoveryKind: ctx.recoveryKind,
 							requestId: ctx.requestId,
 						},
 					);

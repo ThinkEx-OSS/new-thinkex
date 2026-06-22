@@ -102,13 +102,15 @@ export function normalizeThreadErrorMessage(error: unknown) {
 }
 
 export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
+	const lastVisibleUpdateAt =
+		row.last_visible_update_at ?? row.last_assistant_message_at;
+
 	return {
 		id: row.id,
 		workspaceId: row.workspace_id,
 		title: row.title,
 		hasUnreadUpdate: Boolean(
-			row.last_visible_update_at &&
-				row.last_visible_update_at > row.last_viewed_at,
+			lastVisibleUpdateAt && lastVisibleUpdateAt > row.last_viewed_at,
 		),
 		isRunning: row.status === "running",
 		lastRunResult: row.last_run_result,
