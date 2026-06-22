@@ -1,3 +1,8 @@
+import type {
+	ChatErrorClassification,
+	ChatErrorContext,
+} from "@cloudflare/think";
+
 import { ensureChatMetaColumns } from "#/features/workspaces/ai/ai-thread-directory-schema";
 import type {
 	AIThreadMetaRow,
@@ -26,8 +31,11 @@ interface FinishThreadRunInput {
 	now: number;
 	startedAt: number;
 	lastAssistantMessageAt: number | null;
+	lastVisibleUpdateAt: number | null;
 	lastViewedAt: number;
 	errorMessage: string | null;
+	errorClassification: ChatErrorClassification | null;
+	errorStage: ChatErrorContext["stage"] | null;
 }
 
 export function ensureChatMetaStore(store: ChatMetaStore) {
@@ -40,10 +48,13 @@ export function ensureChatMetaStore(store: ChatMetaStore) {
 		last_activity_at INTEGER NOT NULL,
 		last_user_message_at INTEGER,
 		last_assistant_message_at INTEGER,
+		last_visible_update_at INTEGER,
 		last_viewed_at INTEGER NOT NULL,
 		last_run_started_at INTEGER,
 		last_run_finished_at INTEGER,
 		last_error_message TEXT,
+		last_error_classification TEXT,
+		last_error_stage TEXT,
 		title_generated_at INTEGER,
 		created_at INTEGER NOT NULL,
 		updated_at INTEGER NOT NULL,
@@ -68,10 +79,13 @@ export function insertThreadMeta(
 			last_activity_at,
 			last_user_message_at,
 			last_assistant_message_at,
+			last_visible_update_at,
 			last_viewed_at,
 			last_run_started_at,
 			last_run_finished_at,
 			last_error_message,
+			last_error_classification,
+			last_error_stage,
 			title_generated_at,
 			created_at,
 			updated_at,
@@ -86,7 +100,10 @@ export function insertThreadMeta(
 			${input.now},
 			NULL,
 			NULL,
+			NULL,
 			${input.now},
+			NULL,
+			NULL,
 			NULL,
 			NULL,
 			NULL,
@@ -135,6 +152,8 @@ export function markThreadRunStarted(
 			last_run_started_at = ${input.now},
 			last_run_finished_at = NULL,
 			last_error_message = NULL,
+			last_error_classification = NULL,
+			last_error_stage = NULL,
 			updated_at = ${input.now}
 		WHERE id = ${input.threadId} AND archived_at IS NULL
 	`;
@@ -151,9 +170,13 @@ export function markThreadRunFinished(
 			last_run_result = ${input.result},
 			last_activity_at = ${input.now},
 			last_assistant_message_at = ${input.lastAssistantMessageAt},
+			last_visible_update_at = ${input.lastVisibleUpdateAt},
 			last_viewed_at = ${input.lastViewedAt},
+			last_run_started_at = NULL,
 			last_run_finished_at = ${input.now},
 			last_error_message = ${input.errorMessage},
+			last_error_classification = ${input.errorClassification},
+			last_error_stage = ${input.errorStage},
 			updated_at = ${input.now}
 		WHERE id = ${input.threadId}
 			AND archived_at IS NULL
@@ -181,7 +204,11 @@ export function markThreadRunFailed(
 	input: {
 		threadId: string;
 		errorMessage: string;
+		errorClassification: ChatErrorClassification | null;
+		errorStage: ChatErrorContext["stage"] | null;
 		now: number;
+		lastViewedAt: number;
+		lastVisibleUpdateAt: number;
 		startedAt?: number;
 	},
 ) {
@@ -192,8 +219,13 @@ export function markThreadRunFailed(
 				status = 'idle',
 				last_run_result = 'error',
 				last_activity_at = ${input.now},
+				last_visible_update_at = ${input.lastVisibleUpdateAt},
+				last_viewed_at = ${input.lastViewedAt},
+				last_run_started_at = NULL,
 				last_run_finished_at = ${input.now},
 				last_error_message = ${input.errorMessage},
+				last_error_classification = ${input.errorClassification},
+				last_error_stage = ${input.errorStage},
 				updated_at = ${input.now}
 			WHERE id = ${input.threadId} AND archived_at IS NULL
 		`;
@@ -206,8 +238,13 @@ export function markThreadRunFailed(
 			status = 'idle',
 			last_run_result = 'error',
 			last_activity_at = ${input.now},
+			last_visible_update_at = ${input.lastVisibleUpdateAt},
+			last_viewed_at = ${input.lastViewedAt},
+			last_run_started_at = NULL,
 			last_run_finished_at = ${input.now},
 			last_error_message = ${input.errorMessage},
+			last_error_classification = ${input.errorClassification},
+			last_error_stage = ${input.errorStage},
 			updated_at = ${input.now}
 		WHERE id = ${input.threadId}
 			AND archived_at IS NULL
@@ -226,10 +263,13 @@ export function getActiveThreadMetaRows(store: ChatMetaStore) {
 			last_activity_at,
 			last_user_message_at,
 			last_assistant_message_at,
+			last_visible_update_at,
 			last_viewed_at,
 			last_run_started_at,
 			last_run_finished_at,
 			last_error_message,
+			last_error_classification,
+			last_error_stage,
 			title_generated_at,
 			created_at,
 			updated_at,
