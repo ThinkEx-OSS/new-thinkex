@@ -1,6 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
-import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth/minimal";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 import * as schema from "#/db/schema";
@@ -49,7 +49,7 @@ function createAuth(
 
 	return betterAuth({
 		database: drizzleAdapter(database, {
-			provider: "pg",
+			provider: "sqlite",
 			schema,
 		}),
 		secret: getAuthSecret(env),

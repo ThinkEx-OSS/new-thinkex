@@ -29,7 +29,7 @@ export default defineConfig(({ command }) => ({
 			importProtection: {
 				behavior: "error",
 				client: {
-					specifiers: ["pg", "drizzle-orm/node-postgres"],
+					specifiers: ["cloudflare:workers", "drizzle-orm/d1"],
 					files: ["src/db/**", "src/lib/auth.server.ts"],
 				},
 			},

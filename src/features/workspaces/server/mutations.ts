@@ -32,8 +32,8 @@ export async function createWorkspaceForCurrentUser(
 	const openedAt = new Date();
 
 	try {
-		const row = await dbContext.db.transaction(async (tx) => {
-			const [workspace] = await tx
+		const [insertedWorkspaces] = await dbContext.db.batch([
+			dbContext.db
 				.insert(workspaces)
 				.values({
 					id: workspaceId,
@@ -42,22 +42,21 @@ export async function createWorkspaceForCurrentUser(
 					icon: DEFAULT_WORKSPACE_ICON,
 					ownerId: userId,
 				})
-				.returning();
-
-			if (!workspace) {
-				throw new Error("Workspace was not created.");
-			}
-
-			await tx.insert(workspaceMembers).values({
+				.returning(),
+			dbContext.db.insert(workspaceMembers).values({
 				id: crypto.randomUUID(),
-				workspaceId: workspace.id,
+				workspaceId,
 				userId,
 				role: "owner",
 				lastOpenedAt: openedAt,
-			});
+			}),
+		]);
 
-			return workspace;
-		});
+		const row = insertedWorkspaces[0];
+
+		if (!row) {
+			throw new Error("Workspace was not created.");
+		}
 
 		return mapWorkspaceRow(
 			{
@@ -136,8 +135,8 @@ export async function updateWorkspaceForCurrentUser(
 			userId,
 		});
 
-		const workspace = await dbContext.db.transaction(async (tx) => {
-			const [updatedWorkspace] = await tx
+		const [updatedWorkspaces, memberships] = await dbContext.db.batch([
+			dbContext.db
 				.update(workspaces)
 				.set({
 					name: input.name,
@@ -150,13 +149,8 @@ export async function updateWorkspaceForCurrentUser(
 						isNull(workspaces.archivedAt),
 					),
 				)
-				.returning();
-
-			if (!updatedWorkspace) {
-				throw new Error("Workspace was not updated.");
-			}
-
-			const [membership] = await tx
+				.returning(),
+			dbContext.db
 				.select({
 					lastOpenedAt: workspaceMembers.lastOpenedAt,
 					role: workspaceMembers.role,
@@ -168,18 +162,26 @@ export async function updateWorkspaceForCurrentUser(
 						eq(workspaceMembers.userId, userId),
 					),
 				)
-				.limit(1);
+				.limit(1),
+		]);
 
-			if (!membership) {
-				throw new Error("Workspace membership was not found.");
-			}
+		const updatedWorkspace = updatedWorkspaces[0];
 
-			return {
-				...updatedWorkspace,
-				lastOpenedAt: membership.lastOpenedAt,
-				membershipRole: membership.role,
-			};
-		});
+		if (!updatedWorkspace) {
+			throw new Error("Workspace was not updated.");
+		}
+
+		const membership = memberships[0];
+
+		if (!membership) {
+			throw new Error("Workspace membership was not found.");
+		}
+
+		const workspace = {
+			...updatedWorkspace,
+			lastOpenedAt: membership.lastOpenedAt,
+			membershipRole: membership.role,
+		};
 
 		return mapWorkspaceRow(workspace, workspace.membershipRole);
 	} finally {

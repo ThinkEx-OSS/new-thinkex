@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import {
 	user,
@@ -12,7 +12,8 @@ import {
 	createInviteToken,
 	getDefaultInviteLinkExpiresAt,
 	isInviteExpired,
-	resolveRoleAfterAccept,
+	workspaceRoleRank,
+	workspaceRoles,
 } from "#/features/workspaces/invites/workspace-invite-rules";
 import { assertCanGrantWorkspaceRole } from "#/features/workspaces/server/permissions";
 import { buildInvitePath } from "#/lib/client-url";
@@ -32,6 +33,22 @@ export interface WorkspaceInvitePreview {
 	role: WorkspaceRole;
 	workspaceId: string;
 	workspaceName: string;
+}
+
+function getAcceptedMembershipRoleSql(inviteRole: WorkspaceRole) {
+	const preservedRoles = workspaceRoles.filter(
+		(role) => workspaceRoleRank[role] >= workspaceRoleRank[inviteRole],
+	);
+
+	return sql<WorkspaceRole>`
+		case
+			when ${workspaceMembers.role} in (${sql.join(
+				preservedRoles.map((role) => sql`${role}`),
+				sql`, `,
+			)}) then ${workspaceMembers.role}
+			else ${inviteRole}
+		end
+	`;
 }
 
 async function getPendingWorkspaceInviteByToken(db: Db, token: string) {
@@ -85,55 +102,47 @@ export async function acceptWorkspaceInvite(
 	// v1: the token is a secret link — any signed-in user may accept; no invitee email check.
 	const invite = await getPendingWorkspaceInviteByToken(db, input.token);
 
-	return db.transaction(async (tx) => {
-		const [existingMembership] = await tx
-			.select({
-				id: workspaceMembers.id,
-				role: workspaceMembers.role,
-			})
-			.from(workspaceMembers)
-			.where(
-				and(
-					eq(workspaceMembers.workspaceId, invite.workspaceId),
-					eq(workspaceMembers.userId, input.userId),
-				),
-			)
-			.limit(1);
-
-		const resolvedRole = existingMembership
-			? resolveRoleAfterAccept(existingMembership.role, invite.role)
-			: invite.role;
-
-		if (existingMembership) {
-			if (resolvedRole !== existingMembership.role) {
-				await tx
-					.update(workspaceMembers)
-					.set({ role: resolvedRole })
-					.where(eq(workspaceMembers.id, existingMembership.id));
-			}
-		} else {
-			await tx.insert(workspaceMembers).values({
-				id: crypto.randomUUID(),
-				workspaceId: invite.workspaceId,
-				userId: input.userId,
-				role: resolvedRole,
-			});
-		}
-
-		// Email invites are single-use (link invites stay pending/multi-use) so the row
-		// leaves the Invited list and the same address can be re-invited later.
-		if (invite.type === "email") {
-			await tx
-				.update(workspaceInvites)
-				.set({ status: "accepted" })
-				.where(eq(workspaceInvites.id, invite.id));
-		}
-
-		return {
-			role: resolvedRole,
+	const acceptMembership = db
+		.insert(workspaceMembers)
+		.values({
+			id: crypto.randomUUID(),
 			workspaceId: invite.workspaceId,
-		};
-	});
+			userId: input.userId,
+			role: invite.role,
+		})
+		.onConflictDoUpdate({
+			target: [workspaceMembers.workspaceId, workspaceMembers.userId],
+			set: {
+				role: getAcceptedMembershipRoleSql(invite.role),
+			},
+		})
+		.returning({
+			role: workspaceMembers.role,
+		});
+
+	const membershipRows =
+		invite.type === "email"
+			? (
+					await db.batch([
+						acceptMembership,
+						db
+							.update(workspaceInvites)
+							.set({ status: "accepted" })
+							.where(eq(workspaceInvites.id, invite.id)),
+					])
+				)[0]
+			: await acceptMembership;
+
+	const membership = membershipRows[0];
+
+	if (!membership) {
+		throw new WorkspaceInviteError("Invite could not be accepted.");
+	}
+
+	return {
+		role: membership.role,
+		workspaceId: invite.workspaceId,
+	};
 }
 
 export async function getOrCreateWorkspaceInviteLink(

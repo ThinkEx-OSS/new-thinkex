@@ -1,35 +1,56 @@
 import { relations, sql } from "drizzle-orm";
 import {
-	boolean,
+	check,
 	index,
-	pgEnum,
-	pgTable,
+	integer,
+	sqliteTable,
 	text,
-	timestamp,
 	uniqueIndex,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 
-export const user = pgTable("user", {
+const WORKSPACE_ROLES = ["owner", "admin", "editor", "viewer"] as const;
+const WORKSPACE_INVITE_TYPES = ["email", "link"] as const;
+const WORKSPACE_INVITE_STATUSES = [
+	"pending",
+	"accepted",
+	"revoked",
+	"expired",
+] as const;
+
+function sqlEnumValues(values: readonly string[]) {
+	return sql.raw(
+		values.map((value) => `'${value.replaceAll("'", "''")}'`).join(", "),
+	);
+}
+
+export const user = sqliteTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
-	emailVerified: boolean("email_verified").default(false).notNull(),
+	emailVerified: integer("email_verified", { mode: "boolean" })
+		.default(false)
+		.notNull(),
 	image: text("image"),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-	updatedAt: timestamp("updated_at")
-		.defaultNow()
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.$defaultFn(() => /* @__PURE__ */ new Date())
+		.notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp" })
+		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.$onUpdate(() => /* @__PURE__ */ new Date())
 		.notNull(),
 });
 
-export const session = pgTable(
+export const session = sqliteTable(
 	"session",
 	{
 		id: text("id").primaryKey(),
-		expiresAt: timestamp("expires_at").notNull(),
+		expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
 		token: text("token").notNull().unique(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 		ipAddress: text("ip_address"),
@@ -41,7 +62,7 @@ export const session = pgTable(
 	(table) => [index("session_userId_idx").on(table.userId)],
 );
 
-export const account = pgTable(
+export const account = sqliteTable(
 	"account",
 	{
 		id: text("id").primaryKey(),
@@ -53,54 +74,44 @@ export const account = pgTable(
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
-		accessTokenExpiresAt: timestamp("access_token_expires_at"),
-		refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+		accessTokenExpiresAt: integer("access_token_expires_at", {
+			mode: "timestamp",
+		}),
+		refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+			mode: "timestamp",
+		}),
 		scope: text("scope"),
 		password: text("password"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
 	(table) => [index("account_userId_idx").on(table.userId)],
 );
 
-export const verification = pgTable(
+export const verification = sqliteTable(
 	"verification",
 	{
 		id: text("id").primaryKey(),
 		identifier: text("identifier").notNull(),
 		value: text("value").notNull(),
-		expiresAt: timestamp("expires_at").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
-			.defaultNow()
+		expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const workspaceRole = pgEnum("workspace_role", [
-	"owner",
-	"admin",
-	"editor",
-	"viewer",
-]);
-
-export const workspaceInviteType = pgEnum("workspace_invite_type", [
-	"email",
-	"link",
-]);
-
-export const workspaceInviteStatus = pgEnum("workspace_invite_status", [
-	"pending",
-	"accepted",
-	"revoked",
-	"expired",
-]);
-
-export const workspaces = pgTable(
+export const workspaces = sqliteTable(
 	"workspaces",
 	{
 		id: text("id").primaryKey(),
@@ -111,12 +122,14 @@ export const workspaces = pgTable(
 		ownerId: text("owner_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
-			.defaultNow()
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
-		archivedAt: timestamp("archived_at"),
+		archivedAt: integer("archived_at", { mode: "timestamp" }),
 	},
 	(table) => [
 		index("workspaces_owner_id_idx").on(table.ownerId),
@@ -124,7 +137,7 @@ export const workspaces = pgTable(
 	],
 );
 
-export const workspaceMembers = pgTable(
+export const workspaceMembers = sqliteTable(
 	"workspace_members",
 	{
 		id: text("id").primaryKey(),
@@ -134,11 +147,13 @@ export const workspaceMembers = pgTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		role: workspaceRole("role").default("viewer").notNull(),
-		lastOpenedAt: timestamp("last_opened_at"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
-			.defaultNow()
+		role: text("role", { enum: WORKSPACE_ROLES }).default("viewer").notNull(),
+		lastOpenedAt: integer("last_opened_at", { mode: "timestamp" }),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
@@ -146,6 +161,10 @@ export const workspaceMembers = pgTable(
 		uniqueIndex("workspace_members_workspace_user_unique").on(
 			table.workspaceId,
 			table.userId,
+		),
+		check(
+			"workspace_members_role_check",
+			sql`${table.role} in (${sqlEnumValues(WORKSPACE_ROLES)})`,
 		),
 		index("workspace_members_user_id_idx").on(table.userId),
 		index("workspace_members_user_last_opened_at_idx").on(
@@ -155,30 +174,46 @@ export const workspaceMembers = pgTable(
 	],
 );
 
-export const workspaceInvites = pgTable(
+export const workspaceInvites = sqliteTable(
 	"workspace_invites",
 	{
 		id: text("id").primaryKey(),
 		workspaceId: text("workspace_id")
 			.notNull()
 			.references(() => workspaces.id, { onDelete: "cascade" }),
-		role: workspaceRole("role").notNull(),
-		type: workspaceInviteType("type").notNull(),
-		status: workspaceInviteStatus("status").default("pending").notNull(),
+		role: text("role", { enum: WORKSPACE_ROLES }).notNull(),
+		type: text("type", { enum: WORKSPACE_INVITE_TYPES }).notNull(),
+		status: text("status", { enum: WORKSPACE_INVITE_STATUSES })
+			.default("pending")
+			.notNull(),
 		email: text("email"),
 		token: text("token"),
 		createdByUserId: text("created_by_user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		expiresAt: timestamp("expires_at"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
-			.defaultNow()
+		expiresAt: integer("expires_at", { mode: "timestamp" }),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => /* @__PURE__ */ new Date())
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
 	(table) => [
 		uniqueIndex("workspace_invites_token_unique").on(table.token),
+		check(
+			"workspace_invites_role_check",
+			sql`${table.role} in (${sqlEnumValues(WORKSPACE_ROLES)})`,
+		),
+		check(
+			"workspace_invites_type_check",
+			sql`${table.type} in (${sqlEnumValues(WORKSPACE_INVITE_TYPES)})`,
+		),
+		check(
+			"workspace_invites_status_check",
+			sql`${table.status} in (${sqlEnumValues(WORKSPACE_INVITE_STATUSES)})`,
+		),
 		uniqueIndex("workspace_invites_pending_link_per_role")
 			.on(table.workspaceId, table.role)
 			.where(sql`${table.type} = 'link' and ${table.status} = 'pending'`),

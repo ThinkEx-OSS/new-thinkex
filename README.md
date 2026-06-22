@@ -1,53 +1,52 @@
 # ThinkEx
 
-TanStack Start — React, Better Auth, Drizzle/Postgres, Cloudflare Workers.
+TanStack Start — React, Better Auth, Drizzle, D1, Cloudflare Workers.
 
 ```bash
 pnpm install && pnpm dev   # http://localhost:3000 via Infisical
 ```
 
-Local DB: Infisical `DATABASE_URL` (Neon dev). Production Worker: Hyperdrive → PlanetScale `main`.
+App database: Cloudflare D1. Local dev uses the local D1 binding automatically; deployments use the `DB` binding in `wrangler.jsonc`.
 
 ### Database layout
 
 | Environment | Provider | How the app connects |
 |-------------|----------|----------------------|
-| Local dev | Neon dev branch | Infisical **dev** `DATABASE_URL` |
-| Production Worker | PlanetScale `main` | `HYPERDRIVE` binding in `wrangler.jsonc` |
-| Prod migrations (CLI only) | PlanetScale `main` | Infisical **prod** `DATABASE_URL` (direct Postgres URL, not Hyperdrive) |
+| Local dev | local D1 | auto-wired `DB` binding via `pnpm dev` |
+| Deployment | remote D1 | `DB` binding in `wrangler.jsonc` |
 
-Add PlanetScale’s direct connection string to Infisical **prod** as `DATABASE_URL` for `pnpm db:migrate:prod` only. The deployed Worker connects via the `HYPERDRIVE` binding (not Infisical `DATABASE_URL`).
+Fresh setup: create the remote database once with `wrangler d1 create new-thinkex`, then paste the returned `database_id` into `wrangler.jsonc`.
 
 ### Schema changes (Drizzle)
 
-One shared `drizzle/` migration folder. Generate once, apply the same SQL files to both databases ([Drizzle multi-env guidance](https://orm.drizzle.team/docs/drizzle-kit-migrate#multiple-configuration-files-in-one-project)).
+One shared `drizzle/` migration folder. Generate SQL with Drizzle, then apply it to local and remote D1 with Wrangler.
 
 ```bash
 # 1. Edit src/db/schema.ts, then generate SQL (review the new file in drizzle/)
 pnpm db:generate
 pnpm db:check
 
-# 2. Apply to Neon dev, test locally
-pnpm db:migrate
+# 2. Apply locally, then test with pnpm dev
+pnpm db:migrate:local
 
-# 3. Apply to PlanetScale prod, then deploy
-pnpm db:migrate:prod
+# 3. Apply to remote D1, then deploy
+pnpm db:migrate
 pnpm deploy
 ```
 
 Rules:
 
-- Use **`db:generate` + `db:migrate`** everywhere. Do not use `db:push` on prod (bypasses migration history).
-- Always migrate **dev first**, then **prod**, then deploy.
+- Use **`db:generate` + Wrangler migrations**. Do not hand-edit remote schema.
+- Always migrate **local first**, then **remote**, then deploy.
 - Commit the `drizzle/` folder with schema changes.
-- First-time PlanetScale setup: run `pnpm db:migrate:prod` once to bootstrap `main`.
+- The app no longer needs `DATABASE_URL` for its primary database.
 
 ```bash
 pnpm check && pnpm typecheck && pnpm build && pnpm deploy
-pnpm db:generate && pnpm db:migrate && pnpm db:migrate:prod
+pnpm db:generate && pnpm db:migrate:local && pnpm db:migrate
 ```
 
-Secrets: Infisical locally; sync to Cloudflare for prod (`wrangler.jsonc`). `.infisical.json` is safe to commit.
+Secrets still come from Infisical locally and Cloudflare bindings in production. `.infisical.json` is safe to commit.
 
 ### Workspace invite email (Cloudflare Email Service)
 

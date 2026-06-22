@@ -3,7 +3,7 @@
 // Runtime types generated with workerd@1.20260617.1 2026-03-24 nodejs_compat
 interface __BaseEnv_Env {
 	WORKSPACE_KERNEL_FILES: R2Bucket;
-	HYPERDRIVE: Hyperdrive;
+	DB: D1Database;
 	EMAIL: SendEmail;
 	BROWSER: BrowserRun;
 	AI: Ai;

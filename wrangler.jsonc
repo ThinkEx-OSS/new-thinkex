@@ -80,10 +80,12 @@
 			"new_sqlite_classes": ["DocumentSession"]
 		}
 	],
-	"hyperdrive": [
+	"d1_databases": [
 		{
-			"binding": "HYPERDRIVE",
-			"id": "f3b9639f7c774895bee33bd57c1cd668"
+			"binding": "DB",
+			"database_name": "new-thinkex",
+			"database_id": "f963e219-cbfa-4832-b261-cf8364f7b533",
+			"migrations_dir": "drizzle"
 		}
 	]
 }
