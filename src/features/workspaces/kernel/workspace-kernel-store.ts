@@ -183,7 +183,14 @@ export class WorkspaceKernelStore {
 			? normalizeWorkspaceItemName(input.requestedName, "")
 			: "";
 
-		if (input.onNameConflict === "error" && requestedName) {
+		if (input.onNameConflict === "error") {
+			if (!requestedName) {
+				throw new WorkspaceKernelNameConflictError(
+					input.itemId,
+					input.requestedName,
+				);
+			}
+
 			if (existingNames.includes(requestedName)) {
 				throw new WorkspaceKernelNameConflictError(input.itemId, requestedName);
 			}

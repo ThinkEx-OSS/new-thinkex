@@ -40,11 +40,17 @@ export async function editWorkspaceKernelAiItem(
 	});
 
 	if (resolution.status === "failed") {
-		return failedWorkspaceAiEditResult(resolution.failure.code);
+		return failedWorkspaceAiEditResult(
+			resolution.failure.code,
+			input.edits.length,
+		);
 	}
 
 	if (resolution.item.type !== "document") {
-		return failedWorkspaceAiEditResult("unsupported_item_type");
+		return failedWorkspaceAiEditResult(
+			"unsupported_item_type",
+			input.edits.length,
+		);
 	}
 
 	const documentSession = await getDocumentSession({
@@ -71,11 +77,15 @@ async function getDocumentSession(input: {
 
 function failedWorkspaceAiEditResult(
 	code: EditWorkspaceKernelAiFailureCode,
+	editCount: number,
 ): DocumentSessionApplyMarkdownEditsResult {
 	return {
 		applied: 0,
-		failed: 1,
-		failures: [{ code, index: 0 }],
+		failed: editCount,
+		failures: Array.from({ length: editCount }, (_, index) => ({
+			code,
+			index,
+		})),
 		status: "failed",
 	};
 }
