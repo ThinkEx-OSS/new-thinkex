@@ -1,4 +1,3 @@
-import { FolderOpen } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -6,13 +5,6 @@ import {
 	ContextMenuContent,
 	ContextMenuTrigger,
 } from "#/components/ui/context-menu";
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyMedia,
-	EmptyTitle,
-} from "#/components/ui/empty";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
 import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import {
@@ -21,6 +13,7 @@ import {
 } from "#/features/workspaces/components/useWorkspaceMarqueeSelection";
 import { useWorkspaceSelection } from "#/features/workspaces/components/useWorkspaceSelection";
 import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/components/WorkspaceCreateMenu";
+import WorkspaceEmptyBrowseState from "#/features/workspaces/components/WorkspaceEmptyBrowseState";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import WorkspaceFileViewer from "#/features/workspaces/components/WorkspaceFileViewer";
@@ -220,19 +213,12 @@ function WorkspaceBrowseContent({
 							/>
 						) : null}
 						{children.length === 0 ? (
-							<Empty className="border border-dashed bg-muted/20">
-								<EmptyHeader>
-									<EmptyMedia variant="icon">
-										<FolderOpen />
-									</EmptyMedia>
-									<EmptyTitle>No items in this folder</EmptyTitle>
-									<EmptyDescription>
-										{capabilities.canMutateContent
-											? "Items you add here will appear in this workspace view."
-											: "This folder is empty."}
-									</EmptyDescription>
-								</EmptyHeader>
-							</Empty>
+							<WorkspaceEmptyBrowseState
+								workspace={workspace}
+								parentId={parentId}
+								isRoot={parentId === null}
+								onCreateItem={onCreateItem}
+							/>
 						) : null}
 					</ContextMenuTrigger>
 					<ContextMenuContent className="w-56">
