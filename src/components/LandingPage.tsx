@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import SiteFooter from "#/components/SiteFooter";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
+import { CyclingWord } from "#/components/ui/cycling-word";
 import { smoothScrollViewportTop } from "#/lib/smooth-scroll";
 
 export default function LandingPage() {
@@ -70,7 +71,10 @@ export default function LandingPage() {
 						<div className="mx-auto w-full max-w-7xl px-6 py-16 lg:py-20">
 							<div className="max-w-3xl">
 								<h1 className="text-5xl font-medium tracking-tight text-balance sm:text-6xl lg:text-7xl">
-									The workspace that thinks with you
+									The workspace built for how you{" "}
+									<CyclingWord
+										words={["think", "study", "research", "create"]}
+									/>
 								</h1>
 								<p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
 									ThinkEx lets you organize and work across documents, media,
