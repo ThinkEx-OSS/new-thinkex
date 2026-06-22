@@ -21,6 +21,7 @@ const workspaceSkeletonCardKeys = [
 export default function WorkspaceShellSkeleton() {
 	return (
 		<WorkspaceChatLayout
+			chatSurfaceMode="hidden"
 			chrome={<WorkspaceSkeletonChrome />}
 			content={<WorkspaceSkeletonContent />}
 			chatPanel={<WorkspaceSkeletonAiChatPanel />}

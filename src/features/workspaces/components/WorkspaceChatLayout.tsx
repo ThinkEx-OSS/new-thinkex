@@ -30,7 +30,7 @@ export default function WorkspaceChatLayout({
 	chrome,
 	content,
 	chatPanel,
-	chatSurfaceMode = "docked",
+	chatSurfaceMode = "hidden",
 	onCloseDockedChat,
 }: WorkspaceChatLayoutProps) {
 	const chatPanelRef = useRef<PanelImperativeHandle | null>(null);
@@ -54,6 +54,9 @@ export default function WorkspaceChatLayout({
 	const handleChatResize: OnPanelResize | undefined =
 		onCloseDockedChat && chatPanel
 			? () => {
+					// onResize also fires for our imperative collapse() call after mode
+					// flips to hidden/fullscreen, so only treat a collapsed docked rail as
+					// a user-driven close action.
 					if (!isDockedChat || !chatPanelRef.current?.isCollapsed()) {
 						return;
 					}

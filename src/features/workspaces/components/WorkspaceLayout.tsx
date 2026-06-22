@@ -155,6 +155,7 @@ export function WorkspaceShell({
 	if (!persistedStoresHydrated || !session || !activeTab) {
 		return (
 			<WorkspaceChatLayout
+				chatSurfaceMode="hidden"
 				chrome={<WorkspaceSkeletonChrome />}
 				content={<WorkspaceSkeletonContent />}
 				chatPanel={<WorkspaceSkeletonAiChatPanel />}
