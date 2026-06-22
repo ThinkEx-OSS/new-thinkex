@@ -116,7 +116,10 @@ export default function AiChatModelPicker({
 					{groups.map((group) => (
 						<div key={group.id} className="mb-1 last:mb-0">
 							<div className="flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">
-								<ProviderLogo provider={group.id} className="size-3.5" />
+								<ProviderLogo
+									provider={group.id}
+									className="size-3.5 opacity-65"
+								/>
 								{group.label}
 							</div>
 							{group.models.map((model) => {
@@ -163,7 +166,10 @@ function ModelDetails({ model }: { model: WorkspaceAiChatModel }) {
 					<Waypoints className="size-4 shrink-0 text-muted-foreground" />
 				) : null}
 				{model.provider !== "auto" ? (
-					<ProviderLogo provider={model.provider} className="size-4 shrink-0" />
+					<ProviderLogo
+						provider={model.provider}
+						className="size-4 shrink-0 opacity-65"
+					/>
 				) : null}
 				<div className="min-w-0">
 					<div className="font-medium text-foreground">{model.name}</div>
