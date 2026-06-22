@@ -117,7 +117,7 @@ export async function deleteWorkspaceKernelAiItems(
 		failed,
 		status: getWorkspaceKernelAiBatchStatus({
 			failedCount: failed.length,
-			succeededCount: input.paths.length - failed.length,
+			succeededCount: deleted.length,
 		}),
 	};
 }

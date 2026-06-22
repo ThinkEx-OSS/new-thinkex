@@ -5,6 +5,7 @@ import {
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
+	buildWorkspaceKernelItemPathIndex,
 	getParentWorkspacePath,
 	joinWorkspaceItemPath,
 } from "#/features/workspaces/kernel/workspace-kernel-paths";
@@ -127,9 +128,24 @@ export async function renameWorkspaceKernelAiItems(
 		});
 	}
 
+	const finalPaths =
+		renamed.length > 0
+			? buildWorkspaceKernelItemPathIndex(
+					(await context.kernel.getPage()).items,
+				)
+			: new Map<string, string>();
+
 	return {
 		failed,
-		renamed,
+		renamed: renamed.map((item) => ({
+			...item,
+			path:
+				finalPaths.get(item.item.id) ??
+				joinWorkspaceItemPath(
+					getParentWorkspacePath(item.previousPath),
+					item.item.title,
+				),
+		})),
 		status: getWorkspaceKernelAiBatchStatus({
 			failedCount: failed.length,
 			succeededCount: renamed.length,
