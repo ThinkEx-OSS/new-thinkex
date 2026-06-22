@@ -222,6 +222,7 @@ function WorkspaceSettingsDialogContent({
 						workspace={workspace}
 						disabled={deleteWorkspaceMutation.isPending}
 						errorMessage={deleteError}
+						onResetError={() => deleteWorkspaceMutation.reset()}
 						onDelete={() =>
 							deleteWorkspaceMutation.mutate({
 								workspaceId: workspace.id,
@@ -407,14 +408,29 @@ function DeleteWorkspaceButton({
 	workspace,
 	disabled,
 	errorMessage,
+	onResetError,
 	onDelete,
 }: {
 	workspace: WorkspaceSummary;
 	disabled: boolean;
 	errorMessage: string | null;
+	onResetError: () => void;
 	onDelete: () => void;
 }) {
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (disabled) {
+			return;
+		}
+
+		if (nextOpen) {
+			onResetError();
+		} else if (errorMessage) {
+			onResetError();
+		}
+
+		setConfirmOpen(nextOpen);
+	};
 
 	return (
 		<>
@@ -422,12 +438,12 @@ function DeleteWorkspaceButton({
 				type="button"
 				variant="destructive"
 				disabled={disabled}
-				onClick={() => setConfirmOpen(true)}
+				onClick={() => handleOpenChange(true)}
 			>
 				<Trash2 className="size-4" />
 				Delete workspace
 			</Button>
-			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+			<AlertDialog open={confirmOpen} onOpenChange={handleOpenChange}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete workspace?</AlertDialogTitle>
@@ -440,7 +456,7 @@ function DeleteWorkspaceButton({
 						<p className="text-destructive text-sm">{errorMessage}</p>
 					) : null}
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							variant="destructive"
 							disabled={disabled}
