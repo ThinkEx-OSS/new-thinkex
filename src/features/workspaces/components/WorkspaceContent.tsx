@@ -33,6 +33,7 @@ import {
 import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
+import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type {
@@ -50,6 +51,7 @@ import {
 	isWorkspaceItemView,
 } from "#/features/workspaces/model/view";
 import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file";
+import { eventTargetsPreventTypeToFocus } from "#/lib/keyboard-event-target";
 import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
 import { cn } from "#/lib/utils";
 
@@ -177,6 +179,33 @@ function WorkspaceBrowseContent({
 
 		setMoveSelectedDialogOpen(true);
 	};
+
+	const handleDeleteSelectedHotkey = (event: KeyboardEvent) => {
+		if (
+			selectedItems.length === 0 ||
+			deleteSelectedAlertOpen ||
+			moveSelectedDialogOpen ||
+			eventTargetsPreventTypeToFocus(event)
+		) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openDeleteSelectedAlert();
+	};
+
+	useWorkspacePaneHotkey("Backspace", handleDeleteSelectedHotkey, {
+		ignoreInputs: true,
+		preventDefault: false,
+		stopPropagation: false,
+	});
+
+	useWorkspacePaneHotkey("Delete", handleDeleteSelectedHotkey, {
+		ignoreInputs: true,
+		preventDefault: false,
+		stopPropagation: false,
+	});
 
 	return (
 		<>
