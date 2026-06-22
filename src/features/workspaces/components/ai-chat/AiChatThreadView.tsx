@@ -15,6 +15,7 @@ import { aiChatComposerRailClassName } from "#/features/workspaces/components/ai
 import type {
 	AiChatModelId,
 	AiChatSendMessage,
+	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChat } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChat";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
@@ -65,7 +66,7 @@ export default function AiChatThreadView({
 
 	const assistantError = getAssistantErrorState({
 		hasLiveError: Boolean(error),
-		isBusy: presentation.isBusy,
+		inputStatus,
 		threadSummary,
 	});
 
@@ -142,10 +143,10 @@ function getChatMessageFromPrompt(
 
 function getAssistantErrorState(input: {
 	hasLiveError: boolean;
-	isBusy: boolean;
+	inputStatus: AiChatStatus;
 	threadSummary?: AIThreadSummary;
 }): AiChatAssistantErrorState | null {
-	if (input.isBusy) {
+	if (input.inputStatus !== "ready") {
 		return null;
 	}
 
@@ -156,7 +157,7 @@ function getAssistantErrorState(input: {
 		};
 	}
 
-	if (!input.isBusy && input.threadSummary?.lastRunResult === "error") {
+	if (input.threadSummary?.lastRunResult === "error") {
 		return {
 			classification: input.threadSummary.lastErrorClassification,
 			stage: input.threadSummary.lastErrorStage,

@@ -413,7 +413,6 @@ function getVercelAiGatewayApiKey(env: Env) {
 export async function generateAIThreadTitle(input: {
 	env: Env;
 	messages: UIMessage[];
-	sessionAffinity: string;
 }) {
 	const firstUserMessage = getFirstUserMessageText(input.messages);
 
