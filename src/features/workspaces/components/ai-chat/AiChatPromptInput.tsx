@@ -10,22 +10,16 @@ import {
 	PromptInputFooter,
 	PromptInputHeader,
 	type PromptInputMessage,
-	PromptInputSelect,
-	PromptInputSelectContent,
-	PromptInputSelectGroup,
-	PromptInputSelectItem,
-	PromptInputSelectTrigger,
 	PromptInputTextarea,
 	PromptInputTools,
 	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
-import { buttonVariants } from "#/components/ui/button";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
+import AiChatModelPicker from "#/features/workspaces/components/ai-chat/AiChatModelPicker";
 import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
 import {
-	AI_CHAT_MODELS,
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
 } from "#/features/workspaces/components/ai-chat/constants";
@@ -53,8 +47,6 @@ const PROMPT_INPUT_GROUP_CLASSNAME =
 const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
 const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
 const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
-const COMPOSER_MODEL_TRIGGER_CLASSNAME =
-	"h-8.5 w-auto border-none px-2 font-normal text-muted-foreground shadow-none hover:text-foreground focus-visible:ring-0 aria-expanded:text-foreground dark:bg-transparent [&>svg:last-child]:hidden";
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
 			const module = await import(
@@ -118,13 +110,6 @@ export default function AiChatPromptInput({
 	const clearDraftFiles = useWorkspaceAiComposerDraftStore(
 		(state) => state.clearFiles,
 	);
-	const selectedModel =
-		AI_CHAT_MODELS.find((item) => item.id === modelId) ??
-		AI_CHAT_MODELS.find(
-			(item) => item.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-		) ??
-		AI_CHAT_MODELS[0];
-
 	useTypeToFocusPrompt({
 		enabled: composerReady,
 		setInput,
@@ -196,29 +181,10 @@ export default function AiChatPromptInput({
 					<PromptInputTools>
 						<AiChatAttachmentButton />
 
-						<PromptInputSelect
-							onValueChange={(value) => handleModelChange(String(value))}
-							value={modelId}
-						>
-							<PromptInputSelectTrigger
-								size="sm"
-								className={cn(
-									buttonVariants({ variant: "ghost", size: "sm" }),
-									COMPOSER_MODEL_TRIGGER_CLASSNAME,
-								)}
-							>
-								{selectedModel.name}
-							</PromptInputSelectTrigger>
-							<PromptInputSelectContent side="top" align="end">
-								<PromptInputSelectGroup>
-									{AI_CHAT_MODELS.map((item) => (
-										<PromptInputSelectItem key={item.id} value={item.id}>
-											{item.name}
-										</PromptInputSelectItem>
-									))}
-								</PromptInputSelectGroup>
-							</PromptInputSelectContent>
-						</PromptInputSelect>
+						<AiChatModelPicker
+							modelId={modelId}
+							onModelChange={handleModelChange}
+						/>
 
 						{import.meta.env.DEV && getInspectorSnapshot ? (
 							<WorkspaceToolbarIconButton
