@@ -40,38 +40,26 @@ type WorkspaceAiProviderOptions = NonNullable<
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
 const AI_THREAD_CODEMODE_TOOL_NAME = "codemode_execute";
 
-const AI_THREAD_CODEMODE_DESCRIPTION = [
-	"Execute JavaScript in a private assistant sandbox with access to ThinkEx connector SDKs.",
-	"",
-	"## Boundaries",
-	"",
-	"- `state.*` is the private assistant sandbox filesystem for scratch files and directories only. Nothing in `state.*` becomes a real ThinkEx workspace item unless you explicitly call a real workspace mutation tool through `tools.*`.",
-	"- `tools.*` exposes actual ThinkEx workspace, web, and time operations.",
-	"",
-	"## Workflow",
-	"",
-	'1. `const matches = await codemode.search("short intent phrase");`',
-	"2. `const docs = await codemode.describe(matches.results[0].path);`",
-	"3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)` or `await state.readFile(args)`.",
-	"",
-	"## Rules",
-	"",
-	"- The only globals are `state`, `tools`, and `codemode` plus standard JavaScript. There is no `host`, `fs`, `require`, `process`, or Node.js API.",
-	"- Never guess method names. If you have not used a connector method in this conversation, run a discovery pass first.",
-	'- `codemode.describe("tools.workspace_list_items")` or the path returned by search gives TypeScript type declarations.',
-	"- Use `codemode.step(name, fn)` for nondeterministic work outside connector calls.",
-	"- Some methods may require approval. If the run pauses, tell the user what is pending and wait. Do not re-issue the code.",
-	"- Keep non-connector logic deterministic so resume can replay it.",
-	"- Do not use `fetch`. Use connector SDKs.",
-	"",
-	"## Snippets",
-	"",
-	'- `codemode.run("name", input)` runs a saved snippet.',
-	"- If a script may be reused later, write it as `async (input) => { ... }`.",
-].join("\n");
-
 const AI_THREAD_VIEW_ONLY_WORKSPACE_LINE =
 	"- Workspace access: view-only. Do not create, rename, edit, move, or delete workspace items.";
+const WORKSPACE_FS_METHOD_NAMES = [
+	"readFile",
+	"readFileBytes",
+	"writeFile",
+	"writeFileBytes",
+	"appendFile",
+	"exists",
+	"stat",
+	"lstat",
+	"mkdir",
+	"readDir",
+	"rm",
+	"cp",
+	"mv",
+	"symlink",
+	"readlink",
+	"glob",
+] as const satisfies readonly (keyof WorkspaceFsLike)[];
 
 export function createAIThreadTools(input: {
 	env: Env;
@@ -89,6 +77,13 @@ export function createAIThreadTurnToolConfig(input: {
 	canMutate: boolean;
 }) {
 	const toolCatalog = createAIThreadToolCatalog(input);
+	const workspaceFs = isWorkspaceFsLike(input.workspace)
+		? input.workspace
+		: undefined;
+	const state = workspaceFs
+		? createWorkspaceStateBackend(workspaceFs)
+		: undefined;
+	const hasState = workspaceFs !== undefined;
 
 	return {
 		activeTools: toolCatalog.getActiveToolNames(input.canMutate),
@@ -96,10 +91,10 @@ export function createAIThreadTurnToolConfig(input: {
 			codemode_execute: createExecuteTool({
 				ctx: input.ctx,
 				loader: input.env.LOADER,
-				state: createWorkspaceStateBackend(input.workspace as WorkspaceFsLike),
+				state,
 				tools: toolCatalog.getCodemodeTools(input.canMutate),
 				name: AI_THREAD_CODEMODE_TOOL_NAME,
-				description: AI_THREAD_CODEMODE_DESCRIPTION,
+				description: getAIThreadCodemodeDescription(hasState),
 			}),
 		} satisfies ToolSet,
 	};
@@ -250,6 +245,60 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 	}
 
 	return sandboxTools;
+}
+
+function getAIThreadCodemodeDescription(hasState: boolean) {
+	const stateLine = hasState
+		? "- `state.*` is the private assistant sandbox filesystem for scratch files and directories only. Nothing in `state.*` becomes a real ThinkEx workspace item unless you explicitly call a real workspace mutation tool through `tools.*`."
+		: "- `state.*` is unavailable in this runtime. Use `tools.*` for real workspace and web operations.";
+	const workflowLine = hasState
+		? "3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)` or `await state.readFile(args)`."
+		: "3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)`.";
+	const globalsLine = hasState
+		? "- The only globals are `state`, `tools`, and `codemode` plus standard JavaScript. There is no `host`, `fs`, `require`, `process`, or Node.js API."
+		: "- The only globals are `tools` and `codemode` plus standard JavaScript. There is no `host`, `fs`, `require`, `process`, or Node.js API.";
+
+	return [
+		"Execute JavaScript in a private assistant sandbox with access to ThinkEx connector SDKs.",
+		"",
+		"## Boundaries",
+		"",
+		stateLine,
+		"- `tools.*` exposes actual ThinkEx workspace, web, and time operations.",
+		"",
+		"## Workflow",
+		"",
+		'1. `const matches = await codemode.search("short intent phrase");`',
+		"2. `const docs = await codemode.describe(matches.results[0].path);`",
+		workflowLine,
+		"",
+		"## Rules",
+		"",
+		globalsLine,
+		"- Never guess method names. If you have not used a connector method in this conversation, run a discovery pass first.",
+		'- `codemode.describe("tools.workspace_list_items")` or the path returned by search gives TypeScript type declarations.',
+		"- Use `codemode.step(name, fn)` for nondeterministic work outside connector calls.",
+		"- Some methods may require approval. If the run pauses, tell the user what is pending and wait. Do not re-issue the code.",
+		"- Keep non-connector logic deterministic so resume can replay it.",
+		"- Do not use `fetch`. Use connector SDKs.",
+		"",
+		"## Snippets",
+		"",
+		'- `codemode.run("name", input)` runs a saved snippet.',
+		"- If a script may be reused later, write it as `async (input) => { ... }`.",
+	].join("\n");
+}
+
+function isWorkspaceFsLike(
+	workspace: WorkspaceLike,
+): workspace is WorkspaceFsLike {
+	const candidate = workspace as Partial<
+		Record<(typeof WORKSPACE_FS_METHOD_NAMES)[number], unknown>
+	>;
+
+	return WORKSPACE_FS_METHOD_NAMES.every(
+		(method) => typeof candidate[method] === "function",
+	);
 }
 
 function addAIThreadToolEntry(
