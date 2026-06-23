@@ -186,6 +186,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					workspace: this.workspace,
 					getThreadContext: () => this._getThreadContext(),
 					canMutate: thread.promptScope.canMutate,
+					timeZone: getBodyString(ctx.body, "timeZone"),
 				}),
 			};
 		}

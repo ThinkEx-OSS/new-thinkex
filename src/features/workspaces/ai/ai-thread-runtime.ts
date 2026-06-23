@@ -65,6 +65,7 @@ export function createAIThreadTools(input: {
 	env: Env;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
+	timeZone?: string;
 }): ToolSet {
 	return createAIThreadToolCatalog(input).tools;
 }
@@ -75,6 +76,7 @@ export function createAIThreadTurnToolConfig(input: {
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	canMutate: boolean;
+	timeZone?: string;
 }) {
 	const toolCatalog = createAIThreadToolCatalog(input);
 	const workspaceFs = isWorkspaceFsLike(input.workspace)
@@ -185,10 +187,13 @@ function createAIThreadToolCatalog(input: {
 	env: Env;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
+	timeZone?: string;
 }) {
 	const sandboxTools = createSandboxTools(input.workspace);
 	const webTools = createAIThreadWebTools(input.env);
-	const timeTools = createAIThreadTimeTools();
+	const timeTools = createAIThreadTimeTools({
+		defaultTimeZone: input.timeZone,
+	});
 	const workspaceTools = createAIThreadWorkspaceTools({
 		getThreadContext: input.getThreadContext,
 	});
@@ -529,7 +534,7 @@ export function getAIThreadSoulPrompt() {
 		"Do not claim to have read actual workspace content unless an actual workspace tool returned it.",
 		"Resolve this/it/that/here/above/the page/this file from current-turn context: selected quotes, then active view, then active/open items. Ask briefly before changes if ambiguous.",
 		"Web tools read public web content only.",
-		"Use time_get_current for exact UTC now and time_calculate_relative for UTC date filters; the current turn includes user-local date/time context.",
+		"Use time_get_current for exact time in UTC or a requested IANA time zone, and time_calculate_relative for exact relative time math; the current turn includes user-local date/time context.",
 		"Use memory only for durable preferences, workspace goals, thread goals, and decisions. Do not store transient requests, secrets, full documents, item bodies, or actual workspace state.",
 		"Follow tool descriptions and schemas. Keep answers concise, concrete, and action-oriented.",
 	]

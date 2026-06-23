@@ -2,15 +2,34 @@ import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
 
-const emptyToolInputExamples = [{ input: {} }];
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const timeGetCurrentInputExamples = [
+	{ input: {} },
+	{ input: { time_zone: "America/New_York" } },
+];
 const timeCalculateRelativeInputExamples = [
 	{
 		input: {
 			days_ago: 7,
 		},
 	},
+	{
+		input: {
+			days_ago: 1,
+			time_zone: "America/Los_Angeles",
+		},
+	},
 ];
 const MAX_RELATIVE_OFFSET = 10_000;
+
+const timeZoneFieldSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.optional()
+	.describe(
+		"Optional IANA time zone like America/New_York. Defaults to the user's current time zone when available, otherwise UTC.",
+	);
 
 function createRelativeOffsetFieldSchema(description: string) {
 	return z
@@ -22,6 +41,10 @@ function createRelativeOffsetFieldSchema(description: string) {
 		.describe(description);
 }
 
+const timeGetCurrentInputSchema = z.object({
+	time_zone: timeZoneFieldSchema,
+});
+
 const timeRelativeOffsetInputSchema = z.object({
 	days_ago: createRelativeOffsetFieldSchema("Days to subtract from now."),
 	months_ago: createRelativeOffsetFieldSchema(
@@ -31,15 +54,22 @@ const timeRelativeOffsetInputSchema = z.object({
 	years_ago: createRelativeOffsetFieldSchema(
 		"Calendar years to subtract from now.",
 	),
+	time_zone: timeZoneFieldSchema,
 });
 
-const timeRelativeOffsetOutputSchema = timeRelativeOffsetInputSchema.required();
+const timeRelativeOffsetOutputSchema = z.object({
+	days_ago: z.number().int(),
+	months_ago: z.number().int(),
+	weeks_ago: z.number().int(),
+	years_ago: z.number().int(),
+});
 
 const timePointOutputSchema = z.object({
 	timestampSeconds: z.number().int(),
 	timestampMilliseconds: z.number().int(),
 	isoUtc: z.string(),
-	timeZone: z.literal("UTC"),
+	timeZone: z.string(),
+	localDateTime: z.string(),
 });
 
 const timeCalculateRelativeOutputSchema = z.object({
@@ -48,32 +78,44 @@ const timeCalculateRelativeOutputSchema = z.object({
 	offset: timeRelativeOffsetOutputSchema,
 });
 
-export function createAIThreadTimeTools(): ToolSet {
+export function createAIThreadTimeTools(options?: {
+	defaultTimeZone?: string;
+}): ToolSet {
 	return {
 		time_get_current: tool({
 			description:
-				"Return the current UTC time as ISO 8601 plus Unix timestamps.",
-			inputSchema: z.object({}),
-			inputExamples: emptyToolInputExamples,
+				"Return the current time as exact UTC timestamps plus formatted local time in a requested IANA time zone. Defaults to the user's current time zone when available.",
+			inputSchema: timeGetCurrentInputSchema,
+			inputExamples: timeGetCurrentInputExamples,
 			outputSchema: timePointOutputSchema,
 			strict: true,
-			execute: async () => formatTimeToolResult(new Date()),
+			execute: async (input) => {
+				const timeZone = resolveTimeZone(
+					input.time_zone,
+					options?.defaultTimeZone,
+				);
+				return formatTimeToolResult(new Date(), timeZone);
+			},
 		}),
 		time_calculate_relative: tool({
 			description:
-				"Return a past UTC time relative to now. Use for date filters like yesterday, last week, or 3 months ago.",
+				"Return a past exact time relative to now and formatted local time in an optional IANA time zone. Use for exact date filters like 24 hours ago, 7 days ago, or 3 months ago.",
 			inputSchema: timeRelativeOffsetInputSchema,
 			inputExamples: timeCalculateRelativeInputExamples,
 			outputSchema: timeCalculateRelativeOutputSchema,
 			strict: true,
 			execute: async (input) => {
 				const offset = normalizeRelativeOffset(input);
+				const timeZone = resolveTimeZone(
+					input.time_zone,
+					options?.defaultTimeZone,
+				);
 				const current = new Date();
 				const calculated = subtractRelativeUtcDate(current, offset);
 
 				return {
-					current: formatTimeToolResult(current),
-					calculated: formatTimeToolResult(calculated),
+					current: formatTimeToolResult(current, timeZone),
+					calculated: formatTimeToolResult(calculated, timeZone),
 					offset,
 				};
 			},
@@ -81,7 +123,7 @@ export function createAIThreadTimeTools(): ToolSet {
 	};
 }
 
-function formatTimeToolResult(date: Date) {
+function formatTimeToolResult(date: Date, timeZone: string) {
 	const timestampMilliseconds = date.getTime();
 
 	if (!Number.isFinite(timestampMilliseconds)) {
@@ -92,7 +134,8 @@ function formatTimeToolResult(date: Date) {
 		timestampSeconds: Math.floor(timestampMilliseconds / 1000),
 		timestampMilliseconds,
 		isoUtc: date.toISOString(),
-		timeZone: "UTC",
+		timeZone,
+		localDateTime: getTimeToolDateTimeFormatter(timeZone).format(date),
 	};
 }
 
@@ -118,7 +161,7 @@ function subtractRelativeUtcDate(
 	);
 	const days = input.days_ago + input.weeks_ago * 7;
 
-	return new Date(calendarAdjusted.getTime() - days * 24 * 60 * 60 * 1000);
+	return new Date(calendarAdjusted.getTime() - days * DAY_IN_MILLISECONDS);
 }
 
 function subtractUtcCalendarMonthsAndYears(
@@ -157,4 +200,46 @@ function subtractUtcCalendarMonthsAndYears(
 			date.getUTCMilliseconds(),
 		),
 	);
+}
+
+const timeToolDateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function resolveTimeZone(value: string | undefined, fallback?: string) {
+	return validateTimeZone(value) ?? validateTimeZone(fallback) ?? "UTC";
+}
+
+function validateTimeZone(value: string | undefined) {
+	if (!value?.trim()) {
+		return null;
+	}
+
+	try {
+		new Intl.DateTimeFormat("en-US", { timeZone: value });
+		return value;
+	} catch {
+		return null;
+	}
+}
+
+function getTimeToolDateTimeFormatter(timeZone: string) {
+	const cachedFormatter = timeToolDateTimeFormatters.get(timeZone);
+
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat("en-US", {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		second: "2-digit",
+		timeZone,
+		timeZoneName: "short",
+	});
+	timeToolDateTimeFormatters.set(timeZone, formatter);
+
+	return formatter;
 }
