@@ -1,4 +1,4 @@
-export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "gemini";
+export const DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID = "auto";
 
 // Provider grouping order for the model picker. Models are listed under their
 // provider in this order.
@@ -24,9 +24,9 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 	{
 		id: "auto",
 		name: "Auto",
-		// ThinkEx's own "let us pick for you" option. Routed to a strong general
-		// model under the hood (Kimi K2.6 for now); the slug can change without
-		// affecting the user-facing choice.
+		// ThinkEx's own "let us pick for you" option. For now "Auto" is just Kimi
+		// under the hood until we build or adopt a real router; the slug can
+		// change without affecting the user-facing choice.
 		gatewayModel: "moonshotai/kimi-k2.6",
 		provider: "auto",
 		tagline: "Picks a good fit for you",
