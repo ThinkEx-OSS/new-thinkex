@@ -1,5 +1,4 @@
 import {
-	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
@@ -36,18 +35,13 @@ export interface CreateWorkspaceKernelAiFailure {
 }
 
 export interface CreateWorkspaceKernelAiCreatedItem {
-	item: {
-		id: string;
-		title: string;
-		type: WorkspaceItemSummary["type"];
-	};
 	path: string;
+	type: "document" | "folder";
 }
 
 export interface CreateWorkspaceKernelAiItemsResult {
-	created: CreateWorkspaceKernelAiCreatedItem[];
+	items: CreateWorkspaceKernelAiCreatedItem[];
 	failed: CreateWorkspaceKernelAiFailure[];
-	status: ReturnType<typeof getWorkspaceKernelAiBatchStatus>;
 }
 
 type WorkspaceKernelAiCreatePathResolution =
@@ -80,7 +74,7 @@ export async function createWorkspaceKernelAiItems(
 		userId: input.userId,
 		workspaceId: input.workspaceId,
 	});
-	const created: CreateWorkspaceKernelAiCreatedItem[] = [];
+	const items: CreateWorkspaceKernelAiCreatedItem[] = [];
 	const failed: CreateWorkspaceKernelAiFailure[] = [];
 	const createdItemsByPath = new Map<
 		string,
@@ -158,13 +152,9 @@ export async function createWorkspaceKernelAiItems(
 			);
 		}
 
-		created.push({
-			item: {
-				id: command.result.id,
-				title: command.result.name,
-				type: command.result.type,
-			},
+		items.push({
 			path: createdPath,
+			type: itemInput.type,
 		});
 		createdItemsByPath.set(createdPath, {
 			id: command.result.id,
@@ -173,12 +163,8 @@ export async function createWorkspaceKernelAiItems(
 	}
 
 	return {
-		created,
+		items,
 		failed,
-		status: getWorkspaceKernelAiBatchStatus({
-			failedCount: failed.length,
-			succeededCount: created.length,
-		}),
 	};
 }
 

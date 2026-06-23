@@ -1,5 +1,4 @@
 import {
-	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 	resolveWorkspaceKernelAiPath,
@@ -19,7 +18,7 @@ export interface MoveWorkspaceKernelAiItemsInput {
 	workspaceId: string;
 }
 
-export interface MoveWorkspaceKernelAiDestinationFailure {
+interface MoveWorkspaceKernelAiDestinationFailure {
 	code:
 		| "destination_path_not_absolute"
 		| "destination_path_not_folder"
@@ -32,28 +31,25 @@ export interface MoveWorkspaceKernelAiFailure {
 		| "already_in_destination"
 		| "cannot_move_into_descendant"
 		| "cannot_move_root"
+		| "destination_path_not_absolute"
+		| "destination_path_not_folder"
+		| "destination_path_not_found"
 		| "path_already_exists"
 		| "path_not_absolute"
 		| "path_not_found";
-	index: number;
+	index?: number;
 	path: string;
 }
 
 export interface MoveWorkspaceKernelAiMovedItem {
-	item: {
-		id: string;
-		title: string;
-		type: WorkspaceItemSummary["type"];
-	};
 	path: string;
 	previousPath: string;
+	type: WorkspaceItemSummary["type"];
 }
 
 export interface MoveWorkspaceKernelAiItemsResult {
-	destinationFailure?: MoveWorkspaceKernelAiDestinationFailure;
 	failed: MoveWorkspaceKernelAiFailure[];
-	moved: MoveWorkspaceKernelAiMovedItem[];
-	status: ReturnType<typeof getWorkspaceKernelAiBatchStatus>;
+	items: MoveWorkspaceKernelAiMovedItem[];
 }
 
 export async function moveWorkspaceKernelAiItems(
@@ -71,13 +67,13 @@ export async function moveWorkspaceKernelAiItems(
 
 	if (destination.status === "failed") {
 		return {
-			destinationFailure: destination.failure,
-			failed: [],
-			moved: [],
-			status: getWorkspaceKernelAiBatchStatus({
-				failedCount: input.paths.length,
-				succeededCount: 0,
-			}),
+			failed: [
+				{
+					code: destination.failure.code,
+					path: destination.failure.path,
+				},
+			],
+			items: [],
 		};
 	}
 
@@ -135,15 +131,11 @@ export async function moveWorkspaceKernelAiItems(
 	if (resolvedItems.length === 0) {
 		return {
 			failed,
-			moved: [],
-			status: getWorkspaceKernelAiBatchStatus({
-				failedCount: failed.length,
-				succeededCount: 0,
-			}),
+			items: [],
 		};
 	}
 
-	const moved: MoveWorkspaceKernelAiMovedItem[] = [];
+	const items: MoveWorkspaceKernelAiMovedItem[] = [];
 	const pendingItems = [...resolvedItems];
 
 	while (pendingItems.length > 0) {
@@ -163,7 +155,7 @@ export async function moveWorkspaceKernelAiItems(
 				}
 			}
 
-			moved.push(
+			items.push(
 				...command.result.map((item) => {
 					const resolved = pendingItemsById.get(item.id);
 
@@ -174,13 +166,9 @@ export async function moveWorkspaceKernelAiItems(
 					}
 
 					return {
-						item: {
-							id: item.id,
-							title: item.name,
-							type: item.type,
-						},
 						path: joinWorkspaceItemPath(destination.path, item.name),
 						previousPath: resolved.path,
+						type: item.type,
 					};
 				}),
 			);
@@ -209,11 +197,7 @@ export async function moveWorkspaceKernelAiItems(
 
 	return {
 		failed,
-		moved,
-		status: getWorkspaceKernelAiBatchStatus({
-			failedCount: failed.length,
-			succeededCount: input.paths.length - failed.length,
-		}),
+		items,
 	};
 }
 

@@ -165,7 +165,10 @@ function ToolDefinitionCard({ tool }: { tool: AIInspectorToolDefinitionView }) {
 				{tool.description ? (
 					<p className="text-muted-foreground text-sm">{tool.description}</p>
 				) : null}
-				<JsonBlock value={tool.inputSchema} />
+				<JsonDisclosure title="Input schema" value={tool.inputSchema} />
+				{tool.outputSchema ? (
+					<JsonDisclosure title="Output schema" value={tool.outputSchema} />
+				) : null}
 			</div>
 		</details>
 	);

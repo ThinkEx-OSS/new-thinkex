@@ -17,6 +17,7 @@ export function parseToolDefinitions(
 			name: getString(record.name) ?? "unknownTool",
 			description: getString(record.description),
 			inputSchema: record.inputSchema,
+			outputSchema: record.outputSchema,
 			metadata: record.metadata,
 			strict: record.strict,
 			title: getString(record.title),

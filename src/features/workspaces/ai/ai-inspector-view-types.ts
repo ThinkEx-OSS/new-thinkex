@@ -4,6 +4,7 @@ export interface AIInspectorToolDefinitionView {
 	name: string;
 	description?: string;
 	inputSchema?: unknown;
+	outputSchema?: unknown;
 	metadata?: unknown;
 	strict?: unknown;
 	title?: string;

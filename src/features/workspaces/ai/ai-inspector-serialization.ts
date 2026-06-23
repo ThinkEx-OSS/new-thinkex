@@ -47,6 +47,7 @@ export async function summarizeInspectorTools(tools: unknown) {
 				name,
 				description: record.description,
 				inputSchema: await getInspectableSchema(record.inputSchema),
+				outputSchema: await getInspectableSchema(record.outputSchema),
 				inputExamples: record.inputExamples,
 				metadata: record.metadata,
 				strict: record.strict,

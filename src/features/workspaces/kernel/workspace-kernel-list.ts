@@ -6,23 +6,29 @@ import {
 	buildWorkspaceKernelTree,
 	joinWorkspacePathSegment,
 	resolveWorkspaceKernelCwd,
+	WorkspaceKernelPathError,
+	type WorkspaceKernelPathErrorCode,
 } from "#/features/workspaces/kernel/workspace-kernel-paths";
 
 export interface ListWorkspaceKernelItemsResult {
 	path: string;
-	count: number;
 	more: boolean;
-	entries: WorkspaceKernelListEntry[];
+	items: ListWorkspaceKernelItem[];
+	failed: ListWorkspaceKernelItemsFailure[];
 }
 
-export interface WorkspaceKernelListEntry {
+export interface ListWorkspaceKernelItem {
 	path: string;
-	title: string;
 	type: WorkspaceItemType;
 }
 
-interface WorkspaceKernelListEntries {
-	entries: WorkspaceKernelListEntry[];
+export interface ListWorkspaceKernelItemsFailure {
+	code: WorkspaceKernelPathErrorCode;
+	path: string;
+}
+
+interface WorkspaceKernelListedItems {
+	items: ListWorkspaceKernelItem[];
 	truncated: boolean;
 }
 
@@ -32,26 +38,46 @@ export function listWorkspaceKernelPageItems(input: {
 	recursive?: boolean;
 	limit?: number;
 }): ListWorkspaceKernelItemsResult {
-	const tree = buildWorkspaceKernelTree(input.items);
-	const cwd = resolveWorkspaceKernelCwd(input.path ?? "/", tree);
-	const boundedLimit = clampWorkspaceListLimit(input.limit);
-	const listing = collectWorkspaceKernelListEntries({
-		parentId: cwd.parentId,
-		basePath: cwd.path,
-		recursive: input.recursive ?? false,
-		limit: boundedLimit,
-		childrenByParentId: tree.childrenByParentId,
-	});
+	try {
+		const tree = buildWorkspaceKernelTree(input.items);
+		const cwd = resolveWorkspaceKernelCwd(input.path ?? "/", tree);
+		const boundedLimit = clampWorkspaceListLimit(input.limit);
+		const listing = collectWorkspaceKernelListItems({
+			parentId: cwd.parentId,
+			basePath: cwd.path,
+			recursive: input.recursive ?? false,
+			limit: boundedLimit,
+			childrenByParentId: tree.childrenByParentId,
+		});
 
-	return {
-		path: cwd.path,
-		count: listing.entries.length,
-		more: listing.truncated,
-		entries: listing.entries,
-	};
+		return {
+			path: cwd.path,
+			more: listing.truncated,
+			items: listing.items,
+			failed: [],
+		};
+	} catch (error) {
+		if (error instanceof WorkspaceKernelPathError) {
+			const path = input.path?.trim() || "/";
+
+			return {
+				path,
+				more: false,
+				items: [],
+				failed: [
+					{
+						code: error.code,
+						path,
+					},
+				],
+			};
+		}
+
+		throw error;
+	}
 }
 
-function collectWorkspaceKernelListEntries({
+function collectWorkspaceKernelListItems({
 	parentId,
 	basePath,
 	recursive,
@@ -63,8 +89,8 @@ function collectWorkspaceKernelListEntries({
 	recursive: boolean;
 	limit: number;
 	childrenByParentId: Map<string | null, WorkspaceItemSummary[]>;
-}): WorkspaceKernelListEntries {
-	const entries: WorkspaceKernelListEntry[] = [];
+}): WorkspaceKernelListedItems {
+	const items: ListWorkspaceKernelItem[] = [];
 	const visitedIds = new Set<string>();
 	let truncated = false;
 
@@ -84,13 +110,13 @@ function collectWorkspaceKernelListEntries({
 				child.name,
 			);
 
-			if (entries.length >= limit) {
+			if (items.length >= limit) {
 				truncated = true;
 				return false;
 			}
 
-			entries.push(
-				formatWorkspaceKernelListEntry({
+			items.push(
+				formatWorkspaceKernelListItem({
 					item: child,
 					path: toAbsoluteWorkspaceListPath(basePath, relativePath),
 				}),
@@ -107,18 +133,17 @@ function collectWorkspaceKernelListEntries({
 	visit(parentId, "");
 
 	return {
-		entries,
+		items,
 		truncated,
 	};
 }
 
-function formatWorkspaceKernelListEntry(input: {
+function formatWorkspaceKernelListItem(input: {
 	item: WorkspaceItemSummary;
 	path: string;
-}): WorkspaceKernelListEntry {
+}): ListWorkspaceKernelItem {
 	return {
 		path: input.path,
-		title: input.item.name,
 		type: input.item.type,
 	};
 }

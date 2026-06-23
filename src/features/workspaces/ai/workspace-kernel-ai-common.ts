@@ -24,8 +24,6 @@ export interface WorkspaceKernelAiPageContext {
 	tree: WorkspaceKernelTree;
 }
 
-export type WorkspaceKernelAiBatchStatus = "completed" | "failed" | "partial";
-
 export type WorkspaceKernelAiPathResolution =
 	| {
 			code: "path_not_absolute";
@@ -171,19 +169,4 @@ export function resolveWorkspaceKernelAiExistingItemPath<
 	}
 
 	return resolution;
-}
-
-export function getWorkspaceKernelAiBatchStatus(input: {
-	failedCount: number;
-	succeededCount: number;
-}): WorkspaceKernelAiBatchStatus {
-	if (input.succeededCount === 0) {
-		return "failed";
-	}
-
-	if (input.failedCount === 0) {
-		return "completed";
-	}
-
-	return "partial";
 }
