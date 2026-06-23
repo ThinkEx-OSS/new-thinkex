@@ -39,6 +39,7 @@
 		"@base-ui/react": "^1.6.0",
 		"@cf-wasm/photon": "^0.3.6",
 		"@cloudflare/ai-chat": "^0.8.6",
+		"@cloudflare/codemode": "^0.4.1",
 		"@cloudflare/shell": "^0.4.0",
 		"@cloudflare/think": "^0.10.0",
 		"@cloudflare/vite-plugin": "^1.42.0",

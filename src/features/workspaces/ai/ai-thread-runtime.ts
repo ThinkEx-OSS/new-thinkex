@@ -1,3 +1,8 @@
+import {
+	createWorkspaceStateBackend,
+	type WorkspaceFsLike,
+} from "@cloudflare/shell";
+import { createExecuteTool } from "@cloudflare/think/tools/execute";
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
@@ -5,10 +10,8 @@ import {
 	addToolInputExamplesMiddleware,
 	createGateway,
 	generateText,
-	tool,
 	wrapLanguageModel,
 } from "ai";
-import { z } from "zod";
 
 import type {
 	AIThreadContext,
@@ -19,6 +22,7 @@ import {
 	getWorkspaceAiChatModel,
 	type resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
+import { createAIThreadTimeTools } from "#/features/workspaces/ai/time-tools";
 import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { createAIThreadWorkspaceTools } from "#/features/workspaces/ai/workspace-tools";
 import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/workspace-ai-context";
@@ -33,135 +37,38 @@ type WorkspaceAiProviderOptions = NonNullable<
 	Parameters<typeof generateText>[0]["providerOptions"]
 >;
 
-const timeCalculateRelativeInputSchema = z.object({
-	days_ago: z
-		.number()
-		.int()
-		.min(0)
-		.optional()
-		.describe("Days to subtract from now."),
-	months_ago: z
-		.number()
-		.int()
-		.min(0)
-		.optional()
-		.describe("Calendar months to subtract from now."),
-	weeks_ago: z
-		.number()
-		.int()
-		.min(0)
-		.optional()
-		.describe("Weeks to subtract from now."),
-	years_ago: z
-		.number()
-		.int()
-		.min(0)
-		.optional()
-		.describe("Calendar years to subtract from now."),
-});
-
-const emptyToolInputExamples = [{ input: {} }];
-const timeCalculateRelativeInputExamples = [
-	{
-		input: {
-			days_ago: 7,
-		},
-	},
-];
-const sandboxReadFileInputExamples = [
-	{
-		input: {
-			path: "/scratch/notes.md",
-			offset: 1,
-			limit: 40,
-		},
-	},
-];
-const sandboxWriteFileInputExamples = [
-	{
-		input: {
-			path: "/scratch/notes.md",
-			content: "# Scratch Notes\nTemporary assistant work goes here.",
-		},
-	},
-];
-const sandboxEditFileInputExamples = [
-	{
-		input: {
-			path: "/scratch/notes.md",
-			old_string: "# Scratch Notes",
-			new_string: "# Updated Scratch Notes",
-		},
-	},
-];
-const sandboxListFilesInputExamples = [
-	{
-		input: {
-			path: "/",
-			limit: 50,
-		},
-	},
-];
-const sandboxFindFilesInputExamples = [
-	{
-		input: {
-			pattern: "**/*.md",
-		},
-	},
-];
-const sandboxSearchFilesInputExamples = [
-	{
-		input: {
-			query: "TODO",
-			include: "**/*.md",
-			fixedString: true,
-		},
-	},
-];
-const sandboxDeleteFileInputExamples = [
-	{
-		input: {
-			path: "/scratch/notes.md",
-		},
-	},
-];
-
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
+const AI_THREAD_CODEMODE_TOOL_NAME = "codemode_execute";
 
-const AI_THREAD_WORKSPACE_MUTATION_TOOLS = [
-	"workspace_create_items",
-	"workspace_move_items",
-	"workspace_delete_items",
-	"workspace_rename_items",
-	"workspace_edit_item",
-] as const;
-
-const AI_THREAD_BASE_ACTIVE_TOOLS = [
-	"sandbox_read_file",
-	"sandbox_write_file",
-	"sandbox_edit_file",
-	"sandbox_list_files",
-	"sandbox_find_files",
-	"sandbox_search_files",
-	"sandbox_delete_file",
-	"web_markdown",
-	"web_links",
-	"workspace_list_items",
-	"workspace_read_items",
-	"time_get_current",
-	"time_calculate_relative",
-] as const;
-
-export const AI_THREAD_ACTIVE_TOOLS = [
-	...AI_THREAD_BASE_ACTIVE_TOOLS,
-	...AI_THREAD_WORKSPACE_MUTATION_TOOLS,
-] as const;
-
-export function getAIThreadActiveTools(canMutate: boolean) {
-	return canMutate
-		? [...AI_THREAD_ACTIVE_TOOLS]
-		: [...AI_THREAD_BASE_ACTIVE_TOOLS];
-}
+const AI_THREAD_CODEMODE_DESCRIPTION = [
+	"Execute JavaScript in a private assistant sandbox with access to ThinkEx connector SDKs.",
+	"",
+	"## Boundaries",
+	"",
+	"- `state.*` is the private assistant sandbox filesystem for scratch files and directories only. Nothing in `state.*` becomes a real ThinkEx workspace item unless you explicitly call a real workspace mutation tool through `tools.*`.",
+	"- `tools.*` exposes actual ThinkEx workspace, web, and time operations.",
+	"",
+	"## Workflow",
+	"",
+	'1. `const matches = await codemode.search("short intent phrase");`',
+	"2. `const docs = await codemode.describe(matches.results[0].path);`",
+	"3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)` or `await state.readFile(args)`.",
+	"",
+	"## Rules",
+	"",
+	"- The only globals are `state`, `tools`, and `codemode` plus standard JavaScript. There is no `host`, `fs`, `require`, `process`, or Node.js API.",
+	"- Never guess method names. If you have not used a connector method in this conversation, run a discovery pass first.",
+	'- `codemode.describe("tools.workspace_list_items")` or the path returned by search gives TypeScript type declarations.',
+	"- Use `codemode.step(name, fn)` for nondeterministic work outside connector calls.",
+	"- Some methods may require approval. If the run pauses, tell the user what is pending and wait. Do not re-issue the code.",
+	"- Keep non-connector logic deterministic so resume can replay it.",
+	"- Do not use `fetch`. Use connector SDKs.",
+	"",
+	"## Snippets",
+	"",
+	'- `codemode.run("name", input)` runs a saved snippet.',
+	"- If a script may be reused later, write it as `async (input) => { ... }`.",
+].join("\n");
 
 const AI_THREAD_VIEW_ONLY_WORKSPACE_LINE =
 	"- Workspace access: view-only. Do not create, rename, edit, move, or delete workspace items.";
@@ -171,103 +78,208 @@ export function createAIThreadTools(input: {
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 }): ToolSet {
-	const sandboxTools = createSandboxTools(input.workspace);
+	return createAIThreadToolCatalog(input).tools;
+}
+
+export function createAIThreadTurnToolConfig(input: {
+	env: Env;
+	ctx: DurableObjectState;
+	workspace: WorkspaceLike;
+	getThreadContext: () => Promise<AIThreadContext | null>;
+	canMutate: boolean;
+}) {
+	const toolCatalog = createAIThreadToolCatalog(input);
 
 	return {
-		...sandboxTools,
-		...createAIThreadWebTools(input.env),
-		...createAIThreadTimeTools(),
-		...createAIThreadWorkspaceTools({
-			getThreadContext: input.getThreadContext,
-		}),
+		activeTools: toolCatalog.getActiveToolNames(input.canMutate),
+		tools: {
+			codemode_execute: createExecuteTool({
+				ctx: input.ctx,
+				loader: input.env.LOADER,
+				state: createWorkspaceStateBackend(input.workspace as WorkspaceFsLike),
+				tools: toolCatalog.getCodemodeTools(input.canMutate),
+				name: AI_THREAD_CODEMODE_TOOL_NAME,
+				description: AI_THREAD_CODEMODE_DESCRIPTION,
+			}),
+		} satisfies ToolSet,
 	};
 }
 
-function createAIThreadTimeTools(): ToolSet {
-	return {
-		time_get_current: tool({
-			description:
-				"Return the current UTC time as ISO 8601 plus Unix timestamps.",
-			inputSchema: z.object({}),
-			inputExamples: emptyToolInputExamples,
-			execute: async () => formatTimeToolResult(new Date()),
-		}),
-		time_calculate_relative: tool({
-			description:
-				"Return a past UTC time relative to now. Use for date filters like yesterday, last week, or 3 months ago.",
-			inputSchema: timeCalculateRelativeInputSchema,
-			inputExamples: timeCalculateRelativeInputExamples,
-			execute: async ({ days_ago, months_ago, weeks_ago, years_ago }) => {
-				const current = new Date();
-				const calculated = subtractRelativeUtcDate(current, {
-					daysAgo: days_ago ?? 0,
-					monthsAgo: months_ago ?? 0,
-					weeksAgo: weeks_ago ?? 0,
-					yearsAgo: years_ago ?? 0,
-				});
+interface AIThreadToolEntry {
+	codemode: boolean;
+	mutating: boolean;
+	name: string;
+	tool: ToolSet[string];
+}
 
-				return {
-					current: formatTimeToolResult(current),
-					calculated: formatTimeToolResult(calculated),
-					offset: {
-						days_ago: days_ago ?? 0,
-						months_ago: months_ago ?? 0,
-						weeks_ago: weeks_ago ?? 0,
-						years_ago: years_ago ?? 0,
-					},
-				};
-			},
-		}),
+type AIThreadToolDescriptor = Omit<AIThreadToolEntry, "tool">;
+
+const AI_THREAD_SANDBOX_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "sandbox_bash",
+		codemode: false,
+		mutating: false,
+	},
+];
+
+const AI_THREAD_WEB_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "web_markdown",
+		codemode: true,
+		mutating: false,
+	},
+	{
+		name: "web_links",
+		codemode: true,
+		mutating: false,
+	},
+];
+
+const AI_THREAD_TIME_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "time_get_current",
+		codemode: true,
+		mutating: false,
+	},
+	{
+		name: "time_calculate_relative",
+		codemode: true,
+		mutating: false,
+	},
+];
+
+const AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "workspace_list_items",
+		codemode: true,
+		mutating: false,
+	},
+	{
+		name: "workspace_read_items",
+		codemode: true,
+		mutating: false,
+	},
+	{
+		name: "workspace_create_items",
+		codemode: true,
+		mutating: true,
+	},
+	{
+		name: "workspace_move_items",
+		codemode: true,
+		mutating: true,
+	},
+	{
+		name: "workspace_delete_items",
+		codemode: true,
+		mutating: true,
+	},
+	{
+		name: "workspace_rename_items",
+		codemode: true,
+		mutating: true,
+	},
+	{
+		name: "workspace_edit_item",
+		codemode: true,
+		mutating: true,
+	},
+];
+
+function createAIThreadToolCatalog(input: {
+	env: Env;
+	workspace: WorkspaceLike;
+	getThreadContext: () => Promise<AIThreadContext | null>;
+}) {
+	const sandboxTools = createSandboxTools(input.workspace);
+	const webTools = createAIThreadWebTools(input.env);
+	const timeTools = createAIThreadTimeTools();
+	const workspaceTools = createAIThreadWorkspaceTools({
+		getThreadContext: input.getThreadContext,
+	});
+	const entries: AIThreadToolEntry[] = [];
+
+	addAIThreadToolEntries(
+		entries,
+		sandboxTools,
+		AI_THREAD_SANDBOX_TOOL_DESCRIPTORS,
+	);
+	addAIThreadToolEntries(entries, webTools, AI_THREAD_WEB_TOOL_DESCRIPTORS);
+	addAIThreadToolEntries(entries, timeTools, AI_THREAD_TIME_TOOL_DESCRIPTORS);
+	addAIThreadToolEntries(
+		entries,
+		workspaceTools,
+		AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS,
+	);
+
+	return {
+		tools: createAIThreadToolSet(entries),
+		getActiveToolNames(canMutate: boolean) {
+			const names = entries
+				.filter((entry) => canMutate || !entry.mutating)
+				.map((entry) => entry.name);
+
+			return names.includes("sandbox_bash")
+				? [
+						"sandbox_bash",
+						AI_THREAD_CODEMODE_TOOL_NAME,
+						...names.filter((name) => name !== "sandbox_bash"),
+					]
+				: [AI_THREAD_CODEMODE_TOOL_NAME, ...names];
+		},
+		getCodemodeTools(canMutate: boolean) {
+			return createAIThreadToolSet(
+				entries.filter(
+					(entry) => entry.codemode && (canMutate || !entry.mutating),
+				),
+			);
+		},
 	};
 }
 
 function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 	const tools = createWorkspaceTools(workspace);
+	const sandboxTools: ToolSet = {};
 
-	return {
-		sandbox_read_file: {
-			...tools.read,
+	if (tools.bash) {
+		sandboxTools.sandbox_bash = {
+			...tools.bash,
 			description:
-				"Read a private sandbox file. This does not read the actual ThinkEx workspace.",
-			inputExamples: sandboxReadFileInputExamples,
-		},
-		sandbox_write_file: {
-			...tools.write,
-			description:
-				"Write a private sandbox file for assistant scratch work. This does not change actual ThinkEx workspace items.",
-			inputExamples: sandboxWriteFileInputExamples,
-		},
-		sandbox_edit_file: {
-			...tools.edit,
-			description:
-				"Edit a private sandbox file by exact string replacement. This does not edit actual ThinkEx workspace items.",
-			inputExamples: sandboxEditFileInputExamples,
-		},
-		sandbox_list_files: {
-			...tools.list,
-			description:
-				"List private sandbox files and directories. This does not list the actual ThinkEx workspace.",
-			inputExamples: sandboxListFilesInputExamples,
-		},
-		sandbox_find_files: {
-			...tools.find,
-			description:
-				"Find private sandbox files by glob pattern. This does not search the actual ThinkEx workspace.",
-			inputExamples: sandboxFindFilesInputExamples,
-		},
-		sandbox_search_files: {
-			...tools.grep,
-			description:
-				"Search private sandbox file contents. This does not search actual ThinkEx workspace items.",
-			inputExamples: sandboxSearchFilesInputExamples,
-		},
-		sandbox_delete_file: {
-			...tools.delete,
-			description:
-				"Delete a private sandbox file or directory. This does not delete actual ThinkEx workspace items.",
-			inputExamples: sandboxDeleteFileInputExamples,
-		},
-	};
+				"Run a sandboxed Bash script against private sandbox files. Use this for shell-style scratch work inside the assistant sandbox only. This does not run against the actual ThinkEx workspace.",
+		};
+	}
+
+	return sandboxTools;
+}
+
+function addAIThreadToolEntry(
+	entries: AIThreadToolEntry[],
+	entry: AIThreadToolEntry | { tool: undefined; name: string },
+) {
+	if (!entry.tool) {
+		return;
+	}
+
+	entries.push(entry);
+}
+
+function addAIThreadToolEntries(
+	entries: AIThreadToolEntry[],
+	tools: ToolSet,
+	descriptors: AIThreadToolDescriptor[],
+) {
+	for (const descriptor of descriptors) {
+		addAIThreadToolEntry(entries, {
+			...descriptor,
+			tool: tools[descriptor.name],
+		});
+	}
+}
+
+function createAIThreadToolSet(entries: AIThreadToolEntry[]): ToolSet {
+	return Object.fromEntries(
+		entries.map((entry) => [entry.name, entry.tool]),
+	) as ToolSet;
 }
 
 export function getWorkspaceAiLanguageModel(
@@ -567,72 +579,6 @@ function getPromptDateTimeFormatter(timeZone: string) {
 
 function formatPromptDateTime(date: Date, timeZone: string) {
 	return `${getPromptDateTimeFormatter(timeZone).format(date)} (${timeZone})`;
-}
-
-function formatTimeToolResult(date: Date) {
-	return {
-		timestampSeconds: Math.floor(date.getTime() / 1000),
-		timestampMilliseconds: date.getTime(),
-		isoUtc: date.toISOString(),
-		timeZone: "UTC",
-	};
-}
-
-function subtractRelativeUtcDate(
-	date: Date,
-	input: {
-		daysAgo: number;
-		monthsAgo: number;
-		weeksAgo: number;
-		yearsAgo: number;
-	},
-) {
-	const calendarAdjusted = subtractUtcCalendarMonthsAndYears(
-		date,
-		input.monthsAgo,
-		input.yearsAgo,
-	);
-	const days = input.daysAgo + input.weeksAgo * 7;
-
-	return new Date(calendarAdjusted.getTime() - days * 24 * 60 * 60 * 1000);
-}
-
-function subtractUtcCalendarMonthsAndYears(
-	date: Date,
-	monthsAgo: number,
-	yearsAgo: number,
-) {
-	const targetMonthStart = new Date(
-		Date.UTC(
-			date.getUTCFullYear() - yearsAgo,
-			date.getUTCMonth() - monthsAgo,
-			1,
-			date.getUTCHours(),
-			date.getUTCMinutes(),
-			date.getUTCSeconds(),
-			date.getUTCMilliseconds(),
-		),
-	);
-	const lastTargetMonthDay = new Date(
-		Date.UTC(
-			targetMonthStart.getUTCFullYear(),
-			targetMonthStart.getUTCMonth() + 1,
-			0,
-		),
-	).getUTCDate();
-	const targetDay = Math.min(date.getUTCDate(), lastTargetMonthDay);
-
-	return new Date(
-		Date.UTC(
-			targetMonthStart.getUTCFullYear(),
-			targetMonthStart.getUTCMonth(),
-			targetDay,
-			date.getUTCHours(),
-			date.getUTCMinutes(),
-			date.getUTCSeconds(),
-			date.getUTCMilliseconds(),
-		),
-	);
 }
 
 function getFirstUserMessageText(messages: UIMessage[]) {

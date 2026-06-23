@@ -4,6 +4,7 @@ import { routeUserAIRequest } from "#/features/workspaces/ai/auth";
 import { routeDocumentSessionRequest } from "#/features/workspaces/documents/document-session-auth";
 import { routeWorkspaceKernelRequest } from "#/features/workspaces/kernel/workspace-kernel-auth";
 
+export { CodemodeRuntime } from "@cloudflare/codemode";
 export {
 	AIThread,
 	UserAIStore,
