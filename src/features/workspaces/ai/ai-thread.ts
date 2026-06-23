@@ -23,8 +23,8 @@ import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector"
 import { AIThreadInspectorRecorder } from "#/features/workspaces/ai/ai-thread-inspector-recorder";
 import {
 	createAIThreadTools,
+	createAIThreadTurnToolConfig,
 	generateAIThreadTitle,
-	getAIThreadActiveTools,
 	getAIThreadSoulPrompt,
 	getAIThreadSystemPromptForWorkspace,
 	getWorkspaceAiGatewayProviderOptions,
@@ -170,7 +170,6 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			});
 
 			return {
-				activeTools: getAIThreadActiveTools(thread.promptScope.canMutate),
 				model: getWorkspaceAiLanguageModel(
 					modelId,
 					this.env,
@@ -181,6 +180,14 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					thread,
 				}),
 				system,
+				...createAIThreadTurnToolConfig({
+					env: this.env,
+					ctx: this.ctx,
+					workspace: this.workspace,
+					getThreadContext: () => this._getThreadContext(),
+					canMutate: thread.promptScope.canMutate,
+					timeZone: getBodyString(ctx.body, "timeZone"),
+				}),
 			};
 		}
 

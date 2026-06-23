@@ -6,7 +6,6 @@ import {
 import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
-
 import { assertPublicHttpUrl } from "#/features/workspaces/ai/web-access-policy";
 
 const MAX_BROWSER_RESULT_CHARS = 50_000;
@@ -34,9 +33,10 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 				"Load a public webpage and return its rendered content as Markdown.",
 			inputSchema: browserPageInputSchema,
 			inputExamples: browserPageInputExamples,
+			strict: true,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
-				return truncateText(
+				return truncateMarkdown(
 					await browserMarkdown(browser, {
 						url: safeUrl.toString(),
 					}),
@@ -47,9 +47,10 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 			description: "Load a public webpage and return its rendered links.",
 			inputSchema: browserPageInputSchema,
 			inputExamples: browserPageInputExamples,
+			strict: true,
 			execute: async ({ url }) => {
 				const safeUrl = assertPublicHttpUrl(url);
-				return boundJsonResult(
+				return truncateLinks(
 					await browserLinks(browser, {
 						url: safeUrl.toString(),
 					}),
@@ -59,46 +60,40 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 	};
 }
 
-function truncateText(value: string) {
-	if (value.length <= MAX_BROWSER_RESULT_CHARS) {
-		return value;
-	}
-
-	return `${value.slice(0, MAX_BROWSER_RESULT_CHARS)}\n\n[truncated ${
-		value.length - MAX_BROWSER_RESULT_CHARS
-	} characters]`;
-}
-
-function boundJsonResult(value: unknown) {
-	const json = JSON.stringify(value);
-
-	if (json.length <= MAX_BROWSER_RESULT_CHARS) {
-		return value;
-	}
-
-	if (Array.isArray(value)) {
-		const result: unknown[] = [];
-		let size = 2;
-
-		for (const item of value) {
-			const itemSize = JSON.stringify(item).length + 1;
-
-			if (size + itemSize > MAX_BROWSER_RESULT_CHARS) {
-				break;
-			}
-
-			result.push(item);
-			size += itemSize;
-		}
-
-		if (result.length > 0) {
-			return result;
-		}
+function truncateMarkdown(content: string) {
+	if (content.length <= MAX_BROWSER_RESULT_CHARS) {
+		return {
+			content,
+			truncated: false,
+		};
 	}
 
 	return {
+		content: content.slice(0, MAX_BROWSER_RESULT_CHARS),
 		truncated: true,
-		note: `Result is too large (${json.length} characters); narrow the request.`,
-		preview: `${json.slice(0, MAX_BROWSER_RESULT_CHARS)}...`,
+	};
+}
+
+function truncateLinks(items: string[]) {
+	const result: string[] = [];
+	let size = 2;
+	let truncated = false;
+
+	for (const item of items) {
+		const itemSize =
+			JSON.stringify(item).length + (result.length === 0 ? 0 : 1);
+
+		if (size + itemSize > MAX_BROWSER_RESULT_CHARS) {
+			truncated = true;
+			break;
+		}
+
+		result.push(item);
+		size += itemSize;
+	}
+
+	return {
+		items: truncated ? result : items,
+		truncated,
 	};
 }

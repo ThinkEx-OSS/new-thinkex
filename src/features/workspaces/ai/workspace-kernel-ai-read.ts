@@ -6,28 +6,11 @@ import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
-import type { ListWorkspaceKernelItemsResult } from "#/features/workspaces/kernel/workspace-kernel-list";
-import { listWorkspaceKernelPageItems } from "#/features/workspaces/kernel/workspace-kernel-list";
-import type {
-	ReadWorkspaceKernelFileProjectionResult,
-	WorkspaceKernelFileProjectionStatus,
-} from "#/features/workspaces/kernel/workspace-kernel-types";
-import {
-	getMetadataNumber,
-	getMetadataString,
-	resolveWorkspaceFileTypeFromItem,
-} from "#/features/workspaces/model/workspace-file";
-
-interface WorkspaceKernelAiFileExtraction {
-	errorMessage?: string | null;
-	reason: WorkspaceKernelAiFileExtractionReason;
-	status: WorkspaceKernelFileProjectionStatus;
-}
+import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
 
 interface WorkspaceKernelAiContentPage {
 	lineTruncated?: boolean;
 	next?: number;
-	offset?: number;
 	truncated: boolean;
 }
 
@@ -35,48 +18,21 @@ export interface ReadWorkspaceKernelAiItemsInput {
 	contentLimit?: number;
 	contentOffset?: number;
 	paths: string[];
-	recursive?: boolean;
 	userId: string;
 	workspaceId: string;
 }
 
-export type WorkspaceKernelAiReadItem =
-	| {
-			content: string;
-			page?: WorkspaceKernelAiContentPage;
-			path: string;
-			title: string;
-			type: "document";
-	  }
-	| {
-			listing: ListWorkspaceKernelItemsResult;
-			path: string;
-			title: string;
-			type: "folder";
-	  }
-	| {
-			content?: string;
-			extraction: WorkspaceKernelAiFileExtraction;
-			metadata: {
-				assetKind: string | null;
-				mimeType: string | null;
-				sizeBytes: number | null;
-			};
-			page?: WorkspaceKernelAiContentPage;
-			path: string;
-			title: string;
-			type: "file";
-	  }
-	| {
-			path: string;
-			reason: "unsupported_item_type";
-			title: string;
-			type: "flashcard" | "quiz";
-	  };
+export interface WorkspaceKernelAiReadItem {
+	content?: string;
+	page?: WorkspaceKernelAiContentPage;
+	path: string;
+	status: "failed" | "pending" | "ready" | "unsupported";
+	type: "document" | "file" | "flashcard" | "quiz";
+}
 
 export interface WorkspaceKernelAiReadItemsResult {
-	failures: WorkspaceKernelAiReadFailure[];
 	items: WorkspaceKernelAiReadItem[];
+	failed: WorkspaceKernelAiReadFailure[];
 }
 
 const DEFAULT_AI_READ_CONTENT_LIMIT = 2000;
@@ -86,20 +42,9 @@ const TRUNCATED_LINE_SUFFIX = `... (line truncated to ${MAX_AI_READ_LINE_LENGTH}
 
 type WorkspaceKernelAiReadFailureCode =
 	| "content_offset_out_of_range"
+	| "path_is_folder"
 	| "path_not_absolute"
 	| "path_not_found";
-
-type WorkspaceKernelAiFileExtractionReason =
-	| "extracted_markdown_needs_review"
-	| "extracted_markdown_needs_review_but_content_missing"
-	| "extracted_markdown_ready"
-	| "extracted_markdown_ready_but_content_missing"
-	| "extraction_failed"
-	| "extraction_not_started"
-	| "extraction_processing_try_again_later"
-	| "extraction_queued_try_again_later"
-	| "no_text_projection_available"
-	| "unsupported_file_type";
 
 interface WorkspaceKernelAiReadFailure {
 	code: WorkspaceKernelAiReadFailureCode;
@@ -116,8 +61,8 @@ export async function readWorkspaceKernelAiItems(
 		workspaceId: input.workspaceId,
 	});
 	const result: WorkspaceKernelAiReadItemsResult = {
-		failures: [],
 		items: [],
+		failed: [],
 	};
 
 	for (const [index, path] of input.paths.entries()) {
@@ -127,7 +72,7 @@ export async function readWorkspaceKernelAiItems(
 		});
 
 		if (resolution.status === "invalid_path") {
-			result.failures.push({
+			result.failed.push({
 				code: resolution.code,
 				index,
 				path: resolution.path,
@@ -136,22 +81,26 @@ export async function readWorkspaceKernelAiItems(
 		}
 
 		if (resolution.status === "root") {
-			result.items.push({
-				listing: listWorkspaceKernelPageItems({
-					items: context.pageItems,
-					path: resolution.path,
-					recursive: input.recursive ?? false,
-				}),
+			result.failed.push({
+				code: "path_is_folder",
+				index,
 				path: resolution.path,
-				title: "/",
-				type: "folder",
 			});
 			continue;
 		}
 
 		if (resolution.status === "not_found") {
-			result.failures.push({
+			result.failed.push({
 				code: "path_not_found",
+				index,
+				path: resolution.path,
+			});
+			continue;
+		}
+
+		if (resolution.item.type === "folder") {
+			result.failed.push({
+				code: "path_is_folder",
 				index,
 				path: resolution.path,
 			});
@@ -165,14 +114,12 @@ export async function readWorkspaceKernelAiItems(
 					contentOffset: input.contentOffset,
 					item: resolution.item,
 					kernel: context.kernel,
-					pageItems: context.pageItems,
 					path: resolution.path,
-					recursive: input.recursive ?? false,
 				}),
 			);
 		} catch (error) {
 			if (error instanceof WorkspaceAiContentPageError) {
-				result.failures.push({
+				result.failed.push({
 					code: error.code,
 					index,
 					path: resolution.path,
@@ -192,23 +139,12 @@ async function readWorkspaceKernelAiItem(input: {
 	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
-	pageItems: WorkspaceItemSummary[];
 	path: string;
-	recursive: boolean;
 }): Promise<WorkspaceKernelAiReadItem> {
 	const { item } = input;
 
 	if (item.type === "folder") {
-		return {
-			listing: listWorkspaceKernelPageItems({
-				items: input.pageItems,
-				path: input.path,
-				recursive: input.recursive,
-			}),
-			path: input.path,
-			title: item.name,
-			type: "folder",
-		};
+		throw new Error("Folder paths should be handled before item reads.");
 	}
 
 	if (item.type === "document") {
@@ -225,7 +161,7 @@ async function readWorkspaceKernelAiItem(input: {
 			content: page.content,
 			...(page.page ? { page: page.page } : {}),
 			path: input.path,
-			title: item.name,
+			status: "ready",
 			type: "document",
 		};
 	}
@@ -236,8 +172,7 @@ async function readWorkspaceKernelAiItem(input: {
 
 	return {
 		path: input.path,
-		reason: "unsupported_item_type",
-		title: item.name,
+		status: "unsupported",
 		type: item.type,
 	};
 }
@@ -251,36 +186,13 @@ async function readWorkspaceKernelAiFileItem(input: {
 }): Promise<WorkspaceKernelAiReadItem> {
 	const { item } = input;
 	const fileType = resolveWorkspaceFileTypeFromItem(item);
-	const metadata = {
-		assetKind: getMetadataString(item.metadataJson, "assetKind"),
-		mimeType: getMetadataString(item.metadataJson, "mimeType"),
-		sizeBytes: getMetadataNumber(item.metadataJson, "sizeBytes"),
-	};
 
 	if (!fileType) {
-		return {
-			extraction: {
-				reason: "unsupported_file_type",
-				status: "not_started",
-			},
-			metadata,
-			path: input.path,
-			title: item.name,
-			type: "file",
-		};
+		return createWorkspaceKernelAiFileStatusItem(input.path, "unsupported");
 	}
 
 	if (fileType.aiReadStrategy !== "markdown_extraction") {
-		return {
-			extraction: {
-				reason: "no_text_projection_available",
-				status: "not_started",
-			},
-			metadata,
-			path: input.path,
-			title: item.name,
-			type: "file",
-		};
+		return createWorkspaceKernelAiFileStatusItem(input.path, "unsupported");
 	}
 
 	const projection = await input.kernel.readFileProjection({
@@ -288,84 +200,45 @@ async function readWorkspaceKernelAiFileItem(input: {
 		format: "markdown",
 	});
 
-	if (projection?.content && isReadableProjectionStatus(projection.status)) {
-		const page = pageWorkspaceAiMarkdown(projection.content, {
-			limit: input.contentLimit,
-			offset: input.contentOffset,
-		});
-
-		return {
-			content: page.content,
-			extraction: {
-				reason: getReadableProjectionReason(projection.status),
-				status: projection.status,
-			},
-			metadata,
-			...(page.page ? { page: page.page } : {}),
-			path: input.path,
-			title: item.name,
-			type: "file",
-		};
+	if (!projection) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
 	}
 
+	if (
+		projection.status === "not_started" ||
+		projection.status === "queued" ||
+		projection.status === "processing"
+	) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
+	}
+
+	if (projection.status !== "ready" || projection.content === null) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+	}
+
+	const page = pageWorkspaceAiMarkdown(projection.content, {
+		limit: input.contentLimit,
+		offset: input.contentOffset,
+	});
+
 	return {
-		extraction: getFileExtractionStatus(projection),
-		metadata,
+		content: page.content,
+		...(page.page ? { page: page.page } : {}),
 		path: input.path,
-		title: item.name,
+		status: "ready",
 		type: "file",
 	};
 }
 
-function isReadableProjectionStatus(
-	status: WorkspaceKernelFileProjectionStatus,
-) {
-	return status === "ready" || status === "needs_review";
-}
-
-function getFileExtractionStatus(
-	projection: ReadWorkspaceKernelFileProjectionResult | null,
-): WorkspaceKernelAiFileExtraction {
-	if (!projection) {
-		return {
-			reason: "extraction_not_started",
-			status: "not_started",
-		};
-	}
-
+function createWorkspaceKernelAiFileStatusItem(
+	path: string,
+	status: WorkspaceKernelAiReadItem["status"],
+): WorkspaceKernelAiReadItem {
 	return {
-		errorMessage: projection.errorMessage,
-		reason: getFileExtractionReason(projection.status),
-		status: projection.status,
+		path,
+		status,
+		type: "file",
 	};
-}
-
-function getReadableProjectionReason(
-	status: Extract<
-		WorkspaceKernelFileProjectionStatus,
-		"needs_review" | "ready"
-	>,
-): WorkspaceKernelAiFileExtractionReason {
-	return status === "needs_review"
-		? "extracted_markdown_needs_review"
-		: "extracted_markdown_ready";
-}
-
-function getFileExtractionReason(status: WorkspaceKernelFileProjectionStatus) {
-	switch (status) {
-		case "queued":
-			return "extraction_queued_try_again_later";
-		case "processing":
-			return "extraction_processing_try_again_later";
-		case "failed":
-			return "extraction_failed";
-		case "needs_review":
-			return "extracted_markdown_needs_review_but_content_missing";
-		case "ready":
-			return "extracted_markdown_ready_but_content_missing";
-		case "not_started":
-			return "extraction_not_started";
-	}
 }
 
 function pageWorkspaceAiMarkdown(
@@ -404,7 +277,6 @@ function pageWorkspaceAiMarkdown(
 		truncated || lineTruncated || offset !== 1
 			? {
 					...(lineTruncated ? { lineTruncated } : {}),
-					...(offset !== 1 ? { offset } : {}),
 					truncated: truncated || lineTruncated,
 					...(next === undefined ? {} : { next }),
 				}

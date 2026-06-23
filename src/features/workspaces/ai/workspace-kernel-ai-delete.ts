@@ -1,5 +1,4 @@
 import {
-	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
@@ -18,19 +17,13 @@ export interface DeleteWorkspaceKernelAiFailure {
 }
 
 export interface DeleteWorkspaceKernelAiDeletedItem {
-	item: {
-		id: string;
-		title: string;
-		type: WorkspaceItemSummary["type"];
-	};
 	path: string;
+	type: WorkspaceItemSummary["type"];
 }
 
 export interface DeleteWorkspaceKernelAiItemsResult {
-	deleted: DeleteWorkspaceKernelAiDeletedItem[];
-	deletedItemCount: number;
+	items: DeleteWorkspaceKernelAiDeletedItem[];
 	failed: DeleteWorkspaceKernelAiFailure[];
-	status: ReturnType<typeof getWorkspaceKernelAiBatchStatus>;
 }
 
 export async function deleteWorkspaceKernelAiItems(
@@ -71,13 +64,8 @@ export async function deleteWorkspaceKernelAiItems(
 
 	if (resolvedItems.length === 0) {
 		return {
-			deleted: [],
-			deletedItemCount: 0,
+			items: [],
 			failed,
-			status: getWorkspaceKernelAiBatchStatus({
-				failedCount: failed.length,
-				succeededCount: 0,
-			}),
 		};
 	}
 
@@ -94,7 +82,7 @@ export async function deleteWorkspaceKernelAiItems(
 		}
 	}
 
-	const deleted = command.result.itemIds.map((itemId) => {
+	const items = command.result.itemIds.map((itemId) => {
 		const resolved = resolvedItemsById.get(itemId);
 
 		if (!resolved) {
@@ -102,22 +90,13 @@ export async function deleteWorkspaceKernelAiItems(
 		}
 
 		return {
-			item: {
-				id: resolved.item.id,
-				title: resolved.item.name,
-				type: resolved.item.type,
-			},
 			path: resolved.path,
+			type: resolved.item.type,
 		};
 	});
 
 	return {
-		deleted,
-		deletedItemCount: command.result.deletedItemIds.length,
+		items,
 		failed,
-		status: getWorkspaceKernelAiBatchStatus({
-			failedCount: failed.length,
-			succeededCount: deleted.length,
-		}),
 	};
 }

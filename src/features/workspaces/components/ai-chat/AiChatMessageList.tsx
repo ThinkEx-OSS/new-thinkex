@@ -9,13 +9,13 @@ import { Message, MessageContent } from "#/components/ai-elements/message";
 import { Button } from "#/components/ui/button";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
+import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
 import {
 	type AiChatPresentation,
 	type AssistantRowDisplay,
 	getAssistantRowDisplay,
 	isAiChatStreamActive,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
-import { aiChatMessageRailClassName } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
 import { WorkspaceFloatingAskSelectionMenu } from "#/features/workspaces/components/WorkspaceFloatingAskSelectionMenu";
 import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
@@ -105,20 +105,22 @@ export default function AiChatMessageList({
 				{rows.map((row) => {
 					if (row.type === "pending") {
 						return (
-							<div
+							<AiChatTranscriptRail
 								key="assistant-pending"
-								className={`${aiChatMessageRailClassName} pb-5`}
+								className="pb-5"
+								withTopInset={rows[0] === row}
 							>
 								<AiChatAssistantPending pending={row.pending} />
-							</div>
+							</AiChatTranscriptRail>
 						);
 					}
 
 					const { display, message } = row;
 					return (
-						<div
+						<AiChatTranscriptRail
 							key={message.id}
-							className={`${aiChatMessageRailClassName} pb-5`}
+							className="pb-5"
+							withTopInset={rows[0] === row}
 						>
 							<AiChatMessageRow
 								display={display}
@@ -132,18 +134,21 @@ export default function AiChatMessageList({
 								message={message}
 								onRegenerate={onRegenerateLastResponse}
 							/>
-						</div>
+						</AiChatTranscriptRail>
 					);
 				})}
 				{assistantError ? (
-					<div className={`${aiChatMessageRailClassName} pb-5`}>
+					<AiChatTranscriptRail
+						className="pb-5"
+						withTopInset={rows.length === 0}
+					>
 						<AiChatAssistantError
 							canRetry={Boolean(onRegenerateLastResponse)}
 							errorState={assistantError}
 							hasAssistantContent={hasAssistantContent}
 							onRetry={onRegenerateLastResponse}
 						/>
-					</div>
+					</AiChatTranscriptRail>
 				) : null}
 			</div>
 			{selectedText ? (
@@ -169,7 +174,7 @@ export default function AiChatMessageList({
 function AiChatMessageListFallback({ children }: { children: ReactNode }) {
 	return (
 		<div className="min-h-0 flex-1 px-4 pt-5 pb-5">
-			<div className={aiChatMessageRailClassName}>{children}</div>
+			<AiChatTranscriptRail withTopInset>{children}</AiChatTranscriptRail>
 		</div>
 	);
 }

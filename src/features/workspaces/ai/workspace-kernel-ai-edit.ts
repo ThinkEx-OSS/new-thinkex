@@ -25,9 +25,18 @@ export interface EditWorkspaceKernelAiItemInput {
 	workspaceId: string;
 }
 
+type EditWorkspaceKernelAiFailure =
+	DocumentSessionApplyMarkdownEditsResult["failures"][number];
+
+export interface EditWorkspaceKernelAiItemResult {
+	applied: number;
+	failed: EditWorkspaceKernelAiFailure[];
+	path: string;
+}
+
 export async function editWorkspaceKernelAiItem(
 	input: EditWorkspaceKernelAiItemInput,
-): Promise<DocumentSessionApplyMarkdownEditsResult> {
+): Promise<EditWorkspaceKernelAiItemResult> {
 	const context = await getWorkspaceKernelAiPageContext({
 		access: "mutate",
 		userId: input.userId,
@@ -40,17 +49,23 @@ export async function editWorkspaceKernelAiItem(
 	});
 
 	if (resolution.status === "failed") {
-		return failedWorkspaceAiEditResult(
-			resolution.failure.code,
-			input.edits.length,
-		);
+		return {
+			path: resolution.failure.path,
+			...failedWorkspaceAiEditResult(
+				resolution.failure.code,
+				input.edits.length,
+			),
+		};
 	}
 
 	if (resolution.item.type !== "document") {
-		return failedWorkspaceAiEditResult(
-			"unsupported_item_type",
-			input.edits.length,
-		);
+		return {
+			path: resolution.path,
+			...failedWorkspaceAiEditResult(
+				"unsupported_item_type",
+				input.edits.length,
+			),
+		};
 	}
 
 	const documentSession = await getDocumentSession({
@@ -58,9 +73,15 @@ export async function editWorkspaceKernelAiItem(
 		workspaceId: input.workspaceId,
 	});
 
-	return await documentSession.applyMarkdownEdits({
+	const result = await documentSession.applyMarkdownEdits({
 		edits: input.edits,
 	});
+
+	return {
+		applied: result.applied,
+		failed: result.failures,
+		path: resolution.path,
+	};
 }
 
 async function getDocumentSession(input: {
@@ -78,14 +99,12 @@ async function getDocumentSession(input: {
 function failedWorkspaceAiEditResult(
 	code: EditWorkspaceKernelAiFailureCode,
 	editCount: number,
-): DocumentSessionApplyMarkdownEditsResult {
+): Pick<EditWorkspaceKernelAiItemResult, "applied" | "failed"> {
 	return {
 		applied: 0,
-		failed: editCount,
-		failures: Array.from({ length: editCount }, (_, index) => ({
+		failed: Array.from({ length: editCount }, (_, index) => ({
 			code,
 			index,
 		})),
-		status: "failed",
 	};
 }

@@ -1,5 +1,4 @@
 import {
-	getWorkspaceKernelAiBatchStatus,
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
@@ -33,19 +32,14 @@ export interface RenameWorkspaceKernelAiFailure {
 }
 
 export interface RenameWorkspaceKernelAiRenamedItem {
-	item: {
-		id: string;
-		title: string;
-		type: WorkspaceItemSummary["type"];
-	};
 	path: string;
 	previousPath: string;
+	type: WorkspaceItemSummary["type"];
 }
 
 export interface RenameWorkspaceKernelAiItemsResult {
 	failed: RenameWorkspaceKernelAiFailure[];
-	renamed: RenameWorkspaceKernelAiRenamedItem[];
-	status: ReturnType<typeof getWorkspaceKernelAiBatchStatus>;
+	items: RenameWorkspaceKernelAiRenamedItem[];
 }
 
 export async function renameWorkspaceKernelAiItems(
@@ -88,7 +82,9 @@ export async function renameWorkspaceKernelAiItems(
 		});
 	}
 
-	const renamed: RenameWorkspaceKernelAiRenamedItem[] = [];
+	const renamed: Array<
+		RenameWorkspaceKernelAiRenamedItem & { itemId: string }
+	> = [];
 
 	for (const resolved of resolvedItems) {
 		let command: Awaited<ReturnType<typeof context.kernel.renameItem>>;
@@ -115,16 +111,13 @@ export async function renameWorkspaceKernelAiItems(
 		}
 
 		renamed.push({
-			item: {
-				id: command.result.id,
-				title: command.result.name,
-				type: command.result.type,
-			},
+			itemId: command.result.id,
 			path: joinWorkspaceItemPath(
 				getParentWorkspacePath(resolved.path),
 				command.result.name,
 			),
 			previousPath: resolved.path,
+			type: command.result.type,
 		});
 	}
 
@@ -137,18 +130,10 @@ export async function renameWorkspaceKernelAiItems(
 
 	return {
 		failed,
-		renamed: renamed.map((item) => ({
-			...item,
-			path:
-				finalPaths.get(item.item.id) ??
-				joinWorkspaceItemPath(
-					getParentWorkspacePath(item.previousPath),
-					item.item.title,
-				),
+		items: renamed.map((item) => ({
+			path: finalPaths.get(item.itemId) ?? item.path,
+			previousPath: item.previousPath,
+			type: item.type,
 		})),
-		status: getWorkspaceKernelAiBatchStatus({
-			failedCount: failed.length,
-			succeededCount: renamed.length,
-		}),
 	};
 }

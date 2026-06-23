@@ -22,6 +22,7 @@ import {
 import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatPanelToolbar";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
+import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
 import { getAiChatPanelBodyPhase } from "#/features/workspaces/components/ai-chat/ai-chat-panel-phase";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
@@ -171,7 +172,7 @@ function AiChatPanelEmpty({
 	onNewChat: () => void;
 }) {
 	return (
-		<Conversation className="min-h-0">
+		<Conversation className="h-full min-h-0">
 			<ConversationContent
 				scrollClassName="min-h-0 overscroll-contain"
 				className="items-center justify-center gap-3 px-4 py-8 text-center"
@@ -194,12 +195,14 @@ function AiChatPanelEmpty({
 
 function AiChatPanelLoading() {
 	return (
-		<Conversation className="min-h-0">
+		<Conversation className="h-full min-h-0">
 			<ConversationContent
 				scrollClassName="min-h-0 overscroll-contain"
 				className="gap-5 px-4 pt-5 pb-5"
 			>
-				<AiChatThreadSkeleton />
+				<AiChatTranscriptRail withTopInset>
+					<AiChatThreadSkeleton />
+				</AiChatTranscriptRail>
 			</ConversationContent>
 		</Conversation>
 	);
