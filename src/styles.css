@@ -260,32 +260,54 @@
 		line-height: 1.65;
 	}
 
-	.workspace-document-prose li[data-type="taskItem"] {
+	.workspace-document-prose ul[data-type="taskList"] > li {
 		display: flex;
 		align-items: flex-start;
 		gap: 0.6rem;
 		padding-left: 0;
 	}
 
-	.workspace-document-prose li[data-type="taskItem"] > label {
+	.workspace-document-prose ul[data-type="taskList"] > li > label {
 		display: inline-flex;
 		align-items: center;
 		margin-top: 0.38rem;
 	}
 
-	.workspace-document-prose li[data-type="taskItem"] input[type="checkbox"] {
+	.workspace-document-prose
+		ul[data-type="taskList"]
+		> li
+		> label
+		input[type="checkbox"] {
 		width: 0.95rem;
 		height: 0.95rem;
 		accent-color: var(--primary);
 	}
 
-	.workspace-document-prose li[data-type="taskItem"] > div {
+	.workspace-document-prose ul[data-type="taskList"] > li > div {
 		min-width: 0;
 		flex: 1;
 	}
 
-	.workspace-document-prose li[data-type="taskItem"] > div > p {
+	.workspace-document-prose ul[data-type="taskList"] > li > div > p {
 		margin: 0;
+	}
+
+	.workspace-document-prose ul[data-type="taskList"] > li[data-checked="true"] > div {
+		color: color-mix(in oklch, var(--foreground) 30%, var(--muted-foreground));
+	}
+
+	.workspace-document-prose
+		ul[data-type="taskList"]
+		> li[data-checked="true"]
+		> div
+		> p {
+		text-decoration-line: line-through;
+		text-decoration-thickness: 0.06em;
+		text-decoration-color: color-mix(
+			in oklch,
+			var(--muted-foreground) 52%,
+			transparent
+		);
 	}
 
 	.workspace-document-prose blockquote {
