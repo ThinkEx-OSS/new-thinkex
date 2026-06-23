@@ -197,7 +197,7 @@ const workspaceListItemsInputExamples = createInputExamples<
 const workspaceReadItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceReadItemsInputSchema>
 >({
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 	contentLimit: 200,
 });
 
@@ -206,8 +206,8 @@ const workspaceRenameItemsInputExamples = createInputExamples<
 >({
 	items: [
 		{
-			path: "/Demo Folder/Demo Document.md",
-			name: "Tool Demo.md",
+			path: "/Demo Folder/Demo Document",
+			name: "Tool Demo",
 		},
 	],
 });
@@ -216,7 +216,7 @@ const workspaceMoveItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceMoveItemsInputSchema>
 >({
 	destinationPath: "/Archive",
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 });
 
 const workspaceCreateItemsInputExamples = createInputExamples<
@@ -229,7 +229,7 @@ const workspaceCreateItemsInputExamples = createInputExamples<
 		},
 		{
 			type: "document",
-			path: "/Demo Folder/Demo Document.md",
+			path: "/Demo Folder/Demo Document",
 			initialContent:
 				"# Demo Document\nThis document was created as part of a tool demo.",
 		},
@@ -239,13 +239,13 @@ const workspaceCreateItemsInputExamples = createInputExamples<
 const workspaceDeleteItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceDeleteItemsInputSchema>
 >({
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 });
 
 const workspaceEditItemInputExamples = createInputExamples<
 	z.input<typeof workspaceEditItemInputSchema>
 >({
-	path: "/Demo Folder/Demo Document.md",
+	path: "/Demo Folder/Demo Document",
 	edits: [
 		{
 			type: "overwrite",
