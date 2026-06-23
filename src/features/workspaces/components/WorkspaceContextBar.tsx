@@ -14,9 +14,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import {
-	workspaceDropdownMenuRenderer,
-} from "#/features/workspaces/components/WorkspaceMenuRenderers";
 import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import WorkspaceContextActions from "#/features/workspaces/components/WorkspaceContextActions";
 import {
@@ -25,10 +22,11 @@ import {
 } from "#/features/workspaces/components/WorkspaceItemActionDialogs";
 import WorkspaceItemActionsMenu from "#/features/workspaces/components/WorkspaceItemActionsMenu";
 import { WorkspaceItemToolbarSlot } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
+import { workspaceDropdownMenuRenderer } from "#/features/workspaces/components/WorkspaceMenuRenderers";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import { WorkspaceSearchDialog } from "#/features/workspaces/components/WorkspaceSearchDialog";
-import { WorkspaceShareDialog } from "#/features/workspaces/components/WorkspaceShareDialog";
 import WorkspaceSettingsDialog from "#/features/workspaces/components/WorkspaceSettingsDialog";
+import { WorkspaceShareDialog } from "#/features/workspaces/components/WorkspaceShareDialog";
 import { WorkspaceToolbarGroup } from "#/features/workspaces/components/WorkspaceToolbar";
 import {
 	renderWorkspaceMenuActions,
