@@ -4,7 +4,7 @@ import type {
 } from "@cloudflare/think";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ConversationEmptyState } from "#/components/ai-elements/conversation";
+import ThinkExLogo from "#/components/ThinkExLogo";
 import { Message, MessageContent } from "#/components/ai-elements/message";
 import { Button } from "#/components/ui/button";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
@@ -90,11 +90,10 @@ export default function AiChatMessageList({
 
 		return (
 			<AiChatMessageListFallback>
-				<ConversationEmptyState
-					className="min-h-[min(32rem,calc(100vh-12rem))] border-0 p-6"
-					title="Start a workspace chat"
-					description="Ask about the current workspace."
-				/>
+				<div className="flex min-h-[min(32rem,calc(100vh-12rem))] flex-col items-center justify-center gap-3 p-6">
+					<ThinkExLogo size={32} />
+					<p className="text-sm text-muted-foreground">Start a new chat</p>
+				</div>
 			</AiChatMessageListFallback>
 		);
 	}
