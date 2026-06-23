@@ -131,22 +131,22 @@ function WorkspaceItemTreePickerRow({
 				)}
 				onClick={onSelect}
 				aria-pressed={selected}
-				>
-					<Icon
-						className={cn(
-							"size-4 shrink-0",
-							iconClassName,
+			>
+				<Icon
+					className={cn(
+						"size-4 shrink-0",
+						iconClassName,
 						selected && "text-info",
 					)}
 					aria-hidden="true"
-					/>
-					<span className="min-w-0 flex-1 truncate">{node.label}</span>
-					{selected ? (
-						<Check className="size-4 shrink-0 text-info" aria-hidden="true" />
-					) : null}
-				</button>
-			</li>
-		);
+				/>
+				<span className="min-w-0 flex-1 truncate">{node.label}</span>
+				{selected ? (
+					<Check className="size-4 shrink-0 text-info" aria-hidden="true" />
+				) : null}
+			</button>
+		</li>
+	);
 }
 
 function getWorkspaceItemTreePickerRows(

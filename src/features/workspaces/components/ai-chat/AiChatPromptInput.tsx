@@ -1,4 +1,4 @@
-import { Bug, Mic, Plus } from "lucide-react";
+import { Bug, Plus } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -196,9 +196,6 @@ export default function AiChatPromptInput({
 					</PromptInputTools>
 
 					<WorkspaceToolbarGroup className="ml-auto">
-						<WorkspaceToolbarIconButton aria-label="Dictation unavailable">
-							<Mic />
-						</WorkspaceToolbarIconButton>
 						<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
 					</WorkspaceToolbarGroup>
 				</PromptInputFooter>
