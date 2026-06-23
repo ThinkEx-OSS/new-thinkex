@@ -4,7 +4,6 @@ import {
 	Download,
 	EllipsisVertical,
 	FileText,
-	Printer,
 	Redo2,
 	Undo2,
 } from "lucide-react";
@@ -254,7 +253,8 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<Download />
 						</span>
-						Export as PDF
+						Export to PDF
+						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="[&_svg:not([class*='size-'])]:size-4"
@@ -263,19 +263,8 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<FileText />
 						</span>
-						Export as Markdown
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem
-						className="[&_svg:not([class*='size-'])]:size-4"
-						disabled
-					>
-						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
-							<Printer />
-						</span>
-						Print
+						Export to Google Docs
+						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>

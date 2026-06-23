@@ -48,8 +48,10 @@ import { cn } from "#/lib/utils";
 
 interface WorkspaceSettingsDialogProps {
 	workspace: WorkspaceSummary;
-	trigger: ReactElement;
 	capabilities: WorkspaceMemberCapabilities;
+	trigger?: ReactElement;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 interface WorkspaceSettingsDraft {
@@ -68,13 +70,16 @@ const getWorkspaceSettingsDraft = (
 
 export default function WorkspaceSettingsDialog({
 	workspace,
-	trigger,
 	capabilities,
+	trigger,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 }: WorkspaceSettingsDialogProps) {
-	const [open, setOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
 	const [draft, setDraft] = useState(() =>
 		getWorkspaceSettingsDraft(workspace),
 	);
+	const open = controlledOpen ?? uncontrolledOpen;
 
 	if (!capabilities.canMutateContent) {
 		return null;
@@ -85,12 +90,16 @@ export default function WorkspaceSettingsDialog({
 			setDraft(getWorkspaceSettingsDraft(workspace));
 		}
 
-		setOpen(nextOpen);
+		controlledOnOpenChange?.(nextOpen);
+
+		if (controlledOpen === undefined) {
+			setUncontrolledOpen(nextOpen);
+		}
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger render={trigger} />
+			{trigger ? <DialogTrigger render={trigger} /> : null}
 			<WorkspaceSettingsDialogContent
 				canDelete={capabilities.canDeleteWorkspace}
 				draft={draft}

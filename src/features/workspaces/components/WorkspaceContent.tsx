@@ -256,9 +256,7 @@ function WorkspaceBrowseContent({
 									</EmptyMedia>
 									<EmptyTitle>No items in this folder</EmptyTitle>
 									<EmptyDescription>
-										{capabilities.canMutateContent
-											? "Items you add here will appear in this workspace view."
-											: "This folder is empty."}
+										Items you add will appear here
 									</EmptyDescription>
 								</EmptyHeader>
 							</Empty>

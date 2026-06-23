@@ -4,8 +4,8 @@ import type {
 } from "@cloudflare/think";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import ThinkExLogo from "#/components/ThinkExLogo";
 import { Message, MessageContent } from "#/components/ai-elements/message";
+import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
