@@ -6,10 +6,6 @@ import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
-import type {
-	ReadWorkspaceKernelFileProjectionResult,
-	WorkspaceKernelFileProjectionStatus,
-} from "#/features/workspaces/kernel/workspace-kernel-types";
 import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
 
 interface WorkspaceKernelAiContentPage {
@@ -102,6 +98,15 @@ export async function readWorkspaceKernelAiItems(
 			continue;
 		}
 
+		if (resolution.item.type === "folder") {
+			result.failed.push({
+				code: "path_is_folder",
+				index,
+				path: resolution.path,
+			});
+			continue;
+		}
+
 		try {
 			result.items.push(
 				await readWorkspaceKernelAiItem({
@@ -183,19 +188,11 @@ async function readWorkspaceKernelAiFileItem(input: {
 	const fileType = resolveWorkspaceFileTypeFromItem(item);
 
 	if (!fileType) {
-		return {
-			path: input.path,
-			status: "unsupported",
-			type: "file",
-		};
+		return createWorkspaceKernelAiFileStatusItem(input.path, "unsupported");
 	}
 
 	if (fileType.aiReadStrategy !== "markdown_extraction") {
-		return {
-			path: input.path,
-			status: "unsupported",
-			type: "file",
-		};
+		return createWorkspaceKernelAiFileStatusItem(input.path, "unsupported");
 	}
 
 	const projection = await input.kernel.readFileProjection({
@@ -203,50 +200,45 @@ async function readWorkspaceKernelAiFileItem(input: {
 		format: "markdown",
 	});
 
-	if (projection?.content && isReadableProjectionStatus(projection.status)) {
-		const page = pageWorkspaceAiMarkdown(projection.content, {
-			limit: input.contentLimit,
-			offset: input.contentOffset,
-		});
-
-		return {
-			content: page.content,
-			...(page.page ? { page: page.page } : {}),
-			path: input.path,
-			status: "ready",
-			type: "file",
-		};
+	if (!projection) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
 	}
 
+	if (
+		projection.status === "not_started" ||
+		projection.status === "queued" ||
+		projection.status === "processing"
+	) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
+	}
+
+	if (projection.status !== "ready" || projection.content === null) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+	}
+
+	const page = pageWorkspaceAiMarkdown(projection.content, {
+		limit: input.contentLimit,
+		offset: input.contentOffset,
+	});
+
 	return {
+		content: page.content,
+		...(page.page ? { page: page.page } : {}),
 		path: input.path,
-		status: getFileReadStatus(projection),
+		status: "ready",
 		type: "file",
 	};
 }
 
-function isReadableProjectionStatus(
-	status: WorkspaceKernelFileProjectionStatus,
-) {
-	return status === "ready";
-}
-
-function getFileReadStatus(
-	projection: ReadWorkspaceKernelFileProjectionResult | null,
-): WorkspaceKernelAiReadItem["status"] {
-	if (!projection) {
-		return "pending";
-	}
-
-	if (projection.status === "queued" || projection.status === "processing") {
-		return "pending";
-	}
-
-	if (projection.status === "ready") {
-		return "failed";
-	}
-
-	return projection.status === "failed" ? "failed" : "pending";
+function createWorkspaceKernelAiFileStatusItem(
+	path: string,
+	status: WorkspaceKernelAiReadItem["status"],
+): WorkspaceKernelAiReadItem {
+	return {
+		path,
+		status,
+		type: "file",
+	};
 }
 
 function pageWorkspaceAiMarkdown(

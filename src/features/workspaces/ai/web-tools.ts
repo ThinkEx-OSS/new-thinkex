@@ -75,22 +75,16 @@ function truncateMarkdown(content: string) {
 }
 
 function truncateLinks(items: string[]) {
-	const json = JSON.stringify(items);
-
-	if (json.length <= MAX_BROWSER_RESULT_CHARS) {
-		return {
-			items,
-			truncated: false,
-		};
-	}
-
 	const result: string[] = [];
 	let size = 2;
+	let truncated = false;
 
 	for (const item of items) {
-		const itemSize = JSON.stringify(item).length + 1;
+		const itemSize =
+			JSON.stringify(item).length + (result.length === 0 ? 0 : 1);
 
 		if (size + itemSize > MAX_BROWSER_RESULT_CHARS) {
+			truncated = true;
 			break;
 		}
 
@@ -99,7 +93,7 @@ function truncateLinks(items: string[]) {
 	}
 
 	return {
-		items: result,
-		truncated: true,
+		items: truncated ? result : items,
+		truncated,
 	};
 }

@@ -10,9 +10,16 @@ const timeCalculateRelativeInputExamples = [
 		},
 	},
 ];
+const MAX_RELATIVE_OFFSET = 10_000;
 
 function createRelativeOffsetFieldSchema(description: string) {
-	return z.number().int().min(0).optional().describe(description);
+	return z
+		.number()
+		.int()
+		.min(0)
+		.max(MAX_RELATIVE_OFFSET)
+		.optional()
+		.describe(description);
 }
 
 const timeRelativeOffsetInputSchema = z.object({
@@ -29,8 +36,8 @@ const timeRelativeOffsetInputSchema = z.object({
 const timeRelativeOffsetOutputSchema = timeRelativeOffsetInputSchema.required();
 
 const timePointOutputSchema = z.object({
-	timestampSeconds: z.number().int().nonnegative(),
-	timestampMilliseconds: z.number().int().nonnegative(),
+	timestampSeconds: z.number().int(),
+	timestampMilliseconds: z.number().int(),
 	isoUtc: z.string(),
 	timeZone: z.literal("UTC"),
 });
@@ -75,9 +82,15 @@ export function createAIThreadTimeTools(): ToolSet {
 }
 
 function formatTimeToolResult(date: Date) {
+	const timestampMilliseconds = date.getTime();
+
+	if (!Number.isFinite(timestampMilliseconds)) {
+		throw new Error("Calculated time is outside the supported date range.");
+	}
+
 	return {
-		timestampSeconds: Math.floor(date.getTime() / 1000),
-		timestampMilliseconds: date.getTime(),
+		timestampSeconds: Math.floor(timestampMilliseconds / 1000),
+		timestampMilliseconds,
 		isoUtc: date.toISOString(),
 		timeZone: "UTC",
 	};
