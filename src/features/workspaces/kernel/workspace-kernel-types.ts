@@ -88,8 +88,7 @@ export type WorkspaceKernelFileProjectionStatus =
 	| "queued"
 	| "processing"
 	| "ready"
-	| "failed"
-	| "needs_review";
+	| "failed";
 
 export interface UpsertWorkspaceKernelFileProjectionArgs {
 	itemId: string;

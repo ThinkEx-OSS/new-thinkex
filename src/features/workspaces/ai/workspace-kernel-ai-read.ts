@@ -30,7 +30,7 @@ export interface WorkspaceKernelAiReadItem {
 	content?: string;
 	page?: WorkspaceKernelAiContentPage;
 	path: string;
-	status: "failed" | "needs_review" | "pending" | "ready" | "unsupported";
+	status: "failed" | "pending" | "ready" | "unsupported";
 	type: "document" | "file" | "flashcard" | "quiz";
 }
 
@@ -213,7 +213,7 @@ async function readWorkspaceKernelAiFileItem(input: {
 			content: page.content,
 			...(page.page ? { page: page.page } : {}),
 			path: input.path,
-			status: projection.status === "needs_review" ? "needs_review" : "ready",
+			status: "ready",
 			type: "file",
 		};
 	}
@@ -228,7 +228,7 @@ async function readWorkspaceKernelAiFileItem(input: {
 function isReadableProjectionStatus(
 	status: WorkspaceKernelFileProjectionStatus,
 ) {
-	return status === "ready" || status === "needs_review";
+	return status === "ready";
 }
 
 function getFileReadStatus(
@@ -242,7 +242,7 @@ function getFileReadStatus(
 		return "pending";
 	}
 
-	if (projection.status === "ready" || projection.status === "needs_review") {
+	if (projection.status === "ready") {
 		return "failed";
 	}
 

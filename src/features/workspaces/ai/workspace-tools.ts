@@ -272,13 +272,7 @@ const workspaceReadItemsOutputSchema = z.object({
 		z.object({
 			path: workspacePathSchema,
 			type: z.enum(["document", "file", "flashcard", "quiz"]),
-			status: z.enum([
-				"failed",
-				"needs_review",
-				"pending",
-				"ready",
-				"unsupported",
-			]),
+			status: z.enum(["failed", "pending", "ready", "unsupported"]),
 			content: z.string().optional(),
 			page: workspacePagedContentSchema.optional(),
 		}),
