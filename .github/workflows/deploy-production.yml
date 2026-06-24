@@ -1,19 +1,26 @@
 name: Deploy Production
 
+# Ship main after CI passes. No manual approval — branch protection + CI are the gate.
+# Roll back via Cloudflare deployment history or revert + redeploy.
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     environment: production
-    concurrency:
-      group: deploy-production
-      cancel-in-progress: true
 
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -25,6 +32,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: voidzero-dev/setup-vp@v1
         with:
@@ -33,9 +42,6 @@ jobs:
 
       - name: Install dependencies
         run: vp install --frozen-lockfile
-
-      - name: Verify branch quality gates
-        run: vp run check && vp run test
 
       - name: Build production bundle
         run: vp run build:production
