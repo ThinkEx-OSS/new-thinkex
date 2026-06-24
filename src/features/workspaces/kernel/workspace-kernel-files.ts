@@ -4,10 +4,7 @@ import {
 	stringifyTiptapDocumentJson,
 } from "#/features/workspaces/documents/tiptap-document";
 
-export function getWorkspaceKernelShellPath(input: {
-	id: string;
-	type: WorkspaceItemType;
-}) {
+export function getWorkspaceKernelShellPath(input: { id: string; type: WorkspaceItemType }) {
 	if (input.type === "folder") {
 		return `/items/${input.id}`;
 	}
@@ -15,10 +12,7 @@ export function getWorkspaceKernelShellPath(input: {
 	return `/items/${input.id}/content.${getContentExtension(input.type)}`;
 }
 
-export function getWorkspaceKernelFileShellPath(input: {
-	itemId: string;
-	extension: string;
-}) {
+export function getWorkspaceKernelFileShellPath(input: { itemId: string; extension: string }) {
 	return `/items/${input.itemId}/content.${input.extension}`;
 }
 
@@ -40,10 +34,7 @@ export function getWorkspaceKernelContentMimeType(type: WorkspaceItemType) {
 	}
 }
 
-export function getInitialWorkspaceKernelContent(
-	type: WorkspaceItemType,
-	name: string,
-) {
+export function getInitialWorkspaceKernelContent(type: WorkspaceItemType, name: string) {
 	switch (type) {
 		case "document":
 			return stringifyTiptapDocumentJson(createInitialTiptapDocumentJson(name));

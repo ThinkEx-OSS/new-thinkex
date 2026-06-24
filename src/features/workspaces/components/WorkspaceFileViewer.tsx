@@ -1,9 +1,4 @@
-import {
-	type ComponentType,
-	type LazyExoticComponent,
-	lazy,
-	Suspense,
-} from "react";
+import { type ComponentType, type LazyExoticComponent, lazy, Suspense } from "react";
 
 import { ContextMenu, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { Spinner } from "#/components/ui/spinner";
@@ -26,12 +21,8 @@ const workspaceFileViewers: Record<
 	WorkspaceFileAssetKind,
 	LazyExoticComponent<ComponentType<WorkspaceFileViewerComponentProps>>
 > = {
-	pdf: lazy(
-		() => import("#/features/workspaces/components/WorkspacePdfViewer"),
-	),
-	image: lazy(
-		() => import("#/features/workspaces/components/WorkspaceImageViewer"),
-	),
+	pdf: lazy(() => import("#/features/workspaces/components/WorkspacePdfViewer")),
+	image: lazy(() => import("#/features/workspaces/components/WorkspaceImageViewer")),
 };
 
 interface WorkspaceFileViewerProps {
@@ -57,16 +48,10 @@ export default function WorkspaceFileViewer({
 	return (
 		<div className="h-full min-h-0">
 			<ContextMenu>
-				<ContextMenuTrigger
-					render={<section className="h-full min-h-0 overflow-hidden" />}
-				>
+				<ContextMenuTrigger render={<section className="h-full min-h-0 overflow-hidden" />}>
 					{Viewer ? (
 						<Suspense fallback={<WorkspaceFileViewerSkeleton />}>
-							<Viewer
-								item={item}
-								toolbarSlotId={toolbarSlotId}
-								workspaceId={workspaceId}
-							/>
+							<Viewer item={item} toolbarSlotId={toolbarSlotId} workspaceId={workspaceId} />
 						</Suspense>
 					) : (
 						<div className="flex h-full items-center justify-center bg-background">
@@ -85,34 +70,15 @@ export default function WorkspaceFileViewer({
 	);
 }
 
-function WorkspaceUnsupportedFilePlaceholder({
-	item,
-}: {
-	item: WorkspaceItem;
-}) {
-	const {
-		Icon: ItemIcon,
-		iconClassName,
-		surfaceClassName,
-	} = getWorkspaceItemDisplay(item);
+function WorkspaceUnsupportedFilePlaceholder({ item }: { item: WorkspaceItem }) {
+	const { Icon: ItemIcon, iconClassName, surfaceClassName } = getWorkspaceItemDisplay(item);
 
 	return (
-		<div
-			className={cn(
-				"flex flex-col items-center gap-3 text-center",
-				surfaceClassName,
-			)}
-		>
-			<ItemIcon
-				className={cn("size-12", iconClassName)}
-				strokeWidth={1.75}
-				aria-hidden="true"
-			/>
+		<div className={cn("flex flex-col items-center gap-3 text-center", surfaceClassName)}>
+			<ItemIcon className={cn("size-12", iconClassName)} strokeWidth={1.75} aria-hidden="true" />
 			<div className="space-y-1">
 				<h2 className="font-medium text-foreground text-sm">{item.name}</h2>
-				<p className="text-muted-foreground text-xs">
-					This file type does not have a viewer yet.
-				</p>
+				<p className="text-muted-foreground text-xs">This file type does not have a viewer yet.</p>
 			</div>
 		</div>
 	);

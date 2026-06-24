@@ -9,10 +9,10 @@ export async function ensureWorkspaceStarterThreadForUser(input: {
 }) {
 	try {
 		const { env } = await import("cloudflare:workers");
-		const directory = (await getAgentByName(
-			env[userAIAgentName],
-			input.userId,
-		)) as unknown as Pick<UserAIStore, "ensureWorkspaceStarterThread">;
+		const directory = (await getAgentByName(env[userAIAgentName], input.userId)) as unknown as Pick<
+			UserAIStore,
+			"ensureWorkspaceStarterThread"
+		>;
 		await directory.ensureWorkspaceStarterThread({
 			workspaceId: input.workspaceId,
 		});

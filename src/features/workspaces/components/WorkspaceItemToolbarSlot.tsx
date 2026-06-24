@@ -32,36 +32,24 @@ type WorkspaceItemToolbarRegistration =
 
 interface WorkspaceItemToolbarContextValue {
 	registrationsBySlotId: Record<string, WorkspaceItemToolbarRegistration>;
-	setRegistration: Dispatch<
-		SetStateAction<Record<string, WorkspaceItemToolbarRegistration>>
-	>;
+	setRegistration: Dispatch<SetStateAction<Record<string, WorkspaceItemToolbarRegistration>>>;
 }
 
-const WorkspaceItemToolbarContext =
-	createContext<WorkspaceItemToolbarContextValue | null>(null);
+const WorkspaceItemToolbarContext = createContext<WorkspaceItemToolbarContextValue | null>(null);
 
-export function WorkspaceItemToolbarProvider({
-	children,
-}: {
-	children: ReactNode;
-}) {
+export function WorkspaceItemToolbarProvider({ children }: { children: ReactNode }) {
 	const [registrationsBySlotId, setRegistration] = useState<
 		Record<string, WorkspaceItemToolbarRegistration>
 	>({});
 
 	return (
-		<WorkspaceItemToolbarContext
-			value={{ registrationsBySlotId, setRegistration }}
-		>
+		<WorkspaceItemToolbarContext value={{ registrationsBySlotId, setRegistration }}>
 			{children}
 		</WorkspaceItemToolbarContext>
 	);
 }
 
-export function useDocumentEditorToolbar(
-	slotId: string,
-	editor: Editor | null,
-) {
+export function useDocumentEditorToolbar(slotId: string, editor: Editor | null) {
 	const context = use(WorkspaceItemToolbarContext);
 	const setRegistration = context?.setRegistration;
 

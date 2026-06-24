@@ -65,9 +65,7 @@ export function useDocumentEditorUiState(editor: Editor | null) {
 		useEditorState({
 			editor,
 			selector: ({ editor: currentEditor }) =>
-				currentEditor
-					? getDocumentEditorUiState(currentEditor)
-					: emptyDocumentEditorUiState,
+				currentEditor ? getDocumentEditorUiState(currentEditor) : emptyDocumentEditorUiState,
 		}) ?? emptyDocumentEditorUiState
 	);
 }
@@ -133,14 +131,9 @@ function getDocumentEditorUiState(editor: Editor): DocumentEditorUiState {
 function getActiveTextAlign(editor: Editor): DocumentTextAlign {
 	const headingAlign = editor.getAttributes("heading").textAlign;
 	const paragraphAlign = editor.getAttributes("paragraph").textAlign;
-	const textAlign =
-		typeof headingAlign === "string" ? headingAlign : paragraphAlign;
+	const textAlign = typeof headingAlign === "string" ? headingAlign : paragraphAlign;
 
-	if (
-		textAlign === "center" ||
-		textAlign === "justify" ||
-		textAlign === "right"
-	) {
+	if (textAlign === "center" || textAlign === "justify" || textAlign === "right") {
 		return textAlign;
 	}
 
@@ -189,8 +182,7 @@ function getActiveBlock(editor: Editor): DocumentEditorUiState["block"] {
 
 function getEditorCounts(editor: Editor): DocumentEditorCounts {
 	const { from, to } = editor.state.selection;
-	const selectedText =
-		from === to ? "" : editor.state.doc.textBetween(from, to, " ");
+	const selectedText = from === to ? "" : editor.state.doc.textBetween(from, to, " ");
 
 	return {
 		selectedCharacters: selectedText.length,

@@ -72,29 +72,17 @@ export function WorkspaceItemTreePickerDialog({
 							/>
 						))
 					) : (
-						<li className="px-3 py-8 text-center text-muted-foreground text-sm">
-							{emptyMessage}
-						</li>
+						<li className="px-3 py-8 text-center text-muted-foreground text-sm">{emptyMessage}</li>
 					)}
 				</ul>
 
-				<DialogFooter
-					className={cn(hasFooterStart && "items-center sm:justify-between")}
-				>
+				<DialogFooter className={cn(hasFooterStart && "items-center sm:justify-between")}>
 					{hasFooterStart ? <div className="min-w-0">{footerStart}</div> : null}
 					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
-						<Button
-							type="button"
-							disabled={confirmDisabled || confirming}
-							onClick={onConfirm}
-						>
+						<Button type="button" disabled={confirmDisabled || confirming} onClick={onConfirm}>
 							{confirmLabel}
 						</Button>
 					</div>
@@ -125,28 +113,24 @@ function WorkspaceItemTreePickerRow({
 			<button
 				type="button"
 				className={cn(
-					"flex h-9 min-w-0 flex-1 items-center gap-2 rounded-sm px-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/40 dark:hover:bg-accent/60",
-					selected && "bg-muted text-foreground",
+					"flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent px-2 text-left text-sm outline-none transition-[background-color,border-color,color,box-shadow] hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/40 dark:hover:bg-accent/60",
+					selected && "border-info/30 bg-info/10 text-foreground shadow-xs ring-1 ring-info/15",
 				)}
 				onClick={onSelect}
 				aria-pressed={selected}
 			>
 				<Icon
-					className={cn("size-4 shrink-0", iconClassName)}
+					className={cn("size-4 shrink-0", iconClassName, selected && "text-info")}
 					aria-hidden="true"
 				/>
 				<span className="min-w-0 flex-1 truncate">{node.label}</span>
-				{selected ? (
-					<Check className="size-4 shrink-0 text-primary" aria-hidden="true" />
-				) : null}
+				{selected ? <Check className="size-4 shrink-0 text-info" aria-hidden="true" /> : null}
 			</button>
 		</li>
 	);
 }
 
-function getWorkspaceItemTreePickerRows(
-	nodes: readonly WorkspaceItemTreePickerNode[],
-) {
+function getWorkspaceItemTreePickerRows(nodes: readonly WorkspaceItemTreePickerNode[]) {
 	const rows: WorkspaceItemTreePickerNode[] = [];
 
 	for (const node of nodes) {

@@ -5,9 +5,7 @@ import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/")({
 	beforeLoad: async ({ context }) => {
-		const session = await context.queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+		const session = await context.queryClient.ensureQueryData(getAuthSessionQueryOptions());
 
 		if (session) {
 			throw redirect({ to: "/home" });
@@ -20,8 +18,7 @@ export const Route = createFileRoute("/")({
 			},
 			{
 				name: "description",
-				content:
-					"ThinkEx is an AI workspace for documents, media, notes, and persistent context.",
+				content: "ThinkEx is an AI workspace for documents, media, notes, and persistent context.",
 			},
 			{
 				property: "og:title",
@@ -29,8 +26,7 @@ export const Route = createFileRoute("/")({
 			},
 			{
 				property: "og:description",
-				content:
-					"Turn AI into a workspace instead of a chat tab with context that stays visible.",
+				content: "Turn AI into a workspace instead of a chat tab with context that stays visible.",
 			},
 		],
 	}),

@@ -38,9 +38,7 @@ export function isAIInspectorEnabled() {
 	return import.meta.env.DEV;
 }
 
-export function mapAIInspectorEventRow(
-	row: AIInspectorEventRow,
-): AIInspectorEvent {
+export function mapAIInspectorEventRow(row: AIInspectorEventRow): AIInspectorEvent {
 	return {
 		id: row.id,
 		runId: row.run_id,

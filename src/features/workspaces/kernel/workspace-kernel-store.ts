@@ -1,7 +1,4 @@
-import type {
-	WorkspaceItemSummary,
-	WorkspaceItemType,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemSummary, WorkspaceItemType } from "#/features/workspaces/contracts";
 import {
 	getAvailableWorkspaceItemName,
 	normalizeWorkspaceItemName,
@@ -31,10 +28,7 @@ export class WorkspaceKernelStore {
 	private readonly sql: WorkspaceKernelSql;
 	private readonly workspaceId: () => string;
 
-	constructor(input: {
-		sql: WorkspaceKernelSql;
-		workspaceId: () => string;
-	}) {
+	constructor(input: { sql: WorkspaceKernelSql; workspaceId: () => string }) {
 		this.sql = input.sql;
 		this.workspaceId = input.workspaceId;
 	}
@@ -48,9 +42,15 @@ export class WorkspaceKernelStore {
 		`.map((row) => mapKernelItemRow(row, this.workspaceId()));
 	}
 
-	listItems(
-		input: { parentId?: string | null; limit?: number } = {},
-	): WorkspaceItemSummary[] {
+	getAllDocumentItemIds(): string[] {
+		return this.sql<{ id: string }>`
+			SELECT id
+			FROM kernel_items
+			WHERE type = 'document'
+		`.map((row) => row.id);
+	}
+
+	listItems(input: { parentId?: string | null; limit?: number } = {}): WorkspaceItemSummary[] {
 		const parentFilter = input.parentId ?? null;
 		const rows = this.sql<KernelItemRow>`
 			SELECT *
@@ -122,10 +122,7 @@ export class WorkspaceKernelStore {
 			return;
 		}
 
-		if (
-			itemId === parentId ||
-			this.getDescendantIds(itemId).includes(parentId)
-		) {
+		if (itemId === parentId || this.getDescendantIds(itemId).includes(parentId)) {
 			throw new Error("An item cannot be moved into itself.");
 		}
 	}
@@ -185,10 +182,7 @@ export class WorkspaceKernelStore {
 
 		if (input.onNameConflict === "error") {
 			if (!requestedName) {
-				throw new WorkspaceKernelNameConflictError(
-					input.itemId,
-					input.requestedName,
-				);
+				throw new WorkspaceKernelNameConflictError(input.itemId, input.requestedName);
 			}
 
 			if (existingNames.includes(requestedName)) {
@@ -230,10 +224,7 @@ export class WorkspaceKernelStore {
 		);
 	}
 
-	private getActiveSiblingNames(
-		parentId: string | null,
-		excludeItemId?: string,
-	) {
+	private getActiveSiblingNames(parentId: string | null, excludeItemId?: string) {
 		const rows = this.sql<{ name: string }>`
 			SELECT name
 			FROM kernel_items

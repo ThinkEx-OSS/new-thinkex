@@ -52,9 +52,7 @@ export function isSameWorkspaceItemViewState(
 	}
 
 	return (
-		left.kind === right.kind &&
-		left.itemId === right.itemId &&
-		left.pageNumber === right.pageNumber
+		left.kind === right.kind && left.itemId === right.itemId && left.pageNumber === right.pageNumber
 	);
 }
 

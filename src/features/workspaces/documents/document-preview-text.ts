@@ -1,10 +1,7 @@
 import type { TextSerializer } from "@tiptap/core";
 import { getText, getTextSerializersFromSchema } from "@tiptap/core";
 
-import type {
-	JsonValue,
-	WorkspaceItemSummary,
-} from "#/features/workspaces/contracts";
+import type { JsonValue, WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import { getTiptapDocumentSchema } from "#/features/workspaces/documents/tiptap-schema";
 
@@ -17,11 +14,8 @@ const documentPreviewTextSerializers: Record<string, TextSerializer> = {
 	inlineMath: ({ node }) => getMathLatex(node.attrs.latex),
 };
 
-export function getWorkspaceDocumentPreviewText(
-	item: Pick<WorkspaceItemSummary, "metadataJson">,
-) {
-	const previewText =
-		item.metadataJson[WORKSPACE_DOCUMENT_PREVIEW_TEXT_METADATA_KEY];
+export function getWorkspaceDocumentPreviewText(item: Pick<WorkspaceItemSummary, "metadataJson">) {
+	const previewText = item.metadataJson[WORKSPACE_DOCUMENT_PREVIEW_TEXT_METADATA_KEY];
 
 	return typeof previewText === "string" ? previewText.trim() : "";
 }
@@ -62,10 +56,7 @@ export function withDocumentPreviewMetadata(
 	const previewText = extractDocumentPreviewText(content);
 
 	if (!previewText) {
-		const {
-			[WORKSPACE_DOCUMENT_PREVIEW_TEXT_METADATA_KEY]: _removed,
-			...rest
-		} = metadataJson;
+		const { [WORKSPACE_DOCUMENT_PREVIEW_TEXT_METADATA_KEY]: _removed, ...rest } = metadataJson;
 		return rest;
 	}
 
@@ -100,10 +91,7 @@ function truncateDocumentPreviewText(text: string) {
 		return lineLimited;
 	}
 
-	const truncated = lineLimited.slice(
-		0,
-		WORKSPACE_DOCUMENT_PREVIEW_TEXT_MAX_LENGTH,
-	);
+	const truncated = lineLimited.slice(0, WORKSPACE_DOCUMENT_PREVIEW_TEXT_MAX_LENGTH);
 	const lastNewline = truncated.lastIndexOf("\n");
 
 	if (lastNewline > WORKSPACE_DOCUMENT_PREVIEW_TEXT_MAX_LENGTH * 0.6) {

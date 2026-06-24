@@ -24,5 +24,8 @@ export function removeAuthSession(queryClient: QueryClient) {
 }
 
 export function refreshAuthSession(queryClient: QueryClient) {
-	return queryClient.fetchQuery(getAuthSessionQueryOptions());
+	return queryClient.fetchQuery({
+		...getAuthSessionQueryOptions(),
+		staleTime: 0,
+	});
 }

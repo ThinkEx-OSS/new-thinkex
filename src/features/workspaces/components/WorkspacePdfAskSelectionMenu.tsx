@@ -7,10 +7,7 @@ import { useState } from "react";
 import { WorkspaceAskSelectionButton } from "#/features/workspaces/components/WorkspaceAskSelectionButton";
 import { stageComposerQuote } from "#/features/workspaces/composer/workspace-composer-actions";
 import { createPdfSelectedQuote } from "#/features/workspaces/model/workspace-selected-quotes";
-import {
-	type ClientPoint,
-	clamp,
-} from "#/features/workspaces/model/workspace-selection-geometry";
+import { type ClientPoint, clamp } from "#/features/workspaces/model/workspace-selection-geometry";
 
 const PDF_ASK_SELECTION_MENU_HEIGHT = 40;
 const PDF_ASK_SELECTION_MENU_WIDTH = 78;
@@ -30,24 +27,17 @@ export function WorkspacePdfAskSelectionMenu({
 	selectionPoint: ClientPoint | null;
 	workspaceId: string;
 }) {
-	const [menuWrapperElement, setMenuWrapperElement] =
-		useState<HTMLDivElement | null>(null);
+	const [menuWrapperElement, setMenuWrapperElement] = useState<HTMLDivElement | null>(null);
 	const { provides: selectionCapability } = useSelectionCapability();
 	const setMenuWrapperRef = (element: HTMLDivElement | null) => {
 		menuWrapperProps.ref(element);
-		setMenuWrapperElement((current) =>
-			current === element ? current : element,
-		);
+		setMenuWrapperElement((current) => (current === element ? current : element));
 	};
 	const isTopPlacement = placement.suggestTop;
-	const sideSpace = isTopPlacement
-		? placement.spaceAbove
-		: placement.spaceBelow;
+	const sideSpace = isTopPlacement ? placement.spaceAbove : placement.spaceBelow;
 	const wrapperRect = menuWrapperElement?.getBoundingClientRect();
 	const localSelectionX =
-		selectionPoint && wrapperRect
-			? selectionPoint.x - wrapperRect.left
-			: rect.size.width / 2;
+		selectionPoint && wrapperRect ? selectionPoint.x - wrapperRect.left : rect.size.width / 2;
 	const left = clamp(
 		localSelectionX,
 		PDF_ASK_SELECTION_MENU_WIDTH / 2,
@@ -76,46 +66,44 @@ export function WorkspacePdfAskSelectionMenu({
 				}}
 			>
 				<WorkspaceAskSelectionButton
-					onClick={async () => {
-						const selection = selectionCapability?.forDocument(documentId);
+					onClick={() => {
+						void (async () => {
+							const selection = selectionCapability?.forDocument(documentId);
 
-						if (!selection) {
-							return;
-						}
+							if (!selection) {
+								return;
+							}
 
-						let text = "";
+							let text = "";
 
-						try {
-							text = await readPdfSelectedText(selection.getSelectedText());
-						} catch (error) {
-							console.warn(
-								"[WorkspacePdfAskSelectionMenu] Failed to read selected PDF text",
-								error,
+							try {
+								text = await readPdfSelectedText(selection.getSelectedText());
+							} catch (error) {
+								console.warn(
+									"[WorkspacePdfAskSelectionMenu] Failed to read selected PDF text",
+									error,
+								);
+								return;
+							}
+
+							if (!text) {
+								return;
+							}
+
+							const pageNumbers = Array.from(
+								new Set(selection.getFormattedSelection().map((item) => item.pageIndex + 1)),
+							).sort((left, right) => left - right);
+
+							stageComposerQuote(
+								workspaceId,
+								createPdfSelectedQuote({
+									itemId,
+									pageNumbers,
+									text,
+								}),
 							);
-							return;
-						}
-
-						if (!text) {
-							return;
-						}
-
-						const pageNumbers = Array.from(
-							new Set(
-								selection
-									.getFormattedSelection()
-									.map((item) => item.pageIndex + 1),
-							),
-						).sort((left, right) => left - right);
-
-						stageComposerQuote(
-							workspaceId,
-							createPdfSelectedQuote({
-								itemId,
-								pageNumbers,
-								text,
-							}),
-						);
-						selection.clear();
+							selection.clear();
+						})();
 					}}
 				/>
 			</div>
@@ -124,10 +112,7 @@ export function WorkspacePdfAskSelectionMenu({
 }
 
 type PdfSelectedTextTask = {
-	wait: (
-		onSuccess: (lines: string[]) => void,
-		onError: (error: unknown) => void,
-	) => void;
+	wait: (onSuccess: (lines: string[]) => void, onError: (error: unknown) => void) => void;
 };
 
 function readPdfSelectedText(task: PdfSelectedTextTask) {

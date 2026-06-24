@@ -1,11 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import {
-	user,
-	workspaceInvites,
-	workspaceMembers,
-	workspaces,
-} from "#/db/schema";
+import { user, workspaceInvites, workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
 import type { WorkspaceRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import {
@@ -16,6 +11,8 @@ import {
 	workspaceRoles,
 } from "#/features/workspaces/invites/workspace-invite-rules";
 import { assertCanGrantWorkspaceRole } from "#/features/workspaces/server/permissions";
+import { buildWorkspaceInviteAcceptedEventProperties } from "#/integrations/posthog/events";
+import { capturePostHogServerEvent } from "#/integrations/posthog/server";
 import { buildInvitePath } from "#/lib/client-url";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
@@ -95,10 +92,7 @@ export async function getWorkspaceInvitePreview(
 	};
 }
 
-export async function acceptWorkspaceInvite(
-	db: Db,
-	input: { token: string; userId: string },
-) {
+export async function acceptWorkspaceInvite(db: Db, input: { token: string; userId: string }) {
 	// v1: the token is a secret link — any signed-in user may accept; no invitee email check.
 	const invite = await getPendingWorkspaceInviteByToken(db, input.token);
 
@@ -138,6 +132,18 @@ export async function acceptWorkspaceInvite(
 	if (!membership) {
 		throw new WorkspaceInviteError("Invite could not be accepted.");
 	}
+
+	capturePostHogServerEvent({
+		distinctId: input.userId,
+		event: "workspace_invite_accepted",
+		properties: buildWorkspaceInviteAcceptedEventProperties({
+			workspaceId: invite.workspaceId,
+			inviteType: invite.type,
+			inviteRole: invite.role,
+			membershipRole: membership.role,
+		}),
+		timestamp: new Date().toISOString(),
+	});
 
 	return {
 		role: membership.role,

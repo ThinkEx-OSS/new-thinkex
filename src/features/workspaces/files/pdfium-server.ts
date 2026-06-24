@@ -17,10 +17,7 @@ export async function getPdfiumNative() {
 			const pdfiumModule = await init({
 				instantiateWasm: (
 					imports: WebAssembly.Imports,
-					receiveInstance: (
-						instance: WebAssembly.Instance,
-						module: WebAssembly.Module,
-					) => void,
+					receiveInstance: (instance: WebAssembly.Instance, module: WebAssembly.Module) => void,
 				) => {
 					const instance = new WebAssembly.Instance(pdfiumWasmModule, imports);
 					receiveInstance(instance, pdfiumWasmModule);

@@ -45,8 +45,7 @@ export const horizontalTabCollisionDetector = ({
 		return null;
 	}
 
-	const center =
-		dragOperation.shape?.current.center ?? dragOperation.position.current;
+	const center = dragOperation.shape?.current.center ?? dragOperation.position.current;
 
 	if (!center) {
 		return null;
@@ -59,8 +58,7 @@ export const horizontalTabCollisionDetector = ({
 	}
 
 	const direction =
-		dragOperation.position.direction ??
-		getHorizontalDirectionFromShape(dragOperation.shape);
+		dragOperation.position.direction ?? getHorizontalDirectionFromShape(dragOperation.shape);
 	const width = boundingRectangle.right - boundingRectangle.left;
 
 	if (
@@ -72,9 +70,7 @@ export const horizontalTabCollisionDetector = ({
 				? boundingRectangle.left + width * WORKSPACE_TAB_SOURCE_RELEASE_RATIO
 				: boundingRectangle.right - width * WORKSPACE_TAB_SOURCE_RELEASE_RATIO;
 		const sourceShouldRelease =
-			direction === "right"
-				? center.x >= sourceReleaseX
-				: center.x <= sourceReleaseX;
+			direction === "right" ? center.x >= sourceReleaseX : center.x <= sourceReleaseX;
 
 		if (sourceShouldRelease) {
 			return null;
@@ -102,10 +98,7 @@ function getHorizontalCenterCollision(
 	};
 }
 
-function isOutsideVerticalTabBand(
-	centerY: number,
-	bounds: { top: number; bottom: number },
-) {
+function isOutsideVerticalTabBand(centerY: number, bounds: { top: number; bottom: number }) {
 	return (
 		centerY < bounds.top - WORKSPACE_TAB_VERTICAL_COLLISION_OVERSCAN ||
 		centerY > bounds.bottom + WORKSPACE_TAB_VERTICAL_COLLISION_OVERSCAN

@@ -3,10 +3,7 @@ import { tool } from "ai";
 import { z } from "zod";
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
-const timeGetCurrentInputExamples = [
-	{ input: {} },
-	{ input: { time_zone: "America/New_York" } },
-];
+const timeGetCurrentInputExamples = [{ input: {} }, { input: { time_zone: "America/New_York" } }];
 const timeCalculateRelativeInputExamples = [
 	{
 		input: {
@@ -32,13 +29,7 @@ const timeZoneFieldSchema = z
 	);
 
 function createRelativeOffsetFieldSchema(description: string) {
-	return z
-		.number()
-		.int()
-		.min(0)
-		.max(MAX_RELATIVE_OFFSET)
-		.optional()
-		.describe(description);
+	return z.number().int().min(0).max(MAX_RELATIVE_OFFSET).optional().describe(description);
 }
 
 const timeGetCurrentInputSchema = z.object({
@@ -47,13 +38,9 @@ const timeGetCurrentInputSchema = z.object({
 
 const timeRelativeOffsetInputSchema = z.object({
 	days_ago: createRelativeOffsetFieldSchema("Days to subtract from now."),
-	months_ago: createRelativeOffsetFieldSchema(
-		"Calendar months to subtract from now.",
-	),
+	months_ago: createRelativeOffsetFieldSchema("Calendar months to subtract from now."),
 	weeks_ago: createRelativeOffsetFieldSchema("Weeks to subtract from now."),
-	years_ago: createRelativeOffsetFieldSchema(
-		"Calendar years to subtract from now.",
-	),
+	years_ago: createRelativeOffsetFieldSchema("Calendar years to subtract from now."),
 	time_zone: timeZoneFieldSchema,
 });
 
@@ -78,9 +65,7 @@ const timeCalculateRelativeOutputSchema = z.object({
 	offset: timeRelativeOffsetOutputSchema,
 });
 
-export function createAIThreadTimeTools(options?: {
-	defaultTimeZone?: string;
-}): ToolSet {
+export function createAIThreadTimeTools(options?: { defaultTimeZone?: string }): ToolSet {
 	return {
 		time_get_current: tool({
 			description:
@@ -90,10 +75,7 @@ export function createAIThreadTimeTools(options?: {
 			outputSchema: timePointOutputSchema,
 			strict: true,
 			execute: async (input) => {
-				const timeZone = resolveTimeZone(
-					input.time_zone,
-					options?.defaultTimeZone,
-				);
+				const timeZone = resolveTimeZone(input.time_zone, options?.defaultTimeZone);
 				return formatTimeToolResult(new Date(), timeZone);
 			},
 		}),
@@ -106,10 +88,7 @@ export function createAIThreadTimeTools(options?: {
 			strict: true,
 			execute: async (input) => {
 				const offset = normalizeRelativeOffset(input);
-				const timeZone = resolveTimeZone(
-					input.time_zone,
-					options?.defaultTimeZone,
-				);
+				const timeZone = resolveTimeZone(input.time_zone, options?.defaultTimeZone);
 				const current = new Date();
 				const calculated = subtractRelativeUtcDate(current, offset);
 
@@ -139,9 +118,7 @@ function formatTimeToolResult(date: Date, timeZone: string) {
 	};
 }
 
-function normalizeRelativeOffset(
-	input: z.input<typeof timeRelativeOffsetInputSchema>,
-) {
+function normalizeRelativeOffset(input: z.input<typeof timeRelativeOffsetInputSchema>) {
 	return {
 		days_ago: input.days_ago ?? 0,
 		months_ago: input.months_ago ?? 0,
@@ -164,11 +141,7 @@ function subtractRelativeUtcDate(
 	return new Date(calendarAdjusted.getTime() - days * DAY_IN_MILLISECONDS);
 }
 
-function subtractUtcCalendarMonthsAndYears(
-	date: Date,
-	monthsAgo: number,
-	yearsAgo: number,
-) {
+function subtractUtcCalendarMonthsAndYears(date: Date, monthsAgo: number, yearsAgo: number) {
 	const targetMonthStart = new Date(
 		Date.UTC(
 			date.getUTCFullYear() - yearsAgo,
@@ -181,11 +154,7 @@ function subtractUtcCalendarMonthsAndYears(
 		),
 	);
 	const lastTargetMonthDay = new Date(
-		Date.UTC(
-			targetMonthStart.getUTCFullYear(),
-			targetMonthStart.getUTCMonth() + 1,
-			0,
-		),
+		Date.UTC(targetMonthStart.getUTCFullYear(), targetMonthStart.getUTCMonth() + 1, 0),
 	).getUTCDate();
 	const targetDay = Math.min(date.getUTCDate(), lastTargetMonthDay);
 

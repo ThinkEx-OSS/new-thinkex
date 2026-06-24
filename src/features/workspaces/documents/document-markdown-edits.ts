@@ -163,10 +163,7 @@ function* simpleReplacer(_content: string, find: string) {
 	yield find;
 }
 
-function getDocumentMarkdownReplacementCandidates(
-	content: string,
-	oldText: string,
-) {
+function getDocumentMarkdownReplacementCandidates(content: string, oldText: string) {
 	const seen = new Set<string>();
 	const candidates: { occurrences: number; search: string }[] = [];
 
@@ -244,18 +241,12 @@ function* blockAnchorReplacer(content: string, find: string) {
 			continue;
 		}
 
-		for (
-			let endLine = startLine + 2;
-			endLine < originalLines.length;
-			endLine++
-		) {
+		for (let endLine = startLine + 2; endLine < originalLines.length; endLine++) {
 			if (originalLines[endLine].trim() !== lastLineSearch) {
 				continue;
 			}
 
-			if (
-				Math.abs(endLine - startLine + 1 - searchLines.length) <= maxLineDelta
-			) {
+			if (Math.abs(endLine - startLine + 1 - searchLines.length) <= maxLineDelta) {
 				candidates.push({ endLine, startLine });
 			}
 			break;
@@ -265,19 +256,13 @@ function* blockAnchorReplacer(content: string, find: string) {
 	const bestCandidate = candidates
 		.map((candidate) => ({
 			...candidate,
-			similarity: getMiddleLineSimilarity(
-				originalLines,
-				searchLines,
-				candidate,
-			),
+			similarity: getMiddleLineSimilarity(originalLines, searchLines, candidate),
 		}))
 		.filter((candidate) => candidate.similarity >= 0.65)
 		.sort((left, right) => right.similarity - left.similarity)[0];
 
 	if (bestCandidate) {
-		yield originalLines
-			.slice(bestCandidate.startLine, bestCandidate.endLine + 1)
-			.join("\n");
+		yield originalLines.slice(bestCandidate.startLine, bestCandidate.endLine + 1).join("\n");
 	}
 }
 
@@ -298,9 +283,7 @@ function* whitespaceNormalizedReplacer(content: string, find: string) {
 		}
 
 		const words = find.trim().split(/\s+/);
-		const pattern = words
-			.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-			.join("\\s+");
+		const pattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
 		const match = line.match(new RegExp(pattern));
 
 		if (match) {
@@ -416,9 +399,7 @@ function levenshtein(left: string, right: string) {
 	}
 
 	const matrix = Array.from({ length: left.length + 1 }, (_, i) =>
-		Array.from({ length: right.length + 1 }, (_, j) =>
-			i === 0 ? j : j === 0 ? i : 0,
-		),
+		Array.from({ length: right.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
 	);
 
 	for (let i = 1; i <= left.length; i++) {
@@ -455,13 +436,9 @@ function removeCommonIndentation(text: string) {
 		return text;
 	}
 
-	const minIndent = Math.min(
-		...nonEmptyLines.map((line) => line.match(/^(\s*)/)?.[1].length ?? 0),
-	);
+	const minIndent = Math.min(...nonEmptyLines.map((line) => line.match(/^(\s*)/)?.[1].length ?? 0));
 
-	return lines
-		.map((line) => (line.trim().length === 0 ? line : line.slice(minIndent)))
-		.join("\n");
+	return lines.map((line) => (line.trim().length === 0 ? line : line.slice(minIndent))).join("\n");
 }
 
 function unescapeString(value: string) {

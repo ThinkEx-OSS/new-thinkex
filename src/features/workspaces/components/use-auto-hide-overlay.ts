@@ -1,4 +1,4 @@
-import { type FocusEvent, useEffect, useRef, useState } from "react";
+import { type FocusEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type AutoHideControls = {
 	show: () => void;
@@ -21,23 +21,16 @@ export function useAutoHideControls(delayMs: number): {
 	const isPinnedRef = useRef(false);
 	const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const controlsRef = useRef<AutoHideControls>({
-		show: () => {},
-		scheduleHide: () => {},
-		pin: () => {},
-		unpin: () => {},
-	});
-
-	controlsRef.current.show = () => {
+	const show = useCallback(() => {
 		setIsVisible(true);
 
 		if (hideTimeoutRef.current) {
 			clearTimeout(hideTimeoutRef.current);
 			hideTimeoutRef.current = null;
 		}
-	};
+	}, []);
 
-	controlsRef.current.scheduleHide = () => {
+	const scheduleHide = useCallback(() => {
 		if (hideTimeoutRef.current) {
 			clearTimeout(hideTimeoutRef.current);
 		}
@@ -47,17 +40,27 @@ export function useAutoHideControls(delayMs: number): {
 				setIsVisible(false);
 			}
 		}, delayMs);
-	};
+	}, [delayMs]);
 
-	controlsRef.current.pin = () => {
+	const pin = useCallback(() => {
 		isPinnedRef.current = true;
-		controlsRef.current.show();
-	};
+		show();
+	}, [show]);
 
-	controlsRef.current.unpin = () => {
+	const unpin = useCallback(() => {
 		isPinnedRef.current = false;
-		controlsRef.current.scheduleHide();
-	};
+		scheduleHide();
+	}, [scheduleHide]);
+
+	const controls = useMemo(
+		(): AutoHideControls => ({
+			show,
+			scheduleHide,
+			pin,
+			unpin,
+		}),
+		[pin, scheduleHide, show, unpin],
+	);
 
 	useEffect(
 		() => () => {
@@ -69,7 +72,7 @@ export function useAutoHideControls(delayMs: number): {
 	);
 
 	return {
-		controls: controlsRef.current,
+		controls,
 		isVisible,
 		interactionHandlers: {
 			onBlurCapture: (event) => {
@@ -77,16 +80,16 @@ export function useAutoHideControls(delayMs: number): {
 					return;
 				}
 
-				controlsRef.current.unpin();
+				unpin();
 			},
 			onFocusCapture: () => {
-				controlsRef.current.pin();
+				pin();
 			},
 			onMouseEnter: () => {
-				controlsRef.current.pin();
+				pin();
 			},
 			onMouseLeave: () => {
-				controlsRef.current.unpin();
+				unpin();
 			},
 		},
 	};

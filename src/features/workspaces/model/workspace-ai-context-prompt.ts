@@ -24,13 +24,9 @@ export function formatWorkspaceAiContextForPrompt(value: unknown) {
 		"- Item bodies are not included unless fetched with tools. Quotes are user-selected excerpts.",
 		`- User active view: ${formatWorkspaceAiContextPresentation(value.view.presentation)}`,
 	];
-	const selectedItems = value.selectedItems.filter(
-		isWorkspaceAiContextSelectedItem,
-	);
+	const selectedItems = value.selectedItems.filter(isWorkspaceAiContextSelectedItem);
 	const openTabs = value.openTabs.filter(isWorkspaceAiContextTabReference);
-	const selectedQuotes = value.selectedQuotes.filter(
-		isWorkspaceAiContextSelectedQuote,
-	);
+	const selectedQuotes = value.selectedQuotes.filter(isWorkspaceAiContextSelectedQuote);
 
 	if (selectedItems.length > 0) {
 		lines.push("- User-selected workspace items:");
@@ -38,15 +34,11 @@ export function formatWorkspaceAiContextForPrompt(value: unknown) {
 			const state = [
 				item.state.activeVisible ? "active visible" : "",
 				formatWorkspaceAiContextItemViewState(item.state.viewState),
-				item.state.openInTabs.length > 0
-					? `open in ${item.state.openInTabs.join(", ")}`
-					: "",
+				item.state.openInTabs.length > 0 ? `open in ${item.state.openInTabs.join(", ")}` : "",
 			]
 				.filter(Boolean)
 				.join("; ");
-			lines.push(
-				`  ${item.order}. ${item.path} (${item.type}${state ? `; ${state}` : ""})`,
-			);
+			lines.push(`  ${item.order}. ${item.path} (${item.type}${state ? `; ${state}` : ""})`);
 		}
 	}
 
@@ -130,9 +122,7 @@ function formatWorkspaceAiContextSelectedQuoteSource(
 	}
 
 	if (source.kind === "document-selection") {
-		return source.item
-			? `document selection, ${source.item.path}`
-			: "document selection";
+		return source.item ? `document selection, ${source.item.path}` : "document selection";
 	}
 
 	const item = source.item ? `, ${source.item.path}` : "";

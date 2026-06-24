@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "22"
+          cache: true
+
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      - name: Check formatting and lint rules
+        run: vp run check
+
+      - name: Run tests
+        run: vp run test
+
+      - name: Build
+        run: vp run build

@@ -13,12 +13,7 @@ import {
 	getAttachmentLabel,
 	getMediaCategory,
 } from "#/components/ai-elements/attachments";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 
 export function AiChatAttachmentGroup({
 	children,
@@ -27,11 +22,7 @@ export function AiChatAttachmentGroup({
 	children: ReactNode;
 	data: AttachmentData;
 }) {
-	return (
-		<Attachments variant={getAiChatAttachmentVariant(data)}>
-			{children}
-		</Attachments>
-	);
+	return <Attachments variant={getAiChatAttachmentVariant(data)}>{children}</Attachments>;
 }
 
 export function AiChatAttachmentItem({
@@ -130,11 +121,7 @@ function AiChatImageAttachment({
 						<DialogTitle className="truncate text-base">{label}</DialogTitle>
 					</DialogHeader>
 					<div className="flex max-h-[78vh] min-h-0 items-center justify-center overflow-hidden rounded-lg bg-muted/40">
-						<img
-							alt={label}
-							className="max-h-[78vh] max-w-full object-contain"
-							src={data.url}
-						/>
+						<img alt={label} className="max-h-[78vh] max-w-full object-contain" src={data.url} />
 					</div>
 				</DialogContent>
 			</Dialog>

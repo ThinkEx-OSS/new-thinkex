@@ -1,18 +1,18 @@
 import { env as workerEnv } from "cloudflare:workers";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
+import { purgeUserAccountResources } from "#/features/workspaces/durable-object-lifecycle";
+import { sendDeleteAccountVerificationEmail } from "#/features/account/account-deletion-email";
 import * as schema from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import { getAppOrigin, getTrustedAppOrigins } from "#/lib/app-origin";
 
 const isProduction = import.meta.env.PROD;
 
-type AuthEnvKey =
-	| "BETTER_AUTH_SECRET"
-	| "GOOGLE_CLIENT_ID"
-	| "GOOGLE_CLIENT_SECRET";
+type AuthEnvKey = "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET";
 
 type AuthRuntimeEnv = Record<AuthEnvKey, string | undefined>;
 
@@ -33,9 +33,7 @@ function getAuthSecret(env: AuthRuntimeEnv) {
 	const secret = env.BETTER_AUTH_SECRET;
 
 	if (!secret) {
-		throw new Error(
-			"BETTER_AUTH_SECRET is not configured. Set it before enabling authentication.",
-		);
+		throw new Error("BETTER_AUTH_SECRET is not configured. Set it before enabling authentication.");
 	}
 
 	return secret;
@@ -79,13 +77,36 @@ function createAuth(
 				prompt: "select_account",
 			},
 		},
+		user: {
+			deleteUser: {
+				enabled: true,
+				sendDeleteAccountVerification: async ({ user, url }) => {
+					const result = await sendDeleteAccountVerificationEmail({
+						email: user.email,
+						url,
+					});
+
+					if (result.ok) {
+						return;
+					}
+
+					const message =
+						result.reason === "missing_binding"
+							? "Account deletion email is not configured."
+							: "Unable to send account deletion email right now.";
+
+					throw APIError.fromStatus("INTERNAL_SERVER_ERROR", { message });
+				},
+				beforeDelete: async (user) => {
+					await purgeUserAccountResources(user.id);
+				},
+			},
+		},
 		plugins: [tanstackStartCookies()],
 	});
 }
 
-export async function withAuth<T>(
-	run: (auth: ReturnType<typeof createAuth>) => Promise<T>,
-) {
+export async function withAuth<T>(run: (auth: ReturnType<typeof createAuth>) => Promise<T>) {
 	const dbContext = await createDbContext();
 	const auth = createAuth(dbContext.db, getAuthRuntimeEnv());
 

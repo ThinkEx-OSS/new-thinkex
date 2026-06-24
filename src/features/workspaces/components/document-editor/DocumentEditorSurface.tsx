@@ -1,6 +1,7 @@
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Skeleton } from "#/components/ui/skeleton";
@@ -17,8 +18,8 @@ import {
 	useDocumentCollaborationSession,
 } from "#/features/workspaces/documents/use-document-collaboration-session";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import { authClient } from "#/lib/auth-client";
 import { DEFAULT_COLLABORATION_COLOR } from "#/lib/design-system-colors";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export function DocumentEditorSurface({
 	item,
@@ -29,16 +30,14 @@ export function DocumentEditorSurface({
 	toolbarSlotId?: string;
 	workspaceId: string;
 }) {
-	const sessionQuery = authClient.useSession();
+	const sessionQuery = useQuery(getAuthSessionQueryOptions());
 	const sessionUser = sessionQuery.data?.user;
 	const collaborationSession = useDocumentCollaborationSession({
 		workspaceId,
 		itemId: item.id,
 		userId: sessionUser?.id ?? null,
 		userImage: sessionUser?.image ?? null,
-		userName: sessionUser
-			? sessionUser.name || sessionUser.email || "User"
-			: null,
+		userName: sessionUser ? sessionUser.name || sessionUser.email || "User" : null,
 	});
 
 	if (!collaborationSession) {
@@ -87,10 +86,7 @@ function DocumentEditorInstance({
 		},
 	});
 
-	useDocumentEditorToolbar(
-		toolbarSlotId ?? item.id,
-		capabilities.canMutateContent ? editor : null,
-	);
+	useDocumentEditorToolbar(toolbarSlotId ?? item.id, capabilities.canMutateContent ? editor : null);
 
 	return (
 		<section className="relative flex h-full min-h-0 flex-col bg-background">
@@ -110,9 +106,7 @@ function DocumentEditorInstance({
 	);
 }
 
-function getDocumentEditorExtensions(
-	collaborationSession: DocumentCollaborationSession,
-) {
+function getDocumentEditorExtensions(collaborationSession: DocumentCollaborationSession) {
 	const baseExtensions = getTiptapDocumentBaseExtensions();
 
 	return [
@@ -168,9 +162,7 @@ function renderCollaborationSelection(user: Record<string, unknown>) {
 }
 
 function getCollaborationUserColor(user: Record<string, unknown>) {
-	return typeof user.color === "string"
-		? user.color
-		: DEFAULT_COLLABORATION_COLOR;
+	return typeof user.color === "string" ? user.color : DEFAULT_COLLABORATION_COLOR;
 }
 
 function getCollaborationUserName(user: Record<string, unknown>) {

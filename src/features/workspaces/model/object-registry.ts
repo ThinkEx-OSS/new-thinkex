@@ -1,11 +1,4 @@
-import {
-	FilePen,
-	Folder,
-	Layers3,
-	ListChecks,
-	type LucideIcon,
-	Paperclip,
-} from "lucide-react";
+import { FilePen, Folder, Layers3, ListChecks, type LucideIcon, Paperclip } from "lucide-react";
 
 import type { WorkspaceItemType } from "#/features/workspaces/contracts";
 export type WorkspaceItemCreateGroup = "primary" | "learn";
@@ -69,5 +62,6 @@ export function getWorkspaceObjectRegistryEntry(type: WorkspaceItemType) {
 export const workspaceObjectRegistryEntries: WorkspaceItemRegistryEntry[] =
 	Object.values(workspaceObjectRegistry);
 
-export const creatableWorkspaceObjectEntries =
-	workspaceObjectRegistryEntries.filter((entry) => entry.creatable);
+export const creatableWorkspaceObjectEntries = workspaceObjectRegistryEntries.filter(
+	(entry) => entry.creatable,
+);

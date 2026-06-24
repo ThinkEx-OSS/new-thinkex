@@ -184,13 +184,7 @@ export const workspaceSummarySchema = z.object({
 	membershipRole: workspaceMembershipRoleSchema,
 });
 
-export const workspaceItemTypeSchema = z.enum([
-	"folder",
-	"document",
-	"file",
-	"flashcard",
-	"quiz",
-]);
+export const workspaceItemTypeSchema = z.enum(["folder", "document", "file", "flashcard", "quiz"]);
 
 export const workspaceItemSummarySchema = z.object({
 	id: z.string(),
@@ -268,10 +262,7 @@ export const deleteWorkspaceInputSchema = z.object({
 	confirmationName: z.string().trim().min(1),
 });
 
-export const workspaceRoleLabels: Record<
-	(typeof workspaceRoles)[number],
-	string
-> = {
+export const workspaceRoleLabels: Record<(typeof workspaceRoles)[number], string> = {
 	owner: "Owner",
 	admin: "Admin",
 	editor: "Editor",
@@ -295,27 +286,15 @@ export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
 export type WorkspaceDetail = WorkspaceSummary;
 export type WorkspaceItemType = z.infer<typeof workspaceItemTypeSchema>;
 export type WorkspaceItemSummary = z.infer<typeof workspaceItemSummarySchema>;
-export type CreateWorkspaceItemInput = z.infer<
-	typeof createWorkspaceItemInputSchema
->;
-export type RenameWorkspaceItemInput = z.infer<
-	typeof renameWorkspaceItemInputSchema
->;
-export type MoveWorkspaceItemsInput = z.infer<
-	typeof moveWorkspaceItemsInputSchema
->;
-export type DeleteWorkspaceItemsInput = z.infer<
-	typeof deleteWorkspaceItemsInputSchema
->;
-export type UpdateWorkspaceItemColorInput = z.infer<
-	typeof updateWorkspaceItemColorInputSchema
->;
+export type CreateWorkspaceItemInput = z.infer<typeof createWorkspaceItemInputSchema>;
+export type RenameWorkspaceItemInput = z.infer<typeof renameWorkspaceItemInputSchema>;
+export type MoveWorkspaceItemsInput = z.infer<typeof moveWorkspaceItemsInputSchema>;
+export type DeleteWorkspaceItemsInput = z.infer<typeof deleteWorkspaceItemsInputSchema>;
+export type UpdateWorkspaceItemColorInput = z.infer<typeof updateWorkspaceItemColorInputSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceInputSchema>;
 export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;
 export type DeleteWorkspaceInput = z.infer<typeof deleteWorkspaceInputSchema>;
-export type WorkspaceMembershipRole = z.infer<
-	typeof workspaceMembershipRoleSchema
->;
+export type WorkspaceMembershipRole = z.infer<typeof workspaceMembershipRoleSchema>;
 
 export const workspaceMemberSummarySchema = z.object({
 	userId: z.string().min(1),
@@ -324,9 +303,7 @@ export const workspaceMemberSummarySchema = z.object({
 	role: workspaceMembershipRoleSchema,
 });
 
-export type WorkspaceMemberSummary = z.infer<
-	typeof workspaceMemberSummarySchema
->;
+export type WorkspaceMemberSummary = z.infer<typeof workspaceMemberSummarySchema>;
 
 export const workspaceEmailInviteSummarySchema = z.object({
 	id: z.string().min(1),
@@ -335,8 +312,6 @@ export const workspaceEmailInviteSummarySchema = z.object({
 	createdAt: z.coerce.date(),
 });
 
-export type WorkspaceEmailInviteSummary = z.infer<
-	typeof workspaceEmailInviteSummarySchema
->;
+export type WorkspaceEmailInviteSummary = z.infer<typeof workspaceEmailInviteSummarySchema>;
 
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;

@@ -82,9 +82,6 @@ function createSiblingNameIndexes(sql: WorkspaceKernelSql) {
 			WHERE parent_id IS NOT NULL AND deleted_at IS NULL
 		`;
 	} catch (error) {
-		console.warn(
-			"[WorkspaceKernel] Unable to create sibling name indexes",
-			error,
-		);
+		console.warn("[WorkspaceKernel] Unable to create sibling name indexes", error);
 	}
 }

@@ -31,19 +31,14 @@ export function useWorkspaceItemActionDialogState() {
 		moveDialogOpen: state.moveDialogOpen,
 		movingItem: state.movingItem,
 		renamingItem: state.renamingItem,
-		clearDeletingItem: () =>
-			updateState({ deletingItem: null, deleteAlertOpen: false }),
-		clearMovingItem: () =>
-			updateState({ movingItem: null, moveDialogOpen: false }),
+		clearDeletingItem: () => updateState({ deletingItem: null, deleteAlertOpen: false }),
+		clearMovingItem: () => updateState({ movingItem: null, moveDialogOpen: false }),
 		openDeleteAlert: (deletingItem: WorkspaceItem) =>
 			updateState({ deletingItem, deleteAlertOpen: true }),
 		openMoveDialog: (movingItem: WorkspaceItem) =>
 			updateState({ movingItem, moveDialogOpen: true }),
-		setDeleteAlertOpen: (deleteAlertOpen: boolean) =>
-			updateState({ deleteAlertOpen }),
-		setMoveDialogOpen: (moveDialogOpen: boolean) =>
-			updateState({ moveDialogOpen }),
-		setRenamingItem: (renamingItem: WorkspaceItem | null) =>
-			updateState({ renamingItem }),
+		setDeleteAlertOpen: (deleteAlertOpen: boolean) => updateState({ deleteAlertOpen }),
+		setMoveDialogOpen: (moveDialogOpen: boolean) => updateState({ moveDialogOpen }),
+		setRenamingItem: (renamingItem: WorkspaceItem | null) => updateState({ renamingItem }),
 	};
 }

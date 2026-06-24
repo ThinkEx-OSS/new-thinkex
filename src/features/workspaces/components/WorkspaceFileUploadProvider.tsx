@@ -1,12 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	type ChangeEvent,
-	createContext,
-	type ReactNode,
-	use,
-	useCallback,
-	useRef,
-} from "react";
+import { type ChangeEvent, createContext, type ReactNode, use, useCallback, useRef } from "react";
 
 import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
@@ -18,8 +11,7 @@ interface WorkspaceFileUploadContextValue {
 	uploadFiles: (files: Iterable<File>, parentId: string | null) => void;
 }
 
-const WorkspaceFileUploadContext =
-	createContext<WorkspaceFileUploadContextValue | null>(null);
+const WorkspaceFileUploadContext = createContext<WorkspaceFileUploadContextValue | null>(null);
 
 export function WorkspaceFileUploadProvider({
 	children,
@@ -71,9 +63,7 @@ export function WorkspaceFileUploadProvider({
 	};
 
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-		const selectedFiles = event.currentTarget.files
-			? Array.from(event.currentTarget.files)
-			: [];
+		const selectedFiles = event.currentTarget.files ? Array.from(event.currentTarget.files) : [];
 
 		event.currentTarget.value = "";
 
@@ -85,9 +75,7 @@ export function WorkspaceFileUploadProvider({
 	};
 
 	return (
-		<WorkspaceFileUploadContext.Provider
-			value={{ requestFileUpload, uploadFiles }}
-		>
+		<WorkspaceFileUploadContext.Provider value={{ requestFileUpload, uploadFiles }}>
 			<input
 				ref={inputRef}
 				type="file"
@@ -107,9 +95,7 @@ export function useWorkspaceFileUpload() {
 	const context = use(WorkspaceFileUploadContext);
 
 	if (!context) {
-		throw new Error(
-			"useWorkspaceFileUpload must be used within WorkspaceFileUploadProvider.",
-		);
+		throw new Error("useWorkspaceFileUpload must be used within WorkspaceFileUploadProvider.");
 	}
 
 	return context;

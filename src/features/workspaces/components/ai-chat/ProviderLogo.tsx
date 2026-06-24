@@ -47,10 +47,7 @@ function GeminiLogo({ className }: LogoProps) {
 	);
 }
 
-const PROVIDER_LOGOS: Record<
-	WorkspaceAiChatProvider,
-	(props: LogoProps) => ReactElement
-> = {
+const PROVIDER_LOGOS: Record<WorkspaceAiChatProvider, (props: LogoProps) => ReactElement> = {
 	anthropic: ClaudeLogo,
 	openai: OpenAiLogo,
 	google: GeminiLogo,

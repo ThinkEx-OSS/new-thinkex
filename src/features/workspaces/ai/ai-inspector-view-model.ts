@@ -24,9 +24,7 @@ export type {
 	AIInspectorToolDefinitionView,
 } from "#/features/workspaces/ai/ai-inspector-view-types";
 
-export function getAIInspectorRunViews(
-	events: AIInspectorEvent[],
-): AIInspectorRunView[] {
+export function getAIInspectorRunViews(events: AIInspectorEvent[]): AIInspectorRunView[] {
 	const groupedEvents = new Map<string, AIInspectorEvent[]>();
 
 	for (const event of events) {
@@ -112,21 +110,14 @@ function buildRunView(runId: string, events: AIInspectorEvent[]) {
 				step.request = payload.request;
 				step.response = payload.response;
 				step.warnings = payload.warnings;
-				addStepToolCalls(
-					step,
-					toolCalls,
-					payload.toolCalls,
-					payload.toolResults,
-				);
+				addStepToolCalls(step, toolCalls, payload.toolCalls, payload.toolResults);
 				run.usage = payload.usage ?? run.usage;
 				break;
 			}
 			case "turn.finished":
 				run.finishedAt = event.createdAt;
 				run.status =
-					getNestedString(payload, ["result", "status"]) === "failed"
-						? "failed"
-						: "completed";
+					getNestedString(payload, ["result", "status"]) === "failed" ? "failed" : "completed";
 				break;
 			case "turn.error":
 				run.finishedAt = event.createdAt;
@@ -136,17 +127,13 @@ function buildRunView(runId: string, events: AIInspectorEvent[]) {
 		}
 	}
 
-	run.steps = Array.from(steps.values()).sort(
-		(a, b) => a.stepNumber - b.stepNumber,
-	);
+	run.steps = Array.from(steps.values()).sort((a, b) => a.stepNumber - b.stepNumber);
 	run.toolCalls = Array.from(toolCalls.values()).sort(
 		(a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0),
 	);
 
 	for (const step of run.steps) {
-		step.toolCalls = run.toolCalls.filter(
-			(toolCall) => toolCall.stepNumber === step.stepNumber,
-		);
+		step.toolCalls = run.toolCalls.filter((toolCall) => toolCall.stepNumber === step.stepNumber);
 	}
 
 	return run;
@@ -239,19 +226,16 @@ function getToolCall(
 	toolCalls: Map<string, AIInspectorToolCallView>,
 	payload: Record<string, unknown>,
 ) {
-	const id =
-		getString(payload.toolCallId) ?? getString(payload.id) ?? "unknown";
+	const id = getString(payload.toolCallId) ?? getString(payload.id) ?? "unknown";
 	let toolCall = toolCalls.get(id);
 	if (!toolCall) {
 		toolCall = {
 			id,
-			toolName:
-				getString(payload.toolName) ?? getString(payload.name) ?? "unknownTool",
+			toolName: getString(payload.toolName) ?? getString(payload.name) ?? "unknownTool",
 		};
 		toolCalls.set(id, toolCall);
 	}
-	toolCall.toolName =
-		getString(payload.toolName) ?? getString(payload.name) ?? toolCall.toolName;
+	toolCall.toolName = getString(payload.toolName) ?? getString(payload.name) ?? toolCall.toolName;
 	return toolCall;
 }
 

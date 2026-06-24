@@ -34,12 +34,3 @@ export const statusBadgeClassName = {
 	warning: "border-warning/25 bg-warning/10 text-warning",
 	info: "border-info/25 bg-info/10 text-info",
 } as const;
-
-/** Selection / drag highlight surfaces — not primary (actions) */
-export const interactionHighlightClassName = {
-	border: "border-foreground/35",
-	surface: "bg-foreground/8",
-	text: "text-foreground",
-	ring: "ring-foreground/30",
-	ringInset: "ring-2 ring-foreground/30 ring-inset",
-} as const;

@@ -109,11 +109,7 @@ export function WorkspaceShareMemberList({
 	});
 
 	if (isLoading) {
-		return (
-			<p className="px-2 py-3 text-sm text-muted-foreground">
-				Loading members...
-			</p>
-		);
+		return <p className="px-2 py-3 text-sm text-muted-foreground">Loading members...</p>;
 	}
 
 	return (
@@ -215,23 +211,18 @@ function WorkspaceShareMemberRow({
 	onRoleChange: (role: WorkspaceMembershipRole) => void;
 }) {
 	const isCurrentUser = member.userId === currentUserId;
-	const canManage =
-		!isCurrentUser && canManageMember(membershipRole, member.role);
+	const canManage = !isCurrentUser && canManageMember(membershipRole, member.role);
 
 	return (
 		<div className="flex items-center gap-2 rounded-md px-1 py-1.5 hover:bg-muted/50">
 			<Avatar size="sm">
 				<AvatarImage src={member.image ?? undefined} alt="" />
-				<AvatarFallback className="text-xs">
-					{getInitials(member.name)}
-				</AvatarFallback>
+				<AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
 			</Avatar>
 			<div className="min-w-0 flex-1">
 				<p className="truncate text-sm">
 					{member.name}
-					{isCurrentUser ? (
-						<span className="text-muted-foreground"> (you)</span>
-					) : null}
+					{isCurrentUser ? <span className="text-muted-foreground"> (you)</span> : null}
 				</p>
 			</div>
 			{canManage ? (

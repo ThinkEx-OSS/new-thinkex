@@ -160,9 +160,7 @@ export async function moveWorkspaceKernelAiItems(
 					const resolved = pendingItemsById.get(item.id);
 
 					if (!resolved) {
-						throw new Error(
-							`Moved workspace item was not resolved: ${item.id}`,
-						);
+						throw new Error(`Moved workspace item was not resolved: ${item.id}`);
 					}
 
 					return {
@@ -261,12 +259,6 @@ function resolveWorkspaceKernelAiMoveDestination(input: {
 	};
 }
 
-function isWorkspacePathEqualOrDescendant(
-	ancestorPath: string,
-	candidatePath: string,
-) {
-	return (
-		candidatePath === ancestorPath ||
-		candidatePath.startsWith(`${ancestorPath}/`)
-	);
+function isWorkspacePathEqualOrDescendant(ancestorPath: string, candidatePath: string) {
+	return candidatePath === ancestorPath || candidatePath.startsWith(`${ancestorPath}/`);
 }

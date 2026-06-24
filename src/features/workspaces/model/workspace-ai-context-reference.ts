@@ -37,9 +37,7 @@ export function getWorkspaceAiContextItemReference(input: {
 	};
 }
 
-export function getWorkspaceAiContextVisibleItemIds(
-	context: WorkspaceAiContextScope,
-) {
+export function getWorkspaceAiContextVisibleItemIds(context: WorkspaceAiContextScope) {
 	const itemIds = new Set<string>();
 
 	if (context.presentation.mode === "standard") {
@@ -57,10 +55,7 @@ export function getWorkspaceAiContextVisibleItemIds(
 	return itemIds;
 }
 
-function addWorkspaceAiContextVisiblePaneItemId(
-	itemIds: Set<string>,
-	pane: WorkspacePane,
-) {
+function addWorkspaceAiContextVisiblePaneItemId(itemIds: Set<string>, pane: WorkspacePane) {
 	if (pane.kind === "item") {
 		itemIds.add(pane.itemId);
 	}

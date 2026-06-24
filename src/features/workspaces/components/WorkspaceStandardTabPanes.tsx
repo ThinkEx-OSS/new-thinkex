@@ -1,9 +1,6 @@
 import WorkspaceContent from "#/features/workspaces/components/WorkspaceContent";
 import { WorkspacePaneRuntimeProvider } from "#/features/workspaces/components/WorkspacePaneRuntime";
-import type {
-	WorkspaceItemType,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceTab } from "#/features/workspaces/model/tab-types";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { cn } from "#/lib/utils";
@@ -22,10 +19,7 @@ export default function WorkspaceStandardTabPanes({
 	scopedItems: WorkspaceItem[];
 	tabs: WorkspaceTab[];
 	workspace: WorkspaceSummary;
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
+	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
 	return (
@@ -39,9 +33,7 @@ export default function WorkspaceStandardTabPanes({
 						aria-hidden={!isActive}
 						className={cn(
 							"absolute inset-0 min-h-0",
-							isActive
-								? "block pointer-events-auto"
-								: "hidden pointer-events-none select-none",
+							isActive ? "block pointer-events-auto" : "hidden pointer-events-none select-none",
 						)}
 						inert={isActive ? undefined : true}
 					>
@@ -49,9 +41,7 @@ export default function WorkspaceStandardTabPanes({
 							<WorkspaceContent
 								instanceId={tab.id}
 								items={scopedItems}
-								activeItem={
-									tab.viewItemId ? itemsById.get(tab.viewItemId) : undefined
-								}
+								activeItem={tab.viewItemId ? itemsById.get(tab.viewItemId) : undefined}
 								workspace={workspace}
 								onCreateItem={onCreateItem}
 								onOpenItem={onOpenItem}

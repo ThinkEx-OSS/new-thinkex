@@ -21,11 +21,7 @@ interface WorkspaceCardProps {
 	search?: WorkspaceCardSearch;
 }
 
-export default function WorkspaceCard({
-	workspace,
-	className,
-	search,
-}: WorkspaceCardProps) {
+export default function WorkspaceCard({ workspace, className, search }: WorkspaceCardProps) {
 	const { Icon, color } = getWorkspaceDisplay(workspace);
 	const capabilities = getWorkspaceMemberCapabilities(workspace.membershipRole);
 

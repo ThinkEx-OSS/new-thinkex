@@ -42,21 +42,18 @@ export function deriveAiChatPresentation(
 	},
 ): AiChatPresentation {
 	const lastMessage = messages.at(-1);
-	const lastAssistantMessageId =
-		lastMessage?.role === "assistant" ? lastMessage.id : undefined;
+	const lastAssistantMessageId = lastMessage?.role === "assistant" ? lastMessage.id : undefined;
 	const isBusy = isRecovering || isStreaming || isServerStreaming;
 	const awaitingFirstToken = status === "submitted" && !isToolContinuation;
 	const hasAssistantTail = lastMessage?.role === "assistant";
 	const assistantTailIsEmpty =
-		lastMessage?.role === "assistant" &&
-		getDisplayableParts(lastMessage).length === 0;
+		lastMessage?.role === "assistant" && getDisplayableParts(lastMessage).length === 0;
 	const tailPending = isRecovering
 		? hasAssistantTail && !assistantTailIsEmpty
 			? null
 			: "recovering"
 		: !isToolContinuation &&
-				(awaitingFirstToken ||
-					(isBusy && (!hasAssistantTail || assistantTailIsEmpty)))
+			  (awaitingFirstToken || (isBusy && (!hasAssistantTail || assistantTailIsEmpty)))
 			? "thinking"
 			: null;
 
@@ -81,11 +78,7 @@ export function getAssistantRowDisplay(
 	const displayableParts = getDisplayableParts(message);
 	const isLastAssistant = message.id === presentation.lastAssistantMessageId;
 
-	if (
-		presentation.status === "error" &&
-		isLastAssistant &&
-		displayableParts.length === 0
-	) {
+	if (presentation.status === "error" && isLastAssistant && displayableParts.length === 0) {
 		return { kind: "hidden" };
 	}
 
@@ -93,11 +86,7 @@ export function getAssistantRowDisplay(
 		return { kind: "content", parts: displayableParts };
 	}
 
-	if (
-		isLastAssistant &&
-		presentation.status === "ready" &&
-		!presentation.isBusy
-	) {
+	if (isLastAssistant && presentation.status === "ready" && !presentation.isBusy) {
 		return {
 			kind: "empty-terminal",
 			canRegenerate: true,
@@ -114,9 +103,7 @@ export function getAssistantRowDisplay(
 	return { kind: "hidden" };
 }
 
-export function getDisplayableParts(
-	message: AiChatMessage,
-): AiChatMessagePart[] {
+export function getDisplayableParts(message: AiChatMessage): AiChatMessagePart[] {
 	return message.parts.filter(isDisplayableMessagePart);
 }
 

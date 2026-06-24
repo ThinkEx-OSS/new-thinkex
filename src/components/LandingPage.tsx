@@ -38,15 +38,10 @@ export default function LandingPage() {
 						className="flex items-center gap-3 rounded-md text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<ThinkExLogo size={28} />
-						<span className="text-xl font-semibold tracking-tight sm:text-2xl">
-							ThinkEx
-						</span>
+						<span className="text-xl font-semibold tracking-tight sm:text-2xl">ThinkEx</span>
 					</Link>
 
-					<nav
-						className="flex flex-1 items-center justify-end gap-3"
-						aria-label="Site"
-					>
+					<nav className="flex flex-1 items-center justify-end gap-3" aria-label="Site">
 						<ModeToggle className="size-9" />
 						<Button
 							nativeButton={false}
@@ -56,11 +51,7 @@ export default function LandingPage() {
 						>
 							Sign in
 						</Button>
-						<Button
-							nativeButton={false}
-							render={<Link to="/signup" />}
-							size="default"
-						>
+						<Button nativeButton={false} render={<Link to="/signup" />} size="default">
 							Get started
 						</Button>
 					</nav>
@@ -74,13 +65,10 @@ export default function LandingPage() {
 							<div className="max-w-3xl">
 								<h1 className="text-5xl font-medium tracking-tight text-balance sm:text-6xl lg:text-7xl">
 									The workspace built for how you{" "}
-									<CyclingWord
-										words={["think", "study", "research", "create"]}
-									/>
+									<CyclingWord words={["think", "study", "research", "create"]} />
 								</h1>
 								<p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-									ThinkEx lets you organize and work across documents, media,
-									and AI in one place.
+									ThinkEx lets you organize and work across documents, media, and AI in one place.
 								</p>
 							</div>
 
@@ -98,8 +86,8 @@ export default function LandingPage() {
 												Coming soon
 											</p>
 											<p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-												A full product capture will live here once the first
-												marketing-ready workspace screenshot is available.
+												A full product capture will live here once the first marketing-ready
+												workspace screenshot is available.
 											</p>
 										</div>
 

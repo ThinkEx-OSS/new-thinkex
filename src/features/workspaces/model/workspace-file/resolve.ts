@@ -13,12 +13,8 @@ export interface WorkspaceFileItemLike {
 	metadataJson: Record<string, JsonValue>;
 }
 
-export function workspaceItemRequiresHeavyViewerRuntime(
-	item: WorkspaceFileItemLike,
-) {
-	return (
-		resolveWorkspaceFileTypeFromItem(item)?.requiresHeavyViewerRuntime ?? false
-	);
+export function workspaceItemRequiresHeavyViewerRuntime(item: WorkspaceFileItemLike) {
+	return resolveWorkspaceFileTypeFromItem(item)?.requiresHeavyViewerRuntime ?? false;
 }
 
 export function resolveWorkspaceFileTypeFromItem(
@@ -37,11 +33,6 @@ export function resolveWorkspaceFileTypeFromItem(
 	return getWorkspaceUploadFamily(assetKind);
 }
 
-function isWorkspaceFileAssetKind(
-	value: string | null,
-): value is WorkspaceFileAssetKind {
-	return (
-		value !== null &&
-		(workspaceFileAssetKinds as readonly string[]).includes(value)
-	);
+function isWorkspaceFileAssetKind(value: string | null): value is WorkspaceFileAssetKind {
+	return value !== null && (workspaceFileAssetKinds as readonly string[]).includes(value);
 }

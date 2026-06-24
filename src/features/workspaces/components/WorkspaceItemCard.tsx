@@ -237,9 +237,7 @@ export default function WorkspaceItemCard({
 							{item.name}
 						</button>
 					) : (
-						<span className="relative z-20 block max-w-full truncate">
-							{item.name}
-						</span>
+						<span className="relative z-20 block max-w-full truncate">{item.name}</span>
 					)}
 				</CardTitle>
 				{isFolder ? (

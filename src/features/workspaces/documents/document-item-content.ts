@@ -1,7 +1,4 @@
-import type {
-	JsonValue,
-	WorkspaceItemType,
-} from "#/features/workspaces/contracts";
+import type { JsonValue, WorkspaceItemType } from "#/features/workspaces/contracts";
 import { withDocumentPreviewMetadata } from "#/features/workspaces/documents/document-preview-text";
 import { getInitialWorkspaceKernelContent } from "#/features/workspaces/kernel/workspace-kernel-files";
 import { parseWorkspaceItemMetadataJson } from "#/features/workspaces/kernel/workspace-kernel-metadata";
@@ -22,8 +19,7 @@ export function buildWorkspaceItemCreateBootstrap(input: {
 	initialContent?: string;
 }) {
 	const initialContent =
-		input.initialContent ??
-		getInitialWorkspaceKernelContent(input.type, input.name);
+		input.initialContent ?? getInitialWorkspaceKernelContent(input.type, input.name);
 	const metadataJson =
 		input.type === "document"
 			? prepareDocumentItemMetadata(input.metadataJson ?? {}, initialContent)

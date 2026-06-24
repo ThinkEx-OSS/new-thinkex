@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Link2, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
@@ -29,15 +29,14 @@ import {
 	resolveWorkspaceInviteLink,
 	useWorkspaceShareDialogQueries,
 } from "#/features/workspaces/components/workspace-share-queries";
-import {
-	type WorkspaceMembershipRole,
-	workspaceRoleLabels,
-} from "#/features/workspaces/contracts";
+import { type WorkspaceMembershipRole, workspaceRoleLabels } from "#/features/workspaces/contracts";
 import {
 	defaultInviteLinkExpiryMs,
 	getGrantableInviteRoles,
 } from "#/features/workspaces/invites/workspace-invite-rules";
 import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
+import { buildWorkspaceInviteLinkCopiedEventProperties } from "#/integrations/posthog/events";
+import { capturePostHogClientEvent } from "#/integrations/posthog/provider";
 import { buildClientAbsoluteUrl } from "#/lib/client-url";
 
 const defaultInviteLinkExpiryDays = defaultInviteLinkExpiryMs / 86_400_000;
@@ -59,16 +58,10 @@ export function WorkspaceShareDialog({
 	workspaceName,
 }: WorkspaceShareDialogProps) {
 	const queryClient = useQueryClient();
-	const [copyingRole, setCopyingRole] =
-		useState<WorkspaceMembershipRole | null>(null);
-	const [copiedRole, setCopiedRole] = useState<WorkspaceMembershipRole | null>(
-		null,
-	);
+	const [copyingRole, setCopyingRole] = useState<WorkspaceMembershipRole | null>(null);
+	const [copiedRole, setCopiedRole] = useState<WorkspaceMembershipRole | null>(null);
 	const copyFeedbackTimeoutRef = useRef<number | null>(null);
-	const grantableRoles = useMemo(
-		() => getGrantableInviteRoles(membershipRole),
-		[membershipRole],
-	);
+	const grantableRoles = useMemo(() => getGrantableInviteRoles(membershipRole), [membershipRole]);
 	const { copy } = useCopyToClipboard({
 		onError: () => toast.error("Could not copy invite link"),
 	});
@@ -78,28 +71,19 @@ export function WorkspaceShareDialog({
 		workspaceId,
 	});
 
-	useEffect(() => {
-		if (open) {
-			return;
-		}
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen) {
+			setCopiedRole(null);
+			setCopyingRole(null);
 
-		setCopiedRole(null);
-		setCopyingRole(null);
-
-		if (copyFeedbackTimeoutRef.current !== null) {
-			window.clearTimeout(copyFeedbackTimeoutRef.current);
-			copyFeedbackTimeoutRef.current = null;
-		}
-	}, [open]);
-
-	useEffect(
-		() => () => {
 			if (copyFeedbackTimeoutRef.current !== null) {
 				window.clearTimeout(copyFeedbackTimeoutRef.current);
+				copyFeedbackTimeoutRef.current = null;
 			}
-		},
-		[],
-	);
+		}
+
+		onOpenChange(nextOpen);
+	}
 
 	function showCopiedLinkFeedback(role: WorkspaceMembershipRole) {
 		setCopiedRole(role);
@@ -125,15 +109,18 @@ export function WorkspaceShareDialog({
 		}
 
 		try {
-			const result = await resolveWorkspaceInviteLink(
-				queryClient,
-				workspaceId,
-				role,
-			);
+			const result = await resolveWorkspaceInviteLink(queryClient, workspaceId, role);
 
 			const didCopy = await copy(buildClientAbsoluteUrl(result.path));
 
 			if (didCopy) {
+				capturePostHogClientEvent(
+					"workspace_invite_link_copied",
+					buildWorkspaceInviteLinkCopiedEventProperties({
+						workspaceId,
+						role,
+					}),
+				);
 				showCopiedLinkFeedback(role);
 			}
 		} catch {
@@ -144,19 +131,17 @@ export function WorkspaceShareDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="flex max-h-[min(36rem,85vh)] flex-col gap-4 sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Share workspace</DialogTitle>
-					<DialogDescription>
-						Invite people to collaborate on {workspaceName}.
-					</DialogDescription>
+					<DialogDescription>Invite people to collaborate on {workspaceName}.</DialogDescription>
 				</DialogHeader>
 
 				<div className="min-h-0 flex-1 overflow-hidden rounded-md border">
 					<WorkspaceShareEmailInviteField
+						key={open ? workspaceId : `${workspaceId}-closed`}
 						membershipRole={membershipRole}
-						open={open}
 						workspaceId={workspaceId}
 					/>
 					<div className="min-h-0 max-h-64 overflow-y-auto p-1">
@@ -184,13 +169,7 @@ export function WorkspaceShareDialog({
 							}
 						>
 							<AnimatedIconSwap
-								swapKey={
-									copyingRole !== null
-										? "copying"
-										: copiedRole !== null
-											? "copied"
-											: "idle"
-								}
+								swapKey={copyingRole !== null ? "copying" : copiedRole !== null ? "copied" : "idle"}
 							>
 								{copyingRole !== null ? (
 									<Loader2 className="animate-spin" />
@@ -222,9 +201,7 @@ export function WorkspaceShareDialog({
 											void copyInviteLinkForRole(role);
 										}}
 									>
-										{copyingRole === role ? (
-											<Loader2 className="animate-spin" />
-										) : null}
+										{copyingRole === role ? <Loader2 className="animate-spin" /> : null}
 										{workspaceRoleLabels[role]}
 									</DropdownMenuItem>
 								))}

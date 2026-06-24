@@ -25,12 +25,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 		persist(
 			(set, get) => ({
 				sessionsByWorkspaceId: {},
-				ensureWorkspaceSession: ({
-					workspaceId,
-					workspaceName,
-					requestedTabId,
-					validItemIds,
-				}) => {
+				ensureWorkspaceSession: ({ workspaceId, workspaceName, requestedTabId, validItemIds }) => {
 					const currentSession = get().sessionsByWorkspaceId[workspaceId];
 					const normalizedSession = normalizeWorkspaceTabSession(
 						currentSession,
@@ -38,8 +33,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 						validItemIds,
 					);
 					const requestedTabExists =
-						requestedTabId &&
-						normalizedSession.tabs.some((tab) => tab.id === requestedTabId);
+						requestedTabId && normalizedSession.tabs.some((tab) => tab.id === requestedTabId);
 					const nextSession = requestedTabExists
 						? { ...normalizedSession, activeTabId: requestedTabId }
 						: normalizedSession;
@@ -220,12 +214,8 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 							return state;
 						}
 
-						const activeIndex = session.tabs.findIndex(
-							(tab) => tab.id === activeTabId,
-						);
-						const overIndex = session.tabs.findIndex(
-							(tab) => tab.id === overTabId,
-						);
+						const activeIndex = session.tabs.findIndex((tab) => tab.id === activeTabId);
+						const overIndex = session.tabs.findIndex((tab) => tab.id === overTabId);
 
 						if (overIndex === -1) {
 							return state;
@@ -341,17 +331,14 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 				},
 				closeTabsToRight: ({ workspaceId, tabId }) => {
 					const session = get().sessionsByWorkspaceId[workspaceId];
-					const tabIndex =
-						session?.tabs.findIndex((item) => item.id === tabId) ?? -1;
+					const tabIndex = session?.tabs.findIndex((item) => item.id === tabId) ?? -1;
 
 					if (!session || tabIndex === -1) {
 						return session;
 					}
 
 					const nextTabs = session.tabs.slice(0, tabIndex + 1);
-					const activeTabStillOpen = nextTabs.some(
-						(tab) => tab.id === session.activeTabId,
-					);
+					const activeTabStillOpen = nextTabs.some((tab) => tab.id === session.activeTabId);
 					const nextSession = {
 						activeTabId: activeTabStillOpen ? session.activeTabId : tabId,
 						tabs: nextTabs,

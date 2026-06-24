@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1782102514093,
-      "tag": "0000_lethal_screwball",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1782103788409,
-      "tag": "0001_ambiguous_tigra",
+      "when": 1782271140796,
+      "tag": "0000_initial",
       "breakpoints": true
     }
   ]

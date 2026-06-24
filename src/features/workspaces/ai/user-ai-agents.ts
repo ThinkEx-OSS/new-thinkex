@@ -85,9 +85,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return this._createThread(input);
 	}
 
-	async ensureWorkspaceStarterThread(input: {
-		workspaceId: string;
-	}): Promise<AIThreadSummary> {
+	async ensureWorkspaceStarterThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
 		const workspaceId = input.workspaceId.trim();
 
 		if (!workspaceId) {
@@ -108,9 +106,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return this._ensureWorkspaceThreadRecord(workspaceId);
 	}
 
-	private async _createThread(input: {
-		workspaceId: string;
-	}): Promise<AIThreadSummary> {
+	private async _createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
 		const workspaceId = input.workspaceId.trim();
 
 		if (!workspaceId) {
@@ -125,9 +121,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return this._createThreadRecord(workspaceId);
 	}
 
-	private async _createThreadRecord(
-		workspaceId: string,
-	): Promise<AIThreadSummary> {
+	private async _createThreadRecord(workspaceId: string): Promise<AIThreadSummary> {
 		const id = nanoid(12);
 		const now = Date.now();
 		const title = getThreadTitle();
@@ -142,9 +136,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		});
 	}
 
-	private async _ensureWorkspaceThreadRecord(
-		workspaceId: string,
-	): Promise<AIThreadSummary> {
+	private async _ensureWorkspaceThreadRecord(workspaceId: string): Promise<AIThreadSummary> {
 		const existing = this._getWorkspaceThreadSummary(workspaceId);
 
 		if (existing) {
@@ -195,12 +187,8 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		return created;
 	}
 
-	private _getWorkspaceThreadSummary(
-		workspaceId: string,
-	): AIThreadSummary | null {
-		const row = getActiveThreadMetaRows(this).find(
-			(thread) => thread.workspace_id === workspaceId,
-		);
+	private _getWorkspaceThreadSummary(workspaceId: string): AIThreadSummary | null {
+		const row = getActiveThreadMetaRows(this).find((thread) => thread.workspace_id === workspaceId);
 
 		return row ? mapThreadMetaRow(row) : null;
 	}
@@ -224,9 +212,28 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	@callable()
-	async getThreadInspectorSnapshot(
-		threadId: string,
-	): Promise<AIInspectorSnapshot> {
+	async purgeForDeletion(): Promise<void> {
+		for (const thread of this._getActiveThreadMetaRows()) {
+			try {
+				if (this.hasSubAgent(AIThread, thread.id)) {
+					await this.deleteSubAgent(AIThread, thread.id);
+				}
+
+				deleteThreadMeta(this, thread.id);
+			} catch (error) {
+				console.warn("[UserAIStore] Failed to purge chat thread during deletion", {
+					threadId: thread.id,
+					error,
+				});
+			}
+		}
+
+		this._refreshState();
+		await this.ctx.storage.deleteAll();
+	}
+
+	@callable()
+	async getThreadInspectorSnapshot(threadId: string): Promise<AIInspectorSnapshot> {
 		if (!isAIInspectorEnabled()) {
 			return { isEnabled: false, threadId, events: [] };
 		}
@@ -263,9 +270,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 	async getThreadRunStartedAt(threadId: string): Promise<number | undefined> {
 		const thread = await this._requireThreadMeta(threadId);
-		return thread.status === "running"
-			? (thread.last_run_started_at ?? undefined)
-			: undefined;
+		return thread.status === "running" ? (thread.last_run_started_at ?? undefined) : undefined;
 	}
 
 	async recordThreadRunStarted(
@@ -301,9 +306,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			lastVisibleUpdateAt: now,
 			lastViewedAt: options.viewed ? now : thread.last_viewed_at,
 			errorMessage:
-				result.status === "error"
-					? normalizeThreadErrorMessage(options.errorMessage)
-					: null,
+				result.status === "error" ? normalizeThreadErrorMessage(options.errorMessage) : null,
 			errorClassification: null,
 			errorStage: null,
 		});
@@ -330,7 +333,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 
 	async recordThreadRunFailed(
 		threadId: string,
-		error: unknown = undefined,
+		error?: unknown,
 		options: {
 			errorClassification?: AIThreadMetaRow["last_error_classification"];
 			errorStage?: AIThreadMetaRow["last_error_stage"];
@@ -372,9 +375,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	private _getThreadMeta(threadId: string) {
-		return (
-			this._getActiveThreadMetaRows().find((row) => row.id === threadId) ?? null
-		);
+		return this._getActiveThreadMetaRows().find((row) => row.id === threadId) ?? null;
 	}
 
 	private _getActiveThreadMetaRows() {

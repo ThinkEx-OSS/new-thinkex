@@ -37,9 +37,7 @@ export function useWorkspaceNavigation({
 		() => new Map(scopedItems.map((item) => [item.id, item])),
 		[scopedItems],
 	);
-	const session = useWorkspaceTabsStore(
-		(state) => state.sessionsByWorkspaceId[workspace.id],
-	);
+	const session = useWorkspaceTabsStore((state) => state.sessionsByWorkspaceId[workspace.id]);
 	const createRootTab = useWorkspaceTabsStore((state) => state.createRootTab);
 	const createItemTab = useWorkspaceTabsStore((state) => state.createItemTab);
 	const duplicateTab = useWorkspaceTabsStore((state) => state.duplicateTab);
@@ -49,13 +47,9 @@ export function useWorkspaceNavigation({
 	const moveTab = useWorkspaceTabsStore((state) => state.moveTab);
 	const closeTab = useWorkspaceTabsStore((state) => state.closeTab);
 	const closeOtherTabs = useWorkspaceTabsStore((state) => state.closeOtherTabs);
-	const closeTabsToRight = useWorkspaceTabsStore(
-		(state) => state.closeTabsToRight,
-	);
+	const closeTabsToRight = useWorkspaceTabsStore((state) => state.closeTabsToRight);
 	const activeTab = session?.tabs.find((tab) => tab.id === session.activeTabId);
-	const activeItem = activeTab?.viewItemId
-		? itemsById.get(activeTab.viewItemId)
-		: undefined;
+	const activeItem = activeTab?.viewItemId ? itemsById.get(activeTab.viewItemId) : undefined;
 	const validItemIds = useMemo(() => new Set(itemsById.keys()), [itemsById]);
 
 	const navigateToTab = useCallback(
@@ -91,8 +85,7 @@ export function useWorkspaceNavigation({
 	);
 
 	const getInsertIndexAfterActiveTab = () => {
-		const activeTabIndex =
-			session?.tabs.findIndex((tab) => tab.id === activeTab?.id) ?? -1;
+		const activeTabIndex = session?.tabs.findIndex((tab) => tab.id === activeTab?.id) ?? -1;
 
 		return activeTabIndex >= 0 ? activeTabIndex + 1 : Number.MAX_SAFE_INTEGER;
 	};
@@ -178,8 +171,7 @@ export function useWorkspaceNavigation({
 	const closeWorkspaceTab = (tab: WorkspaceTab) => {
 		const nextSession = closeTab({ workspaceId: workspace.id, tabId: tab.id });
 		const nextActiveTab =
-			nextSession.tabs.find((item) => item.id === nextSession.activeTabId) ??
-			nextSession.tabs[0];
+			nextSession.tabs.find((item) => item.id === nextSession.activeTabId) ?? nextSession.tabs[0];
 
 		if (nextActiveTab && nextActiveTab.id !== activeTab?.id) {
 			navigateToTab(nextActiveTab);
@@ -190,9 +182,7 @@ export function useWorkspaceNavigation({
 			workspaceId: workspace.id,
 			tabId: tab.id,
 		});
-		const nextActiveTab = nextSession?.tabs.find(
-			(item) => item.id === nextSession.activeTabId,
-		);
+		const nextActiveTab = nextSession?.tabs.find((item) => item.id === nextSession.activeTabId);
 
 		if (nextActiveTab) {
 			navigateToTab(nextActiveTab);
@@ -203,18 +193,13 @@ export function useWorkspaceNavigation({
 			workspaceId: workspace.id,
 			tabId: tab.id,
 		});
-		const nextActiveTab = nextSession?.tabs.find(
-			(item) => item.id === nextSession.activeTabId,
-		);
+		const nextActiveTab = nextSession?.tabs.find((item) => item.id === nextSession.activeTabId);
 
 		if (nextActiveTab && nextActiveTab.id !== activeTab?.id) {
 			navigateToTab(nextActiveTab);
 		}
 	};
-	const openItem = (
-		item: WorkspaceItem,
-		options?: OpenWorkspaceItemOptions,
-	) => {
+	const openItem = (item: WorkspaceItem, options?: OpenWorkspaceItemOptions) => {
 		if (options?.background) {
 			openItemInNewTab({ item, activate: false });
 			return;
@@ -242,9 +227,7 @@ export function useWorkspaceNavigation({
 			return;
 		}
 
-		const parent = activeItem.parentId
-			? itemsById.get(activeItem.parentId)
-			: undefined;
+		const parent = activeItem.parentId ? itemsById.get(activeItem.parentId) : undefined;
 		const tab = replaceActiveTabView({ item: parent });
 
 		navigateToTab(tab);

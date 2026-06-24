@@ -17,9 +17,7 @@ function WorkspaceToolbarGroup({
 	return (
 		<div
 			className={cn(
-				scrollable
-					? workspaceToolbarScrollGroupClassName
-					: workspaceToolbarGroupClassName,
+				scrollable ? workspaceToolbarScrollGroupClassName : workspaceToolbarGroupClassName,
 				className,
 			)}
 			{...props}
@@ -63,8 +61,4 @@ function WorkspaceToolbarTextButton({
 	);
 }
 
-export {
-	WorkspaceToolbarGroup,
-	WorkspaceToolbarIconButton,
-	WorkspaceToolbarTextButton,
-};
+export { WorkspaceToolbarGroup, WorkspaceToolbarIconButton, WorkspaceToolbarTextButton };

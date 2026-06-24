@@ -180,7 +180,6 @@ export function CyclingWord({ words, className }: CyclingWordProps) {
 					// Right of it: un-revealed letters glowing a logo color.
 					const color = i < head ? undefined : colors[i];
 					return (
-						// biome-ignore lint/suspicious/noArrayIndexKey: stable char slot
 						<span key={i} style={{ color }}>
 							{ch}
 						</span>

@@ -18,6 +18,14 @@ import {
 	type WorkspaceDropTarget,
 } from "./drag-types";
 
+function dragEntityIdToString(id: unknown): string {
+	if (typeof id === "string" || typeof id === "number" || typeof id === "bigint") {
+		return String(id);
+	}
+
+	return "";
+}
+
 export { getWorkspaceFolderDropTargetId };
 
 export function getWorkspaceDragSource(
@@ -48,7 +56,7 @@ export function getWorkspaceDragSource(
 	if (source.type === WORKSPACE_TAB_DRAG_TYPE) {
 		return {
 			kind: "tab",
-			tabId: String(source.id),
+			tabId: dragEntityIdToString(source.id),
 		};
 	}
 
@@ -60,7 +68,7 @@ export function getWorkspaceDragSource(
 
 	return {
 		kind: "workspace-item",
-		itemId: String(source.id),
+		itemId: dragEntityIdToString(source.id),
 		row,
 	};
 }
@@ -111,7 +119,7 @@ export function getWorkspaceDropTarget(
 	if (target.type === WORKSPACE_TAB_DRAG_TYPE) {
 		return {
 			kind: "tab",
-			tabId: String(target.id),
+			tabId: dragEntityIdToString(target.id),
 		};
 	}
 
@@ -142,7 +150,7 @@ export function getWorkspaceDropTarget(
 
 	return {
 		kind: "workspace-item",
-		itemId: String(target.id),
+		itemId: dragEntityIdToString(target.id),
 		row,
 	};
 }
@@ -152,18 +160,11 @@ export function getWorkspaceItemSortableGroup(input: {
 	parentId: string | null;
 	row: "folder" | "item";
 }) {
-	return [
-		"workspace-items",
-		input.workspaceId,
-		input.parentId ?? "root",
-		input.row,
-	].join(":");
+	return ["workspace-items", input.workspaceId, input.parentId ?? "root", input.row].join(":");
 }
 
 export function getWorkspaceItemDragTypeForRow(row: WorkspaceDragRow) {
-	return row === "folder"
-		? WORKSPACE_FOLDER_DRAG_TYPE
-		: WORKSPACE_ITEM_DRAG_TYPE;
+	return row === "folder" ? WORKSPACE_FOLDER_DRAG_TYPE : WORKSPACE_ITEM_DRAG_TYPE;
 }
 
 export function getWorkspaceItemSortableAccept(row: WorkspaceDragRow) {

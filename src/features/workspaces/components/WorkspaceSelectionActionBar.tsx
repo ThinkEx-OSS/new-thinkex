@@ -32,30 +32,17 @@ export default function WorkspaceSelectionActionBar({
 				</div>
 				{canMutateContent ? (
 					<>
-						<Button
-							type="button"
-							size="default"
-							variant="outline"
-							onClick={onMove}
-						>
+						<Button type="button" size="default" variant="outline" onClick={onMove}>
 							<FolderInput className="size-4" aria-hidden="true" />
 							Move
 						</Button>
-						<Button
-							type="button"
-							size="default"
-							variant="destructive"
-							onClick={onDelete}
-						>
+						<Button type="button" size="default" variant="destructive" onClick={onDelete}>
 							<Trash2 className="size-4" aria-hidden="true" />
 							Delete
 						</Button>
 					</>
 				) : null}
-				<WorkspaceToolbarIconButton
-					aria-label="Clear selection"
-					onClick={onClear}
-				>
+				<WorkspaceToolbarIconButton aria-label="Clear selection" onClick={onClear}>
 					<X aria-hidden="true" />
 				</WorkspaceToolbarIconButton>
 			</div>

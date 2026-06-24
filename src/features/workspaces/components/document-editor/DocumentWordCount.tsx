@@ -1,10 +1,6 @@
 import type { Editor } from "@tiptap/react";
 
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { useDocumentEditorUiState } from "#/features/workspaces/components/document-editor/document-editor-state";
 import {
 	workspaceOverlayControlClassName,
@@ -28,24 +24,15 @@ export function DocumentWordCount({ editor }: { editor: Editor | null }) {
 			<Tooltip>
 				<TooltipTrigger
 					aria-label={label}
-					render={
-						<span
-							className={cn(workspaceOverlayPillClassNames(), "cursor-default")}
-						/>
-					}
+					render={<span className={cn(workspaceOverlayPillClassNames(), "cursor-default")} />}
 				>
 					{hasSelection ? (
 						<span className={workspaceOverlayPillSegmentClassName}>
 							<span className="tabular-nums">{counts.selectedWords}</span>
-							<span
-								aria-hidden="true"
-								className={workspaceOverlaySlashClassName}
-							>
+							<span aria-hidden="true" className={workspaceOverlaySlashClassName}>
 								/
 							</span>
-							<span className={workspaceOverlaySecondaryClassName}>
-								{counts.totalWords}
-							</span>
+							<span className={workspaceOverlaySecondaryClassName}>{counts.totalWords}</span>
 						</span>
 					) : (
 						<span className="tabular-nums">{counts.totalWords}</span>

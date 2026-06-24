@@ -5,11 +5,7 @@ import { WorkspaceForbiddenError } from "#/features/workspaces/server/permission
 import { apiError, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
-async function handleWorkspaceFilePreview(
-	request: Request,
-	workspaceId: string,
-	itemId: string,
-) {
+async function handleWorkspaceFilePreview(request: Request, workspaceId: string, itemId: string) {
 	const requestId = getRequestId(request);
 
 	try {
@@ -44,8 +40,7 @@ async function handleWorkspaceFilePreview(
 		const headers = {
 			"cache-control": "private, max-age=86400, immutable",
 			"content-length": String(body.byteLength),
-			"content-type":
-				preview.contentType || WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
+			"content-type": preview.contentType || WORKSPACE_FILE_PREVIEW_CONTENT_TYPE,
 			etag: `"${cacheKey}"`,
 			"x-request-id": requestId,
 		};
@@ -71,9 +66,7 @@ async function handleWorkspaceFilePreview(
 	}
 }
 
-export const Route = createFileRoute(
-	"/api/v1/workspaces/$workspaceId/files/$itemId/preview",
-)({
+export const Route = createFileRoute("/api/v1/workspaces/$workspaceId/files/$itemId/preview")({
 	server: {
 		handlers: {
 			GET: ({ params, request }) =>

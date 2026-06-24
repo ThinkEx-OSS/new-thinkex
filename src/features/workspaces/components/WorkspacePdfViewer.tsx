@@ -34,19 +34,9 @@ import {
 	SelectionPluginPackage,
 	useSelectionCapability,
 } from "@embedpdf/plugin-selection/react";
-import {
-	TilingLayer,
-	TilingPluginPackage,
-} from "@embedpdf/plugin-tiling/react";
-import {
-	Viewport,
-	ViewportPluginPackage,
-} from "@embedpdf/plugin-viewport/react";
-import {
-	ZoomGestureWrapper,
-	ZoomMode,
-	ZoomPluginPackage,
-} from "@embedpdf/plugin-zoom/react";
+import { TilingLayer, TilingPluginPackage } from "@embedpdf/plugin-tiling/react";
+import { Viewport, ViewportPluginPackage } from "@embedpdf/plugin-viewport/react";
+import { ZoomGestureWrapper, ZoomMode, ZoomPluginPackage } from "@embedpdf/plugin-zoom/react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Spinner } from "#/components/ui/spinner";
 import {
@@ -133,9 +123,7 @@ export default function WorkspacePdfViewer({
 					Could not load the PDF engine.
 				</WorkspacePdfLoadFailure>
 			) : isLoading || !engine ? (
-				<WorkspacePdfViewerStatus>
-					Loading PDF viewer...
-				</WorkspacePdfViewerStatus>
+				<WorkspacePdfViewerStatus>Loading PDF viewer...</WorkspacePdfViewerStatus>
 			) : (
 				<EmbedPDF key={fileUrl} engine={engine} plugins={pdfPlugins}>
 					{({ activeDocumentId, pluginsReady }) =>
@@ -148,15 +136,11 @@ export default function WorkspacePdfViewer({
 								isCaptureActive={isCaptureActive}
 								itemId={item.id}
 								onCaptureModeExit={() => setIsCaptureActive(false)}
-								onCaptureModeToggle={() =>
-									setIsCaptureActive((current) => !current)
-								}
+								onCaptureModeToggle={() => setIsCaptureActive((current) => !current)}
 								workspaceId={workspaceId}
 							/>
 						) : (
-							<WorkspacePdfViewerStatus>
-								Preparing document...
-							</WorkspacePdfViewerStatus>
+							<WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>
 						)
 					}
 				</EmbedPDF>
@@ -192,8 +176,7 @@ function WorkspacePdfDocumentLoader({
 		documentId: string;
 		message: string;
 	} | null>(null);
-	const currentOpenError =
-		openError?.documentId === documentId ? openError.message : null;
+	const currentOpenError = openError?.documentId === documentId ? openError.message : null;
 
 	useEffect(() => {
 		if (!documentManager || documentManager.isDocumentOpen(documentId)) {
@@ -228,7 +211,7 @@ function WorkspacePdfDocumentLoader({
 						? error.message
 						: typeof error === "object" && error && "message" in error
 							? String(error.message)
-							: String(error);
+							: "Unable to open PDF";
 
 				setOpenError({ documentId, message });
 			},
@@ -248,9 +231,7 @@ function WorkspacePdfDocumentLoader({
 	}
 
 	if (!activeDocumentId) {
-		return (
-			<WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>
-		);
+		return <WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>;
 	}
 
 	return (
@@ -299,9 +280,7 @@ function WorkspacePdfDocumentContent({
 	onCaptureModeToggle: () => void;
 	workspaceId: string;
 }) {
-	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
-		null,
-	);
+	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(null);
 	const { provides: renderCapability } = useRenderCapability();
 
 	const handleCapture = ({ blob, pageIndex }: WorkspacePdfCaptureResult) => {
@@ -316,9 +295,7 @@ function WorkspacePdfDocumentContent({
 	};
 
 	if (isLoading) {
-		return (
-			<WorkspacePdfViewerStatus>Loading document...</WorkspacePdfViewerStatus>
-		);
+		return <WorkspacePdfViewerStatus>Loading document...</WorkspacePdfViewerStatus>;
 	}
 
 	if (isError) {
@@ -330,9 +307,7 @@ function WorkspacePdfDocumentContent({
 	}
 
 	if (!isLoaded) {
-		return (
-			<WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>
-		);
+		return <WorkspacePdfViewerStatus>Preparing document...</WorkspacePdfViewerStatus>;
 	}
 
 	return (
@@ -348,10 +323,7 @@ function WorkspacePdfDocumentContent({
 				onExit={onCaptureModeExit}
 				onToggle={onCaptureModeToggle}
 			/>
-			<WorkspacePdfCaptureInteractionMode
-				documentId={documentId}
-				isActive={isCaptureActive}
-			/>
+			<WorkspacePdfCaptureInteractionMode documentId={documentId} isActive={isCaptureActive} />
 			<ZoomGestureWrapper
 				className="min-h-full"
 				documentId={documentId}
@@ -410,10 +382,7 @@ function WorkspacePdfPage({
 		<div className="absolute inset-0 overflow-hidden bg-background">
 			<Rotate documentId={documentId} pageIndex={pageLayout.pageIndex}>
 				<div className="absolute inset-0">
-					<PagePointerProvider
-						documentId={documentId}
-						pageIndex={pageLayout.pageIndex}
-					>
+					<PagePointerProvider documentId={documentId} pageIndex={pageLayout.pageIndex}>
 						<RenderLayer
 							className="block select-none"
 							documentId={documentId}
@@ -476,12 +445,8 @@ function WorkspacePdfItemViewStateReporter({
 	const {
 		state: { currentPage },
 	} = useScroll(documentId);
-	const clearItemViewState = useWorkspaceUiStore(
-		(state) => state.clearItemViewState,
-	);
-	const setItemViewState = useWorkspaceUiStore(
-		(state) => state.setItemViewState,
-	);
+	const clearItemViewState = useWorkspaceUiStore((state) => state.clearItemViewState);
+	const setItemViewState = useWorkspaceUiStore((state) => state.setItemViewState);
 
 	useEffect(() => {
 		setItemViewState(workspaceId, {
@@ -500,11 +465,7 @@ function WorkspacePdfItemViewStateReporter({
 	return null;
 }
 
-function WorkspacePdfSelectionShortcuts({
-	documentId,
-}: {
-	documentId: string;
-}) {
+function WorkspacePdfSelectionShortcuts({ documentId }: { documentId: string }) {
 	const { provides: selection } = useSelectionCapability();
 
 	useWorkspacePaneHotkey(

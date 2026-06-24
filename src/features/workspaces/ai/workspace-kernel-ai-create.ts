@@ -3,7 +3,7 @@ import {
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { parseMarkdownToTiptapDocument } from "#/features/workspaces/documents/document-markdown";
+import { parseMarkdownToTiptapDocumentProjection } from "#/features/workspaces/documents/document-markdown";
 import { stringifyTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
@@ -37,6 +37,7 @@ export interface CreateWorkspaceKernelAiFailure {
 export interface CreateWorkspaceKernelAiCreatedItem {
 	path: string;
 	type: "document" | "folder";
+	warnings?: string[];
 }
 
 export interface CreateWorkspaceKernelAiItemsResult {
@@ -76,10 +77,7 @@ export async function createWorkspaceKernelAiItems(
 	});
 	const items: CreateWorkspaceKernelAiCreatedItem[] = [];
 	const failed: CreateWorkspaceKernelAiFailure[] = [];
-	const createdItemsByPath = new Map<
-		string,
-		{ id: string; type: WorkspaceItemSummary["type"] }
-	>();
+	const createdItemsByPath = new Map<string, { id: string; type: WorkspaceItemSummary["type"] }>();
 
 	for (const [index, itemInput] of input.items.entries()) {
 		const path = resolveWorkspaceKernelAiCreatePath(itemInput.path);
@@ -147,14 +145,15 @@ export async function createWorkspaceKernelAiItems(
 		const createdPath = joinWorkspaceItemPath(parent.path, command.result.name);
 
 		if (createdPath !== path.path) {
-			throw new Error(
-				`Workspace create path mismatch: expected ${path.path}, got ${createdPath}`,
-			);
+			throw new Error(`Workspace create path mismatch: expected ${path.path}, got ${createdPath}`);
 		}
 
 		items.push({
 			path: createdPath,
 			type: itemInput.type,
+			...(initialContent.warnings && initialContent.warnings.length > 0
+				? { warnings: initialContent.warnings }
+				: {}),
 		});
 		createdItemsByPath.set(createdPath, {
 			id: command.result.id,
@@ -169,10 +168,7 @@ export async function createWorkspaceKernelAiItems(
 }
 
 function resolveWorkspaceKernelAiCreateParent(input: {
-	createdItemsByPath: ReadonlyMap<
-		string,
-		{ id: string; type: WorkspaceItemSummary["type"] }
-	>;
+	createdItemsByPath: ReadonlyMap<string, { id: string; type: WorkspaceItemSummary["type"] }>;
 	parentPath: string;
 	tree: WorkspaceKernelTree;
 }):
@@ -216,9 +212,7 @@ function resolveWorkspaceKernelAiCreateParent(input: {
 	});
 
 	if (parent.status === "invalid_path") {
-		throw new Error(
-			`Unexpected invalid create parent path: ${input.parentPath}`,
-		);
+		throw new Error(`Unexpected invalid create parent path: ${input.parentPath}`);
 	}
 
 	if (parent.status === "not_found") {
@@ -246,9 +240,7 @@ function resolveWorkspaceKernelAiCreateParent(input: {
 	};
 }
 
-function resolveWorkspaceKernelAiCreatePath(
-	path: string,
-): WorkspaceKernelAiCreatePathResolution {
+function resolveWorkspaceKernelAiCreatePath(path: string): WorkspaceKernelAiCreatePathResolution {
 	try {
 		const normalizedPath = normalizeWorkspacePath(path);
 
@@ -279,10 +271,7 @@ function resolveWorkspaceKernelAiCreatePath(
 			status: "ready",
 		};
 	} catch (error) {
-		if (
-			error instanceof WorkspaceKernelPathError &&
-			error.code === "path_not_absolute"
-		) {
+		if (error instanceof WorkspaceKernelPathError && error.code === "path_not_absolute") {
 			return {
 				code: error.code,
 				path,
@@ -294,12 +283,11 @@ function resolveWorkspaceKernelAiCreatePath(
 	}
 }
 
-function getWorkspaceKernelAiCreateInitialContent(
-	input: CreateWorkspaceKernelAiItemInput,
-):
+function getWorkspaceKernelAiCreateInitialContent(input: CreateWorkspaceKernelAiItemInput):
 	| {
 			content?: string;
 			status: "ready";
+			warnings?: string[];
 	  }
 	| {
 			code: "invalid_initial_content";
@@ -310,11 +298,12 @@ function getWorkspaceKernelAiCreateInitialContent(
 	}
 
 	try {
-		const document = parseMarkdownToTiptapDocument(input.initialContent);
+		const projection = parseMarkdownToTiptapDocumentProjection(input.initialContent);
 
 		return {
-			content: stringifyTiptapDocumentJson(document),
+			content: stringifyTiptapDocumentJson(projection.document),
 			status: "ready",
+			...(projection.warnings.length > 0 ? { warnings: projection.warnings } : {}),
 		};
 	} catch {
 		return {

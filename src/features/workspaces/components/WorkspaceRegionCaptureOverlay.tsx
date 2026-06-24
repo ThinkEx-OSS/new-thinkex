@@ -28,9 +28,7 @@ export function WorkspaceImageRegionCaptureOverlay({
 
 	return (
 		<div className="pointer-events-none absolute inset-0 z-[60]">
-			{selectionRect ? (
-				<WorkspaceCaptureSelectionRect region={selectionRect} />
-			) : null}
+			{selectionRect ? <WorkspaceCaptureSelectionRect region={selectionRect} /> : null}
 		</div>
 	);
 }

@@ -1,9 +1,5 @@
 import { PointerActivationConstraints } from "@dnd-kit/dom";
-import {
-	DragDropProvider,
-	KeyboardSensor,
-	PointerSensor,
-} from "@dnd-kit/react";
+import { DragDropProvider, KeyboardSensor, PointerSensor } from "@dnd-kit/react";
 import type { ReactNode } from "react";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { MoveWorkspaceItemsInput } from "#/features/workspaces/contracts";

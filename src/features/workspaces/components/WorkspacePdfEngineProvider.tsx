@@ -1,17 +1,15 @@
 import { PdfEngineProvider, usePdfiumEngine } from "@embedpdf/engines/react";
 import type { ReactNode } from "react";
 
-import { getPdfiumWasmAbsoluteUrl } from "#/features/workspaces/files/pdfium-assets";
-import { getClientOrigin } from "#/lib/client-url";
+import pdfiumWasmUrl from "@embedpdf/pdfium/pdfium.wasm?url";
+import { buildClientAbsoluteUrl } from "#/lib/client-url";
 
-export function WorkspacePdfEngineProvider({
-	children,
-}: {
-	children: ReactNode;
-}) {
+export function WorkspacePdfEngineProvider({ children }: { children: ReactNode }) {
+	const wasmUrl =
+		typeof window === "undefined" ? pdfiumWasmUrl : buildClientAbsoluteUrl(pdfiumWasmUrl);
 	const engineState = usePdfiumEngine({
 		fontFallback: null,
-		wasmUrl: getPdfiumWasmAbsoluteUrl(getClientOrigin()),
+		wasmUrl,
 	});
 
 	return <PdfEngineProvider {...engineState}>{children}</PdfEngineProvider>;

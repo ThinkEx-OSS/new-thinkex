@@ -5,10 +5,7 @@ interface WorkspaceTreeItem {
 	parentId: string | null;
 }
 
-export function getWorkspaceChildren(
-	items: WorkspaceItem[],
-	parentId: string | null,
-) {
+export function getWorkspaceChildren(items: WorkspaceItem[], parentId: string | null) {
 	return items
 		.filter((item) => item.parentId === parentId)
 		.slice()
@@ -26,9 +23,7 @@ export function getWorkspaceRootItems<TItem extends WorkspaceTreeItem>(
 	return uniqueItemIds
 		.map((itemId) => itemsById.get(itemId))
 		.filter((item): item is TItem => Boolean(item))
-		.filter(
-			(item) => !hasSelectedWorkspaceAncestor(item, itemsById, selectedItemIds),
-		);
+		.filter((item) => !hasSelectedWorkspaceAncestor(item, itemsById, selectedItemIds));
 }
 
 export function getWorkspaceSubtreeItemIds<TItem extends WorkspaceTreeItem>(
@@ -58,10 +53,7 @@ export function getWorkspaceSubtreeItemIds<TItem extends WorkspaceTreeItem>(
 	return subtreeItemIds;
 }
 
-export function getWorkspaceDescendantIds(
-	items: readonly WorkspaceItem[],
-	itemId: string,
-) {
+export function getWorkspaceDescendantIds(items: readonly WorkspaceItem[], itemId: string) {
 	const itemIds = getWorkspaceSubtreeItemIds(items, [itemId]);
 	itemIds.delete(itemId);
 	return Array.from(itemIds);
@@ -135,10 +127,7 @@ export function getWorkspaceBreadcrumbItems(
 	return [...ancestors, item];
 }
 
-export function getWorkspaceItemMeta(
-	item: WorkspaceItem,
-	allItems: WorkspaceItem[],
-) {
+export function getWorkspaceItemMeta(item: WorkspaceItem, allItems: WorkspaceItem[]) {
 	if (item.type !== "folder") {
 		return item.meta;
 	}

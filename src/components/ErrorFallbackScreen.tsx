@@ -2,11 +2,7 @@ import type { ReactElement } from "react";
 
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "#/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
 
 interface ErrorFallbackScreenProps {
 	eyebrow?: string;
@@ -47,11 +43,7 @@ export default function ErrorFallbackScreen({
 						<Button
 							render={homeLink}
 							variant={showRetry ? "ghost" : "default"}
-							className={
-								showRetry
-									? "text-muted-foreground hover:text-foreground"
-									: undefined
-							}
+							className={showRetry ? "text-muted-foreground hover:text-foreground" : undefined}
 						>
 							Go home
 						</Button>

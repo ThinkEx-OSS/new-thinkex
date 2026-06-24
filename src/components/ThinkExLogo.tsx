@@ -8,11 +8,7 @@ interface ThinkExLogoProps {
 	presentation?: boolean;
 }
 
-export default function ThinkExLogo({
-	size,
-	className,
-	presentation = false,
-}: ThinkExLogoProps) {
+export default function ThinkExLogo({ size, className, presentation = false }: ThinkExLogoProps) {
 	const explicitPx = size != null;
 
 	return (
@@ -29,18 +25,14 @@ export default function ThinkExLogo({
 				src="/newlogothinkex-light.svg"
 				alt={presentation ? "" : "ThinkEx"}
 				decoding="async"
-				className={cn(
-					"absolute inset-0 h-full w-full object-contain dark:hidden",
-				)}
+				className={cn("absolute inset-0 h-full w-full object-contain dark:hidden")}
 			/>
 			<img
 				src="/newlogothinkex-dark.svg"
 				alt=""
 				decoding="async"
 				aria-hidden="true"
-				className={cn(
-					"absolute inset-0 hidden h-full w-full object-contain dark:block",
-				)}
+				className={cn("absolute inset-0 hidden h-full w-full object-contain dark:block")}
 			/>
 		</span>
 	);

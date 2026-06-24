@@ -64,7 +64,10 @@ CREATE TABLE `workspace_invites` (
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`created_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`created_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "workspace_invites_role_check" CHECK("workspace_invites"."role" in ('owner', 'admin', 'editor', 'viewer')),
+	CONSTRAINT "workspace_invites_type_check" CHECK("workspace_invites"."type" in ('email', 'link')),
+	CONSTRAINT "workspace_invites_status_check" CHECK("workspace_invites"."status" in ('pending', 'accepted', 'revoked', 'expired'))
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `workspace_invites_token_unique` ON `workspace_invites` (`token`);--> statement-breakpoint
@@ -81,7 +84,8 @@ CREATE TABLE `workspace_members` (
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "workspace_members_role_check" CHECK("workspace_members"."role" in ('owner', 'admin', 'editor', 'viewer'))
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `workspace_members_workspace_user_unique` ON `workspace_members` (`workspace_id`,`user_id`);--> statement-breakpoint

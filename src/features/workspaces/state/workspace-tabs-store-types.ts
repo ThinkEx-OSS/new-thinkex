@@ -1,7 +1,4 @@
-import type {
-	WorkspaceTab,
-	WorkspaceTabSession,
-} from "#/features/workspaces/model/tab-types";
+import type { WorkspaceTab, WorkspaceTabSession } from "#/features/workspaces/model/tab-types";
 
 export type { WorkspaceTab, WorkspaceTabSession };
 
@@ -14,9 +11,7 @@ export type EnsureWorkspaceSessionInput = {
 
 export type WorkspaceTabsState = {
 	sessionsByWorkspaceId: Record<string, WorkspaceTabSession>;
-	ensureWorkspaceSession: (
-		input: EnsureWorkspaceSessionInput,
-	) => WorkspaceTabSession;
+	ensureWorkspaceSession: (input: EnsureWorkspaceSessionInput) => WorkspaceTabSession;
 	createRootTab: (input: {
 		workspaceId: string;
 		workspaceName: string;
@@ -43,20 +38,9 @@ export type WorkspaceTabsState = {
 		viewItemId?: string;
 	}) => WorkspaceTab;
 	activateTab: (input: { workspaceId: string; tabId: string }) => void;
-	reorderTabs: (input: {
-		workspaceId: string;
-		activeTabId: string;
-		overTabId: string;
-	}) => void;
-	moveTab: (input: {
-		workspaceId: string;
-		tabId: string;
-		toIndex: number;
-	}) => void;
-	closeTab: (input: {
-		workspaceId: string;
-		tabId: string;
-	}) => WorkspaceTabSession;
+	reorderTabs: (input: { workspaceId: string; activeTabId: string; overTabId: string }) => void;
+	moveTab: (input: { workspaceId: string; tabId: string; toIndex: number }) => void;
+	closeTab: (input: { workspaceId: string; tabId: string }) => WorkspaceTabSession;
 	closeOtherTabs: (input: {
 		workspaceId: string;
 		tabId: string;

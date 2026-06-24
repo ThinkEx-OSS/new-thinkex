@@ -80,10 +80,7 @@ export function useWorkspaceTabCloseResizeLock(tabCount: number) {
 					tabWidth: width,
 				}),
 			);
-			releaseTimerRef.current = setTimeout(
-				release,
-				WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS,
-			);
+			releaseTimerRef.current = setTimeout(release, WORKSPACE_TAB_CLOSE_RESIZE_LOCK_TIMEOUT_MS);
 		},
 		[clearReclaimTimer, clearReleaseTimer, release, setLock, tabCount],
 	);
@@ -97,10 +94,7 @@ export function useWorkspaceTabCloseResizeLock(tabCount: number) {
 	);
 
 	useLayoutEffect(() => {
-		const nextLock = reconcileWorkspaceTabCloseResizeLock(
-			lockStateRef.current,
-			tabCount,
-		);
+		const nextLock = reconcileWorkspaceTabCloseResizeLock(lockStateRef.current, tabCount);
 
 		if (nextLock === lockStateRef.current) {
 			return;

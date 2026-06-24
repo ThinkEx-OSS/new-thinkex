@@ -111,12 +111,8 @@ export interface WorkspaceKernelClient {
 		fileName: string;
 		sizeBytes: number;
 	}>;
-	readFilePreview(input: {
-		itemId: string;
-	}): Promise<ReadWorkspaceKernelFilePreviewResult | null>;
-	upsertFileProjection(
-		input: UpsertWorkspaceKernelFileProjectionArgs,
-	): Promise<void>;
+	readFilePreview(input: { itemId: string }): Promise<ReadWorkspaceKernelFilePreviewResult | null>;
+	upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs): Promise<void>;
 	readFileProjection(
 		input: ReadWorkspaceKernelFileProjectionArgs,
 	): Promise<ReadWorkspaceKernelFileProjectionResult | null>;
@@ -126,6 +122,7 @@ export interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	purgeForDeletion(): Promise<void>;
 }
 
 export async function readWorkspaceKernelFileContent(input: {

@@ -38,11 +38,7 @@ export function RenameWorkspaceItemDialog({
 	return (
 		<Dialog open={Boolean(item)} onOpenChange={onOpenChange}>
 			{item ? (
-				<RenameWorkspaceItemDialogContent
-					key={item.id}
-					item={item}
-					onOpenChange={onOpenChange}
-				/>
+				<RenameWorkspaceItemDialogContent key={item.id} item={item} onOpenChange={onOpenChange} />
 			) : null}
 		</Dialog>
 	);
@@ -63,7 +59,8 @@ function RenameWorkspaceItemDialogContent({
 			<form
 				className="grid gap-6"
 				action={(formData) => {
-					const name = String(formData.get("name") ?? "").trim();
+					const rawName = formData.get("name");
+					const name = (typeof rawName === "string" ? rawName : "").trim();
 
 					if (!name) {
 						return;
@@ -82,34 +79,19 @@ function RenameWorkspaceItemDialogContent({
 			>
 				<DialogHeader>
 					<DialogTitle>Rename item</DialogTitle>
-					<DialogDescription>
-						Update the item name shown in this workspace.
-					</DialogDescription>
+					<DialogDescription>Update the item name shown in this workspace.</DialogDescription>
 				</DialogHeader>
 				<FieldGroup>
 					<Field>
 						<FieldLabel htmlFor={nameInputId}>Name</FieldLabel>
-						<Input
-							id={nameInputId}
-							name="name"
-							defaultValue={item.name}
-							required
-							autoFocus
-						/>
+						<Input id={nameInputId} name="name" defaultValue={item.name} required autoFocus />
 					</Field>
 				</FieldGroup>
 				<DialogFooter>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpenChange(false)}
-					>
+					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
-					<Button
-						type="submit"
-						disabled={renameWorkspaceItemMutation.isPending}
-					>
+					<Button type="submit" disabled={renameWorkspaceItemMutation.isPending}>
 						Save
 					</Button>
 				</DialogFooter>
@@ -159,9 +141,7 @@ export function DeleteWorkspaceItemsAlert({
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						variant="destructive"
-						disabled={
-							itemIds.length === 0 || deleteWorkspaceItemsMutation.isPending
-						}
+						disabled={itemIds.length === 0 || deleteWorkspaceItemsMutation.isPending}
 						onClick={(event) => {
 							event.preventDefault();
 
@@ -248,9 +228,8 @@ export function WorkspaceDeleteSelectedItemsDescription({
 
 	return (
 		<>
-			This cannot be undone. {selectedCount} selected {itemLabel} will be
-			removed from the workspace. Anything inside selected folders will also be
-			deleted.
+			This cannot be undone. {selectedCount} selected {itemLabel} will be removed from the
+			workspace. Anything inside selected folders will also be deleted.
 		</>
 	);
 }

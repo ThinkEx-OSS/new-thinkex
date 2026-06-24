@@ -1,10 +1,4 @@
-import {
-	type RefObject,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import {
 	DEFAULT_IMAGE_VIEWER_TRANSFORM,
@@ -20,17 +14,20 @@ export function useWorkspaceImageViewerTransform({
 	isCaptureActive: boolean;
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [transform, setTransform] = useState<ImageViewerTransform>(
-		DEFAULT_IMAGE_VIEWER_TRANSFORM,
-	);
+	const [transform, setTransform] = useState<ImageViewerTransform>(DEFAULT_IMAGE_VIEWER_TRANSFORM);
 	const transformRef = useRef(transform);
 	const gestureStateRef = useRef({
 		captureActive: isCaptureActive,
 		spacePressed: false,
 	});
 
-	transformRef.current = transform;
-	gestureStateRef.current.captureActive = isCaptureActive;
+	useEffect(() => {
+		transformRef.current = transform;
+	}, [transform]);
+
+	useEffect(() => {
+		gestureStateRef.current.captureActive = isCaptureActive;
+	}, [isCaptureActive]);
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -47,9 +44,7 @@ export function useWorkspaceImageViewerTransform({
 	}, [enabled]);
 
 	const deferCaptureSelection = useCallback(
-		() =>
-			gestureStateRef.current.captureActive &&
-			gestureStateRef.current.spacePressed,
+		() => gestureStateRef.current.captureActive && gestureStateRef.current.spacePressed,
 		[],
 	);
 

@@ -33,10 +33,7 @@ export function ColorSwatchPicker<Value extends string | null>({
 	return (
 		<fieldset
 			aria-label={ariaLabel}
-			className={cn(
-				"m-0 grid min-w-0 grid-cols-4 gap-2 border-0 p-0",
-				className,
-			)}
+			className={cn("m-0 grid min-w-0 grid-cols-4 gap-2 border-0 p-0", className)}
 		>
 			{options.map((option) => {
 				const selected = option.value === value;
@@ -66,19 +63,13 @@ export function ColorSwatchPicker<Value extends string | null>({
 								"flex items-center justify-center",
 								showLabels ? "size-4 rounded-full" : "size-6 rounded-[4px]",
 								option.swatchClassName,
-								selected &&
-									"ring-2 ring-ring ring-offset-2 ring-offset-background",
+								selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
 							)}
 							style={option.swatchStyle}
 							aria-hidden="true"
 						>
 							{selected ? (
-								<CheckIcon
-									className={cn(
-										"size-3 text-white drop-shadow",
-										option.checkClassName,
-									)}
-								/>
+								<CheckIcon className={cn("size-3 text-white drop-shadow", option.checkClassName)} />
 							) : null}
 						</span>
 						{showLabels ? <span>{option.label}</span> : null}

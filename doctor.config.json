@@ -7,7 +7,6 @@
 			".firecrawl/**",
 			".nitro/**",
 			".output/**",
-			".reference/**",
 			".tanstack/**",
 			".tmp/**",
 			".vinxi/**",
@@ -16,8 +15,6 @@
 			"dist/**",
 			"dist-ssr/**",
 			"node_modules/**",
-			"../references/**",
-			"references/**",
 			"tmp/**"
 		]
 	}

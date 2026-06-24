@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -6,8 +6,9 @@ import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
+import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
-import { refreshAuthSession, removeAuthSession } from "#/lib/session-query";
+import { getAuthSessionQueryOptions, refreshAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
 
@@ -38,12 +39,10 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 	const navigate = useNavigate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { data: session, refetch } = authClient.useSession();
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
 	const alternateHref = mode === "signin" ? "/signup" : "/login";
 	const alternateAccountCta =
-		mode === "signin"
-			? "Don't have an account? Sign up"
-			: "Already have an account? Sign in";
+		mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in";
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -53,10 +52,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 				<div className="space-y-4 text-center">
 					<p className="text-sm leading-6 text-muted-foreground">
 						You&apos;re signed in as{" "}
-						<span className="font-medium text-foreground">
-							{session.user.email}
-						</span>
-						.
+						<span className="font-medium text-foreground">{session.user.email}</span>.
 					</p>
 					<div className="flex flex-wrap justify-center gap-3">
 						<Button nativeButton={false} render={<Link to={callbackURL} />}>
@@ -65,17 +61,18 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={async () => {
-								try {
-									await authClient.signOut();
-									removeAuthSession(queryClient);
-									await Promise.all([refetch(), router.invalidate()]);
-									await navigate({ to: "/" });
-								} catch (error) {
-									toast.error(
-										getErrorMessage(error, "Unable to sign out right now."),
-									);
-								}
+							onClick={() => {
+								void (async () => {
+									try {
+										await signOutCurrentUser({
+											queryClient,
+											router,
+											navigate,
+										});
+									} catch (error) {
+										toast.error(getErrorMessage(error, "Unable to sign out right now."));
+									}
+								})();
 							}}
 						>
 							Sign out
@@ -91,27 +88,24 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 			<div className="mx-auto grid w-full max-w-xs gap-6">
 				<Button
 					type="button"
-					onClick={async () => {
-						setIsLoading(true);
-						setErrorMessage(null);
+					onClick={() => {
+						void (async () => {
+							setIsLoading(true);
+							setErrorMessage(null);
 
-						try {
-							await authClient.signIn.social({
-								provider: "google",
-								callbackURL,
-							});
-							await Promise.all([
-								refetch(),
-								refreshAuthSession(queryClient),
-								router.invalidate(),
-							]);
-						} catch (error) {
-							setErrorMessage("Failed to sign in with Google");
-							toast.error(
-								getErrorMessage(error, "Failed to sign in with Google"),
-							);
-							setIsLoading(false);
-						}
+							try {
+								await authClient.signIn.social({
+									provider: "google",
+									callbackURL,
+								});
+								await refreshAuthSession(queryClient);
+								await router.invalidate();
+							} catch (error) {
+								setErrorMessage("Failed to sign in with Google");
+								toast.error(getErrorMessage(error, "Failed to sign in with Google"));
+								setIsLoading(false);
+							}
+						})();
 					}}
 					disabled={isLoading}
 					className="w-full"

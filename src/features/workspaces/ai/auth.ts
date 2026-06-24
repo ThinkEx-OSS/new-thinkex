@@ -1,9 +1,6 @@
 import { getAgentByName } from "agents";
 
-import {
-	isUserAIRequestPath,
-	userAIAgentName,
-} from "#/features/workspaces/agent-routes";
+import { isUserAIRequestPath, userAIAgentName } from "#/features/workspaces/agent-routes";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 export async function routeUserAIRequest(request: Request, env: Env) {
@@ -20,10 +17,7 @@ export async function routeUserAIRequest(request: Request, env: Env) {
 			return new Response("Unauthorized", { status: 401 });
 		}
 
-		const directory = await getAgentByName(
-			env[userAIAgentName],
-			session.user.id,
-		);
+		const directory = await getAgentByName(env[userAIAgentName], session.user.id);
 
 		return directory.fetch(request);
 	} catch (error) {

@@ -43,9 +43,7 @@ export function getWorkspaceSplitDropTargetInput(id: unknown):
 		return undefined;
 	}
 
-	const paneId = decodeWorkspaceDropTargetSegment(
-		value.slice(0, sideSeparatorIndex),
-	);
+	const paneId = decodeWorkspaceDropTargetSegment(value.slice(0, sideSeparatorIndex));
 	const side = value.slice(sideSeparatorIndex + 1);
 
 	if (!paneId || !isWorkspaceSplitDropSide(side)) {

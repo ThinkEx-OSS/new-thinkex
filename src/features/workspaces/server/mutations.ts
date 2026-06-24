@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import { ensureWorkspaceStarterThreadForUser } from "#/features/workspaces/ai/workspace-starter-thread.server";
+import { purgeWorkspaceResources } from "#/features/workspaces/durable-object-lifecycle";
 import type {
 	CreateWorkspaceInput,
 	DeleteWorkspaceInput,
@@ -21,12 +22,21 @@ import {
 	assertCanReadWorkspace,
 	getCurrentUserId,
 } from "#/features/workspaces/server/permissions";
+import { buildWorkspaceCreatedEventProperties } from "#/integrations/posthog/events";
+import { capturePostHogServerEvent } from "#/integrations/posthog/server";
 
 export async function createWorkspaceForCurrentUser(
 	input: CreateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
 	const userId = await getCurrentUserId();
 	const workspace = await insertWorkspaceForUser(input, userId);
+
+	capturePostHogServerEvent({
+		distinctId: userId,
+		event: "workspace_created",
+		properties: buildWorkspaceCreatedEventProperties(workspace),
+		timestamp: new Date().toISOString(),
+	});
 
 	await ensureWorkspaceStarterThreadForUser({
 		userId,
@@ -86,10 +96,7 @@ async function insertWorkspaceForUser(
 export async function recordWorkspaceOpenedForCurrentUser(
 	workspaceId: string,
 ): Promise<WorkspaceSummary | null> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const [userId, dbContext] = await Promise.all([getCurrentUserId(), createDbContext()]);
 	const openedAt = new Date();
 
 	try {
@@ -100,10 +107,7 @@ export async function recordWorkspaceOpenedForCurrentUser(
 				.update(workspaceMembers)
 				.set({ lastOpenedAt: openedAt })
 				.where(
-					and(
-						eq(workspaceMembers.workspaceId, workspaceId),
-						eq(workspaceMembers.userId, userId),
-					),
+					and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
 				)
 				.returning({
 					lastOpenedAt: workspaceMembers.lastOpenedAt,
@@ -112,9 +116,7 @@ export async function recordWorkspaceOpenedForCurrentUser(
 			dbContext.db
 				.select()
 				.from(workspaces)
-				.where(
-					and(eq(workspaces.id, workspaceId), isNull(workspaces.archivedAt)),
-				)
+				.where(and(eq(workspaces.id, workspaceId), isNull(workspaces.archivedAt)))
 				.limit(1),
 		]);
 
@@ -137,10 +139,7 @@ export async function recordWorkspaceOpenedForCurrentUser(
 export async function updateWorkspaceForCurrentUser(
 	input: UpdateWorkspaceInput,
 ): Promise<WorkspaceSummary> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const [userId, dbContext] = await Promise.all([getCurrentUserId(), createDbContext()]);
 
 	try {
 		await assertCanMutateWorkspace(dbContext.db, {
@@ -156,12 +155,7 @@ export async function updateWorkspaceForCurrentUser(
 					icon: input.icon,
 					color: input.color,
 				})
-				.where(
-					and(
-						eq(workspaces.id, input.workspaceId),
-						isNull(workspaces.archivedAt),
-					),
-				)
+				.where(and(eq(workspaces.id, input.workspaceId), isNull(workspaces.archivedAt)))
 				.returning(),
 			dbContext.db
 				.select({
@@ -202,13 +196,8 @@ export async function updateWorkspaceForCurrentUser(
 	}
 }
 
-export async function deleteWorkspaceForCurrentUser(
-	input: DeleteWorkspaceInput,
-) {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+export async function deleteWorkspaceForCurrentUser(input: DeleteWorkspaceInput) {
+	const [userId, dbContext] = await Promise.all([getCurrentUserId(), createDbContext()]);
 
 	try {
 		await assertCanDeleteWorkspace(dbContext.db, {
@@ -219,12 +208,7 @@ export async function deleteWorkspaceForCurrentUser(
 		const [workspace] = await dbContext.db
 			.select()
 			.from(workspaces)
-			.where(
-				and(
-					eq(workspaces.id, input.workspaceId),
-					isNull(workspaces.archivedAt),
-				),
-			)
+			.where(and(eq(workspaces.id, input.workspaceId), isNull(workspaces.archivedAt)))
 			.limit(1);
 
 		if (!workspace) {
@@ -239,6 +223,10 @@ export async function deleteWorkspaceForCurrentUser(
 			.delete(workspaces)
 			.where(eq(workspaces.id, input.workspaceId))
 			.returning({ id: workspaces.id });
+
+		if (deletedWorkspace) {
+			await purgeWorkspaceResources(input.workspaceId);
+		}
 
 		return deletedWorkspace ?? null;
 	} finally {

@@ -10,9 +10,7 @@ import type { WorkspacePresentation } from "#/features/workspaces/state/workspac
 export type WorkspaceAiContextScope = {
 	activeItem?: WorkspaceItem;
 	activeTabId?: string;
-	itemViewStatesByItemId: Readonly<
-		Record<string, WorkspaceItemViewState | undefined>
-	>;
+	itemViewStatesByItemId: Readonly<Record<string, WorkspaceItemViewState | undefined>>;
 	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	presentation: WorkspacePresentation;
 	selectedItemIds: readonly string[];

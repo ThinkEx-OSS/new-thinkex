@@ -7,11 +7,7 @@ import {
 	AvatarGroupCount,
 	AvatarImage,
 } from "#/components/ui/avatar";
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "#/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "#/components/ui/hover-card";
 import type { WorkspacePresenceUser } from "#/features/workspaces/realtime/messages";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
@@ -32,9 +28,7 @@ function getInitials(name: string) {
 export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 	const { data: session } = useQuery(getAuthSessionQueryOptions());
 	const currentUserId = session?.user.id;
-	const otherUsers = currentUserId
-		? users.filter((user) => user.id !== currentUserId)
-		: [];
+	const otherUsers = currentUserId ? users.filter((user) => user.id !== currentUserId) : [];
 	const visibleUsers = otherUsers.slice(0, 3);
 	const overflowCount = Math.max(otherUsers.length - visibleUsers.length, 0);
 
@@ -63,9 +57,7 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 							<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
 						</Avatar>
 					))}
-					{overflowCount > 0 ? (
-						<AvatarGroupCount>+{overflowCount}</AvatarGroupCount>
-					) : null}
+					{overflowCount > 0 ? <AvatarGroupCount>+{overflowCount}</AvatarGroupCount> : null}
 				</AvatarGroup>
 			</HoverCardTrigger>
 			<HoverCardContent align="end" className="w-56 rounded-md p-2">
@@ -79,9 +71,7 @@ export function WorkspacePresence({ status, users }: WorkspacePresenceProps) {
 								<AvatarImage src={user.image ?? undefined} alt="" />
 								<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
 							</Avatar>
-							<p className="min-w-0 truncate text-sm font-medium">
-								{user.name}
-							</p>
+							<p className="min-w-0 truncate text-sm font-medium">{user.name}</p>
 						</div>
 					))}
 				</div>

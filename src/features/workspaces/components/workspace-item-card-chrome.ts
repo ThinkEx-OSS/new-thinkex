@@ -15,8 +15,7 @@ export const workspaceItemPreviewControlRowClass =
 export const workspaceItemCardBaseClass =
 	"workspace-item-card group/item relative flex h-full min-h-44 cursor-pointer flex-col gap-0 overflow-hidden py-0 transition-[background-color,box-shadow] active:cursor-grabbing";
 
-export const workspaceItemCardHoverClass =
-	"hover:bg-secondary dark:hover:bg-accent/75";
+export const workspaceItemCardHoverClass = "hover:bg-secondary dark:hover:bg-accent/75";
 
 export const workspaceItemCardUnselectedHoverClass =
 	"not-data-[selected=true]:hover:shadow-md not-data-[selected=true]:hover:ring-foreground/15 dark:not-data-[selected=true]:hover:ring-foreground/18";
@@ -29,11 +28,9 @@ export const workspaceItemPreviewStageClass =
 
 export const workspaceItemPreviewContentLayerClass = "absolute inset-0";
 
-export const workspaceItemPreviewControlsLayerClass =
-	"absolute inset-x-0 top-0 z-20";
+export const workspaceItemPreviewControlsLayerClass = "absolute inset-x-0 top-0 z-20";
 
-export const workspaceItemDocumentPreviewPanelClass =
-	"size-full overflow-hidden p-3";
+export const workspaceItemDocumentPreviewPanelClass = "size-full overflow-hidden p-3";
 
 export const workspaceItemDocumentPreviewTextClass =
 	"size-full overflow-hidden break-words whitespace-pre-line text-[11px] leading-[1.45] text-muted-foreground/70 line-clamp-[11]";

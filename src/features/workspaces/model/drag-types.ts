@@ -1,10 +1,7 @@
 export const WORKSPACE_TAB_DRAG_TYPE = "workspace-tab";
 export const WORKSPACE_FOLDER_DRAG_TYPE = "workspace-folder";
 export const WORKSPACE_ITEM_DRAG_TYPE = "workspace-item";
-export const WORKSPACE_ITEM_DRAG_TYPES = [
-	WORKSPACE_FOLDER_DRAG_TYPE,
-	WORKSPACE_ITEM_DRAG_TYPE,
-];
+export const WORKSPACE_ITEM_DRAG_TYPES = [WORKSPACE_FOLDER_DRAG_TYPE, WORKSPACE_ITEM_DRAG_TYPE];
 
 export type WorkspaceDragRow = "folder" | "item";
 export type WorkspaceSplitDropSide = "left" | "right" | "top" | "bottom";

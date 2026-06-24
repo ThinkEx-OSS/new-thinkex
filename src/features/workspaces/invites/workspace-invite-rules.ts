@@ -14,10 +14,7 @@ export const workspaceRoleRank: Record<WorkspaceRole, number> = {
 
 export const defaultInviteLinkExpiryMs = 7 * 24 * 60 * 60 * 1000;
 
-export function canGrantRole(
-	inviterRole: WorkspaceRole,
-	grantedRole: WorkspaceRole,
-) {
+export function canGrantRole(inviterRole: WorkspaceRole, grantedRole: WorkspaceRole) {
 	if (grantedRole === "owner") {
 		return false;
 	}
@@ -25,19 +22,7 @@ export function canGrantRole(
 	return workspaceRoleRank[grantedRole] <= workspaceRoleRank[inviterRole];
 }
 
-export function resolveRoleAfterAccept(
-	existingRole: WorkspaceRole,
-	inviteRole: WorkspaceRole,
-): WorkspaceRole {
-	return workspaceRoleRank[existingRole] >= workspaceRoleRank[inviteRole]
-		? existingRole
-		: inviteRole;
-}
-
-export function canManageMember(
-	actorRole: WorkspaceRole,
-	targetRole: WorkspaceRole,
-) {
+export function canManageMember(actorRole: WorkspaceRole, targetRole: WorkspaceRole) {
 	if (targetRole === "owner") {
 		return false;
 	}
@@ -69,9 +54,7 @@ export function getGrantableInviteRoles(inviterRole: WorkspaceRole) {
 	return workspaceRoles.filter((role) => canGrantRole(inviterRole, role));
 }
 
-export function getDefaultInviteRole(
-	inviterRole: WorkspaceRole,
-): WorkspaceRole {
+export function getDefaultInviteRole(inviterRole: WorkspaceRole): WorkspaceRole {
 	const grantableRoles = getGrantableInviteRoles(inviterRole);
 
 	if (grantableRoles.includes("editor")) {
@@ -81,9 +64,7 @@ export function getDefaultInviteRole(
 	return grantableRoles.at(-1) ?? "viewer";
 }
 
-export function getAssignableMemberRoles(
-	actorRole: WorkspaceRole,
-): WorkspaceRole[] {
+export function getAssignableMemberRoles(actorRole: WorkspaceRole): WorkspaceRole[] {
 	return getGrantableInviteRoles(actorRole).filter(
 		(role) => actorRole === "owner" || role !== "admin",
 	);

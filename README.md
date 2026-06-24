@@ -1,66 +1,82 @@
 # ThinkEx
 
-TanStack Start — React, Better Auth, Drizzle, D1, Cloudflare Workers.
+ThinkEx is a workspace for thinking across notes, documents, media, and AI in one place.
+
+ThinkEx is built around persistent workspaces instead of disposable chat threads. You can lay out sources side by side, organize them spatially, ask questions against specific context, and keep the resulting knowledge inside the workspace instead of losing it in chat history.
+
+## Overview
+
+This repository contains the current ThinkEx web app. It is built with React and TanStack Start and deployed on Cloudflare Workers.
+
+At a high level, the app combines:
+
+- a browser-based workspace UI
+- first-class documents and media
+- AI-assisted reasoning inside the workspace
+- collaboration and sharing
+- storage, workflows, and realtime infrastructure on Cloudflare
+
+## What ThinkEx Does
+
+ThinkEx is aimed at research, synthesis, and knowledge work where context matters.
+
+- Work in persistent workspaces instead of one-off chats.
+- Put notes, PDFs, and other artifacts next to each other.
+- Ask the AI about the exact context you selected.
+- Save outputs back into the workspace as part of the ongoing work.
+- Share workspaces with collaborators.
+
+## Tech Stack
+
+- React 19
+- TanStack Start, Router, and Query
+- TypeScript
+- Tailwind CSS
+- Better Auth
+- Drizzle ORM
+- Vite+
+- Tiptap for rich text editing
+- Yjs / PartyServer for collaborative document state
+- EmbedPDF / PDFium for PDF rendering
+- Cloudflare Workers
+- Cloudflare D1
+- Cloudflare R2
+- Cloudflare Durable Objects
+- Cloudflare Workflows
+- Cloudflare Email
+
+Current named runtime pieces include:
+
+- `WorkspaceKernel`
+- `UserAIStore`
+- `DocumentSession`
+- `WorkspaceFileExtractionWorkflow`
+
+## Local Development
 
 ```bash
-pnpm install && pnpm dev   # http://localhost:3000 via Infisical
+pnpm install
+pnpm dev
 ```
 
-App database: Cloudflare D1. Local dev uses the local D1 binding automatically; deployments use the `DB` binding in `wrangler.jsonc`.
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-### Database layout
+Local development expects secrets through Infisical.
 
-| Environment | Provider | How the app connects |
-|-------------|----------|----------------------|
-| Local dev | local D1 | auto-wired `DB` binding via `pnpm dev` |
-| Deployment | remote D1 | `DB` binding in `wrangler.jsonc` |
+Common commands:
 
-Fresh setup: create the remote database once with `wrangler d1 create new-thinkex`, then paste the returned `database_id` into `wrangler.jsonc`.
+- `pnpm dev`
+- `pnpm test`
+- `pnpm check`
+- `pnpm build`
 
-### Schema changes (Drizzle)
+## Deployment Model
 
-One shared `drizzle/` migration folder. Generate SQL with Drizzle, then apply it to local and remote D1 with Wrangler.
+The repository currently targets local development, staging, and production. Deployment is handled through GitHub Actions and Wrangler. Database changes flow through Drizzle-generated SQL plus Wrangler D1 migrations.
 
-```bash
-# 1. Edit src/db/schema.ts, then generate SQL (review the new file in drizzle/)
-pnpm db:generate
-pnpm db:check
+## Repository
 
-# 2. Apply locally, then test with pnpm dev
-pnpm db:migrate:local
-
-# 3. Apply to remote D1, then deploy
-pnpm db:migrate
-pnpm deploy
-```
-
-Rules:
-
-- Use **`db:generate` + Wrangler migrations**. Do not hand-edit remote schema.
-- Always migrate **local first**, then **remote**, then deploy.
-- Commit the `drizzle/` folder with schema changes.
-- The app no longer needs `DATABASE_URL` for its primary database.
-
-```bash
-pnpm check && pnpm typecheck && pnpm build && pnpm deploy
-pnpm db:generate && pnpm db:migrate:local && pnpm db:migrate
-```
-
-Secrets still come from Infisical locally and Cloudflare bindings in production. `.infisical.json` is safe to commit.
-
-### Workspace invite email (Cloudflare Email Service)
-
-Email invites send through the Worker `EMAIL` binding (`send_email` in `wrangler.jsonc`). Production requires onboarding the ThinkEx sending domain:
-
-```bash
-npx wrangler email sending enable thinkex.app
-npx wrangler email sending dns get thinkex.app
-```
-
-Set `WORKSPACE_INVITE_FROM_EMAIL` in `wrangler.jsonc` to an address on that domain (default: `invites@thinkex.app`). Local dev uses `"remote": true` on the binding so sends hit the real service — use addresses you control.
-
-If the binding or domain is not configured, invites are still saved in the database and the share dialog reports which addresses failed to send.
-
-**Prod:** `https://new-thinkex.chakrabortyurjit.workers.dev` — OAuth callback `/api/auth/callback/google`
-
-**Docs:** [`CONTEXT.md`](CONTEXT.md) · [`docs/README.md`](docs/README.md) · [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`AGENTS.md`](AGENTS.md)
+- `src/features/workspaces/` contains most of the product-specific logic.
+- `src/integrations/` contains external service integrations such as PostHog.
+- `drizzle/` contains the current database migration baseline.
+- `wrangler.jsonc` is the main Cloudflare runtime config.

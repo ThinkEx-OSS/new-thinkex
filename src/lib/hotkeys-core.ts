@@ -7,10 +7,7 @@ import {
 	useHotkey,
 } from "@tanstack/react-hotkeys";
 
-type AppHotkeyAction =
-	| "sidebar.toggle"
-	| "workspace.aiChat.toggle"
-	| "workspace.search.open";
+type AppHotkeyAction = "workspace.aiChat.toggle" | "workspace.search.open";
 
 type AppHotkeyDefinition = {
 	hotkey: Hotkey;
@@ -19,11 +16,6 @@ type AppHotkeyDefinition = {
 };
 
 const APP_HOTKEYS = {
-	"sidebar.toggle": {
-		hotkey: "Mod+B",
-		description: "Toggle sidebar",
-		scope: "global",
-	},
 	"workspace.aiChat.toggle": {
 		hotkey: "Mod+J",
 		description: "Toggle AI chat",
@@ -65,9 +57,4 @@ function formatAppHotkey(hotkey: Hotkey) {
 }
 
 export type { AppHotkeyAction, AppHotkeyDefinition };
-export {
-	APP_HOTKEY_DEFAULT_OPTIONS,
-	formatAppHotkey,
-	getAppHotkey,
-	useAppHotkey,
-};
+export { APP_HOTKEY_DEFAULT_OPTIONS, formatAppHotkey, getAppHotkey, useAppHotkey };

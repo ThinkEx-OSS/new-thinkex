@@ -2,9 +2,7 @@ import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 export type WorkspaceViewMode = "root" | "folder" | "item";
 
-export function getWorkspaceViewMode(
-	activeItem?: WorkspaceItem,
-): WorkspaceViewMode {
+export function getWorkspaceViewMode(activeItem?: WorkspaceItem): WorkspaceViewMode {
 	if (!activeItem) {
 		return "root";
 	}
@@ -16,9 +14,7 @@ export function getWorkspaceViewMode(
 	return "item";
 }
 
-export function isWorkspaceItemView(
-	activeItem?: WorkspaceItem,
-): activeItem is WorkspaceItem {
+export function isWorkspaceItemView(activeItem?: WorkspaceItem): activeItem is WorkspaceItem {
 	return getWorkspaceViewMode(activeItem) === "item";
 }
 

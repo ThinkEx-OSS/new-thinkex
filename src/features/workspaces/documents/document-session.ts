@@ -8,7 +8,7 @@ import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 import type { DocumentSessionRouteParams } from "#/features/workspaces/agent-routes";
 import {
-	parseMarkdownToTiptapDocument,
+	parseMarkdownToTiptapDocumentProjection,
 	serializeTiptapDocumentToMarkdown,
 } from "#/features/workspaces/documents/document-markdown";
 import {
@@ -21,10 +21,10 @@ import {
 	resolveDocumentSessionConnectionAccess,
 } from "#/features/workspaces/documents/document-session-connection-access";
 import {
+	coerceTiptapDocumentJson,
 	parseTiptapDocumentJson,
 	stringifyTiptapDocumentJson,
 	type TiptapDocumentJson,
-	tiptapDocumentJsonSchema,
 } from "#/features/workspaces/documents/tiptap-document";
 import {
 	getTiptapDocumentSchema,
@@ -48,6 +48,7 @@ export interface DocumentSessionApplyMarkdownEditsResult {
 	failed: number;
 	failures: { code: string; index: number }[];
 	status: DocumentMarkdownEditResultStatus;
+	warnings: string[];
 }
 
 export class DocumentSession extends YServer {
@@ -65,15 +66,10 @@ export class DocumentSession extends YServer {
 		context: ConnectionContext,
 	) {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		let access: Awaited<
-			ReturnType<typeof resolveDocumentSessionConnectionAccess>
-		>;
+		let access: Awaited<ReturnType<typeof resolveDocumentSessionConnectionAccess>>;
 
 		try {
-			access = await resolveDocumentSessionConnectionAccess(
-				context.request,
-				room.workspaceId,
-			);
+			access = await resolveDocumentSessionConnectionAccess(context.request, room.workspaceId);
 		} catch {
 			connection.close(1011, "Unauthorized");
 			return;
@@ -88,7 +84,7 @@ export class DocumentSession extends YServer {
 			canMutate: access.canMutate,
 			userId: access.userId,
 		});
-		super.onConnect(connection, context);
+		void super.onConnect(connection, context);
 	}
 
 	override isReadOnly(connection: Connection<DocumentSessionConnectionState>) {
@@ -104,9 +100,7 @@ export class DocumentSession extends YServer {
 			throw new Error("Document session can only open document items.");
 		}
 
-		const persistedUpdate = await this.ctx.storage.get<Uint8Array>(
-			persistedYDocUpdateKey,
-		);
+		const persistedUpdate = await this.ctx.storage.get<Uint8Array>(persistedYDocUpdateKey);
 
 		if (persistedUpdate) {
 			Y.applyUpdate(this.document, persistedUpdate, this);
@@ -143,22 +137,22 @@ export class DocumentSession extends YServer {
 				failed: editResult.failed,
 				failures: editResult.failures,
 				status: editResult.status,
+				warnings: [],
 			};
 		}
 
+		let projection;
+
 		try {
-			this.replaceCurrentDocument(
-				parseMarkdownToTiptapDocument(editResult.content),
-			);
+			projection = parseMarkdownToTiptapDocumentProjection(editResult.content);
+			this.replaceCurrentDocument(projection.document);
 		} catch {
 			return {
 				applied: 0,
 				failed: input.edits.length,
-				failures: [
-					...editResult.failures,
-					{ code: "invalid_document_projection", index: -1 },
-				],
+				failures: [...editResult.failures, { code: "invalid_document_projection", index: -1 }],
 				status: "rejected",
+				warnings: [],
 			};
 		}
 
@@ -170,12 +164,17 @@ export class DocumentSession extends YServer {
 			failed: editResult.failed,
 			failures: editResult.failures,
 			status: editResult.status,
+			warnings: projection.warnings,
 		};
+	}
+
+	async purgeForDeletion(): Promise<void> {
+		await this.ctx.storage.deleteAll();
 	}
 
 	private async checkpointToKernel() {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		const document = tiptapDocumentJsonSchema.parse(
+		const document = coerceTiptapDocumentJson(
 			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
 		);
 		const kernel = await this.getWorkspaceKernel(room.workspaceId);
@@ -189,9 +188,7 @@ export class DocumentSession extends YServer {
 	}
 
 	private getCurrentTiptapDocument() {
-		return tiptapDocumentJsonSchema.parse(
-			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
-		);
+		return coerceTiptapDocumentJson(yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField));
 	}
 
 	private replaceCurrentDocument(document: TiptapDocumentJson) {
@@ -199,31 +196,20 @@ export class DocumentSession extends YServer {
 
 		this.document.transact(() => {
 			fragment.delete(0, fragment.length);
-			prosemirrorJSONToYXmlFragment(
-				getTiptapDocumentSchema(),
-				document,
-				fragment,
-			);
+			prosemirrorJSONToYXmlFragment(getTiptapDocumentSchema(), document, fragment);
 		}, this);
 	}
 
 	private async persistYDoc() {
-		await this.ctx.storage.put(
-			persistedYDocUpdateKey,
-			Y.encodeStateAsUpdate(this.document),
-		);
+		await this.ctx.storage.put(persistedYDocUpdateKey, Y.encodeStateAsUpdate(this.document));
 	}
 
-	private async getWorkspaceKernel(
-		workspaceId: string,
-	): Promise<WorkspaceKernelClient> {
+	private async getWorkspaceKernel(workspaceId: string): Promise<WorkspaceKernelClient> {
 		return getWorkspaceKernelFromEnv(this.env, workspaceId);
 	}
 }
 
-function getDocumentSessionRoomNameParts(
-	roomName: string,
-): DocumentSessionRouteParams {
+function getDocumentSessionRoomNameParts(roomName: string): DocumentSessionRouteParams {
 	const separatorIndex = roomName.indexOf(":");
 
 	if (separatorIndex <= 0 || separatorIndex === roomName.length - 1) {

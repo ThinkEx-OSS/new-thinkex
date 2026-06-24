@@ -1,10 +1,6 @@
 import { Plugin, type UniqueIdentifier } from "@dnd-kit/abstract";
 import type { DragDropManager } from "@dnd-kit/dom";
-import {
-	isSortable,
-	type Sortable,
-	SortableDroppable,
-} from "@dnd-kit/dom/sortable";
+import { isSortable, type Sortable, SortableDroppable } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { batch } from "@dnd-kit/state";
 
@@ -60,9 +56,7 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 				const sortableIndices = getSortableIndices(instances);
 				const sameGroup = source.sortable.group === target.sortable.group;
 				const sourceInstances = instances.get(source.sortable.group);
-				const targetInstances = sameGroup
-					? sourceInstances
-					: instances.get(target.sortable.group);
+				const targetInstances = sameGroup ? sourceInstances : instances.get(target.sortable.group);
 
 				if (!sourceInstances || !targetInstances) {
 					return;
@@ -73,12 +67,10 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 						return;
 					}
 
-					manager.renderer.rendering.then(() => {
+					void manager.renderer.rendering.then(() => {
 						const newInstances = getSortableInstances();
 
-						if (
-							hasSortableStateChanged(sortableIndices, instances, newInstances)
-						) {
+						if (hasSortableStateChanged(sortableIndices, instances, newInstances)) {
 							return;
 						}
 
@@ -116,23 +108,19 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 						reorder(sourceElement, sourceIndex, targetElement, targetIndex);
 
 						batch(() => {
-							for (const [index, sortable] of nextState[
-								sourceGroup
-							].entries()) {
+							for (const [index, sortable] of nextState[sourceGroup].entries()) {
 								sortable.index = index;
 							}
 
 							if (!sameGroup) {
-								for (const [index, sortable] of nextState[
-									targetGroup
-								].entries()) {
+								for (const [index, sortable] of nextState[targetGroup].entries()) {
 									sortable.group = target.sortable.group;
 									sortable.index = index;
 								}
 							}
 						});
 
-						manager.actions
+						void manager.actions
 							.setDropTarget(source.id)
 							.then(() => manager.collisionObserver.enable());
 					});
@@ -164,28 +152,21 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 				queueMicrotask(() => {
 					const instances = getSortableInstances();
 					const sortableIndices = getSortableIndices(instances);
-					const initialGroupInstances = instances.get(
-						source.sortable.initialGroup,
-					);
+					const initialGroupInstances = instances.get(source.sortable.initialGroup);
 
 					if (!initialGroupInstances) {
 						return;
 					}
 
-					manager.renderer.rendering.then(() => {
+					void manager.renderer.rendering.then(() => {
 						const newInstances = getSortableInstances();
 
-						if (
-							hasSortableStateChanged(sortableIndices, instances, newInstances)
-						) {
+						if (hasSortableStateChanged(sortableIndices, instances, newInstances)) {
 							return;
 						}
 
 						const currentSortables = sortSortables(initialGroupInstances);
-						const initialSortables = sortSortables(
-							initialGroupInstances,
-							sortByInitialIndex,
-						);
+						const initialSortables = sortSortables(initialGroupInstances, sortByInitialIndex);
 						const sourceElement = source.sortable.element;
 						const initialPosition = initialSortables.indexOf(source.sortable);
 						const target = currentSortables[initialPosition];

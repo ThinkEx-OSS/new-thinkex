@@ -28,11 +28,7 @@ function useCommandContext() {
 	return context;
 }
 
-function Command({
-	className,
-	children,
-	...props
-}: React.ComponentProps<"div">) {
+function Command({ className, children, ...props }: React.ComponentProps<"div">) {
 	const [search, setSearch] = React.useState("");
 	const [items, setItems] = React.useState(() => new Map<string, boolean>());
 
@@ -105,10 +101,7 @@ function CommandDialog({
 				<DialogDescription>{description}</DialogDescription>
 			</DialogHeader>
 			<DialogContent
-				className={cn(
-					"top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0",
-					className,
-				)}
+				className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}
 				showCloseButton={showCloseButton}
 			>
 				{children}
@@ -117,12 +110,7 @@ function CommandDialog({
 	);
 }
 
-function CommandInput({
-	className,
-	onChange,
-	value,
-	...props
-}: React.ComponentProps<"input">) {
+function CommandInput({ className, onChange, value, ...props }: React.ComponentProps<"input">) {
 	const { search, setSearch } = useCommandContext();
 	const resolvedValue = value ?? search;
 
@@ -189,10 +177,7 @@ function CommandGroup({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function CommandSeparator({
-	className,
-	...props
-}: React.ComponentProps<"div">) {
+function CommandSeparator({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="command-separator"
@@ -217,8 +202,7 @@ function CommandItem({
 	const id = React.useId();
 	const { registerItem, search, unregisterItem } = useCommandContext();
 	const itemValue = value ?? (typeof children === "string" ? children : "");
-	const visible =
-		!search || itemValue.toLowerCase().includes(search.trim().toLowerCase());
+	const visible = !search || itemValue.toLowerCase().includes(search.trim().toLowerCase());
 
 	React.useEffect(() => {
 		registerItem(id, visible);
@@ -262,10 +246,7 @@ function CommandItem({
 	);
 }
 
-function CommandShortcut({
-	className,
-	...props
-}: React.ComponentProps<"span">) {
+function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) {
 	return (
 		<span
 			data-slot="command-shortcut"

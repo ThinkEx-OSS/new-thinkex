@@ -1,11 +1,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { LucideIcon } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuTrigger,
-} from "#/components/ui/context-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "#/components/ui/context-menu";
 import { WorkspaceTabShell } from "#/features/workspaces/components/WorkspaceTabShell";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { workspaceControlledSortablePlugins } from "#/features/workspaces/components/workspace-sortable-plugins";
@@ -19,17 +15,10 @@ import {
 import type { WorkspaceTab } from "#/features/workspaces/state/workspace-tabs-store";
 import { cn } from "#/lib/utils";
 
-export function WorkspaceTabDivider({
-	isVisible = true,
-}: {
-	isVisible?: boolean;
-}) {
+export function WorkspaceTabDivider({ isVisible = true }: { isVisible?: boolean }) {
 	return (
 		<div
-			className={cn(
-				"relative z-10 h-4 w-px shrink-0 bg-border/70",
-				!isVisible && "opacity-0",
-			)}
+			className={cn("relative z-10 h-4 w-px shrink-0 bg-border/70", !isVisible && "opacity-0")}
 			aria-hidden="true"
 		/>
 	);
@@ -109,9 +98,7 @@ export function WorkspaceTabItem({
 				title={title}
 				TabIcon={TabIcon}
 				iconClassName={iconClassName}
-				variant={
-					showAttachedChrome ? "active-attached" : isActive ? "active" : "idle"
-				}
+				variant={showAttachedChrome ? "active-attached" : isActive ? "active" : "idle"}
 				buttonRef={handleRef}
 				isDragSource={isDragSource}
 				showClose={showClose}
@@ -129,9 +116,7 @@ export function WorkspaceTabItem({
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger render={tabContent} />
-			<ContextMenuContent className="w-56">
-				{contextMenuContent}
-			</ContextMenuContent>
+			<ContextMenuContent className="w-56">{contextMenuContent}</ContextMenuContent>
 		</ContextMenu>
 	);
 }

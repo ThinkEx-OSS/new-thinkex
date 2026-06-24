@@ -11,9 +11,7 @@ import { assertPublicHttpUrl } from "#/features/workspaces/ai/web-access-policy"
 const MAX_BROWSER_RESULT_CHARS = 50_000;
 
 const browserPageInputSchema = z.object({
-	url: z
-		.url()
-		.describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
+	url: z.url().describe("Public HTTP(S) URL to load in Cloudflare Browser Run."),
 });
 
 const browserPageInputExamples = [
@@ -29,8 +27,7 @@ export function createAIThreadWebTools(env: Env): ToolSet {
 
 	return {
 		web_markdown: tool({
-			description:
-				"Load a public webpage and return its rendered content as Markdown.",
+			description: "Load a public webpage and return its rendered content as Markdown.",
 			inputSchema: browserPageInputSchema,
 			inputExamples: browserPageInputExamples,
 			strict: true,
@@ -80,8 +77,7 @@ function truncateLinks(items: string[]) {
 	let truncated = false;
 
 	for (const item of items) {
-		const itemSize =
-			JSON.stringify(item).length + (result.length === 0 ? 0 : 1);
+		const itemSize = JSON.stringify(item).length + (result.length === 0 ? 0 : 1);
 
 		if (size + itemSize > MAX_BROWSER_RESULT_CHARS) {
 			truncated = true;

@@ -36,10 +36,7 @@ function clamp(value: number, min: number, max: number) {
 
 function getTouchDistance(touches: TouchList) {
 	const [first, second] = [touches[0], touches[1]];
-	return Math.hypot(
-		second.clientX - first.clientX,
-		second.clientY - first.clientY,
-	);
+	return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
 }
 
 function getTouchCenter(touches: TouchList) {
@@ -50,11 +47,7 @@ function getTouchCenter(touches: TouchList) {
 	};
 }
 
-function getContainerPoint(
-	container: HTMLElement,
-	clientX: number,
-	clientY: number,
-) {
+function getContainerPoint(container: HTMLElement, clientX: number, clientY: number) {
 	const rect = container.getBoundingClientRect();
 	return {
 		x: clientX - rect.left,
@@ -107,16 +100,8 @@ export function setupImageViewerGestures({
 	let dragStartClientY = 0;
 	let dragStartTransform: ImageViewerTransform = DEFAULT_IMAGE_VIEWER_TRANSFORM;
 
-	const applyScaleAtPoint = (
-		pointX: number,
-		pointY: number,
-		nextScale: number,
-	) => {
-		const clampedScale = clamp(
-			nextScale,
-			IMAGE_VIEWER_MIN_SCALE,
-			IMAGE_VIEWER_MAX_SCALE,
-		);
+	const applyScaleAtPoint = (pointX: number, pointY: number, nextScale: number) => {
+		const clampedScale = clamp(nextScale, IMAGE_VIEWER_MIN_SCALE, IMAGE_VIEWER_MAX_SCALE);
 		setTransform(zoomTowardPoint(getTransform(), pointX, pointY, clampedScale));
 	};
 
@@ -159,11 +144,7 @@ export function setupImageViewerGestures({
 				MAX_ACCUMULATED_SCALE,
 			);
 
-			applyScaleAtPoint(
-				point.x,
-				point.y,
-				wheelGestureStartScale * accumulatedWheelScale,
-			);
+			applyScaleAtPoint(point.x, point.y, wheelGestureStartScale * accumulatedWheelScale);
 
 			wheelZoomTimeout = setTimeout(() => {
 				wheelZoomTimeout = null;
@@ -243,8 +224,7 @@ export function setupImageViewerGestures({
 
 		const center = getTouchCenter(event.touches);
 		const point = getContainerPoint(container, center.x, center.y);
-		const nextScale =
-			pinchStartScale * (getTouchDistance(event.touches) / pinchStartDistance);
+		const nextScale = pinchStartScale * (getTouchDistance(event.touches) / pinchStartDistance);
 
 		applyScaleAtPoint(point.x, point.y, nextScale);
 		event.preventDefault();

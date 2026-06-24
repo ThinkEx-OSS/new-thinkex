@@ -47,9 +47,7 @@ export default function AiChatMessageRow({
 
 	const isAssistant = message.role === "assistant";
 	const displayableParts = isAssistant ? [] : getDisplayableParts(message);
-	const userAttachmentParts = isAssistant
-		? []
-		: displayableParts.filter(isAttachmentPart);
+	const userAttachmentParts = isAssistant ? [] : displayableParts.filter(isAttachmentPart);
 	const userBodyParts = isAssistant
 		? []
 		: displayableParts.filter((part) => !isAttachmentPart(part));
@@ -67,10 +65,7 @@ export default function AiChatMessageRow({
 				{userAttachmentParts.length > 0 ? (
 					<div className="mb-2 ml-auto flex w-fit max-w-full flex-col gap-2">
 						{userAttachmentParts.map((part, index) => (
-							<AiChatMessagePartView
-								key={getMessagePartKey(message.id, part, index)}
-								part={part}
-							/>
+							<AiChatMessagePartView key={getMessagePartKey(message.id, part, index)} part={part} />
 						))}
 					</div>
 				) : null}
@@ -92,10 +87,7 @@ export default function AiChatMessageRow({
 						)}
 					</MessageContent>
 				) : null}
-				{isAssistant &&
-				display?.kind === "content" &&
-				display.parts.length > 0 &&
-				!isStreaming ? (
+				{isAssistant && display?.kind === "content" && display.parts.length > 0 && !isStreaming ? (
 					<MessageToolbar className="mt-2 justify-start">
 						<MessageActions className="-ms-2.5">
 							{copyableText ? <CopyResponseAction text={copyableText} /> : null}
@@ -133,10 +125,7 @@ function AssistantMessageBody({
 }) {
 	if (display.kind === "content") {
 		return display.parts.map((part, index) => (
-			<AiChatMessagePartView
-				key={getMessagePartKey(message.id, part, index)}
-				part={part}
-			/>
+			<AiChatMessagePartView key={getMessagePartKey(message.id, part, index)} part={part} />
 		));
 	}
 
@@ -215,11 +204,7 @@ function getCopyableMessageText(message: AiChatMessage) {
 	return textParts.join("\n\n").trim();
 }
 
-function getMessagePartKey(
-	messageId: string,
-	part: AiChatMessagePart,
-	index: number,
-) {
+function getMessagePartKey(messageId: string, part: AiChatMessagePart, index: number) {
 	if (isToolUIPart(part)) {
 		return `${messageId}-tool-${part.toolCallId}`;
 	}
