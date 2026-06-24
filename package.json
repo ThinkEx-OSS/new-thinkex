@@ -20,8 +20,6 @@
 		"doctor:full": "react-doctor . --scope full --verbose",
 		"knip": "knip",
 		"prepare": "lefthook install",
-		"postinstall": "node scripts/copy-pdfium-wasm.mjs",
-		"copy-pdfium-wasm": "node scripts/copy-pdfium-wasm.mjs",
 		"references:setup": "bash scripts/setup-references-workspace.sh",
 		"test": "vitest run --passWithNoTests",
 		"typecheck": "tsgo --noEmit",
