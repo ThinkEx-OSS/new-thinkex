@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Send, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "#/components/ui/badge";
@@ -19,24 +19,22 @@ import { cn } from "#/lib/utils";
 
 export function WorkspaceShareEmailInviteField({
 	membershipRole,
-	open,
 	workspaceId,
 }: {
 	membershipRole: WorkspaceMembershipRole;
-	open: boolean;
 	workspaceId: string;
 }) {
 	const queryClient = useQueryClient();
 	const inputRef = useRef<HTMLInputElement>(null);
-	const grantableRoles = useMemo(
-		() => getGrantableInviteRoles(membershipRole),
-		[membershipRole],
-	);
+	const grantableRoles = useMemo(() => getGrantableInviteRoles(membershipRole), [membershipRole]);
 	const [draftEmails, setDraftEmails] = useState<string[]>([]);
 	const [inputValue, setInputValue] = useState("");
-	const [inviteRole, setInviteRole] = useState<WorkspaceMembershipRole>(() =>
+	const [inviteRoleSelection, setInviteRoleSelection] = useState<WorkspaceMembershipRole>(() =>
 		getDefaultInviteRole(membershipRole),
 	);
+	const inviteRole = grantableRoles.includes(inviteRoleSelection)
+		? inviteRoleSelection
+		: getDefaultInviteRole(membershipRole);
 
 	const createInvitesMutation = useMutation({
 		mutationFn: createWorkspaceEmailInvitesFn,
@@ -73,12 +71,8 @@ export function WorkspaceShareEmailInviteField({
 			}
 
 			if (skipped.length > 0) {
-				const alreadyMembers = skipped.filter(
-					(entry) => entry.reason === "already_member",
-				).length;
-				const invalid = skipped.filter(
-					(entry) => entry.reason === "invalid_email",
-				).length;
+				const alreadyMembers = skipped.filter((entry) => entry.reason === "already_member").length;
+				const invalid = skipped.filter((entry) => entry.reason === "invalid_email").length;
 
 				if (alreadyMembers > 0) {
 					toast.message(
@@ -90,9 +84,7 @@ export function WorkspaceShareEmailInviteField({
 
 				if (invalid > 0) {
 					toast.error(
-						invalid === 1
-							? "1 email address is invalid"
-							: `${invalid} email addresses are invalid`,
+						invalid === 1 ? "1 email address is invalid" : `${invalid} email addresses are invalid`,
 					);
 				}
 			}
@@ -100,27 +92,11 @@ export function WorkspaceShareEmailInviteField({
 		onError: () => toast.error("Could not save invites"),
 	});
 
-	useEffect(() => {
-		if (!open) {
-			setDraftEmails([]);
-			setInputValue("");
-		}
-
-		setInviteRole((current) =>
-			grantableRoles.includes(current)
-				? current
-				: getDefaultInviteRole(membershipRole),
-		);
-	}, [grantableRoles, membershipRole, open]);
-
 	function removeDraftEmail(email: string) {
 		setDraftEmails((current) => current.filter((entry) => entry !== email));
 	}
 
-	function addDraftEmail(
-		rawEmail: string,
-		{ showErrors = false }: { showErrors?: boolean } = {},
-	) {
+	function addDraftEmail(rawEmail: string, { showErrors = false }: { showErrors?: boolean } = {}) {
 		const email = normalizeInviteEmail(rawEmail);
 
 		if (!email) {
@@ -191,8 +167,7 @@ export function WorkspaceShareEmailInviteField({
 	}
 
 	const hasInviteTarget =
-		draftEmails.length > 0 ||
-		(inputValue.trim().length > 0 && isValidInviteEmail(inputValue));
+		draftEmails.length > 0 || (inputValue.trim().length > 0 && isValidInviteEmail(inputValue));
 
 	const showInviteControls = inputValue.length > 0 || draftEmails.length > 0;
 
@@ -230,9 +205,7 @@ export function WorkspaceShareEmailInviteField({
 						id="workspace-share-email"
 						type="email"
 						value={inputValue}
-						placeholder={
-							draftEmails.length === 0 ? "Add people by email" : "Add another"
-						}
+						placeholder={draftEmails.length === 0 ? "Add people by email" : "Add another"}
 						className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
 						onChange={(event) => setInputValue(event.target.value)}
 						onKeyDown={(event) => {
@@ -247,11 +220,7 @@ export function WorkspaceShareEmailInviteField({
 								return;
 							}
 
-							if (
-								event.key === "Backspace" &&
-								inputValue.length === 0 &&
-								draftEmails.length > 0
-							) {
+							if (event.key === "Backspace" && inputValue.length === 0 && draftEmails.length > 0) {
 								setDraftEmails((current) => current.slice(0, -1));
 							}
 						}}
@@ -263,13 +232,11 @@ export function WorkspaceShareEmailInviteField({
 			<div
 				className={cn(
 					"absolute top-1/2 right-2 flex -translate-y-1/2 items-center gap-1 transition-opacity duration-150",
-					showInviteControls
-						? "pointer-events-auto opacity-100"
-						: "pointer-events-none opacity-0",
+					showInviteControls ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
 				)}
 			>
 				<WorkspaceShareRoleMenu
-					onValueChange={setInviteRole}
+					onValueChange={setInviteRoleSelection}
 					roles={grantableRoles}
 					value={inviteRole}
 				/>
@@ -282,11 +249,7 @@ export function WorkspaceShareEmailInviteField({
 					disabled={!hasInviteTarget || createInvitesMutation.isPending}
 					onClick={handleInvite}
 				>
-					{createInvitesMutation.isPending ? (
-						<Loader2 className="animate-spin" />
-					) : (
-						<Send />
-					)}
+					{createInvitesMutation.isPending ? <Loader2 className="animate-spin" /> : <Send />}
 				</Button>
 			</div>
 		</div>

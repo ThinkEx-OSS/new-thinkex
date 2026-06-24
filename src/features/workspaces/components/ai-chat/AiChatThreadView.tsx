@@ -111,7 +111,9 @@ export default function AiChatThreadView({
 						status={inputStatus}
 						onModelChange={onModelChange}
 						onSubmit={sendMessage}
-						onStop={stop}
+						onStop={() => {
+							void stop();
+						}}
 					/>
 				</div>
 			</div>

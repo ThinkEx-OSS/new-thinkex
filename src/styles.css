@@ -8,14 +8,6 @@
 @theme inline {
 	--font-heading: var(--font-sans);
 	--font-sans: "Geist", sans-serif;
-	--color-sidebar-ring: var(--sidebar-ring);
-	--color-sidebar-border: var(--sidebar-border);
-	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-	--color-sidebar-accent: var(--sidebar-accent);
-	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-	--color-sidebar-primary: var(--sidebar-primary);
-	--color-sidebar-foreground: var(--sidebar-foreground);
-	--color-sidebar: var(--sidebar);
 	--color-chart-5: var(--chart-5);
 	--color-chart-6: var(--chart-6);
 	--color-chart-4: var(--chart-4);
@@ -110,20 +102,12 @@
 
 	.workspace-tab-active::before {
 		left: -15px;
-		background: radial-gradient(
-			circle at top left,
-			transparent 18px,
-			var(--background) 18px
-		);
+		background: radial-gradient(circle at top left, transparent 18px, var(--background) 18px);
 	}
 
 	.workspace-tab-active::after {
 		right: -15px;
-		background: radial-gradient(
-			circle at top right,
-			transparent 18px,
-			var(--background) 18px
-		);
+		background: radial-gradient(circle at top right, transparent 18px, var(--background) 18px);
 	}
 
 	.workspace-ask-selection-button {
@@ -162,8 +146,7 @@
 
 	.pdf-scrollbar,
 	.pdf-scrollbar * {
-		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 82%, transparent)
-			transparent;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 82%, transparent) transparent;
 		scrollbar-width: thin;
 	}
 
@@ -191,11 +174,7 @@
 		--workspace-document-code-background: var(--muted);
 		--workspace-document-highlight: oklch(0.9 0.14 90 / 70%);
 		--workspace-document-highlight-foreground: oklch(0.2 0.05 78);
-		--workspace-document-surface: color-mix(
-			in oklch,
-			var(--muted) 72%,
-			transparent
-		);
+		--workspace-document-surface: color-mix(in oklch, var(--muted) 72%, transparent);
 		color: var(--foreground);
 	}
 
@@ -273,11 +252,7 @@
 		margin-top: 0.38rem;
 	}
 
-	.workspace-document-prose
-		ul[data-type="taskList"]
-		> li
-		> label
-		input[type="checkbox"] {
+	.workspace-document-prose ul[data-type="taskList"] > li > label input[type="checkbox"] {
 		width: 0.95rem;
 		height: 0.95rem;
 		accent-color: var(--primary);
@@ -296,18 +271,10 @@
 		color: color-mix(in oklch, var(--foreground) 30%, var(--muted-foreground));
 	}
 
-	.workspace-document-prose
-		ul[data-type="taskList"]
-		> li[data-checked="true"]
-		> div
-		> p {
+	.workspace-document-prose ul[data-type="taskList"] > li[data-checked="true"] > div > p {
 		text-decoration-line: line-through;
 		text-decoration-thickness: 0.06em;
-		text-decoration-color: color-mix(
-			in oklch,
-			var(--muted-foreground) 52%,
-			transparent
-		);
+		text-decoration-color: color-mix(in oklch, var(--muted-foreground) 52%, transparent);
 	}
 
 	.workspace-document-prose blockquote {
@@ -467,9 +434,7 @@
 		white-space: pre;
 	}
 
-	.workspace-document-prose
-		.workspace-document-code-block
-		[data-node-view-content-react] {
+	.workspace-document-prose .workspace-document-code-block [data-node-view-content-react] {
 		display: block;
 		background: transparent;
 		font: inherit;
@@ -480,10 +445,7 @@
 		color: var(--shiki-dark) !important;
 	}
 
-	.dark
-		.workspace-document-prose
-		.workspace-document-code-block.shiki
-		span {
+	.dark .workspace-document-prose .workspace-document-code-block.shiki span {
 		color: var(--shiki-dark) !important;
 	}
 
@@ -545,21 +507,16 @@
 		pointer-events: none;
 	}
 
-	.workspace-document-prose
-		.workspace-document-code-block.is-editor-empty::before,
-	.workspace-document-prose
-		.workspace-document-code-block
-		.is-editor-empty::before,
+	.workspace-document-prose .workspace-document-code-block.is-editor-empty::before,
+	.workspace-document-prose .workspace-document-code-block .is-editor-empty::before,
 	.workspace-document-prose .workspace-document-code-block.is-empty::before,
 	.workspace-document-prose .workspace-document-code-block .is-empty::before,
 	.workspace-document-prose .react-renderer.node-codeBlock.is-editor-empty::before,
 	.workspace-document-prose .react-renderer.node-codeBlock.is-empty::before,
-	.workspace-document-prose
-		.react-renderer.node-codeBlock[data-placeholder]::before {
+	.workspace-document-prose .react-renderer.node-codeBlock[data-placeholder]::before {
 		display: none !important;
 		content: none !important;
 	}
-
 }
 
 html,

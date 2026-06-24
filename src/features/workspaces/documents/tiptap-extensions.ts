@@ -17,8 +17,7 @@ export function getTiptapDocumentBaseExtensions() {
 			codeBlock: CodeBlockShiki,
 		}),
 		Placeholder.configure({
-			placeholder: ({ node }) =>
-				node.type.name === "heading" ? "Untitled" : "Write something...",
+			placeholder: ({ node }) => (node.type.name === "heading" ? "Untitled" : "Write something..."),
 		}),
 		CharacterCount,
 	];

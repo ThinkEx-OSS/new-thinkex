@@ -5,11 +5,7 @@ import { WorkspaceForbiddenError } from "#/features/workspaces/server/permission
 import { apiError, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
-async function handleWorkspaceFileContent(
-	request: Request,
-	workspaceId: string,
-	itemId: string,
-) {
+async function handleWorkspaceFileContent(request: Request, workspaceId: string, itemId: string) {
 	const requestId = getRequestId(request);
 
 	try {
@@ -60,9 +56,7 @@ async function handleWorkspaceFileContent(
 	}
 }
 
-export const Route = createFileRoute(
-	"/api/v1/workspaces/$workspaceId/files/$itemId/content",
-)({
+export const Route = createFileRoute("/api/v1/workspaces/$workspaceId/files/$itemId/content")({
 	server: {
 		handlers: {
 			GET: ({ params, request }) =>

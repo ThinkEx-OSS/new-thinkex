@@ -83,7 +83,7 @@ export class DocumentSession extends YServer {
 			canMutate: access.canMutate,
 			userId: access.userId,
 		});
-		super.onConnect(connection, context);
+		void super.onConnect(connection, context);
 	}
 
 	override isReadOnly(connection: Connection<DocumentSessionConnectionState>) {

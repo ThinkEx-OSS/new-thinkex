@@ -2,11 +2,7 @@ import { Eye, MessageSquare, X } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Button } from "#/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import {
@@ -27,12 +23,8 @@ export default function WorkspaceAiChatContextChips({
 }: {
 	context: WorkspaceAiContextScope;
 }) {
-	const setSelectionItem = useWorkspaceSelectionStore(
-		(state) => state.setItemSelected,
-	);
-	const removeQuote = useWorkspaceAiComposerDraftStore(
-		(state) => state.removeQuote,
-	);
+	const setSelectionItem = useWorkspaceSelectionStore((state) => state.setItemSelected);
+	const removeQuote = useWorkspaceAiComposerDraftStore((state) => state.removeQuote);
 	const chips = getWorkspaceAiContextChips(context);
 	const activeChips = chips.filter((chip) => chip.isActiveVisible);
 	const inactiveChips = chips.filter((chip) => !chip.isActiveVisible);
@@ -159,24 +151,17 @@ function WorkspaceAiChatContextChipContent({
 	viewStateLabel?: string;
 }) {
 	const LeadingIcon = isActiveVisible ? Eye : Icon;
-	const leadingIconClassName = isActiveVisible
-		? "text-foreground"
-		: iconClassName;
+	const leadingIconClassName = isActiveVisible ? "text-foreground" : iconClassName;
 
 	return (
 		<>
 			<LeadingIcon
-				className={cn(
-					"size-3 shrink-0 text-muted-foreground",
-					leadingIconClassName,
-				)}
+				className={cn("size-3 shrink-0 text-muted-foreground", leadingIconClassName)}
 				aria-label={isActiveVisible ? "active item" : undefined}
 			/>
 			<span className="min-w-0 truncate font-medium">{label}</span>
 			{viewStateLabel ? (
-				<span className="shrink-0 tabular-nums text-muted-foreground">
-					{viewStateLabel}
-				</span>
+				<span className="shrink-0 tabular-nums text-muted-foreground">{viewStateLabel}</span>
 			) : null}
 		</>
 	);
@@ -222,9 +207,7 @@ function WorkspaceAiChatSelectedQuoteChip({
 }
 
 function WorkspaceAiChatSelectedQuoteIcon() {
-	return (
-		<MessageSquare className="size-3 shrink-0 text-blue-600 dark:text-blue-300" />
-	);
+	return <MessageSquare className="size-3 shrink-0 text-blue-600 dark:text-blue-300" />;
 }
 
 function getWorkspaceAiChatSelectedQuotePreview(quote: WorkspaceSelectedQuote) {

@@ -17,8 +17,7 @@ import {
 import { cn } from "#/lib/utils";
 
 export function ConversationPanel({ run }: { run: AIInspectorRunView }) {
-	const messages =
-		run.messages.length > 0 ? run.messages : run.steps[0]?.messages;
+	const messages = run.messages.length > 0 ? run.messages : run.steps[0]?.messages;
 	const hasMessages = messages && messages.length > 0;
 	const hasSteps = run.steps.length > 0;
 
@@ -29,21 +28,14 @@ export function ConversationPanel({ run }: { run: AIInspectorRunView }) {
 	return (
 		<div className="grid gap-4">
 			{messages?.map((message, index) => (
-				<ConversationMessage
-					key={getConversationMessageKey(message, index)}
-					message={message}
-				/>
+				<ConversationMessage key={getConversationMessageKey(message, index)} message={message} />
 			))}
 			{run.steps.map((step) => (
 				<ConversationStep key={step.stepNumber} run={run} step={step} />
 			))}
 			{run.error ? (
 				<div className="grid gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
-					<ConversationHeader
-						icon={Bot}
-						label="Agent error"
-						tone="destructive"
-					/>
+					<ConversationHeader icon={Bot} label="Agent error" tone="destructive" />
 					<JsonDisclosure title="Error" value={run.error} />
 				</div>
 			) : null}
@@ -69,9 +61,7 @@ function ConversationMessage({ message }: { message: AIInspectorMessageView }) {
 				label={formatRole(role)}
 				meta={
 					message.toolCalls.length > 0
-						? `${message.toolCalls.length} tool part${
-								message.toolCalls.length === 1 ? "" : "s"
-							}`
+						? `${message.toolCalls.length} tool part${message.toolCalls.length === 1 ? "" : "s"}`
 						: undefined
 				}
 			/>
@@ -88,13 +78,7 @@ function ConversationMessage({ message }: { message: AIInspectorMessageView }) {
 	);
 }
 
-function ConversationStep({
-	run,
-	step,
-}: {
-	run: AIInspectorRunView;
-	step: AIInspectorStepView;
-}) {
+function ConversationStep({ run, step }: { run: AIInspectorRunView; step: AIInspectorStepView }) {
 	return (
 		<article className="grid w-full min-w-0 max-w-4xl gap-2 overflow-hidden rounded-md border bg-background p-3">
 			<ConversationHeader
@@ -126,13 +110,7 @@ function ConversationStep({
 	);
 }
 
-function ModelInputDetails({
-	run,
-	step,
-}: {
-	run: AIInspectorRunView;
-	step: AIInspectorStepView;
-}) {
+function ModelInputDetails({ run, step }: { run: AIInspectorRunView; step: AIInspectorStepView }) {
 	return (
 		<details className="min-w-0 max-w-full overflow-hidden rounded-md border bg-muted/20">
 			<summary className="flex min-w-0 cursor-pointer items-center gap-2 px-3 py-2 font-medium text-xs marker:content-none">
@@ -144,59 +122,32 @@ function ModelInputDetails({
 				</span>
 			</summary>
 			<div className="grid min-w-0 max-w-full gap-2 overflow-hidden border-t p-3">
-				{run.system ? (
-					<TextDisclosure title="System prompt" text={run.system} />
-				) : null}
-				<JsonDisclosure
-					title="Messages sent to this step"
-					value={step.messages}
-				/>
-				{run.tools.length > 0 ? (
-					<JsonDisclosure title="Available tools" value={run.tools} />
-				) : null}
-				{run.body ? (
-					<JsonDisclosure title="Turn request body" value={run.body} />
-				) : null}
-				{step.usage ? (
-					<JsonDisclosure title="Usage" value={step.usage} />
-				) : null}
+				{run.system ? <TextDisclosure title="System prompt" text={run.system} /> : null}
+				<JsonDisclosure title="Messages sent to this step" value={step.messages} />
+				{run.tools.length > 0 ? <JsonDisclosure title="Available tools" value={run.tools} /> : null}
+				{run.body ? <JsonDisclosure title="Turn request body" value={run.body} /> : null}
+				{step.usage ? <JsonDisclosure title="Usage" value={step.usage} /> : null}
 				{hasInspectorValue(step.warnings) ? (
 					<JsonDisclosure title="Warnings" value={step.warnings} />
 				) : null}
 				{hasInspectorValue(step.sources) ? (
 					<JsonDisclosure title="Sources" value={step.sources} />
 				) : null}
-				{hasInspectorValue(step.files) ? (
-					<JsonDisclosure title="Files" value={step.files} />
-				) : null}
-				{step.request ? (
-					<JsonDisclosure title="Provider request" value={step.request} />
-				) : null}
-				{step.response ? (
-					<JsonDisclosure title="Provider response" value={step.response} />
-				) : null}
+				{hasInspectorValue(step.files) ? <JsonDisclosure title="Files" value={step.files} /> : null}
+				{step.request ? <JsonDisclosure title="Provider request" value={step.request} /> : null}
+				{step.response ? <JsonDisclosure title="Provider response" value={step.response} /> : null}
 				{step.providerMetadata ? (
-					<JsonDisclosure
-						title="Provider metadata"
-						value={step.providerMetadata}
-					/>
+					<JsonDisclosure title="Provider metadata" value={step.providerMetadata} />
 				) : null}
 				{step.otherChunks.length > 0 ? (
-					<JsonDisclosure
-						title="Raw stream internals"
-						value={step.otherChunks}
-					/>
+					<JsonDisclosure title="Raw stream internals" value={step.otherChunks} />
 				) : null}
 			</div>
 		</details>
 	);
 }
 
-function ConversationToolCall({
-	toolCall,
-}: {
-	toolCall: AIInspectorToolCallView;
-}) {
+function ConversationToolCall({ toolCall }: { toolCall: AIInspectorToolCallView }) {
 	return (
 		<details className="min-w-0 max-w-full overflow-hidden rounded-md border bg-muted/20">
 			<summary className="flex min-w-0 cursor-pointer items-center gap-2 px-3 py-2 marker:content-none">
@@ -209,9 +160,7 @@ function ConversationToolCall({
 					{toolCall.success === false ? "failed" : "called"}
 				</Badge>
 				{typeof toolCall.durationMs === "number" ? (
-					<span className="ml-auto text-muted-foreground text-xs">
-						{toolCall.durationMs}ms
-					</span>
+					<span className="ml-auto text-muted-foreground text-xs">{toolCall.durationMs}ms</span>
 				) : null}
 			</summary>
 			<div className="grid min-w-0 max-w-full gap-2 overflow-hidden border-t p-3">
@@ -241,18 +190,11 @@ function ConversationHeader({
 	return (
 		<div className="flex min-w-0 items-center gap-2">
 			<Icon
-				className={cn(
-					"size-4 text-muted-foreground",
-					tone === "destructive" && "text-destructive",
-				)}
+				className={cn("size-4 text-muted-foreground", tone === "destructive" && "text-destructive")}
 				aria-hidden="true"
 			/>
 			<span className="font-medium text-sm">{label}</span>
-			{meta ? (
-				<span className="min-w-0 truncate text-muted-foreground text-xs">
-					{meta}
-				</span>
-			) : null}
+			{meta ? <span className="min-w-0 truncate text-muted-foreground text-xs">{meta}</span> : null}
 		</div>
 	);
 }
@@ -261,10 +203,7 @@ function formatRole(role: string) {
 	return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-function getConversationMessageKey(
-	message: AIInspectorMessageView,
-	index: number,
-) {
+function getConversationMessageKey(message: AIInspectorMessageView, index: number) {
 	return [
 		index,
 		message.role,
@@ -273,9 +212,7 @@ function getConversationMessageKey(
 	].join(":");
 }
 
-function getToolPreviewKey(
-	toolCall: AIInspectorMessageView["toolCalls"][number],
-) {
+function getToolPreviewKey(toolCall: AIInspectorMessageView["toolCalls"][number]) {
 	return [
 		toolCall.type,
 		toolCall.toolName,

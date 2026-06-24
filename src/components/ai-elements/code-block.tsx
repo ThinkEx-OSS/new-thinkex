@@ -1,11 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { isValidElement, useEffect, useState } from "react";
-import type {
-	BundledLanguage,
-	BundledTheme,
-	HighlighterGeneric,
-	ThemedToken,
-} from "shiki";
+import type { BundledLanguage, BundledTheme, HighlighterGeneric, ThemedToken } from "shiki";
 import { bundledLanguagesInfo, createHighlighter } from "shiki";
 import {
 	CodeBlockActions,
@@ -40,9 +35,7 @@ const isUnderline = (fontStyle: number | undefined) =>
 	// oxlint-disable-next-line eslint(no-bitwise)
 	fontStyle && fontStyle & 4;
 
-const languageIds = new Set(
-	bundledLanguagesInfo.map((language) => language.id),
-);
+const languageIds = new Set(bundledLanguagesInfo.map((language) => language.id));
 const languageAliases = new Map(
 	bundledLanguagesInfo.flatMap((language) =>
 		(language.aliases ?? []).map((alias) => [alias, language.id] as const),
@@ -159,9 +152,7 @@ const LineSpan = ({
 	<span className={showLineNumbers ? LINE_NUMBER_CLASSES : "block"}>
 		{keyedLine.tokens.length === 0
 			? "\n"
-			: keyedLine.tokens.map(({ token, key }) => (
-					<TokenSpan key={key} token={token} />
-				))}
+			: keyedLine.tokens.map(({ token, key }) => <TokenSpan key={key} token={token} />)}
 	</span>
 );
 
@@ -191,8 +182,7 @@ const pendingTokenKeys = new Set<string>();
 // Subscribers for async token updates
 const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
 
-const getTokensCacheKey = (code: string, language: BundledLanguage) =>
-	`${language}\0${code}`;
+const getTokensCacheKey = (code: string, language: BundledLanguage) => `${language}\0${code}`;
 
 const getHighlighter = (
 	language: BundledLanguage,
@@ -333,11 +323,7 @@ function CodeBlockBody({
 				)}
 			>
 				{keyedLines.map((keyedLine) => (
-					<LineSpan
-						key={keyedLine.key}
-						keyedLine={keyedLine}
-						showLineNumbers={showLineNumbers}
-					/>
+					<LineSpan key={keyedLine.key} keyedLine={keyedLine} showLineNumbers={showLineNumbers} />
 				))}
 			</code>
 		</pre>
@@ -419,11 +405,7 @@ export const CodeBlock = ({
 	return (
 		<CodeBlockContainer className={className} language={language} {...props}>
 			{children}
-			<CodeBlockContent
-				code={code}
-				language={language}
-				showLineNumbers={showLineNumbers}
-			/>
+			<CodeBlockContent code={code} language={language} showLineNumbers={showLineNumbers} />
 		</CodeBlockContainer>
 	);
 };
@@ -447,10 +429,7 @@ export const MarkdownCodeBlock = ({
 	if (!isBlock) {
 		return (
 			<code
-				className={cn(
-					"rounded-sm bg-muted px-1 py-0.5 font-mono text-[0.9em]",
-					className,
-				)}
+				className={cn("rounded-sm bg-muted px-1 py-0.5 font-mono text-[0.9em]", className)}
 				{...props}
 			>
 				{children}
@@ -459,20 +438,13 @@ export const MarkdownCodeBlock = ({
 	}
 
 	const rawLanguage =
-		getLanguageFromClassName(className) ??
-		getLanguageFromClassName(node?.properties?.className);
+		getLanguageFromClassName(className) ?? getLanguageFromClassName(node?.properties?.className);
 	const language = normalizeLanguage(rawLanguage);
 	const label = rawLanguage || "text";
 	const code = getTextContent(children).replace(/\n$/, "");
 
 	return (
-		<CodeBlock
-			className="my-4"
-			code={code}
-			language={language}
-			showLineNumbers
-			{...props}
-		>
+		<CodeBlock className="my-4" code={code} language={language} showLineNumbers {...props}>
 			<CodeBlockHeader>
 				<CodeBlockTitle>
 					<CodeBlockLabel>{label}</CodeBlockLabel>

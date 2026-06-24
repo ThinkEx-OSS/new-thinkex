@@ -23,13 +23,8 @@ export function WorkspacePdfRegionCaptureOverlay({
 	}
 
 	return (
-		<div
-			ref={boundsRef}
-			className="absolute inset-0 z-[60] cursor-crosshair touch-none"
-		>
-			{selectionRect ? (
-				<WorkspaceCaptureSelectionRect region={selectionRect} />
-			) : null}
+		<div ref={boundsRef} className="absolute inset-0 z-[60] cursor-crosshair touch-none">
+			{selectionRect ? <WorkspaceCaptureSelectionRect region={selectionRect} /> : null}
 		</div>
 	);
 }

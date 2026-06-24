@@ -1,5 +1,5 @@
 import { FolderPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
@@ -66,18 +66,6 @@ export function MoveWorkspaceItemsDialog({
 	const isBusy = isCreatePending || isMovePending;
 	const canMove = rootItems.length > 0 && !selectedCurrentParent && !isBusy;
 
-	useEffect(() => {
-		setSelectedParentDraft((current) =>
-			current?.itemIdsKey === rootItemIdsKey ? current : null,
-		);
-	}, [rootItemIdsKey]);
-
-	useEffect(() => {
-		if (!open) {
-			setSelectedParentDraft(null);
-		}
-	}, [open]);
-
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (!nextOpen) {
 			setSelectedParentDraft(null);
@@ -122,8 +110,7 @@ export function MoveWorkspaceItemsDialog({
 							{
 								onError: () => {
 									setSelectedParentDraft((current) =>
-										current?.itemIdsKey === rootItemIdsKey &&
-										current.parentId === id
+										current?.itemIdsKey === rootItemIdsKey && current.parentId === id
 											? {
 													itemIdsKey: rootItemIdsKey,
 													parentId: previousParentId,
@@ -157,16 +144,8 @@ export function MoveWorkspaceItemsDialog({
 
 				if (showToast) {
 					void toast.promise(movePromise, {
-						loading: getMoveWorkspaceItemsToastMessage(
-							"Moving",
-							rootItems.length,
-							"...",
-						),
-						success: getMoveWorkspaceItemsToastMessage(
-							"Moved",
-							rootItems.length,
-							".",
-						),
+						loading: getMoveWorkspaceItemsToastMessage("Moving", rootItems.length, "..."),
+						success: getMoveWorkspaceItemsToastMessage("Moved", rootItems.length, "."),
 						error: (error) =>
 							getErrorMessage(
 								error,

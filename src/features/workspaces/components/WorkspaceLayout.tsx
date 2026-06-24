@@ -1,9 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import {
-	applyWorkspaceEventToCache,
-	workspacePageQueryKey,
-} from "#/features/workspaces/cache";
+import { applyWorkspaceEventToCache, workspacePageQueryKey } from "#/features/workspaces/cache";
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
@@ -22,10 +19,7 @@ import WorkspaceSplitPresentation from "#/features/workspaces/components/Workspa
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
 import { WorkspaceMutationAccessProvider } from "#/features/workspaces/components/workspace-mutation-access";
-import type {
-	WorkspaceItemType,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { workspaceItemRequiresHeavyViewerRuntime } from "#/features/workspaces/model/workspace-file";
@@ -68,14 +62,10 @@ export function WorkspaceShell({
 	const createWorkspaceItemMutation = useCreateWorkspaceItemMutation();
 	const moveWorkspaceItemsMutation = useMoveWorkspaceItemsMutation();
 	const persistedStoresHydrated = useWorkspacePersistedStoresHydrated();
-	const ensureWorkspaceUiSession = useWorkspaceUiStore(
-		(state) => state.ensureWorkspaceSession,
-	);
+	const ensureWorkspaceUiSession = useWorkspaceUiStore((state) => state.ensureWorkspaceSession);
 	const itemViewStatesByItemId = useWorkspaceItemViewStates(workspace.id);
 	const selectedQuotes = useWorkspaceAiComposerDraftQuotes(workspace.id);
-	const setChatSurfaceMode = useWorkspaceUiStore(
-		(state) => state.setChatSurfaceMode,
-	);
+	const setChatSurfaceMode = useWorkspaceUiStore((state) => state.setChatSurfaceMode);
 	const toggleChatPanel = useWorkspaceUiStore((state) => state.toggleChatPanel);
 	const realtime = useWorkspaceRealtime({
 		workspaceId: workspace.id,
@@ -87,12 +77,12 @@ export function WorkspaceShell({
 			applyWorkspaceEventToCache(queryClient, event);
 		},
 		onReconnect: () => {
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({
 				queryKey: workspacePageQueryKey(workspace.id),
 			});
 		},
 		onRevisionGap: () => {
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({
 				queryKey: workspacePageQueryKey(workspace.id),
 			});
 		},
@@ -124,16 +114,9 @@ export function WorkspaceShell({
 	const normalizedUiSession = useWorkspaceUiSession(workspace.id);
 	const selectedItemIds = useWorkspaceSelectionItemIds(workspace.id);
 	const { chatSurfaceMode, presentation } = normalizedUiSession;
-	const hasHeavyViewerRuntimeItems = scopedItems.some(
-		workspaceItemRequiresHeavyViewerRuntime,
-	);
-	const createWorkspaceItem = (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => {
-		if (
-			!getWorkspaceMemberCapabilities(workspace.membershipRole).canMutateContent
-		) {
+	const hasHeavyViewerRuntimeItems = scopedItems.some(workspaceItemRequiresHeavyViewerRuntime);
+	const createWorkspaceItem = (input: { type: WorkspaceItemType; parentId: string | null }) => {
+		if (!getWorkspaceMemberCapabilities(workspace.membershipRole).canMutateContent) {
 			return;
 		}
 
@@ -194,9 +177,7 @@ export function WorkspaceShell({
 			<WorkspaceItemToolbarProvider>
 				<WorkspaceChatLayout
 					chatSurfaceMode={chatSurfaceMode}
-					onDockedChatCollapse={() =>
-						setChatSurfaceMode(workspace.id, "hidden")
-					}
+					onDockedChatCollapse={() => setChatSurfaceMode(workspace.id, "hidden")}
 					chrome={
 						<WorkspaceTopBar
 							workspace={workspace}
@@ -210,9 +191,7 @@ export function WorkspaceShell({
 									itemsById={itemsById}
 									toolbarSlotId={activeTab.id}
 									onCreateItem={createWorkspaceItem}
-									onCloseItemView={
-										isWorkspaceItemView(activeItem) ? closeItemView : undefined
-									}
+									onCloseItemView={isWorkspaceItemView(activeItem) ? closeItemView : undefined}
 									onNavigateToRoot={openWorkspaceRoot}
 									onNavigateToItem={openItem}
 								/>
@@ -271,9 +250,7 @@ export function WorkspaceShell({
 	return (
 		<WorkspaceMutationAccessProvider membershipRole={workspace.membershipRole}>
 			{hasHeavyViewerRuntimeItems ? (
-				<WorkspacePdfEngineProvider>
-					{workspaceInteractionContent}
-				</WorkspacePdfEngineProvider>
+				<WorkspacePdfEngineProvider>{workspaceInteractionContent}</WorkspacePdfEngineProvider>
 			) : (
 				workspaceInteractionContent
 			)}

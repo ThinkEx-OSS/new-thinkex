@@ -83,10 +83,7 @@ export const CodeBlockActions = ({
 	className,
 	...props
 }: HTMLAttributes<HTMLDivElement>) => (
-	<div
-		className={cn("-my-1 -mr-1 flex items-center gap-1", className)}
-		{...props}
-	>
+	<div className={cn("-my-1 -mr-1 flex items-center gap-1", className)} {...props}>
 		{children}
 	</div>
 );
@@ -201,13 +198,11 @@ export const CodeBlockDownloadButton = ({
 
 export type CodeBlockLanguageSelectorProps = ComponentProps<typeof Select>;
 
-export const CodeBlockLanguageSelector = (
-	props: CodeBlockLanguageSelectorProps,
-) => <Select {...props} />;
+export const CodeBlockLanguageSelector = (props: CodeBlockLanguageSelectorProps) => (
+	<Select {...props} />
+);
 
-export type CodeBlockLanguageSelectorTriggerProps = ComponentProps<
-	typeof SelectTrigger
->;
+export type CodeBlockLanguageSelectorTriggerProps = ComponentProps<typeof SelectTrigger>;
 
 export const CodeBlockLanguageSelectorTrigger = ({
 	className,
@@ -223,34 +218,24 @@ export const CodeBlockLanguageSelectorTrigger = ({
 	/>
 );
 
-export type CodeBlockLanguageSelectorValueProps = ComponentProps<
-	typeof SelectValue
->;
+export type CodeBlockLanguageSelectorValueProps = ComponentProps<typeof SelectValue>;
 
-export const CodeBlockLanguageSelectorValue = (
-	props: CodeBlockLanguageSelectorValueProps,
-) => <SelectValue {...props} />;
+export const CodeBlockLanguageSelectorValue = (props: CodeBlockLanguageSelectorValueProps) => (
+	<SelectValue {...props} />
+);
 
-export type CodeBlockLanguageSelectorContentProps = ComponentProps<
-	typeof SelectContent
->;
+export type CodeBlockLanguageSelectorContentProps = ComponentProps<typeof SelectContent>;
 
 export const CodeBlockLanguageSelectorContent = ({
 	align = "start",
 	className,
 	...props
 }: CodeBlockLanguageSelectorContentProps) => (
-	<SelectContent
-		align={align}
-		className={cn("max-h-72", className)}
-		{...props}
-	/>
+	<SelectContent align={align} className={cn("max-h-72", className)} {...props} />
 );
 
-export type CodeBlockLanguageSelectorItemProps = ComponentProps<
-	typeof SelectItem
->;
+export type CodeBlockLanguageSelectorItemProps = ComponentProps<typeof SelectItem>;
 
-export const CodeBlockLanguageSelectorItem = (
-	props: CodeBlockLanguageSelectorItemProps,
-) => <SelectItem {...props} />;
+export const CodeBlockLanguageSelectorItem = (props: CodeBlockLanguageSelectorItemProps) => (
+	<SelectItem {...props} />
+);

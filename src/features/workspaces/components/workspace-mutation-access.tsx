@@ -9,9 +9,7 @@ import {
 
 const readOnlyItemSortableDisabled: SortableDisabled = { droppable: true };
 
-function getWorkspaceItemSortableDisabled(
-	canMutateContent: boolean,
-): boolean | SortableDisabled {
+function getWorkspaceItemSortableDisabled(canMutateContent: boolean): boolean | SortableDisabled {
 	return canMutateContent ? false : readOnlyItemSortableDisabled;
 }
 
@@ -20,8 +18,9 @@ interface WorkspaceMutationAccessContextValue {
 	itemSortableDisabled: boolean | SortableDisabled;
 }
 
-const WorkspaceMutationAccessContext =
-	createContext<WorkspaceMutationAccessContextValue | null>(null);
+const WorkspaceMutationAccessContext = createContext<WorkspaceMutationAccessContextValue | null>(
+	null,
+);
 
 export function WorkspaceMutationAccessProvider({
 	membershipRole,
@@ -33,16 +32,10 @@ export function WorkspaceMutationAccessProvider({
 	const capabilities = getWorkspaceMemberCapabilities(membershipRole);
 	const value = {
 		capabilities,
-		itemSortableDisabled: getWorkspaceItemSortableDisabled(
-			capabilities.canMutateContent,
-		),
+		itemSortableDisabled: getWorkspaceItemSortableDisabled(capabilities.canMutateContent),
 	};
 
-	return (
-		<WorkspaceMutationAccessContext value={value}>
-			{children}
-		</WorkspaceMutationAccessContext>
-	);
+	return <WorkspaceMutationAccessContext value={value}>{children}</WorkspaceMutationAccessContext>;
 }
 
 export function useWorkspaceMutationAccess() {

@@ -1,17 +1,9 @@
-import {
-	createWorkspaceStateBackend,
-	type WorkspaceFsLike,
-} from "@cloudflare/shell";
+import { createWorkspaceStateBackend, type WorkspaceFsLike } from "@cloudflare/shell";
 import { createExecuteTool } from "@cloudflare/think/tools/execute";
 import type { WorkspaceLike } from "@cloudflare/think/tools/workspace";
 import { createWorkspaceTools } from "@cloudflare/think/tools/workspace";
 import type { LanguageModel, ToolSet, UIMessage } from "ai";
-import {
-	addToolInputExamplesMiddleware,
-	createGateway,
-	generateText,
-	wrapLanguageModel,
-} from "ai";
+import { addToolInputExamplesMiddleware, createGateway, generateText, wrapLanguageModel } from "ai";
 
 import type {
 	AIThreadContext,
@@ -27,8 +19,7 @@ import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { createAIThreadWorkspaceTools } from "#/features/workspaces/ai/workspace-tools";
 import { formatWorkspaceAiContextForPrompt } from "#/features/workspaces/model/workspace-ai-context";
 
-const thinkPromptSectionDivider =
-	"══════════════════════════════════════════════";
+const thinkPromptSectionDivider = "══════════════════════════════════════════════";
 
 const AI_THREAD_TITLE_GATEWAY_MODEL = "google/gemini-2.5-flash-lite";
 const AI_THREAD_TITLE_FALLBACK_MODELS = ["openai/gpt-4.1-nano"] as const;
@@ -79,12 +70,8 @@ export function createAIThreadTurnToolConfig(input: {
 	timeZone?: string;
 }) {
 	const toolCatalog = createAIThreadToolCatalog(input);
-	const workspaceFs = isWorkspaceFsLike(input.workspace)
-		? input.workspace
-		: undefined;
-	const state = workspaceFs
-		? createWorkspaceStateBackend(workspaceFs)
-		: undefined;
+	const workspaceFs = isWorkspaceFsLike(input.workspace) ? input.workspace : undefined;
+	const state = workspaceFs ? createWorkspaceStateBackend(workspaceFs) : undefined;
 	const hasState = workspaceFs !== undefined;
 
 	return {
@@ -199,18 +186,10 @@ function createAIThreadToolCatalog(input: {
 	});
 	const entries: AIThreadToolEntry[] = [];
 
-	addAIThreadToolEntries(
-		entries,
-		sandboxTools,
-		AI_THREAD_SANDBOX_TOOL_DESCRIPTORS,
-	);
+	addAIThreadToolEntries(entries, sandboxTools, AI_THREAD_SANDBOX_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, webTools, AI_THREAD_WEB_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, timeTools, AI_THREAD_TIME_TOOL_DESCRIPTORS);
-	addAIThreadToolEntries(
-		entries,
-		workspaceTools,
-		AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS,
-	);
+	addAIThreadToolEntries(entries, workspaceTools, AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS);
 
 	return {
 		tools: createAIThreadToolSet(entries),
@@ -229,9 +208,7 @@ function createAIThreadToolCatalog(input: {
 		},
 		getCodemodeTools(canMutate: boolean) {
 			return createAIThreadToolSet(
-				entries.filter(
-					(entry) => entry.codemode && (canMutate || !entry.mutating),
-				),
+				entries.filter((entry) => entry.codemode && (canMutate || !entry.mutating)),
 			);
 		},
 	};
@@ -294,16 +271,12 @@ function getAIThreadCodemodeDescription(hasState: boolean) {
 	].join("\n");
 }
 
-function isWorkspaceFsLike(
-	workspace: WorkspaceLike,
-): workspace is WorkspaceFsLike {
+function isWorkspaceFsLike(workspace: WorkspaceLike): workspace is WorkspaceFsLike {
 	const candidate = workspace as Partial<
 		Record<(typeof WORKSPACE_FS_METHOD_NAMES)[number], unknown>
 	>;
 
-	return WORKSPACE_FS_METHOD_NAMES.every(
-		(method) => typeof candidate[method] === "function",
-	);
+	return WORKSPACE_FS_METHOD_NAMES.every((method) => typeof candidate[method] === "function");
 }
 
 function addAIThreadToolEntry(
@@ -331,9 +304,7 @@ function addAIThreadToolEntries(
 }
 
 function createAIThreadToolSet(entries: AIThreadToolEntry[]): ToolSet {
-	return Object.fromEntries(
-		entries.map((entry) => [entry.name, entry.tool]),
-	) as ToolSet;
+	return Object.fromEntries(entries.map((entry) => [entry.name, entry.tool])) as ToolSet;
 }
 
 export function getWorkspaceAiLanguageModel(
@@ -341,16 +312,10 @@ export function getWorkspaceAiLanguageModel(
 	env: Env,
 	_sessionAffinity: string,
 ): LanguageModel {
-	return getWorkspaceAiLanguageModelForGatewayModel(
-		getWorkspaceAiChatModel(modelId),
-		env,
-	);
+	return getWorkspaceAiLanguageModelForGatewayModel(getWorkspaceAiChatModel(modelId), env);
 }
 
-function getWorkspaceAiLanguageModelForGatewayModel(
-	gatewayModel: string,
-	env: Env,
-): LanguageModel {
+function getWorkspaceAiLanguageModelForGatewayModel(gatewayModel: string, env: Env): LanguageModel {
 	const gateway = createGateway({
 		apiKey: getVercelAiGatewayApiKey(env),
 	});
@@ -388,11 +353,7 @@ export function getWorkspaceAiGatewayProviderOptions(input?: {
 		"feature:workspace-chat",
 		`model:${modelId}`,
 		input?.thread ? `workspace:${input.thread.workspaceId}` : undefined,
-		input?.thread
-			? input.thread.promptScope.canMutate
-				? "mode:mutate"
-				: "mode:view"
-			: undefined,
+		input?.thread ? (input.thread.promptScope.canMutate ? "mode:mutate" : "mode:view") : undefined,
 		...(input?.tags ?? []),
 	].filter((tag): tag is string => Boolean(tag));
 
@@ -434,9 +395,7 @@ function getWorkspaceAiGatewayRoutingOptions(
 	}
 }
 
-function getWorkspaceAiReasoningOptions(
-	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
-) {
+function getWorkspaceAiReasoningOptions(modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>) {
 	switch (modelId) {
 		case "claude-sonnet":
 			return {
@@ -466,8 +425,7 @@ function getWorkspaceAiReasoningOptions(
 
 function getVercelAiGatewayApiKey(env: Env) {
 	const apiKey =
-		(env as { AI_GATEWAY_API_KEY?: string }).AI_GATEWAY_API_KEY ??
-		process.env.AI_GATEWAY_API_KEY;
+		(env as { AI_GATEWAY_API_KEY?: string }).AI_GATEWAY_API_KEY ?? process.env.AI_GATEWAY_API_KEY;
 
 	if (!apiKey) {
 		throw new Error("AI_GATEWAY_API_KEY is required to use Vercel AI Gateway.");
@@ -476,10 +434,7 @@ function getVercelAiGatewayApiKey(env: Env) {
 	return apiKey;
 }
 
-export async function generateAIThreadTitle(input: {
-	env: Env;
-	messages: UIMessage[];
-}) {
+export async function generateAIThreadTitle(input: { env: Env; messages: UIMessage[] }) {
 	const firstUserMessage = getFirstUserMessageText(input.messages);
 
 	if (!firstUserMessage) {
@@ -487,10 +442,7 @@ export async function generateAIThreadTitle(input: {
 	}
 
 	const result = await generateText({
-		model: getWorkspaceAiLanguageModelForGatewayModel(
-			AI_THREAD_TITLE_GATEWAY_MODEL,
-			input.env,
-		),
+		model: getWorkspaceAiLanguageModelForGatewayModel(AI_THREAD_TITLE_GATEWAY_MODEL, input.env),
 		providerOptions: {
 			gateway: {
 				...getWorkspaceAiGatewayTransportOptions(),
@@ -576,9 +528,7 @@ function getThinkExRuntimeScopePrompt(
 	},
 ) {
 	const timeZone = getPromptTimeZone(options.timeZone);
-	const workspaceAiContext = formatWorkspaceAiContextForPrompt(
-		options.workspaceAiContext,
-	);
+	const workspaceAiContext = formatWorkspaceAiContextForPrompt(options.workspaceAiContext);
 
 	return [
 		thinkPromptSectionDivider,

@@ -66,9 +66,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					requestId: ctx.requestId,
 				});
 
-				return this.keepAliveWhile(() =>
-					this._handleChatRecoveryExhausted(ctx),
-				);
+				return this.keepAliveWhile(() => this._handleChatRecoveryExhausted(ctx));
 			},
 		} satisfies Exclude<ChatRecoveryConfig, boolean>;
 		override chatStreamStallTimeoutMs = 90_000;
@@ -142,25 +140,18 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 
 			if (!ctx.continuation) {
-				this.activeRunStartedAt = await directory.recordThreadRunStarted(
-					this.name,
-					{
-						isUserMessage: true,
-					},
-				);
+				this.activeRunStartedAt = await directory.recordThreadRunStarted(this.name, {
+					isUserMessage: true,
+				});
 
 				void this.keepAliveWhile(() => this._maybeGenerateThreadTitle());
 			}
 
 			const modelId = resolveWorkspaceAiChatModelId(ctx.body?.modelId);
-			const system = getAIThreadSystemPromptForWorkspace(
-				ctx.system,
-				thread.promptScope,
-				{
-					timeZone: getBodyString(ctx.body, "timeZone"),
-					workspaceAiContext: ctx.body?.workspaceAiContext,
-				},
-			);
+			const system = getAIThreadSystemPromptForWorkspace(ctx.system, thread.promptScope, {
+				timeZone: getBodyString(ctx.body, "timeZone"),
+				workspaceAiContext: ctx.body?.workspaceAiContext,
+			});
 
 			await this.inspector.recordTurnStarted({
 				ctx,
@@ -170,11 +161,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			});
 
 			return {
-				model: getWorkspaceAiLanguageModel(
-					modelId,
-					this.env,
-					this.sessionAffinity,
-				),
+				model: getWorkspaceAiLanguageModel(modelId, this.env, this.sessionAffinity),
 				providerOptions: getWorkspaceAiGatewayProviderOptions({
 					modelId,
 					thread,
@@ -226,10 +213,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 						kind: "failed",
 					},
 					(metadataError) => {
-						console.warn(
-							"[AIThread] Failed to clear directory run status",
-							metadataError,
-						);
+						console.warn("[AIThread] Failed to clear directory run status", metadataError);
 					},
 				);
 			});
@@ -263,11 +247,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		}
 
 		private _shouldSettleRunAfterResponse(result: ChatResponseResult) {
-			return (
-				!result.continuation ||
-				result.status === "error" ||
-				result.status === "aborted"
-			);
+			return !result.continuation || result.status === "error" || result.status === "aborted";
 		}
 
 		private _hasActiveConnections() {
@@ -300,15 +280,11 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				const viewed = this._hasActiveConnections();
 
 				if (settlement.kind === "finished") {
-					await directory.recordThreadRunFinished(
-						this.name,
-						settlement.result,
-						{
-							startedAt,
-							viewed,
-							errorMessage: settlement.result.error,
-						},
-					);
+					await directory.recordThreadRunFinished(this.name, settlement.result, {
+						startedAt,
+						viewed,
+						errorMessage: settlement.result.error,
+					});
 				} else {
 					await directory.recordThreadRunFailed(this.name, settlement.error, {
 						errorClassification: settlement.errorClassification,
@@ -326,9 +302,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 		}
 
-		private async _handleChatRecoveryExhausted(
-			ctx: ChatRecoveryExhaustedContext,
-		) {
+		private async _handleChatRecoveryExhausted(ctx: ChatRecoveryExhaustedContext) {
 			await this._settleActiveRun(
 				{
 					error: AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE,
@@ -336,16 +310,12 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					kind: "failed",
 				},
 				(error) => {
-					console.warn(
-						"[AIThread] Failed to record recovery exhaustion",
-						error,
-						{
-							incidentId: ctx.incidentId,
-							reason: ctx.reason,
-							recoveryKind: ctx.recoveryKind,
-							requestId: ctx.requestId,
-						},
-					);
+					console.warn("[AIThread] Failed to record recovery exhaustion", error, {
+						incidentId: ctx.incidentId,
+						reason: ctx.reason,
+						recoveryKind: ctx.recoveryKind,
+						requestId: ctx.requestId,
+					});
 				},
 			);
 		}

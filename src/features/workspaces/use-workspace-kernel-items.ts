@@ -143,7 +143,7 @@ export function useUpdateWorkspaceItemColorMutation() {
 							return;
 						}
 
-						queryClient.invalidateQueries({
+						void queryClient.invalidateQueries({
 							queryKey: workspacePageQueryKey(input.workspaceId),
 						});
 						toast.error(getErrorMessage(error, "Unable to update item color right now."));

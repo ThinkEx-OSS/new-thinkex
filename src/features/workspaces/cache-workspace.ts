@@ -29,39 +29,34 @@ export function seedWorkspaceCaches(
 	const listMode = options.listMode ?? "upsert";
 
 	if (listMode !== "skip") {
-		queryClient.setQueryData<WorkspaceSummary[]>(
-			workspacesQueryKey,
-			(current) => {
-				if (!current && listMode === "update-existing") {
-					return undefined;
-				}
+		queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) => {
+			if (!current && listMode === "update-existing") {
+				return undefined;
+			}
 
-				if (!current) {
-					return [workspace];
-				}
+			if (!current) {
+				return [workspace];
+			}
 
-				if (current.some((item) => item.id === workspace.id)) {
-					return current
-						.map((item) => (item.id === workspace.id ? workspace : item))
-						.sort(compareWorkspaceRecentFirst);
-				}
+			if (current.some((item) => item.id === workspace.id)) {
+				return current
+					.map((item) => (item.id === workspace.id ? workspace : item))
+					.sort(compareWorkspaceRecentFirst);
+			}
 
-				return [workspace, ...current].sort(compareWorkspaceRecentFirst);
-			},
-		);
+			return [workspace, ...current].sort(compareWorkspaceRecentFirst);
+		});
 	}
 
 	queryClient.setQueryData(workspaceQueryKey(workspace.id), workspace);
 
 	if ("items" in input) {
-		queryClient.setQueryData<WorkspacePage>(
-			workspacePageQueryKey(workspace.id),
-			(current) =>
-				createWorkspacePageCacheEntry({
-					workspace,
-					items: input.items,
-					revision: input.revision ?? current?.revision ?? 0,
-				}),
+		queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspace.id), (current) =>
+			createWorkspacePageCacheEntry({
+				workspace,
+				items: input.items,
+				revision: input.revision ?? current?.revision ?? 0,
+			}),
 		);
 	}
 }
@@ -90,12 +85,8 @@ export function restoreWorkspaceListCache(
 	queryClient.removeQueries({ queryKey: workspacesQueryKey });
 }
 
-export function removeWorkspaceFromListCache(
-	queryClient: QueryClient,
-	workspaceId: string,
-) {
-	const previousWorkspaces =
-		queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
+export function removeWorkspaceFromListCache(queryClient: QueryClient, workspaceId: string) {
+	const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 
 	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) =>
 		current?.filter((workspace) => workspace.id !== workspaceId),
@@ -110,70 +101,47 @@ export function markWorkspaceOpenedInCache(
 	openedAt: string,
 ) {
 	const updateWorkspace = (workspace: WorkspaceSummary) =>
-		workspace.id === workspaceId
-			? { ...workspace, lastOpenedAt: openedAt }
-			: workspace;
+		workspace.id === workspaceId ? { ...workspace, lastOpenedAt: openedAt } : workspace;
 
 	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) =>
 		current?.map(updateWorkspace).sort(compareWorkspaceRecentFirst),
 	);
-	queryClient.setQueryData<WorkspaceSummary>(
-		workspaceQueryKey(workspaceId),
-		(current) => (current ? updateWorkspace(current) : current),
+	queryClient.setQueryData<WorkspaceSummary>(workspaceQueryKey(workspaceId), (current) =>
+		current ? updateWorkspace(current) : current,
 	);
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(workspaceId),
-		(current) =>
-			current
-				? {
-						...current,
-						workspace: updateWorkspace(current.workspace),
-					}
-				: current,
+	queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspaceId), (current) =>
+		current
+			? {
+					...current,
+					workspace: updateWorkspace(current.workspace),
+				}
+			: current,
 	);
 }
 
-export function updateWorkspaceInCaches(
-	queryClient: QueryClient,
-	workspace: WorkspaceSummary,
-) {
-	seedWorkspaceCaches(
-		queryClient,
-		{ workspace },
-		{ listMode: "update-existing" },
-	);
-	queryClient.setQueryData<WorkspacePage>(
-		workspacePageQueryKey(workspace.id),
-		(current) =>
-			current
-				? {
-						...current,
-						workspace,
-					}
-				: current,
+export function updateWorkspaceInCaches(queryClient: QueryClient, workspace: WorkspaceSummary) {
+	seedWorkspaceCaches(queryClient, { workspace }, { listMode: "update-existing" });
+	queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspace.id), (current) =>
+		current
+			? {
+					...current,
+					workspace,
+				}
+			: current,
 	);
 }
 
-export function removeWorkspaceCaches(
-	queryClient: QueryClient,
-	workspaceId: string,
-) {
+export function removeWorkspaceCaches(queryClient: QueryClient, workspaceId: string) {
 	removeWorkspaceFromListCache(queryClient, workspaceId);
 	removeWorkspaceDetailCaches(queryClient, workspaceId);
 }
 
-export function removeWorkspaceDetailCaches(
-	queryClient: QueryClient,
-	workspaceId: string,
-) {
+export function removeWorkspaceDetailCaches(queryClient: QueryClient, workspaceId: string) {
 	queryClient.removeQueries({ queryKey: workspaceQueryKey(workspaceId) });
 	queryClient.removeQueries({ queryKey: workspacePageQueryKey(workspaceId) });
 }
 
-function compareWorkspaceRecentFirst(
-	left: WorkspaceSummary,
-	right: WorkspaceSummary,
-) {
+function compareWorkspaceRecentFirst(left: WorkspaceSummary, right: WorkspaceSummary) {
 	const leftRecentAt = left.lastOpenedAt ?? left.createdAt;
 	const rightRecentAt = right.lastOpenedAt ?? right.createdAt;
 	const recentDelta = rightRecentAt.localeCompare(leftRecentAt);

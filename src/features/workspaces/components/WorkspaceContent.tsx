@@ -1,11 +1,7 @@
 import { FolderOpen } from "lucide-react";
 import { useRef, useState } from "react";
 
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuTrigger,
-} from "#/components/ui/context-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "#/components/ui/context-menu";
 import {
 	Empty,
 	EmptyDescription,
@@ -36,20 +32,11 @@ import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/Works
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
-import type {
-	WorkspaceItemType,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
-import {
-	getWorkspaceChildren,
-	splitWorkspaceChildren,
-} from "#/features/workspaces/model/tree";
+import { getWorkspaceChildren, splitWorkspaceChildren } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
-import {
-	getWorkspaceBrowseParentId,
-	isWorkspaceItemView,
-} from "#/features/workspaces/model/view";
+import { getWorkspaceBrowseParentId, isWorkspaceItemView } from "#/features/workspaces/model/view";
 import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file";
 import { eventTargetsPreventTypeToFocus } from "#/lib/keyboard-event-target";
 import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
@@ -60,16 +47,11 @@ interface WorkspaceContentProps {
 	items: WorkspaceItem[];
 	activeItem?: WorkspaceItem;
 	workspace: WorkspaceSummary;
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
+	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }
 
-type WorkspaceItemActionDialogsState = ReturnType<
-	typeof useWorkspaceItemActionDialogState
->;
+type WorkspaceItemActionDialogsState = ReturnType<typeof useWorkspaceItemActionDialogState>;
 
 export default function WorkspaceContent({
 	instanceId,
@@ -147,16 +129,11 @@ function WorkspaceBrowseContent({
 		onDrop: handleNativeFileDrop,
 		targetRef: browseSurfaceRef,
 	});
-	const {
-		clearSelection,
-		selectedItemIds,
-		selectedItems,
-		setItemSelected,
-		setSelectedItemIds,
-	} = useWorkspaceSelection({
-		items,
-		workspaceId,
-	});
+	const { clearSelection, selectedItemIds, selectedItems, setItemSelected, setSelectedItemIds } =
+		useWorkspaceSelection({
+			items,
+			workspaceId,
+		});
 	const {
 		marqueeRect,
 		registerItemElement,
@@ -255,18 +232,13 @@ function WorkspaceBrowseContent({
 										<FolderOpen />
 									</EmptyMedia>
 									<EmptyTitle>No items in this folder</EmptyTitle>
-									<EmptyDescription>
-										Items you add will appear here
-									</EmptyDescription>
+									<EmptyDescription>Items you add will appear here</EmptyDescription>
 								</EmptyHeader>
 							</Empty>
 						) : null}
 					</ContextMenuTrigger>
 					<ContextMenuContent className="w-56">
-						<WorkspaceCreateContextMenuContent
-							parentId={parentId}
-							onCreateItem={onCreateItem}
-						/>
+						<WorkspaceCreateContextMenuContent parentId={parentId} onCreateItem={onCreateItem} />
 					</ContextMenuContent>
 				</ContextMenu>
 				<WorkspaceSelectionActionBar
@@ -303,9 +275,7 @@ function WorkspaceBrowseContent({
 				itemIds={selectedItems.map((item) => item.id)}
 				title="Delete selected items?"
 				description={
-					<WorkspaceDeleteSelectedItemsDescription
-						selectedCount={selectedItems.length}
-					/>
+					<WorkspaceDeleteSelectedItemsDescription selectedCount={selectedItems.length} />
 				}
 				onOpenChange={setDeleteSelectedAlertOpen}
 				onDeleted={clearSelection}
@@ -356,11 +326,7 @@ function WorkspaceItemGrid({
 	);
 }
 
-function WorkspaceMarqueeOverlay({
-	rect,
-}: {
-	rect: WorkspaceMarqueeRect | null;
-}) {
+function WorkspaceMarqueeOverlay({ rect }: { rect: WorkspaceMarqueeRect | null }) {
 	if (!rect) {
 		return null;
 	}
@@ -437,11 +403,7 @@ function WorkspaceItemView({
 }) {
 	if (item.type === "document") {
 		return (
-			<DocumentEditorSurface
-				item={item}
-				toolbarSlotId={viewInstanceId}
-				workspaceId={workspaceId}
-			/>
+			<DocumentEditorSurface item={item} toolbarSlotId={viewInstanceId} workspaceId={workspaceId} />
 		);
 	}
 
@@ -458,11 +420,7 @@ function WorkspaceItemView({
 		);
 	}
 
-	const {
-		Icon: ItemIcon,
-		iconClassName,
-		surfaceClassName,
-	} = getWorkspaceItemDisplay(item);
+	const { Icon: ItemIcon, iconClassName, surfaceClassName } = getWorkspaceItemDisplay(item);
 
 	return (
 		<div className="h-full min-h-0">
@@ -484,9 +442,7 @@ function WorkspaceItemView({
 							aria-hidden="true"
 						/>
 						<div className="space-y-1">
-							<h2 className="font-medium text-foreground text-sm">
-								{item.name}
-							</h2>
+							<h2 className="font-medium text-foreground text-sm">{item.name}</h2>
 						</div>
 					</div>
 				</ContextMenuTrigger>

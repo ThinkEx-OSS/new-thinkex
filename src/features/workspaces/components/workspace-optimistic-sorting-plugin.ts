@@ -67,7 +67,7 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 						return;
 					}
 
-					manager.renderer.rendering.then(() => {
+					void manager.renderer.rendering.then(() => {
 						const newInstances = getSortableInstances();
 
 						if (hasSortableStateChanged(sortableIndices, instances, newInstances)) {
@@ -120,7 +120,9 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 							}
 						});
 
-						manager.actions.setDropTarget(source.id).then(() => manager.collisionObserver.enable());
+						void manager.actions
+							.setDropTarget(source.id)
+							.then(() => manager.collisionObserver.enable());
 					});
 				});
 			}),
@@ -156,7 +158,7 @@ export class WorkspaceOptimisticSortingPlugin extends Plugin<DragDropManager> {
 						return;
 					}
 
-					manager.renderer.rendering.then(() => {
+					void manager.renderer.rendering.then(() => {
 						const newInstances = getSortableInstances();
 
 						if (hasSortableStateChanged(sortableIndices, instances, newInstances)) {

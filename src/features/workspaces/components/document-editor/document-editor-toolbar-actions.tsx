@@ -142,8 +142,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		icon: <CodeXml />,
 		label: "Code",
 		active: (editorState) => isStructureBlock(editorState, "codeBlock"),
-		run: (editor) =>
-			editor.chain().focus().toggleCodeBlock({ language: "typescript" }).run(),
+		run: (editor) => editor.chain().focus().toggleCodeBlock({ language: "typescript" }).run(),
 	},
 	{
 		id: "horizontal-rule",
@@ -167,11 +166,7 @@ export const documentBlockActions: DocumentToolbarAction[] = [
 		active: (editorState) => isStructureBlock(editorState, "table"),
 		disabled: isCodeBlock,
 		run: (editor) =>
-			editor
-				.chain()
-				.focus()
-				.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-				.run(),
+			editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
 	},
 ];
 
@@ -306,22 +301,12 @@ export function getInlineMarkIcon(mark: DocumentInlineMark) {
 	}
 }
 
-function isFontSize(
-	editorState: DocumentEditorUiState,
-	size: DocumentFontSize,
-) {
-	return (
-		editorState.block.kind === "fontSize" && editorState.block.size === size
-	);
+function isFontSize(editorState: DocumentEditorUiState, size: DocumentFontSize) {
+	return editorState.block.kind === "fontSize" && editorState.block.size === size;
 }
 
-function isStructureBlock(
-	editorState: DocumentEditorUiState,
-	type: DocumentStructureBlock,
-) {
-	return (
-		editorState.block.kind === "structure" && editorState.block.type === type
-	);
+function isStructureBlock(editorState: DocumentEditorUiState, type: DocumentStructureBlock) {
+	return editorState.block.kind === "structure" && editorState.block.type === type;
 }
 
 export function isCodeBlock(editorState: DocumentEditorUiState) {
@@ -330,10 +315,7 @@ export function isCodeBlock(editorState: DocumentEditorUiState) {
 
 function setSelectionLink(editor: Editor) {
 	const currentHref = editor.getAttributes("link").href;
-	const href = globalThis.prompt(
-		"Link URL",
-		typeof currentHref === "string" ? currentHref : "",
-	);
+	const href = globalThis.prompt("Link URL", typeof currentHref === "string" ? currentHref : "");
 
 	if (href === null) {
 		return;

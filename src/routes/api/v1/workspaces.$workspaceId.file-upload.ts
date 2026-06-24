@@ -21,10 +21,7 @@ const fileFormKey = "file";
 const parentIdFormKey = "parentId";
 const clientMutationIdFormKey = "clientMutationId";
 
-async function handleWorkspaceFileUpload(
-	request: Request,
-	workspaceId: string,
-) {
+async function handleWorkspaceFileUpload(request: Request, workspaceId: string) {
 	const requestId = getRequestId(request);
 	let objectKey: string | null = null;
 
@@ -55,12 +52,7 @@ async function handleWorkspaceFileUpload(
 		const file = formData.get(fileFormKey);
 
 		if (!(file instanceof File)) {
-			return apiError(
-				requestId,
-				400,
-				"INVALID_UPLOAD",
-				"File upload is missing a file.",
-			);
+			return apiError(requestId, 400, "INVALID_UPLOAD", "File upload is missing a file.");
 		}
 
 		const validationError = getWorkspaceFileUploadValidationError({
@@ -99,9 +91,7 @@ async function handleWorkspaceFileUpload(
 			objectKey,
 			contentType: file.type || null,
 			assetKind: descriptor.assetKind,
-			clientMutationId: getNullableString(
-				formData.get(clientMutationIdFormKey),
-			),
+			clientMutationId: getNullableString(formData.get(clientMutationIdFormKey)),
 		});
 
 		objectKey = null;
@@ -156,13 +146,10 @@ async function handleWorkspaceFileUpload(
 	}
 }
 
-export const Route = createFileRoute(
-	"/api/v1/workspaces/$workspaceId/file-upload",
-)({
+export const Route = createFileRoute("/api/v1/workspaces/$workspaceId/file-upload")({
 	server: {
 		handlers: {
-			POST: ({ params, request }) =>
-				handleWorkspaceFileUpload(request, params.workspaceId),
+			POST: ({ params, request }) => handleWorkspaceFileUpload(request, params.workspaceId),
 		},
 	},
 });

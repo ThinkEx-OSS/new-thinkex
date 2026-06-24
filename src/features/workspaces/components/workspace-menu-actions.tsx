@@ -92,10 +92,7 @@ export function applyWorkspaceMenuReadOnly(
 	});
 }
 
-export function workspaceMenuItemInteraction(
-	readOnly: boolean,
-	onSelect: () => void,
-) {
+export function workspaceMenuItemInteraction(readOnly: boolean, onSelect: () => void) {
 	return {
 		disabled: readOnly,
 		onClick: readOnly ? undefined : onSelect,
@@ -118,9 +115,7 @@ function renderWorkspaceMenuAction(
 						{action.leading}
 						<span>{action.label}</span>
 						{action.trailing !== undefined && action.trailing !== null ? (
-							<span className="ml-auto text-xs text-muted-foreground">
-								{action.trailing}
-							</span>
+							<span className="ml-auto text-xs text-muted-foreground">{action.trailing}</span>
 						) : null}
 					</>
 				),

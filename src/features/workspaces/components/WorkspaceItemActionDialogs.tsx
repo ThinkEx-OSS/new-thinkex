@@ -59,7 +59,8 @@ function RenameWorkspaceItemDialogContent({
 			<form
 				className="grid gap-6"
 				action={(formData) => {
-					const name = String(formData.get("name") ?? "").trim();
+					const rawName = formData.get("name");
+					const name = (typeof rawName === "string" ? rawName : "").trim();
 
 					if (!name) {
 						return;
