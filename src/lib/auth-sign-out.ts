@@ -17,12 +17,7 @@ export async function clearLocalAuthSession(input: ClearLocalAuthSessionInput) {
 	await input.navigate({ to: "/", replace: input.replace });
 }
 
-interface SignOutCurrentUserInput extends ClearLocalAuthSessionInput {
-	refetchSession?: () => Promise<unknown>;
-}
-
-export async function signOutCurrentUser(input: SignOutCurrentUserInput) {
+export async function signOutCurrentUser(input: ClearLocalAuthSessionInput) {
 	await authClient.signOut();
-	await input.refetchSession?.();
 	await clearLocalAuthSession(input);
 }

@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
@@ -9,16 +9,16 @@ import { Button } from "#/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { DeleteAccountSection } from "#/features/account/components/DeleteAccountSection";
-import { authClient } from "#/lib/auth-client";
 import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export function SettingsPage() {
 	const navigate = useNavigate();
 	const router = useRouter();
 	const canGoBack = useCanGoBack();
 	const queryClient = useQueryClient();
-	const { data: session, refetch } = authClient.useSession();
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
 
 	const user = session?.user;
 	const displayName = user?.name || user?.email || "User";
@@ -38,7 +38,6 @@ export function SettingsPage() {
 				queryClient,
 				router,
 				navigate,
-				refetchSession: refetch,
 			});
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Unable to sign out right now."));

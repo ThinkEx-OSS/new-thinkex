@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -6,8 +6,9 @@ import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
+import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
-import { refreshAuthSession, removeAuthSession } from "#/lib/session-query";
+import { getAuthSessionQueryOptions, refreshAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
 
@@ -38,7 +39,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 	const navigate = useNavigate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { data: session, refetch } = authClient.useSession();
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
 	const alternateHref = mode === "signin" ? "/signup" : "/login";
 	const alternateAccountCta =
 		mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in";
@@ -63,10 +64,11 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							onClick={() => {
 								void (async () => {
 									try {
-										await authClient.signOut();
-										removeAuthSession(queryClient);
-										await Promise.all([refetch(), router.invalidate()]);
-										await navigate({ to: "/" });
+										await signOutCurrentUser({
+											queryClient,
+											router,
+											navigate,
+										});
 									} catch (error) {
 										toast.error(getErrorMessage(error, "Unable to sign out right now."));
 									}
@@ -96,11 +98,8 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 									provider: "google",
 									callbackURL,
 								});
-								await Promise.all([
-									refetch(),
-									refreshAuthSession(queryClient),
-									router.invalidate(),
-								]);
+								await refreshAuthSession(queryClient);
+								await router.invalidate();
 							} catch (error) {
 								setErrorMessage("Failed to sign in with Google");
 								toast.error(getErrorMessage(error, "Failed to sign in with Google"));
