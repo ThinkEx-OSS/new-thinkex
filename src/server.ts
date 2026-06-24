@@ -3,7 +3,7 @@ import handler from "@tanstack/react-start/server-entry";
 import { routeUserAIRequest } from "#/features/workspaces/ai/auth";
 import { routeDocumentSessionRequest } from "#/features/workspaces/documents/document-session-auth";
 import { routeWorkspaceKernelRequest } from "#/features/workspaces/kernel/workspace-kernel-auth";
-import { posthogHostOrigin } from "#/integrations/posthog/config";
+import { posthogHost, posthogHostOrigin, posthogProjectToken } from "#/integrations/posthog/config";
 import { capturePostHogServerException } from "#/integrations/posthog/server";
 
 export { CodemodeRuntime } from "@cloudflare/codemode";
@@ -13,10 +13,33 @@ export { WorkspaceFileExtractionWorkflow } from "#/features/workspaces/extractio
 export { WorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel";
 
 const isProduction = import.meta.env.PROD;
+const cloudflareInsightsScriptOrigin = "https://static.cloudflareinsights.com";
+const cloudflareInsightsConnectOrigin = "https://cloudflareinsights.com";
+
+function buildContentSecurityPolicyReportUrl() {
+	if (!posthogHost || !posthogProjectToken) {
+		return undefined;
+	}
+
+	try {
+		const reportUrl = new URL("/report/", posthogHost);
+		reportUrl.searchParams.set("token", posthogProjectToken);
+		reportUrl.searchParams.set("v", "1");
+
+		return reportUrl.toString();
+	} catch {
+		return undefined;
+	}
+}
 
 function buildContentSecurityPolicy() {
-	const scriptSrc = ["'self'", "'unsafe-inline'"];
-	const connectSrc = ["'self'", "wss:"];
+	const scriptSrc = [
+		"'self'",
+		"'unsafe-inline'",
+		"'wasm-unsafe-eval'",
+		cloudflareInsightsScriptOrigin,
+	];
+	const connectSrc = ["'self'", "wss:", cloudflareInsightsConnectOrigin];
 
 	if (posthogHostOrigin) {
 		scriptSrc.push(posthogHostOrigin);
@@ -28,7 +51,7 @@ function buildContentSecurityPolicy() {
 		connectSrc.push("ws:", "http://localhost:*", "http://127.0.0.1:*");
 	}
 
-	return [
+	const cspDirectives = [
 		"default-src 'self'",
 		"base-uri 'self'",
 		"object-src 'none'",
@@ -43,7 +66,15 @@ function buildContentSecurityPolicy() {
 		`connect-src ${connectSrc.join(" ")}`,
 		"media-src 'self' data: blob:",
 		"worker-src 'self' blob:",
-	].join("; ");
+	];
+
+	const reportUrl = buildContentSecurityPolicyReportUrl();
+
+	if (reportUrl) {
+		cspDirectives.push(`report-uri ${reportUrl}`);
+	}
+
+	return cspDirectives.join("; ");
 }
 
 function isHtmlResponse(response: Response) {
