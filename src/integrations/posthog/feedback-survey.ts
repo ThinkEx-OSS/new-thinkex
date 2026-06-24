@@ -9,23 +9,11 @@ export function findFeedbackSurvey(surveys: Survey[], surveyId: string): Survey 
 	return surveys.find((survey) => survey.id === surveyId && survey.type === SurveyType.API) ?? null;
 }
 
-export function getSurveyQuestionId(question: BasicSurveyQuestion, index: number) {
-	return question.id ?? `question-${index}`;
-}
-
 export function getFeedbackOpenQuestions(survey: Survey): FeedbackOpenQuestion[] {
-	return survey.questions.flatMap((question, index) => {
-		if (question.type !== SurveyQuestionType.Open) {
-			return [];
-		}
-
-		return [
-			{
-				...question,
-				id: getSurveyQuestionId(question, index),
-			},
-		];
-	});
+	return survey.questions.filter(
+		(question): question is FeedbackOpenQuestion =>
+			question.type === SurveyQuestionType.Open && Boolean(question.id),
+	);
 }
 
 export function buildFeedbackSurveySentProperties(
@@ -79,8 +67,13 @@ export function loadFeedbackSurvey(): Promise<Survey> {
 		}
 
 		posthog.getSurveys((surveys, context) => {
-			if (!context?.isLoaded || context.error) {
-				reject(new Error(context?.error ?? "Unable to load feedback survey."));
+			if (context?.error) {
+				reject(new Error(context.error));
+				return;
+			}
+
+			if (context && !context.isLoaded) {
+				reject(new Error("Unable to load feedback survey."));
 				return;
 			}
 
@@ -97,6 +90,6 @@ export function loadFeedbackSurvey(): Promise<Survey> {
 			}
 
 			resolve(survey);
-		});
+		}, true);
 	});
 }

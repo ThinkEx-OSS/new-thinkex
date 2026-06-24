@@ -186,18 +186,18 @@ export class WorkspaceKernel extends Agent<Env> {
 	@callable()
 	async purgeForDeletion(): Promise<void> {
 		const workspaceId = this.name;
-		const documentItems = this.store.getPageItems().filter((item) => item.type === "document");
+		const documentItemIds = this.store.getAllDocumentItemIds();
 
-		for (const item of documentItems) {
+		for (const itemId of documentItemIds) {
 			try {
 				await getDocumentSessionFromEnv(this.env, {
 					workspaceId,
-					itemId: item.id,
+					itemId,
 				}).purgeForDeletion();
 			} catch (error) {
 				console.warn("[WorkspaceKernel] DocumentSession purge failed", {
 					workspaceId,
-					itemId: item.id,
+					itemId,
 					error,
 				});
 			}

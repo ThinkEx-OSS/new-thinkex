@@ -1,7 +1,9 @@
-import { env as workerEnv } from "cloudflare:workers";
-
-const DEFAULT_FROM_EMAIL = "invites@thinkex.app";
-const DEFAULT_FROM_NAME = "ThinkEx";
+import {
+	escapeHtml,
+	getEmailSender,
+	getTransactionalFromEmail,
+	TRANSACTIONAL_FROM_NAME,
+} from "#/lib/transactional-email";
 
 export type DeleteAccountEmailDeliveryFailureReason = "missing_binding" | "send_failed";
 
@@ -17,18 +19,6 @@ export interface DeleteAccountEmailDeliveryFailure {
 export type DeleteAccountEmailDeliveryOutcome =
 	| DeleteAccountEmailDeliveryResult
 	| DeleteAccountEmailDeliveryFailure;
-
-function getAccountFromEmail() {
-	return workerEnv.WORKSPACE_INVITE_FROM_EMAIL?.trim() || DEFAULT_FROM_EMAIL;
-}
-
-function escapeHtml(value: string) {
-	return value
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;");
-}
 
 export function buildDeleteAccountEmailContent(input: { deleteUrl: string }) {
 	const subject = "Confirm deletion of your ThinkEx account";
@@ -52,10 +42,6 @@ export function buildDeleteAccountEmailContent(input: { deleteUrl: string }) {
 	return { subject, text, html };
 }
 
-function getEmailSender() {
-	return workerEnv.EMAIL ?? null;
-}
-
 export async function sendDeleteAccountVerificationEmail(input: {
 	email: string;
 	url: string;
@@ -73,8 +59,8 @@ export async function sendDeleteAccountVerificationEmail(input: {
 		await emailSender.send({
 			to: input.email,
 			from: {
-				email: getAccountFromEmail(),
-				name: DEFAULT_FROM_NAME,
+				email: getTransactionalFromEmail(),
+				name: TRANSACTIONAL_FROM_NAME,
 			},
 			subject: content.subject,
 			html: content.html,

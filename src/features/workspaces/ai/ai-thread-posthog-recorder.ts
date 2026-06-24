@@ -10,14 +10,6 @@ import type {
 	TurnContext,
 } from "@cloudflare/think";
 
-import {
-	buildPostHogAiInputFromPrompt,
-	buildPostHogAiInputFromStep,
-	buildPostHogAiOutputFromStep,
-	buildPostHogAiOutputFromText,
-	extractTokenUsage,
-	parseGatewayModel,
-} from "#/features/workspaces/ai/ai-thread-posthog-serialization";
 import type { AIThreadContext } from "#/features/workspaces/ai/ai-thread-metadata";
 import {
 	getWorkspaceAiChatModel,
@@ -28,6 +20,103 @@ import {
 	capturePostHogAiSpan,
 } from "#/integrations/posthog/ai-observability";
 import { capturePostHogServerEvent } from "#/integrations/posthog/server";
+
+function parseGatewayModel(gatewayModel: string) {
+	const slashIndex = gatewayModel.indexOf("/");
+
+	if (slashIndex === -1) {
+		return {
+			provider: "vercel-ai-gateway",
+			model: gatewayModel,
+		};
+	}
+
+	return {
+		provider: gatewayModel.slice(0, slashIndex),
+		model: gatewayModel.slice(slashIndex + 1),
+	};
+}
+
+function extractTokenUsage(usage: unknown) {
+	if (!usage || typeof usage !== "object") {
+		return {};
+	}
+
+	const record = usage as Record<string, unknown>;
+
+	return {
+		inputTokens:
+			typeof record.inputTokens === "number"
+				? record.inputTokens
+				: typeof record.promptTokens === "number"
+					? record.promptTokens
+					: undefined,
+		outputTokens:
+			typeof record.outputTokens === "number"
+				? record.outputTokens
+				: typeof record.completionTokens === "number"
+					? record.completionTokens
+					: undefined,
+	};
+}
+
+function buildPostHogAiInputFromPrompt(prompt: string) {
+	return [{ role: "user", content: prompt }];
+}
+
+function buildPostHogAiOutputFromText(text: string) {
+	return [{ role: "assistant", content: text }];
+}
+
+function buildPostHogAiInputFromStep(ctx: StepContext) {
+	const stepRecord = ctx as StepContext & { messages?: unknown };
+
+	if (Array.isArray(stepRecord.messages)) {
+		return stepRecord.messages;
+	}
+
+	const request = ctx.request as Record<string, unknown> | undefined;
+
+	if (!request || typeof request !== "object") {
+		return [];
+	}
+
+	if (Array.isArray(request.messages)) {
+		return request.messages;
+	}
+
+	const body = request.body;
+	if (!body || typeof body !== "object") {
+		return [];
+	}
+
+	const bodyRecord = body as Record<string, unknown>;
+
+	if (Array.isArray(bodyRecord.messages)) {
+		return bodyRecord.messages;
+	}
+
+	if (typeof bodyRecord.prompt === "string") {
+		return buildPostHogAiInputFromPrompt(bodyRecord.prompt);
+	}
+
+	return [];
+}
+
+function buildPostHogAiOutputFromStep(ctx: StepContext) {
+	if (ctx.text) {
+		return buildPostHogAiOutputFromText(ctx.text);
+	}
+
+	const response = ctx.response as Record<string, unknown> | undefined;
+	const messages = response?.messages;
+
+	if (Array.isArray(messages)) {
+		return messages;
+	}
+
+	return [];
+}
 
 interface PostHogTurnState {
 	distinctId: string;
@@ -42,6 +131,14 @@ interface PostHogTurnState {
 	currentStepStartedAt?: number;
 	currentStepFirstTokenAt?: number;
 	activeToolSpans: Map<string, { spanId: string; startedAt: number }>;
+}
+
+function turnTelemetryProperties(turn: PostHogTurnState) {
+	return {
+		thread_id: turn.sessionId,
+		workspace_id: turn.workspaceId,
+		trace_id: turn.traceId,
+	};
 }
 
 export interface AIThreadPostHogTraceContext {
@@ -64,7 +161,7 @@ export class AIThreadPostHogRecorder {
 		const turnRootSpanId = crypto.randomUUID();
 		const gatewayModel = getWorkspaceAiChatModel(input.modelId);
 
-		this.turn = {
+		const turn: PostHogTurnState = {
 			distinctId: input.thread.userId,
 			sessionId: input.thread.id,
 			traceId,
@@ -76,14 +173,13 @@ export class AIThreadPostHogRecorder {
 			turnStartedAt: Date.now(),
 			activeToolSpans: new Map(),
 		};
+		this.turn = turn;
 
 		capturePostHogServerEvent({
 			distinctId: input.thread.userId,
 			event: "ai_turn_started",
 			properties: {
-				thread_id: input.thread.id,
-				workspace_id: input.thread.workspaceId,
-				trace_id: traceId,
+				...turnTelemetryProperties(turn),
 				model_id: input.modelId,
 				continuation: Boolean(input.ctx.continuation),
 			},
@@ -123,8 +219,6 @@ export class AIThreadPostHogRecorder {
 			return;
 		}
 
-		const latencySeconds = ctx.durationMs / 1000;
-
 		capturePostHogAiSpan({
 			distinctId: turn.distinctId,
 			traceId: turn.traceId,
@@ -132,12 +226,11 @@ export class AIThreadPostHogRecorder {
 			spanId: activeToolSpan.spanId,
 			spanName: ctx.toolName,
 			parentId: turn.turnRootSpanId,
-			latencySeconds,
+			latencySeconds: ctx.durationMs / 1000,
 			isError: !ctx.success,
 			error: ctx.success ? undefined : ctx.error,
 			properties: {
-				thread_id: turn.sessionId,
-				workspace_id: turn.workspaceId,
+				...turnTelemetryProperties(turn),
 				tool_call_id: ctx.toolCallId,
 				step_number: ctx.stepNumber,
 				tool_input: ctx.input,
@@ -149,9 +242,7 @@ export class AIThreadPostHogRecorder {
 			distinctId: turn.distinctId,
 			event: "ai_tool_invoked",
 			properties: {
-				thread_id: turn.sessionId,
-				workspace_id: turn.workspaceId,
-				trace_id: turn.traceId,
+				...turnTelemetryProperties(turn),
 				tool_name: ctx.toolName,
 				success: ctx.success,
 				duration_ms: ctx.durationMs,
@@ -191,8 +282,7 @@ export class AIThreadPostHogRecorder {
 			timeToFirstToken,
 			stopReason: ctx.finishReason,
 			properties: {
-				thread_id: turn.sessionId,
-				workspace_id: turn.workspaceId,
+				...turnTelemetryProperties(turn),
 				model_id: turn.modelId,
 				step_number: ctx.stepNumber,
 				feature: "workspace-chat",
@@ -226,9 +316,7 @@ export class AIThreadPostHogRecorder {
 			distinctId: turn.distinctId,
 			event: "ai_turn_completed",
 			properties: {
-				thread_id: turn.sessionId,
-				workspace_id: turn.workspaceId,
-				trace_id: turn.traceId,
+				...turnTelemetryProperties(turn),
 				status: result.status,
 				step_count: turn.stepCount,
 			},
@@ -253,9 +341,7 @@ export class AIThreadPostHogRecorder {
 			distinctId: turn.distinctId,
 			event: "ai_turn_failed",
 			properties: {
-				thread_id: turn.sessionId,
-				workspace_id: turn.workspaceId,
-				trace_id: turn.traceId,
+				...turnTelemetryProperties(turn),
 				error_stage: input?.errorStage ?? null,
 				error_classification: input?.errorClassification ?? null,
 				error_message: error instanceof Error ? error.message : String(error),

@@ -228,6 +228,7 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 			}
 		}
 
+		this._refreshState();
 		await this.ctx.storage.deleteAll();
 	}
 

@@ -10,8 +10,8 @@ import { Field, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { DeleteAccountSection } from "#/features/account/components/DeleteAccountSection";
 import { authClient } from "#/lib/auth-client";
+import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
-import { removeAuthSession } from "#/lib/session-query";
 
 export function SettingsPage() {
 	const navigate = useNavigate();
@@ -24,11 +24,12 @@ export function SettingsPage() {
 
 	const handleSignOut = async () => {
 		try {
-			await authClient.signOut();
-			await refetch();
-			removeAuthSession(queryClient);
-			await router.invalidate();
-			await navigate({ to: "/" });
+			await signOutCurrentUser({
+				queryClient,
+				router,
+				navigate,
+				refetchSession: refetch,
+			});
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Unable to sign out right now."));
 		}
@@ -71,8 +72,7 @@ export function SettingsPage() {
 							id="settings-display-name"
 							value={displayName}
 							readOnly
-							disabled
-							aria-readonly="true"
+							className="cursor-default bg-muted/40"
 						/>
 					</Field>
 					<Field>
@@ -82,8 +82,7 @@ export function SettingsPage() {
 							type="email"
 							value={user?.email ?? ""}
 							readOnly
-							disabled
-							aria-readonly="true"
+							className="cursor-default bg-muted/40"
 						/>
 					</Field>
 				</FieldGroup>

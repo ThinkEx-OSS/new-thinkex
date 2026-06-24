@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { resetPostHogClientIdentity } from "#/integrations/posthog/provider";
 import { authClient } from "#/lib/auth-client";
-import { removeAuthSession } from "#/lib/session-query";
+import { clearLocalAuthSession } from "#/lib/auth-sign-out";
 
 export const Route = createFileRoute("/account-deleted")({
 	head: () => ({
@@ -37,10 +37,13 @@ function AccountDeletedPage() {
 				// The account may already be deleted; clear local session regardless.
 			}
 
-			removeAuthSession(queryClient);
 			resetPostHogClientIdentity();
-			await router.invalidate();
-			await navigate({ to: "/" });
+			await clearLocalAuthSession({
+				queryClient,
+				router,
+				navigate,
+				replace: true,
+			});
 		})();
 	}, [navigate, queryClient, router]);
 

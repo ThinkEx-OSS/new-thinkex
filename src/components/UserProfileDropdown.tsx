@@ -24,10 +24,8 @@ import {
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
 import { getErrorMessage } from "#/lib/error-message";
-import { removeAuthSession } from "#/lib/session-query";
+import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { isPostHogFeedbackEnabled } from "#/integrations/posthog/config";
-import { loadFeedbackSurvey } from "#/integrations/posthog/feedback-survey";
-import type { Survey } from "posthog-js";
 
 const userMenuTriggerClassName =
 	"size-8 rounded-full p-0 hover:bg-muted focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0 dark:hover:bg-input/50";
@@ -57,42 +55,15 @@ export default function UserProfileDropdown() {
 	const { theme, setTheme } = useTheme();
 	const { data: session, isPending, refetch } = authClient.useSession();
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
-	const [feedbackSurvey, setFeedbackSurvey] = useState<Survey | null>(null);
-	const [feedbackLoading, setFeedbackLoading] = useState(false);
-	const [feedbackLoadError, setFeedbackLoadError] = useState<string | null>(null);
-
-	const handleOpenFeedback = () => {
-		if (!isPostHogFeedbackEnabled) {
-			toast.error("Feedback is not available right now.");
-			return;
-		}
-
-		setFeedbackOpen(true);
-		setFeedbackLoading(true);
-		setFeedbackLoadError(null);
-		setFeedbackSurvey(null);
-
-		void loadFeedbackSurvey()
-			.then((survey) => {
-				setFeedbackSurvey(survey);
-			})
-			.catch((error: unknown) => {
-				const message = getErrorMessage(error, "Unable to load feedback form right now.");
-				setFeedbackLoadError(message);
-				toast.error(message);
-			})
-			.finally(() => {
-				setFeedbackLoading(false);
-			});
-	};
 
 	const handleSignOut = async () => {
 		try {
-			await authClient.signOut();
-			await refetch();
-			removeAuthSession(queryClient);
-			await router.invalidate();
-			await navigate({ to: "/" });
+			await signOutCurrentUser({
+				queryClient,
+				router,
+				navigate,
+				refetchSession: refetch,
+			});
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Unable to sign out right now."));
 		}
@@ -151,11 +122,7 @@ export default function UserProfileDropdown() {
 								</DropdownMenuSubContent>
 							</DropdownMenuSub>
 							{isPostHogFeedbackEnabled ? (
-								<DropdownMenuItem
-									onClick={() => {
-										handleOpenFeedback();
-									}}
-								>
+								<DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
 									<MessageSquarePlus className="size-4" />
 									Feedback
 								</DropdownMenuItem>
@@ -180,13 +147,7 @@ export default function UserProfileDropdown() {
 						</DropdownMenuGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
-				<FeedbackDialog
-					open={feedbackOpen}
-					onOpenChange={setFeedbackOpen}
-					survey={feedbackSurvey}
-					isLoading={feedbackLoading}
-					loadError={feedbackLoadError}
-				/>
+				<FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
 			</>
 		);
 	}

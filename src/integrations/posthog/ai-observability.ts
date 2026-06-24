@@ -1,5 +1,6 @@
 import { waitUntil } from "cloudflare:workers";
 import { captureAiGeneration, type CaptureAiGenerationOptions } from "@posthog/ai";
+import type { PostHog } from "posthog-node";
 
 import { isPostHogAiObservabilityEnabled } from "#/integrations/posthog/config";
 import { getPostHogServerClient } from "#/integrations/posthog/server";
@@ -17,6 +18,14 @@ export interface PostHogAiSpanInput {
 	properties?: Record<string, unknown>;
 }
 
+function getPostHogAiClient(): PostHog | null {
+	if (!isPostHogAiObservabilityEnabled) {
+		return null;
+	}
+
+	return getPostHogServerClient() ?? null;
+}
+
 function schedulePostHogAiTask(task: Promise<void>, context: Record<string, unknown>) {
 	waitUntil(
 		task.catch((error) => {
@@ -28,6 +37,37 @@ function schedulePostHogAiTask(task: Promise<void>, context: Record<string, unkn
 	);
 }
 
+function appendAiTraceProperties(
+	properties: Record<string, unknown>,
+	input: {
+		traceId?: string;
+		sessionId?: string;
+		spanId?: string;
+		spanName?: string;
+		parentId?: string;
+	},
+) {
+	if (input.traceId) {
+		properties.$ai_trace_id = input.traceId;
+	}
+
+	if (input.sessionId) {
+		properties.$ai_session_id = input.sessionId;
+	}
+
+	if (input.spanId) {
+		properties.$ai_span_id = input.spanId;
+	}
+
+	if (input.spanName) {
+		properties.$ai_span_name = input.spanName;
+	}
+
+	if (input.parentId) {
+		properties.$ai_parent_id = input.parentId;
+	}
+}
+
 export function capturePostHogAiGeneration(
 	options: CaptureAiGenerationOptions & {
 		distinctId: string;
@@ -37,11 +77,7 @@ export function capturePostHogAiGeneration(
 		spanId?: string;
 	},
 ) {
-	if (!isPostHogAiObservabilityEnabled) {
-		return;
-	}
-
-	const client = getPostHogServerClient();
+	const client = getPostHogAiClient();
 	if (!client) {
 		return;
 	}
@@ -50,21 +86,13 @@ export function capturePostHogAiGeneration(
 		...options.properties,
 	};
 
-	if (options.sessionId) {
-		properties.$ai_session_id = options.sessionId;
-	}
-
-	if (options.spanName) {
-		properties.$ai_span_name = options.spanName;
-	}
-
-	if (options.parentId) {
-		properties.$ai_parent_id = options.parentId;
-	}
-
-	if (options.spanId) {
-		properties.$ai_span_id = options.spanId;
-	}
+	appendAiTraceProperties(properties, {
+		traceId: options.traceId,
+		sessionId: options.sessionId,
+		spanId: options.spanId,
+		spanName: options.spanName,
+		parentId: options.parentId,
+	});
 
 	schedulePostHogAiTask(
 		captureAiGeneration(client, {
@@ -81,26 +109,16 @@ export function capturePostHogAiGeneration(
 }
 
 export function capturePostHogAiSpan(input: PostHogAiSpanInput) {
-	if (!isPostHogAiObservabilityEnabled) {
-		return;
-	}
-
-	const client = getPostHogServerClient();
+	const client = getPostHogAiClient();
 	if (!client) {
 		return;
 	}
 
 	const properties: Record<string, unknown> = {
-		$ai_trace_id: input.traceId,
-		$ai_session_id: input.sessionId,
-		$ai_span_id: input.spanId,
-		$ai_span_name: input.spanName,
 		...input.properties,
 	};
 
-	if (input.parentId) {
-		properties.$ai_parent_id = input.parentId;
-	}
+	appendAiTraceProperties(properties, input);
 
 	if (input.latencySeconds !== undefined) {
 		properties.$ai_latency = input.latencySeconds;

@@ -1,8 +1,9 @@
+import { getAgentByName } from "agents";
 import { eq } from "drizzle-orm";
 
 import { workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
-import { getUserAIStoreFromEnv } from "#/features/workspaces/ai/user-ai-store-access";
+import { userAIAgentName } from "#/features/workspaces/agent-routes";
 import { getWorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel-access";
 
 async function listOwnedWorkspaceIds(userId: string) {
@@ -24,7 +25,10 @@ async function purgeUserAIStore(userId: string) {
 	const { env } = await import("cloudflare:workers");
 
 	try {
-		await getUserAIStoreFromEnv(env, userId).purgeForDeletion();
+		const store = getAgentByName(env[userAIAgentName], userId) as unknown as {
+			purgeForDeletion(): Promise<void>;
+		};
+		await store.purgeForDeletion();
 	} catch (error) {
 		console.warn("[DurableObjectLifecycle] UserAIStore purge failed", { userId, error });
 	}

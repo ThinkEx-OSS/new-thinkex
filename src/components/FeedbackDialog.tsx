@@ -19,14 +19,13 @@ import {
 	captureFeedbackSurveyShown,
 	getFeedbackOpenQuestions,
 	type FeedbackOpenQuestion,
+	loadFeedbackSurvey,
 } from "#/integrations/posthog/feedback-survey";
+import { getErrorMessage } from "#/lib/error-message";
 
 interface FeedbackDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	survey: Survey | null;
-	isLoading: boolean;
-	loadError: string | null;
 }
 
 function getInitialResponses(questions: FeedbackOpenQuestion[]) {
@@ -131,19 +130,42 @@ function FeedbackDialogForm({
 	);
 }
 
-export default function FeedbackDialog({
-	open,
-	onOpenChange,
-	survey,
-	isLoading,
-	loadError,
-}: FeedbackDialogProps) {
+export default function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+	const [survey, setSurvey] = useState<Survey | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		onOpenChange(nextOpen);
+
+		if (!nextOpen) {
+			return;
+		}
+
+		setIsLoading(true);
+		setLoadError(null);
+		setSurvey(null);
+
+		void loadFeedbackSurvey()
+			.then((loadedSurvey) => {
+				setSurvey(loadedSurvey);
+			})
+			.catch((error: unknown) => {
+				const message = getErrorMessage(error, "Unable to load feedback form right now.");
+				setLoadError(message);
+				toast.error(message);
+			})
+			.finally(() => {
+				setIsLoading(false);
+			});
+	};
+
 	const title = survey?.name ?? "Feedback";
 	const description =
 		survey?.description ?? "Tell us what you think. You can submit feedback as often as you like.";
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>

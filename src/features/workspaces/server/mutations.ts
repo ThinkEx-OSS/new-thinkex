@@ -219,12 +219,14 @@ export async function deleteWorkspaceForCurrentUser(input: DeleteWorkspaceInput)
 			throw new Error("Workspace name confirmation does not match.");
 		}
 
-		await purgeWorkspaceResources(input.workspaceId);
-
 		const [deletedWorkspace] = await dbContext.db
 			.delete(workspaces)
 			.where(eq(workspaces.id, input.workspaceId))
 			.returning({ id: workspaces.id });
+
+		if (deletedWorkspace) {
+			await purgeWorkspaceResources(input.workspaceId);
+		}
 
 		return deletedWorkspace ?? null;
 	} finally {
