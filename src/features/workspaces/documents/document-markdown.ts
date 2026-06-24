@@ -2,8 +2,9 @@ import type { JSONContent } from "@tiptap/core";
 import { Markdown, MarkdownManager } from "@tiptap/markdown";
 
 import {
+	coerceTiptapDocumentProjection,
 	type TiptapDocumentJson,
-	tiptapDocumentJsonSchema,
+	type TiptapDocumentProjection,
 } from "#/features/workspaces/documents/tiptap-document";
 import { getTiptapDocumentSchemaExtensions } from "#/features/workspaces/documents/tiptap-schema";
 
@@ -16,7 +17,13 @@ export function serializeTiptapDocumentToMarkdown(document: TiptapDocumentJson) 
 }
 
 export function parseMarkdownToTiptapDocument(markdown: string): TiptapDocumentJson {
-	return tiptapDocumentJsonSchema.parse(getDocumentMarkdownManager().parse(markdown));
+	return parseMarkdownToTiptapDocumentProjection(markdown).document;
+}
+
+export function parseMarkdownToTiptapDocumentProjection(
+	markdown: string,
+): TiptapDocumentProjection {
+	return coerceTiptapDocumentProjection(getDocumentMarkdownManager().parse(markdown));
 }
 
 function getDocumentMarkdownManager() {

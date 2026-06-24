@@ -25,6 +25,7 @@ export interface EditWorkspaceKernelAiItemResult {
 	applied: number;
 	failed: EditWorkspaceKernelAiFailure[];
 	path: string;
+	warnings: string[];
 }
 
 export async function editWorkspaceKernelAiItem(
@@ -44,6 +45,7 @@ export async function editWorkspaceKernelAiItem(
 	if (resolution.status === "failed") {
 		return {
 			path: resolution.failure.path,
+			warnings: [],
 			...failedWorkspaceAiEditResult(resolution.failure.code, input.edits.length),
 		};
 	}
@@ -51,6 +53,7 @@ export async function editWorkspaceKernelAiItem(
 	if (resolution.item.type !== "document") {
 		return {
 			path: resolution.path,
+			warnings: [],
 			...failedWorkspaceAiEditResult("unsupported_item_type", input.edits.length),
 		};
 	}
@@ -68,6 +71,7 @@ export async function editWorkspaceKernelAiItem(
 		applied: result.applied,
 		failed: result.failures,
 		path: resolution.path,
+		warnings: result.warnings,
 	};
 }
 
