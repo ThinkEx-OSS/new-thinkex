@@ -45,13 +45,6 @@ ThinkEx is aimed at research, synthesis, and knowledge work where context matter
 - Cloudflare Workflows
 - Cloudflare Email
 
-Current named runtime pieces include:
-
-- `WorkspaceKernel`
-- `UserAIStore`
-- `DocumentSession`
-- `WorkspaceFileExtractionWorkflow`
-
 ## Local Development
 
 ```bash
