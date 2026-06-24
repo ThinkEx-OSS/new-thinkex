@@ -179,7 +179,7 @@
 			"name": "thinkex",
 			"routes": [
 				{
-					"pattern": "app.thinkex.app",
+					"pattern": "beta.thinkex.app",
 					"custom_domain": true,
 				},
 			],
