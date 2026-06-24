@@ -4,7 +4,13 @@ import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
-import { isPostHogEnabled, posthogHost, posthogProjectToken } from "#/integrations/posthog/config";
+import {
+	isPostHogDevEnvironment,
+	isPostHogEnabled,
+	isPostHogSessionReplayEnabled,
+	posthogHost,
+	posthogProjectToken,
+} from "#/integrations/posthog/config";
 import type {
 	PostHogClientEventName,
 	PostHogEventPropertiesByName,
@@ -23,7 +29,7 @@ function getPostHogTracingHostnames() {
 		hostnames.add(window.location.hostname);
 	}
 
-	if (import.meta.env.DEV) {
+	if (isPostHogDevEnvironment) {
 		hostnames.add("localhost");
 		hostnames.add("127.0.0.1");
 	}
@@ -38,7 +44,19 @@ if (typeof window !== "undefined" && isPostHogEnabled && !isPostHogInitialized) 
 		api_host: posthogHost,
 		ui_host: posthogUiHost,
 		defaults: "2026-05-30",
+		debug: false,
+		...(isPostHogSessionReplayEnabled ? {} : { disable_session_recording: true }),
 		...(tracingHeaders.length > 0 ? { tracing_headers: tracingHeaders } : {}),
+		loaded: (client) => {
+			if (isPostHogDevEnvironment) {
+				// Clear debug mode if it was enabled via ?__posthog_debug=true or localStorage.
+				client.debug(false);
+			}
+
+			if (!isPostHogSessionReplayEnabled) {
+				client.stopSessionRecording();
+			}
+		},
 	});
 
 	isPostHogInitialized = true;

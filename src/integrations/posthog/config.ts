@@ -20,8 +20,22 @@ function resolvePostHogHostOrigin(host: string | undefined) {
 	}
 }
 
+function parseEnvFlag(value: string | undefined) {
+	return value?.trim().toLowerCase() === "true";
+}
+
 export const posthogProjectToken = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN?.trim() || undefined;
 
 export const posthogHost = normalizePostHogHost(import.meta.env.VITE_POSTHOG_HOST);
 export const posthogHostOrigin = resolvePostHogHostOrigin(posthogHost);
 export const isPostHogEnabled = Boolean(posthogProjectToken && posthogHost);
+
+/** Vite dev server (`pnpm dev`). Staging/production builds are not dev. */
+export const isPostHogDevEnvironment = import.meta.env.DEV;
+
+/**
+ * Session replay `$snapshot` payloads are huge and flood the dev terminal.
+ * Enabled in deployed builds; locally opt in with VITE_POSTHOG_SESSION_REPLAY=true.
+ */
+export const isPostHogSessionReplayEnabled =
+	!isPostHogDevEnvironment || parseEnvFlag(import.meta.env.VITE_POSTHOG_SESSION_REPLAY);
