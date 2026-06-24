@@ -1,12 +1,9 @@
-import { Camera, Download, EllipsisVertical, Link2, Printer } from "lucide-react";
+import { Camera, Download, EllipsisVertical } from "lucide-react";
 
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import {
@@ -56,33 +53,15 @@ export function WorkspaceFileToolbar({
 					<EllipsisVertical />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-48" align="end">
-					<DropdownMenuGroup>
-						<DropdownMenuLabel>File</DropdownMenuLabel>
-						<DropdownMenuItem
-							className="[&_svg:not([class*='size-'])]:size-4"
-							onClick={handleDownload}
-						>
-							<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
-								<Download />
-							</span>
-							Download file
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
-						<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
-							<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
-								<Printer />
-							</span>
-							Print
-						</DropdownMenuItem>
-						<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
-							<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
-								<Link2 />
-							</span>
-							Copy file link
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
+					<DropdownMenuItem
+						className="[&_svg:not([class*='size-'])]:size-4"
+						onClick={handleDownload}
+					>
+						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
+							<Download />
+						</span>
+						Download file
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</WorkspaceToolbarGroup>

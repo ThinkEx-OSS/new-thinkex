@@ -220,14 +220,14 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<Download />
 						</span>
-						Export to PDF
+						PDF
 						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
 					<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<FileText />
 						</span>
-						Export to Google Docs
+						Google Docs
 						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
