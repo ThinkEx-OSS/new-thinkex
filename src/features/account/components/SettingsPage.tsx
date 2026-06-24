@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,11 +16,21 @@ import { getErrorMessage } from "#/lib/error-message";
 export function SettingsPage() {
 	const navigate = useNavigate();
 	const router = useRouter();
+	const canGoBack = useCanGoBack();
 	const queryClient = useQueryClient();
 	const { data: session, refetch } = authClient.useSession();
 
 	const user = session?.user;
 	const displayName = user?.name || user?.email || "User";
+
+	const handleBack = () => {
+		if (canGoBack) {
+			router.history.back();
+			return;
+		}
+
+		void navigate({ to: "/home" });
+	};
 
 	const handleSignOut = async () => {
 		try {
@@ -46,11 +56,10 @@ export function SettingsPage() {
 		>
 			<div className="mx-auto w-full max-w-lg space-y-8">
 				<Button
-					nativeButton={false}
-					render={<Link to="/home" />}
 					variant="ghost"
 					size="sm"
 					className="-ml-2 w-fit text-muted-foreground"
+					onClick={handleBack}
 				>
 					<ArrowLeft className="size-4" />
 					Back

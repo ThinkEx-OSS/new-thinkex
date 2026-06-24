@@ -247,14 +247,6 @@ function getWorkspaceRootMenuActions(input: {
 	return [
 		{
 			kind: "item",
-			id: "settings",
-			label: "Settings",
-			leading: <Settings className="size-4" />,
-			disabled: !input.canOpenSettings,
-			onSelect: input.onOpenSettings,
-		},
-		{
-			kind: "item",
 			id: "share",
 			label: "Share",
 			leading: <Share2 className="size-4" />,
@@ -267,6 +259,14 @@ function getWorkspaceRootMenuActions(input: {
 			leading: <Clock3 className="size-4" />,
 			trailing: "Soon",
 			disabled: true,
+		},
+		{
+			kind: "item",
+			id: "settings",
+			label: "Settings",
+			leading: <Settings className="size-4" />,
+			disabled: !input.canOpenSettings,
+			onSelect: input.onOpenSettings,
 		},
 	];
 }
