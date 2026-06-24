@@ -28,7 +28,7 @@
 		"deploy:staging": "vp run build:staging && vp run deploy:worker:staging",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate:local": "wrangler d1 migrations apply thinkex --local",
-		"db:migrate": "wrangler d1 migrations apply thinkex --remote",
+		"db:migrate": "wrangler d1 migrations apply DB --remote --env production",
 		"db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
 		"db:check": "drizzle-kit check",
 		"cf-typegen": "wrangler types",

@@ -175,5 +175,83 @@
 				},
 			],
 		},
+		"production": {
+			"name": "thinkex",
+			"routes": [
+				{
+					"pattern": "app.thinkex.app",
+					"custom_domain": true,
+				},
+			],
+			"vars": {
+				"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
+				"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app",
+			},
+			"secrets": {
+				"required": [
+					"BETTER_AUTH_URL",
+					"BETTER_AUTH_SECRET",
+					"GOOGLE_CLIENT_ID",
+					"GOOGLE_CLIENT_SECRET",
+					"FIRECRAWL_API_KEY",
+					"AI_GATEWAY_API_KEY",
+				],
+			},
+			"ai": {
+				"binding": "AI",
+				"remote": true,
+			},
+			"worker_loaders": [
+				{
+					"binding": "LOADER",
+				},
+			],
+			"browser": {
+				"binding": "BROWSER",
+			},
+			"send_email": [
+				{
+					"name": "EMAIL",
+					"remote": true,
+				},
+			],
+			"r2_buckets": [
+				{
+					"binding": "WORKSPACE_KERNEL_FILES",
+					"bucket_name": "thinkex-workspace-kernel-files",
+				},
+			],
+			"workflows": [
+				{
+					"name": "workspace-file-extraction",
+					"binding": "WORKSPACE_FILE_EXTRACTION_WORKFLOW",
+					"class_name": "WorkspaceFileExtractionWorkflow",
+				},
+			],
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "UserAIStore",
+						"class_name": "UserAIStore",
+					},
+					{
+						"name": "WorkspaceKernel",
+						"class_name": "WorkspaceKernel",
+					},
+					{
+						"name": "DocumentSession",
+						"class_name": "DocumentSession",
+					},
+				],
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "thinkex",
+					"database_id": "e5ff462d-fab3-4ab2-9259-fd107c2df809",
+					"migrations_dir": "drizzle",
+				},
+			],
+		},
 	},
 }
