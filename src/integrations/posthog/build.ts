@@ -58,13 +58,11 @@ export function createPostHogBuildPlugin(plugin: typeof posthogPlugin) {
 		return null;
 	}
 
-	const host = process.env.POSTHOG_HOST?.trim();
 	const releaseName = process.env.POSTHOG_RELEASE_NAME?.trim() || "thinkex-web";
 
 	return plugin({
 		personalApiKey,
 		projectId,
-		...(host ? { host } : {}),
 		sourcemaps: {
 			enabled: true,
 			releaseName,
