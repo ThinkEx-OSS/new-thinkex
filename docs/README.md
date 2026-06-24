@@ -5,7 +5,6 @@
 | [`../CONTEXT.md`](../CONTEXT.md) | Product language (glossary only) |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Ownership map + pointers (start here) |
 | [`AI_WEB_CAPABILITIES.md`](AI_WEB_CAPABILITIES.md) | AI web/browser tool tradeoffs |
-| [`references.md`](references.md) | External example repos |
 | [`../README.md`](../README.md) | Run, deploy, email DNS |
 | [`adr/`](adr/) | Irreversible decisions (create when needed) |
 

@@ -1,12 +1,8 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"entry": [
-		"src/client.tsx",
-		"src/router.tsx",
-		"src/routes/**/*.{ts,tsx}"
-	],
+	"entry": ["src/client.tsx", "src/router.tsx", "src/routes/**/*.{ts,tsx}"],
 	"project": ["src/**/*.{ts,tsx}"],
-	"ignoreFiles": ["src/components/ui/**", "src/hooks/use-mobile.ts"],
+	"ignoreFiles": ["src/components/ui/**"],
 	"ignoreIssues": {
 		"src/components/ui/**": ["exports", "types", "enumMembers"],
 		"src/components/ai-elements/**": ["exports", "types"]
