@@ -9,11 +9,11 @@ export function getAuthSessionQueryOptions() {
 	return queryOptions({
 		queryKey: authSessionQueryKey,
 		queryFn: () => getSession(),
-		staleTime: typeof window !== "undefined" ? Infinity : 0,
+		staleTime: typeof window !== "undefined" ? 5 * 60_000 : 0,
 		gcTime: typeof window !== "undefined" ? 60 * 60_000 : 0,
 		refetchInterval: false,
-		refetchOnWindowFocus: false,
-		refetchOnReconnect: false,
+		refetchOnWindowFocus: true,
+		refetchOnReconnect: true,
 		refetchOnMount: false,
 		retry: 1,
 	});
@@ -24,5 +24,8 @@ export function removeAuthSession(queryClient: QueryClient) {
 }
 
 export function refreshAuthSession(queryClient: QueryClient) {
-	return queryClient.fetchQuery(getAuthSessionQueryOptions());
+	return queryClient.fetchQuery({
+		...getAuthSessionQueryOptions(),
+		staleTime: 0,
+	});
 }

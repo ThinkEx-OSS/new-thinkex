@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Laptop, LogOut, MessageSquarePlus, Moon, Settings, Sun, SunMoon } from "lucide-react";
 import { useState } from "react";
@@ -22,10 +22,10 @@ import {
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
-import { authClient } from "#/lib/auth-client";
 import { getErrorMessage } from "#/lib/error-message";
 import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { isPostHogFeedbackEnabled } from "#/integrations/posthog/config";
+import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 const userMenuTriggerClassName =
 	"size-8 rounded-full p-0 hover:bg-muted focus-visible:ring-2 active:not-aria-[haspopup]:translate-y-0 dark:hover:bg-input/50";
@@ -53,7 +53,7 @@ export default function UserProfileDropdown() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { theme, setTheme } = useTheme();
-	const { data: session, isPending, refetch } = authClient.useSession();
+	const { data: session, isPending } = useQuery(getAuthSessionQueryOptions());
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 
 	const handleSignOut = async () => {
@@ -62,7 +62,6 @@ export default function UserProfileDropdown() {
 				queryClient,
 				router,
 				navigate,
-				refetchSession: refetch,
 			});
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Unable to sign out right now."));
