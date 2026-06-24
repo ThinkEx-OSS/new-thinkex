@@ -1,4 +1,3 @@
-import { waitUntil } from "cloudflare:workers";
 import { PostHog } from "posthog-node";
 
 import { isPostHogEnabled, posthogHost, posthogProjectToken } from "#/integrations/posthog/config";
@@ -8,8 +7,13 @@ import type {
 } from "#/integrations/posthog/events";
 import {
 	getTelemetryRequestContext,
+	type TelemetryRequestContext,
 	type TelemetryRequestDetails,
 } from "#/integrations/posthog/server-context";
+import {
+	schedulePostHogCapture,
+	type PostHogTelemetryScheduler,
+} from "#/integrations/posthog/scheduler";
 
 const posthogServerClient =
 	posthogProjectToken && posthogHost
@@ -26,6 +30,9 @@ interface PostHogServerEvent<TEvent extends PostHogServerEventName> {
 	distinctId: string;
 	event: TEvent;
 	properties: PostHogEventPropertiesByName[TEvent];
+	requestContext?: TelemetryRequestContext;
+	request?: TelemetryRequestDetails;
+	schedule?: PostHogTelemetryScheduler;
 	timestamp?: Date | string;
 }
 
@@ -37,18 +44,9 @@ interface PostHogServerExceptionInput {
 	distinctId?: string;
 	error: unknown;
 	properties?: Record<string, unknown>;
+	requestContext?: TelemetryRequestContext;
 	request?: TelemetryRequestDetails;
-}
-
-function schedulePostHogTask(task: Promise<void>, context: Record<string, unknown>) {
-	waitUntil(
-		task.catch((error) => {
-			console.error("PostHog server capture failed.", {
-				...context,
-				error,
-			});
-		}),
-	);
+	schedule?: PostHogTelemetryScheduler;
 }
 
 export function capturePostHogServerEvent<TEvent extends PostHogServerEventName>(
@@ -58,7 +56,7 @@ export function capturePostHogServerEvent<TEvent extends PostHogServerEventName>
 		return;
 	}
 
-	const requestContext = getTelemetryRequestContext();
+	const requestContext = input.requestContext ?? getTelemetryRequestContext(input.request);
 	const timestamp =
 		input.timestamp instanceof Date
 			? input.timestamp
@@ -66,8 +64,13 @@ export function capturePostHogServerEvent<TEvent extends PostHogServerEventName>
 				? new Date(input.timestamp)
 				: undefined;
 
-	schedulePostHogTask(
-		posthogServerClient
+	schedulePostHogCapture({
+		context: {
+			event: input.event,
+			type: "event",
+		},
+		schedule: input.schedule,
+		task: posthogServerClient
 			.captureImmediate({
 				distinctId: input.distinctId,
 				event: input.event,
@@ -78,11 +81,7 @@ export function capturePostHogServerEvent<TEvent extends PostHogServerEventName>
 				...(timestamp ? { timestamp } : {}),
 			})
 			.then(() => undefined),
-		{
-			event: input.event,
-			type: "event",
-		},
-	);
+	});
 }
 
 export function capturePostHogServerException(input: PostHogServerExceptionInput) {
@@ -90,17 +89,18 @@ export function capturePostHogServerException(input: PostHogServerExceptionInput
 		return;
 	}
 
-	const requestContext = getTelemetryRequestContext(input.request);
+	const requestContext = input.requestContext ?? getTelemetryRequestContext(input.request);
 
-	schedulePostHogTask(
-		posthogServerClient
+	schedulePostHogCapture({
+		context: {
+			type: "exception",
+		},
+		schedule: input.schedule,
+		task: posthogServerClient
 			.captureExceptionImmediate(input.error, input.distinctId ?? requestContext.distinctId, {
 				...requestContext.properties,
 				...input.properties,
 			})
 			.then(() => undefined),
-		{
-			type: "exception",
-		},
-	);
+	});
 }

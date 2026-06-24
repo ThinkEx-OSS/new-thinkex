@@ -20,6 +20,8 @@ import {
 	capturePostHogAiSpan,
 } from "#/integrations/posthog/ai-observability";
 import { capturePostHogServerEvent } from "#/integrations/posthog/server";
+import { emptyTelemetryRequestContext } from "#/integrations/posthog/server-context";
+import type { PostHogTelemetryScheduler } from "#/integrations/posthog/scheduler";
 
 function parseGatewayModel(gatewayModel: string) {
 	const slashIndex = gatewayModel.indexOf("/");
@@ -149,8 +151,27 @@ export interface AIThreadPostHogTraceContext {
 	parentSpanId: string;
 }
 
+interface AIThreadPostHogRecorderOptions {
+	schedule?: PostHogTelemetryScheduler;
+}
+
+interface AgentPostHogRuntime {
+	requestContext: typeof emptyTelemetryRequestContext;
+	schedule?: PostHogTelemetryScheduler;
+}
+
 export class AIThreadPostHogRecorder {
 	private turn: PostHogTurnState | null = null;
+	private readonly schedule?: PostHogTelemetryScheduler;
+	private readonly serverEventRuntime: AgentPostHogRuntime;
+
+	constructor(options: AIThreadPostHogRecorderOptions = {}) {
+		this.schedule = options.schedule;
+		this.serverEventRuntime = {
+			requestContext: emptyTelemetryRequestContext,
+			schedule: options.schedule,
+		};
+	}
 
 	recordTurnStarted(input: {
 		ctx: TurnContext;
@@ -183,6 +204,7 @@ export class AIThreadPostHogRecorder {
 				model_id: input.modelId,
 				continuation: Boolean(input.ctx.continuation),
 			},
+			...this.serverEventRuntime,
 		});
 	}
 
@@ -236,6 +258,7 @@ export class AIThreadPostHogRecorder {
 				tool_input: ctx.input,
 				tool_output: ctx.success ? ctx.output : undefined,
 			},
+			schedule: this.schedule,
 		});
 
 		capturePostHogServerEvent({
@@ -247,6 +270,7 @@ export class AIThreadPostHogRecorder {
 				success: ctx.success,
 				duration_ms: ctx.durationMs,
 			},
+			...this.serverEventRuntime,
 		});
 	}
 
@@ -288,6 +312,7 @@ export class AIThreadPostHogRecorder {
 				feature: "workspace-chat",
 				$ai_stream: timeToFirstToken !== undefined,
 			},
+			schedule: this.schedule,
 		});
 
 		turn.currentStepStartedAt = undefined;
@@ -320,6 +345,7 @@ export class AIThreadPostHogRecorder {
 				status: result.status,
 				step_count: turn.stepCount,
 			},
+			...this.serverEventRuntime,
 		});
 
 		this.turn = null;
@@ -346,6 +372,7 @@ export class AIThreadPostHogRecorder {
 				error_classification: input?.errorClassification ?? null,
 				error_message: error instanceof Error ? error.message : String(error),
 			},
+			...this.serverEventRuntime,
 		});
 
 		this.turn = null;
@@ -401,6 +428,7 @@ export class AIThreadPostHogRecorder {
 				workspace_id: workspaceId,
 				feature: input.feature,
 			},
+			schedule: this.schedule,
 		});
 	}
 }

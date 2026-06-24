@@ -1,9 +1,12 @@
-import { waitUntil } from "cloudflare:workers";
 import { captureAiGeneration, type CaptureAiGenerationOptions } from "@posthog/ai";
 import type { PostHog } from "posthog-node";
 
 import { isPostHogAiObservabilityEnabled } from "#/integrations/posthog/config";
 import { getPostHogServerClient } from "#/integrations/posthog/server";
+import {
+	schedulePostHogCapture,
+	type PostHogTelemetryScheduler,
+} from "#/integrations/posthog/scheduler";
 
 export interface PostHogAiSpanInput {
 	distinctId: string;
@@ -16,6 +19,7 @@ export interface PostHogAiSpanInput {
 	isError?: boolean;
 	error?: unknown;
 	properties?: Record<string, unknown>;
+	schedule?: PostHogTelemetryScheduler;
 }
 
 function getPostHogAiClient(): PostHog | null {
@@ -24,17 +28,6 @@ function getPostHogAiClient(): PostHog | null {
 	}
 
 	return getPostHogServerClient() ?? null;
-}
-
-function schedulePostHogAiTask(task: Promise<void>, context: Record<string, unknown>) {
-	waitUntil(
-		task.catch((error) => {
-			console.error("PostHog AI capture failed.", {
-				...context,
-				error,
-			});
-		}),
-	);
 }
 
 function appendAiTraceProperties(
@@ -75,15 +68,17 @@ export function capturePostHogAiGeneration(
 		spanName?: string;
 		parentId?: string;
 		spanId?: string;
+		schedule?: PostHogTelemetryScheduler;
 	},
 ) {
 	const client = getPostHogAiClient();
 	if (!client) {
 		return;
 	}
+	const { schedule, ...captureOptions } = options;
 
 	const properties: Record<string, unknown> = {
-		...options.properties,
+		...captureOptions.properties,
 	};
 
 	appendAiTraceProperties(properties, {
@@ -94,18 +89,19 @@ export function capturePostHogAiGeneration(
 		parentId: options.parentId,
 	});
 
-	schedulePostHogAiTask(
-		captureAiGeneration(client, {
-			...options,
+	schedulePostHogCapture({
+		context: {
+			type: "ai_generation",
+			spanName: options.spanName,
+		},
+		schedule,
+		task: captureAiGeneration(client, {
+			...captureOptions,
 			privacyMode: false,
 			captureImmediate: true,
 			properties,
 		}),
-		{
-			type: "ai_generation",
-			spanName: options.spanName,
-		},
-	);
+	});
 }
 
 export function capturePostHogAiSpan(input: PostHogAiSpanInput) {
@@ -134,17 +130,18 @@ export function capturePostHogAiSpan(input: PostHogAiSpanInput) {
 					: JSON.stringify(input.error);
 	}
 
-	schedulePostHogAiTask(
-		client
+	schedulePostHogCapture({
+		context: {
+			type: "ai_span",
+			spanName: input.spanName,
+		},
+		schedule: input.schedule,
+		task: client
 			.captureImmediate({
 				distinctId: input.distinctId,
 				event: "$ai_span",
 				properties,
 			})
 			.then(() => undefined),
-		{
-			type: "ai_span",
-			spanName: input.spanName,
-		},
-	);
+	});
 }

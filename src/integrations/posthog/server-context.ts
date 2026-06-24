@@ -16,6 +16,10 @@ export interface TelemetryRequestContext {
 	properties: TelemetryRequestContextProperties;
 }
 
+export const emptyTelemetryRequestContext = {
+	properties: {},
+} satisfies TelemetryRequestContext;
+
 export interface TelemetryRequestDetails {
 	headers?: Headers;
 	method?: string;

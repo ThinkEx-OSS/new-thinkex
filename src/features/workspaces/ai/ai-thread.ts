@@ -78,7 +78,11 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		private shouldRefreshSessionPrompt = false;
 		private activeRunStartedAt: number | undefined;
 		private readonly inspector = new AIThreadInspectorRecorder(this);
-		private readonly posthog = new AIThreadPostHogRecorder();
+		private readonly posthog = new AIThreadPostHogRecorder({
+			schedule: (task) => {
+				void this.keepAliveWhile(() => task);
+			},
+		});
 
 		getModel(): LanguageModel {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
