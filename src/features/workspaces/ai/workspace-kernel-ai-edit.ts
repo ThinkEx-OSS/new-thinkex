@@ -1,16 +1,10 @@
-import { getDocumentSessionRoomName } from "#/features/workspaces/agent-routes";
+import { getDocumentSessionFromEnv } from "#/features/workspaces/document-session-access";
 import {
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiExistingItemPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
-import type { DocumentMarkdownEdit } from "#/features/workspaces/documents/document-markdown-edits";
 import type { DocumentSessionApplyMarkdownEditsResult } from "#/features/workspaces/documents/document-session";
-
-interface DocumentSessionClient {
-	applyMarkdownEdits(input: {
-		edits: DocumentMarkdownEdit[];
-	}): Promise<DocumentSessionApplyMarkdownEditsResult>;
-}
+import type { DocumentMarkdownEdit } from "#/features/workspaces/documents/document-markdown-edits";
 
 type EditWorkspaceKernelAiFailureCode =
 	| "cannot_edit_root"
@@ -31,6 +25,7 @@ export interface EditWorkspaceKernelAiItemResult {
 	applied: number;
 	failed: EditWorkspaceKernelAiFailure[];
 	path: string;
+	warnings: string[];
 }
 
 export async function editWorkspaceKernelAiItem(
@@ -50,6 +45,7 @@ export async function editWorkspaceKernelAiItem(
 	if (resolution.status === "failed") {
 		return {
 			path: resolution.failure.path,
+			warnings: [],
 			...failedWorkspaceAiEditResult(resolution.failure.code, input.edits.length),
 		};
 	}
@@ -57,6 +53,7 @@ export async function editWorkspaceKernelAiItem(
 	if (resolution.item.type !== "document") {
 		return {
 			path: resolution.path,
+			warnings: [],
 			...failedWorkspaceAiEditResult("unsupported_item_type", input.edits.length),
 		};
 	}
@@ -74,16 +71,14 @@ export async function editWorkspaceKernelAiItem(
 		applied: result.applied,
 		failed: result.failures,
 		path: resolution.path,
+		warnings: result.warnings,
 	};
 }
 
 async function getDocumentSession(input: { itemId: string; workspaceId: string }) {
 	const { env } = await import("cloudflare:workers");
-	const documentSessionNamespace = env.DocumentSession as unknown as {
-		getByName(name: string): DocumentSessionClient;
-	};
 
-	return documentSessionNamespace.getByName(getDocumentSessionRoomName(input));
+	return getDocumentSessionFromEnv(env, input);
 }
 
 function failedWorkspaceAiEditResult(

@@ -31,6 +31,36 @@ export interface PostHogEventPropertiesByName {
 		share_method: "link";
 		shared_role: WorkspaceMembershipRole;
 	};
+	ai_turn_started: {
+		thread_id: string;
+		workspace_id: string;
+		trace_id: string;
+		model_id: string;
+		continuation: boolean;
+	};
+	ai_turn_completed: {
+		thread_id: string;
+		workspace_id: string;
+		trace_id: string;
+		status: string;
+		step_count: number;
+	};
+	ai_tool_invoked: {
+		thread_id: string;
+		workspace_id: string;
+		trace_id: string;
+		tool_name: string;
+		success: boolean;
+		duration_ms: number;
+	};
+	ai_turn_failed: {
+		thread_id: string;
+		workspace_id: string;
+		trace_id: string;
+		error_stage: string | null;
+		error_classification: string | null;
+		error_message: string;
+	};
 }
 
 export type PostHogEventName = keyof PostHogEventPropertiesByName;

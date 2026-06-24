@@ -265,6 +265,10 @@ const workspaceCreateItemsOutputSchema = z.object({
 		z.object({
 			path: workspacePathSchema,
 			type: z.enum(["document", "folder"]),
+			warnings: z
+				.array(z.string())
+				.optional()
+				.describe("Content projection warnings for created documents."),
 		}),
 	),
 	failed: z.array(
@@ -338,6 +342,10 @@ const workspaceEditItemOutputSchema = z.object({
 			index: workspaceIndexSchema,
 		}),
 	),
+	warnings: z
+		.array(z.string())
+		.describe("Content projection warnings after applying edits.")
+		.optional(),
 });
 
 type WorkspaceThreadToolConfig<

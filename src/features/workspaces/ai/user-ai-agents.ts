@@ -212,6 +212,27 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	}
 
 	@callable()
+	async purgeForDeletion(): Promise<void> {
+		for (const thread of this._getActiveThreadMetaRows()) {
+			try {
+				if (this.hasSubAgent(AIThread, thread.id)) {
+					await this.deleteSubAgent(AIThread, thread.id);
+				}
+
+				deleteThreadMeta(this, thread.id);
+			} catch (error) {
+				console.warn("[UserAIStore] Failed to purge chat thread during deletion", {
+					threadId: thread.id,
+					error,
+				});
+			}
+		}
+
+		this._refreshState();
+		await this.ctx.storage.deleteAll();
+	}
+
+	@callable()
 	async getThreadInspectorSnapshot(threadId: string): Promise<AIInspectorSnapshot> {
 		if (!isAIInspectorEnabled()) {
 			return { isEnabled: false, threadId, events: [] };

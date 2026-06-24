@@ -1,7 +1,8 @@
 import { Workspace as ShellWorkspace } from "@cloudflare/shell";
-import { Agent, type Connection, type ConnectionContext } from "agents";
+import { Agent, callable, type Connection, type ConnectionContext } from "agents";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
+import { getDocumentSessionFromEnv } from "#/features/workspaces/document-session-access";
 import { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
 import { WorkspaceKernelFileCommands } from "#/features/workspaces/kernel/workspace-kernel-file-commands";
 import { WorkspaceKernelItemCommands } from "#/features/workspaces/kernel/workspace-kernel-item-commands";
@@ -180,6 +181,50 @@ export class WorkspaceKernel extends Agent<Env> {
 		limit = 100,
 	}: ListWorkspaceKernelEventsArgs): Promise<WorkspaceRealtimeEvent[]> {
 		return this.events.getEventsSince({ afterRevision, limit });
+	}
+
+	@callable()
+	async purgeForDeletion(): Promise<void> {
+		const workspaceId = this.name;
+		const documentItemIds = this.store.getAllDocumentItemIds();
+
+		for (const itemId of documentItemIds) {
+			try {
+				await getDocumentSessionFromEnv(this.env, {
+					workspaceId,
+					itemId,
+				}).purgeForDeletion();
+			} catch (error) {
+				console.warn("[WorkspaceKernel] DocumentSession purge failed", {
+					workspaceId,
+					itemId,
+					error,
+				});
+			}
+		}
+
+		await Promise.all([
+			this.deleteR2Prefix(`uploads/workspaces/${workspaceId}/`),
+			this.deleteR2Prefix(`workspace_kernel_files/${workspaceId}/`),
+		]);
+
+		await this.ctx.storage.deleteAll();
+	}
+
+	private async deleteR2Prefix(prefix: string) {
+		const bucket = this.env.WORKSPACE_KERNEL_FILES;
+
+		if (!bucket) {
+			return;
+		}
+
+		let cursor: string | undefined;
+
+		do {
+			const listed = await bucket.list({ prefix, cursor });
+			await Promise.all(listed.objects.map((object) => bucket.delete(object.key)));
+			cursor = listed.truncated ? listed.cursor : undefined;
+		} while (cursor);
 	}
 
 	private broadcastPresenceSnapshot() {

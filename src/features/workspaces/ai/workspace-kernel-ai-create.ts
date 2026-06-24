@@ -3,7 +3,7 @@ import {
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
-import { parseMarkdownToTiptapDocument } from "#/features/workspaces/documents/document-markdown";
+import { parseMarkdownToTiptapDocumentProjection } from "#/features/workspaces/documents/document-markdown";
 import { stringifyTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
@@ -37,6 +37,7 @@ export interface CreateWorkspaceKernelAiFailure {
 export interface CreateWorkspaceKernelAiCreatedItem {
 	path: string;
 	type: "document" | "folder";
+	warnings?: string[];
 }
 
 export interface CreateWorkspaceKernelAiItemsResult {
@@ -150,6 +151,9 @@ export async function createWorkspaceKernelAiItems(
 		items.push({
 			path: createdPath,
 			type: itemInput.type,
+			...(initialContent.warnings && initialContent.warnings.length > 0
+				? { warnings: initialContent.warnings }
+				: {}),
 		});
 		createdItemsByPath.set(createdPath, {
 			id: command.result.id,
@@ -283,6 +287,7 @@ function getWorkspaceKernelAiCreateInitialContent(input: CreateWorkspaceKernelAi
 	| {
 			content?: string;
 			status: "ready";
+			warnings?: string[];
 	  }
 	| {
 			code: "invalid_initial_content";
@@ -293,11 +298,12 @@ function getWorkspaceKernelAiCreateInitialContent(input: CreateWorkspaceKernelAi
 	}
 
 	try {
-		const document = parseMarkdownToTiptapDocument(input.initialContent);
+		const projection = parseMarkdownToTiptapDocumentProjection(input.initialContent);
 
 		return {
-			content: stringifyTiptapDocumentJson(document),
+			content: stringifyTiptapDocumentJson(projection.document),
 			status: "ready",
+			...(projection.warnings.length > 0 ? { warnings: projection.warnings } : {}),
 		};
 	} catch {
 		return {

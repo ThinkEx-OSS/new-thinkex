@@ -8,7 +8,7 @@ import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 import type { DocumentSessionRouteParams } from "#/features/workspaces/agent-routes";
 import {
-	parseMarkdownToTiptapDocument,
+	parseMarkdownToTiptapDocumentProjection,
 	serializeTiptapDocumentToMarkdown,
 } from "#/features/workspaces/documents/document-markdown";
 import {
@@ -21,10 +21,10 @@ import {
 	resolveDocumentSessionConnectionAccess,
 } from "#/features/workspaces/documents/document-session-connection-access";
 import {
+	coerceTiptapDocumentJson,
 	parseTiptapDocumentJson,
 	stringifyTiptapDocumentJson,
 	type TiptapDocumentJson,
-	tiptapDocumentJsonSchema,
 } from "#/features/workspaces/documents/tiptap-document";
 import {
 	getTiptapDocumentSchema,
@@ -48,6 +48,7 @@ export interface DocumentSessionApplyMarkdownEditsResult {
 	failed: number;
 	failures: { code: string; index: number }[];
 	status: DocumentMarkdownEditResultStatus;
+	warnings: string[];
 }
 
 export class DocumentSession extends YServer {
@@ -136,17 +137,22 @@ export class DocumentSession extends YServer {
 				failed: editResult.failed,
 				failures: editResult.failures,
 				status: editResult.status,
+				warnings: [],
 			};
 		}
 
+		let projection;
+
 		try {
-			this.replaceCurrentDocument(parseMarkdownToTiptapDocument(editResult.content));
+			projection = parseMarkdownToTiptapDocumentProjection(editResult.content);
+			this.replaceCurrentDocument(projection.document);
 		} catch {
 			return {
 				applied: 0,
 				failed: input.edits.length,
 				failures: [...editResult.failures, { code: "invalid_document_projection", index: -1 }],
 				status: "rejected",
+				warnings: [],
 			};
 		}
 
@@ -158,12 +164,17 @@ export class DocumentSession extends YServer {
 			failed: editResult.failed,
 			failures: editResult.failures,
 			status: editResult.status,
+			warnings: projection.warnings,
 		};
+	}
+
+	async purgeForDeletion(): Promise<void> {
+		await this.ctx.storage.deleteAll();
 	}
 
 	private async checkpointToKernel() {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		const document = tiptapDocumentJsonSchema.parse(
+		const document = coerceTiptapDocumentJson(
 			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
 		);
 		const kernel = await this.getWorkspaceKernel(room.workspaceId);
@@ -177,9 +188,7 @@ export class DocumentSession extends YServer {
 	}
 
 	private getCurrentTiptapDocument() {
-		return tiptapDocumentJsonSchema.parse(
-			yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField),
-		);
+		return coerceTiptapDocumentJson(yDocToProsemirrorJSON(this.document, tiptapDocumentYjsField));
 	}
 
 	private replaceCurrentDocument(document: TiptapDocumentJson) {

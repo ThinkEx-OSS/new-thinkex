@@ -42,6 +42,14 @@ export class WorkspaceKernelStore {
 		`.map((row) => mapKernelItemRow(row, this.workspaceId()));
 	}
 
+	getAllDocumentItemIds(): string[] {
+		return this.sql<{ id: string }>`
+			SELECT id
+			FROM kernel_items
+			WHERE type = 'document'
+		`.map((row) => row.id);
+	}
+
 	listItems(input: { parentId?: string | null; limit?: number } = {}): WorkspaceItemSummary[] {
 		const parentFilter = input.parentId ?? null;
 		const rows = this.sql<KernelItemRow>`

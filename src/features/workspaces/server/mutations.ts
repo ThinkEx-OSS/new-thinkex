@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import { ensureWorkspaceStarterThreadForUser } from "#/features/workspaces/ai/workspace-starter-thread.server";
+import { purgeWorkspaceResources } from "#/features/workspaces/durable-object-lifecycle";
 import type {
 	CreateWorkspaceInput,
 	DeleteWorkspaceInput,
@@ -222,6 +223,10 @@ export async function deleteWorkspaceForCurrentUser(input: DeleteWorkspaceInput)
 			.delete(workspaces)
 			.where(eq(workspaces.id, input.workspaceId))
 			.returning({ id: workspaces.id });
+
+		if (deletedWorkspace) {
+			await purgeWorkspaceResources(input.workspaceId);
+		}
 
 		return deletedWorkspace ?? null;
 	} finally {

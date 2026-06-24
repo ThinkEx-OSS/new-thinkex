@@ -94,6 +94,15 @@ function identifyPostHogUser(session: AuthenticatedSession) {
 	});
 }
 
+/** Clears client-side PostHog identity only; server-side person history remains. */
+export function resetPostHogClientIdentity() {
+	if (!isPostHogEnabled) {
+		return;
+	}
+
+	posthog.reset();
+}
+
 function PostHogAuthSync() {
 	const { data: session, isPending } = useQuery(getAuthSessionQueryOptions());
 	const lastDistinctIdRef = useRef<string | null>(null);
@@ -110,7 +119,7 @@ function PostHogAuthSync() {
 		}
 
 		if (lastDistinctIdRef.current) {
-			posthog.reset();
+			resetPostHogClientIdentity();
 			lastDistinctIdRef.current = null;
 		}
 	}, [isPending, session]);

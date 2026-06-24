@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AccountDeletedRouteImport } from './routes/account-deleted'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as ProtectedSettingsRouteImport } from './routes/_protected/settings'
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -32,6 +34,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountDeletedRoute = AccountDeletedRouteImport.update({
+  id: '/account-deleted',
+  path: '/account-deleted',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
@@ -45,6 +52,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedSettingsRoute = ProtectedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedHomeRoute = ProtectedHomeRouteImport.update({
   id: '/home',
@@ -88,9 +100,11 @@ const ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account-deleted': typeof AccountDeletedRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/home': typeof ProtectedHomeRoute
+  '/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -101,9 +115,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account-deleted': typeof AccountDeletedRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/home': typeof ProtectedHomeRoute
+  '/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -116,9 +132,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
+  '/account-deleted': typeof AccountDeletedRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_protected/home': typeof ProtectedHomeRoute
+  '/_protected/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -131,9 +149,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account-deleted'
     | '/login'
     | '/signup'
     | '/home'
+    | '/settings'
     | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
@@ -144,9 +164,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account-deleted'
     | '/login'
     | '/signup'
     | '/home'
+    | '/settings'
     | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
@@ -158,9 +180,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_protected'
+    | '/account-deleted'
     | '/login'
     | '/signup'
     | '/_protected/home'
+    | '/_protected/settings'
     | '/invite/$token'
     | '/_protected/workspaces/$workspaceId'
     | '/api/auth/$'
@@ -173,6 +197,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
+  AccountDeletedRoute: typeof AccountDeletedRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -196,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account-deleted': {
+      id: '/account-deleted'
+      path: '/account-deleted'
+      fullPath: '/account-deleted'
+      preLoaderRoute: typeof AccountDeletedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected': {
       id: '/_protected'
       path: ''
@@ -216,6 +248,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_protected/settings': {
+      id: '/_protected/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ProtectedSettingsRouteImport
+      parentRoute: typeof ProtectedRoute
     }
     '/_protected/home': {
       id: '/_protected/home'
@@ -271,11 +310,13 @@ declare module '@tanstack/react-router' {
 
 interface ProtectedRouteChildren {
   ProtectedHomeRoute: typeof ProtectedHomeRoute
+  ProtectedSettingsRoute: typeof ProtectedSettingsRoute
   ProtectedWorkspacesWorkspaceIdRoute: typeof ProtectedWorkspacesWorkspaceIdRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedHomeRoute: ProtectedHomeRoute,
+  ProtectedSettingsRoute: ProtectedSettingsRoute,
   ProtectedWorkspacesWorkspaceIdRoute: ProtectedWorkspacesWorkspaceIdRoute,
 }
 
@@ -305,6 +346,7 @@ const ApiV1WorkspacesRouteWithChildren = ApiV1WorkspacesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
+  AccountDeletedRoute: AccountDeletedRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,

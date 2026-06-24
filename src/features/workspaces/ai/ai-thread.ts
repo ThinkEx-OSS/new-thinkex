@@ -21,6 +21,7 @@ import { generateText, type LanguageModel, type ToolSet } from "ai";
 
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AIThreadInspectorRecorder } from "#/features/workspaces/ai/ai-thread-inspector-recorder";
+import { AIThreadPostHogRecorder } from "#/features/workspaces/ai/ai-thread-posthog-recorder";
 import {
 	createAIThreadTools,
 	createAIThreadTurnToolConfig,
@@ -32,6 +33,7 @@ import {
 } from "#/features/workspaces/ai/ai-thread-runtime";
 import {
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	getWorkspaceAiChatModel,
 	resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
 import type { UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
@@ -76,6 +78,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		private shouldRefreshSessionPrompt = false;
 		private activeRunStartedAt: number | undefined;
 		private readonly inspector = new AIThreadInspectorRecorder(this);
+		private readonly posthog = new AIThreadPostHogRecorder();
 
 		getModel(): LanguageModel {
 			// Think requires a base model before `beforeTurn` runs. Normal UI sends
@@ -105,15 +108,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				})
 				.onCompaction(
 					createCompactFunction({
-						summarize: (prompt) =>
-							generateText({
-								model: getWorkspaceAiLanguageModel(
-									DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-									this.env,
-									this.sessionAffinity,
-								),
-								prompt,
-							}).then((result) => result.text),
+						summarize: (prompt) => this._summarizeCompactionPrompt(prompt),
 					}),
 				)
 				.compactAfter(100_000)
@@ -159,6 +154,11 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				system,
 				thread,
 			});
+			this.posthog.recordTurnStarted({
+				ctx,
+				modelId,
+				thread,
+			});
 
 			return {
 				model: getWorkspaceAiLanguageModel(modelId, this.env, this.sessionAffinity),
@@ -180,18 +180,21 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		beforeStep(ctx: PrepareStepContext): StepConfig | undefined {
 			this.inspector.recordStepStarted(ctx);
+			this.posthog.recordStepStarted(ctx);
 
 			return undefined;
 		}
 
 		beforeToolCall(ctx: ToolCallContext): ToolCallDecision | undefined {
 			this.inspector.recordToolStarted(ctx);
+			this.posthog.recordToolStarted(ctx);
 
 			return undefined;
 		}
 
 		override async onChatResponse(result: ChatResponseResult) {
 			this.inspector.recordTurnFinished(result);
+			this.posthog.recordTurnFinished(result);
 			if (!this._shouldSettleRunAfterResponse(result)) {
 				await this._refreshSessionPromptIfNeeded();
 				return;
@@ -204,6 +207,10 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		override onChatError(error: unknown, ctx?: ChatErrorContext) {
 			this.inspector.recordTurnError(error);
+			this.posthog.recordTurnError(error, {
+				errorClassification: ctx?.classification,
+				errorStage: ctx?.stage,
+			});
 			void this.keepAliveWhile(async () => {
 				await this._settleActiveRun(
 					{
@@ -223,6 +230,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		afterToolCall(ctx: ToolCallResultContext): void {
 			this.inspector.recordToolFinished(ctx);
+			this.posthog.recordToolFinished(ctx);
 
 			if (ctx.success && ctx.toolName === "set_context") {
 				this.shouldRefreshSessionPrompt = true;
@@ -231,10 +239,12 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 
 		onStepFinish(ctx: StepContext): void {
 			this.inspector.recordStepFinished(ctx);
+			this.posthog.recordStepFinished(ctx);
 		}
 
 		onChunk(ctx: ChunkContext): void {
 			this.inspector.recordChunk(ctx);
+			this.posthog.recordChunk(ctx);
 		}
 
 		getInspectorSnapshot(): AIInspectorSnapshot {
@@ -320,6 +330,35 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			);
 		}
 
+		private async _summarizeCompactionPrompt(prompt: string) {
+			const startedAt = Date.now();
+			const gatewayModel = getWorkspaceAiChatModel(DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID);
+			const result = await generateText({
+				model: getWorkspaceAiLanguageModel(
+					DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+					this.env,
+					this.sessionAffinity,
+				),
+				prompt,
+			});
+			const thread = await this._getThreadContext();
+
+			if (thread) {
+				this.posthog.recordAuxiliaryGeneration({
+					feature: "compaction",
+					gatewayModel,
+					prompt,
+					text: result.text,
+					usage: result.usage,
+					latencySeconds: (Date.now() - startedAt) / 1000,
+					thread,
+					traceContext: this.posthog.getActiveTraceContext(),
+				});
+			}
+
+			return result.text;
+		}
+
 		private async _maybeGenerateThreadTitle() {
 			const directory = await this.parentAgent(getUserAIStore());
 
@@ -328,13 +367,26 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 
 			try {
-				await directory.recordGeneratedThreadTitle(
-					this.name,
-					await generateAIThreadTitle({
-						env: this.env,
-						messages: await this.getMessages(),
-					}),
-				);
+				const titleResult = await generateAIThreadTitle({
+					env: this.env,
+					messages: await this.getMessages(),
+				});
+				const thread = await this._getThreadContext();
+
+				if (titleResult && thread) {
+					this.posthog.recordAuxiliaryGeneration({
+						feature: "thread-title",
+						gatewayModel: titleResult.gatewayModel,
+						prompt: titleResult.prompt,
+						text: titleResult.title,
+						usage: titleResult.usage,
+						latencySeconds: titleResult.latencySeconds,
+						thread,
+						traceContext: this.posthog.getActiveTraceContext(),
+					});
+				}
+
+				await directory.recordGeneratedThreadTitle(this.name, titleResult?.title);
 			} catch (error) {
 				console.warn("[AIThread] Failed to generate title", error);
 			}

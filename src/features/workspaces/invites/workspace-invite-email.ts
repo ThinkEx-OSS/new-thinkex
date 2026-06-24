@@ -1,11 +1,12 @@
-import { env as workerEnv } from "cloudflare:workers";
-
 import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 import type { WorkspaceRole } from "#/features/workspaces/invites/workspace-invite-rules";
 import { buildInviteUrl } from "#/lib/app-origin";
-
-const DEFAULT_FROM_EMAIL = "invites@thinkex.app";
-const DEFAULT_FROM_NAME = "ThinkEx";
+import {
+	escapeHtml,
+	getEmailSender,
+	getTransactionalFromEmail,
+	TRANSACTIONAL_FROM_NAME,
+} from "#/lib/transactional-email";
 
 export type WorkspaceInviteEmailDeliveryFailureReason = "missing_binding" | "send_failed";
 
@@ -18,18 +19,6 @@ export interface WorkspaceInviteEmailPayload {
 	email: string;
 	token: string;
 	role: WorkspaceRole;
-}
-
-function getInviteFromEmail() {
-	return workerEnv.WORKSPACE_INVITE_FROM_EMAIL?.trim() || DEFAULT_FROM_EMAIL;
-}
-
-function escapeHtml(value: string) {
-	return value
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;");
 }
 
 export function buildWorkspaceInviteEmailContent(input: {
@@ -56,10 +45,6 @@ export function buildWorkspaceInviteEmailContent(input: {
 	return { subject, text, html };
 }
 
-function getEmailSender() {
-	return workerEnv.EMAIL ?? null;
-}
-
 export async function sendWorkspaceInviteEmails(input: {
 	invites: WorkspaceInviteEmailPayload[];
 	inviterName: string;
@@ -75,7 +60,7 @@ export async function sendWorkspaceInviteEmails(input: {
 		}));
 	}
 
-	const fromEmail = getInviteFromEmail();
+	const fromEmail = getTransactionalFromEmail();
 
 	const sendResults = await Promise.all(
 		input.invites.map(async (invite) => {
@@ -92,7 +77,7 @@ export async function sendWorkspaceInviteEmails(input: {
 					to: invite.email,
 					from: {
 						email: fromEmail,
-						name: DEFAULT_FROM_NAME,
+						name: TRANSACTIONAL_FROM_NAME,
 					},
 					subject: content.subject,
 					html: content.html,
