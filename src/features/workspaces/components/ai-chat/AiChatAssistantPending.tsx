@@ -13,57 +13,12 @@ const THINKING_LOTTIE_BY_THEME = {
 	light: "/thinkexlight.lottie",
 } as const;
 const DOTLOTTIE_WASM_SRC = "/vendor/dotlottie/dotlottie-player.wasm";
-const THINKING_LOTTIE_PREFETCHES = [
-	{
-		href: DOTLOTTIE_WASM_SRC,
-		crossOrigin: "anonymous",
-		type: "application/wasm",
-	},
-	{ href: THINKING_LOTTIE_BY_THEME.dark },
-	{ href: THINKING_LOTTIE_BY_THEME.light },
-];
 
 let dotLottieModulePromise: Promise<typeof import("@lottiefiles/dotlottie-react")> | undefined;
 
 const LazyDotLottieReact = lazy(async () => ({
 	default: (await loadDotLottieReact()).DotLottieReact,
 }));
-
-export function scheduleAiChatThinkingLoaderPrewarm() {
-	if (typeof window === "undefined") {
-		return;
-	}
-
-	let cancelled = false;
-	const prewarm = () => {
-		if (cancelled) {
-			return;
-		}
-
-		prewarmAiChatThinkingLoader();
-	};
-
-	if ("requestIdleCallback" in window) {
-		const callbackId = window.requestIdleCallback(prewarm, { timeout: 3000 });
-
-		return () => {
-			cancelled = true;
-			window.cancelIdleCallback(callbackId);
-		};
-	}
-
-	const timeoutId = globalThis.setTimeout(prewarm, 1500);
-
-	return () => {
-		cancelled = true;
-		globalThis.clearTimeout(timeoutId);
-	};
-}
-
-function prewarmAiChatThinkingLoader() {
-	void loadDotLottieReact();
-	THINKING_LOTTIE_PREFETCHES.forEach(prefetchStaticAsset);
-}
 
 function loadDotLottieReact() {
 	dotLottieModulePromise ??= import("@lottiefiles/dotlottie-react").then((module) => {
@@ -73,34 +28,6 @@ function loadDotLottieReact() {
 	});
 
 	return dotLottieModulePromise;
-}
-
-function prefetchStaticAsset({
-	crossOrigin,
-	href,
-	type,
-}: {
-	crossOrigin?: string;
-	href: string;
-	type?: string;
-}) {
-	const url = buildClientAbsoluteUrl(href);
-
-	if (document.head.querySelector(`link[href="${url}"]`)) {
-		return;
-	}
-
-	const link = document.createElement("link");
-	link.rel = "prefetch";
-	link.href = url;
-	link.as = "fetch";
-	if (crossOrigin) {
-		link.crossOrigin = crossOrigin;
-	}
-	if (type) {
-		link.type = type;
-	}
-	document.head.appendChild(link);
 }
 
 export function AiChatAssistantPending({ pending }: { pending: AssistantPendingKind }) {

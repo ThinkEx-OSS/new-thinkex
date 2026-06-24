@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { Conversation, ConversationContent } from "#/components/ai-elements/conversation";
 import {
 	AlertDialog,
@@ -11,7 +11,6 @@ import {
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
-import { scheduleAiChatThinkingLoaderPrewarm } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import {
 	AiChatAttachmentDropProvider,
 	useAiChatAttachmentDrop,
@@ -57,10 +56,6 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 		threads,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
-
-	useEffect(() => {
-		return scheduleAiChatThinkingLoaderPrewarm();
-	}, []);
 
 	const panelBodyPhase = getAiChatPanelBodyPhase({
 		activeThreadId,
