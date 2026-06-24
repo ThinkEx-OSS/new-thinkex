@@ -22,15 +22,6 @@ export function canGrantRole(inviterRole: WorkspaceRole, grantedRole: WorkspaceR
 	return workspaceRoleRank[grantedRole] <= workspaceRoleRank[inviterRole];
 }
 
-export function resolveRoleAfterAccept(
-	existingRole: WorkspaceRole,
-	inviteRole: WorkspaceRole,
-): WorkspaceRole {
-	return workspaceRoleRank[existingRole] >= workspaceRoleRank[inviteRole]
-		? existingRole
-		: inviteRole;
-}
-
 export function canManageMember(actorRole: WorkspaceRole, targetRole: WorkspaceRole) {
 	if (targetRole === "owner") {
 		return false;

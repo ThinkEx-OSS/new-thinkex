@@ -10,9 +10,11 @@
 	"ignoreExportsUsedInFile": true,
 	"ignoreBinaries": ["infisical"],
 	"ignoreDependencies": [
+		"@babel/plugin-proposal-decorators",
 		"@tailwindcss/typography",
 		"@tanstack/devtools-event-client",
 		"@tanstack/router-plugin",
+		"@voidzero-dev/vite-plus-core",
 		"cloudflare",
 		"shadcn",
 		"tailwindcss",
