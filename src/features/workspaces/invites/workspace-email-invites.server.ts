@@ -1,11 +1,6 @@
 import { and, asc, eq, gt, inArray, isNotNull, isNull, or } from "drizzle-orm";
 
-import {
-	user,
-	workspaceInvites,
-	workspaceMembers,
-	workspaces,
-} from "#/db/schema";
+import { user, workspaceInvites, workspaceMembers, workspaces } from "#/db/schema";
 import type { createDbContext } from "#/db/server";
 import type { WorkspaceEmailInviteSummary } from "#/features/workspaces/contracts";
 import {
@@ -28,6 +23,8 @@ import {
 	getWorkspaceMemberRole,
 	WorkspaceForbiddenError,
 } from "#/features/workspaces/server/permissions";
+import { buildWorkspaceSharedEventProperties } from "#/integrations/posthog/events";
+import { capturePostHogServerEvent } from "#/integrations/posthog/server";
 import { getAppOrigin } from "#/lib/app-origin";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
@@ -105,9 +102,7 @@ export async function createWorkspaceEmailInvites(
 	await assertCanGrantWorkspaceRole(db, input);
 
 	const skipped: CreateWorkspaceEmailInvitesResult["skipped"] = [];
-	const uniqueEmails = [
-		...new Set(input.emails.map((email) => normalizeInviteEmail(email))),
-	];
+	const uniqueEmails = [...new Set(input.emails.map((email) => normalizeInviteEmail(email)))];
 
 	if (uniqueEmails.length === 0) {
 		return { persisted: [], delivered: [], skipped, failedToSend: [] };
@@ -132,9 +127,7 @@ export async function createWorkspaceEmailInvites(
 		.innerJoin(user, eq(workspaceMembers.userId, user.id))
 		.where(eq(workspaceMembers.workspaceId, input.workspaceId));
 
-	const memberEmails = new Set(
-		existingMembers.map((row) => normalizeInviteEmail(row.email)),
-	);
+	const memberEmails = new Set(existingMembers.map((row) => normalizeInviteEmail(row.email)));
 
 	const emailsToInvite = validEmails.filter((email) => {
 		if (memberEmails.has(email)) {
@@ -202,10 +195,28 @@ export async function createWorkspaceEmailInvites(
 		appOrigin: getAppOrigin(),
 	});
 	const failedEmails = new Set(failedToSend.map((failure) => failure.email));
+	const delivered = persisted.filter((email) => !failedEmails.has(email));
+
+	if (persisted.length > 0) {
+		capturePostHogServerEvent({
+			distinctId: input.userId,
+			event: "workspace_shared",
+			properties: buildWorkspaceSharedEventProperties({
+				workspaceId: input.workspaceId,
+				role: input.role,
+				requestedCount: input.emails.length,
+				persistedCount: persisted.length,
+				deliveredCount: delivered.length,
+				failedCount: failedToSend.length,
+				skippedCount: skipped.length,
+			}),
+			timestamp: new Date().toISOString(),
+		});
+	}
 
 	return {
 		persisted,
-		delivered: persisted.filter((email) => !failedEmails.has(email)),
+		delivered,
 		skipped,
 		failedToSend,
 	};
@@ -233,10 +244,7 @@ export async function listWorkspaceEmailInvites(
 				eq(workspaceInvites.type, "email"),
 				eq(workspaceInvites.status, "pending"),
 				isNotNull(workspaceInvites.email),
-				or(
-					isNull(workspaceInvites.expiresAt),
-					gt(workspaceInvites.expiresAt, now),
-				),
+				or(isNull(workspaceInvites.expiresAt), gt(workspaceInvites.expiresAt, now)),
 			),
 		)
 		.orderBy(asc(workspaceInvites.createdAt));

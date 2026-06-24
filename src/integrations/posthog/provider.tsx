@@ -4,32 +4,63 @@ import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
+import { isPostHogEnabled, posthogHost, posthogProjectToken } from "#/integrations/posthog/config";
+import type {
+	PostHogClientEventName,
+	PostHogEventPropertiesByName,
+} from "#/integrations/posthog/events";
 import type { AuthSession } from "#/lib/session-query";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
-const posthogProjectToken = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN?.trim();
-const posthogHost = import.meta.env.VITE_POSTHOG_HOST?.trim();
 const posthogUiHost = "https://us.posthog.com";
-const isPostHogEnabled = Boolean(posthogProjectToken && posthogHost);
 
 let isPostHogInitialized = false;
 
+function getPostHogTracingHostnames() {
+	const hostnames = new Set<string>();
+
+	if (typeof window !== "undefined" && window.location.hostname) {
+		hostnames.add(window.location.hostname);
+	}
+
+	if (import.meta.env.DEV) {
+		hostnames.add("localhost");
+		hostnames.add("127.0.0.1");
+	}
+
+	return [...hostnames];
+}
+
 if (typeof window !== "undefined" && isPostHogEnabled && !isPostHogInitialized) {
+	const tracingHeaders = getPostHogTracingHostnames();
+
 	posthog.init(posthogProjectToken, {
 		api_host: posthogHost,
 		ui_host: posthogUiHost,
 		defaults: "2026-05-30",
+		...(tracingHeaders.length > 0 ? { tracing_headers: tracingHeaders } : {}),
 	});
 
 	isPostHogInitialized = true;
 }
 
-export function capturePostHogClientEvent(event: string, properties?: Record<string, unknown>) {
+export function capturePostHogClientEvent<TEvent extends PostHogClientEventName>(
+	event: TEvent,
+	properties: PostHogEventPropertiesByName[TEvent],
+) {
 	if (!isPostHogEnabled) {
 		return;
 	}
 
 	posthog.capture(event, properties);
+}
+
+export function capturePostHogClientException(error: Error, properties?: Record<string, unknown>) {
+	if (!isPostHogEnabled) {
+		return;
+	}
+
+	posthog.captureException(error, properties);
 }
 
 type AuthenticatedSession = NonNullable<AuthSession>;
