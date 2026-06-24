@@ -34,12 +34,6 @@ const faviconLinks = import.meta.env.DEV
 				type: "image/svg+xml",
 				sizes: "any",
 			},
-			{
-				rel: "icon",
-				href: "/favicon.ico",
-				type: "image/x-icon",
-				sizes: "16x16 32x32 64x64",
-			},
 		];
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
