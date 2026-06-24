@@ -6,12 +6,9 @@ import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
 import { authClient } from "#/lib/auth-client";
+import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
-import {
-	getAuthSessionQueryOptions,
-	refreshAuthSession,
-	removeAuthSession,
-} from "#/lib/session-query";
+import { getAuthSessionQueryOptions, refreshAuthSession } from "#/lib/session-query";
 
 type AuthMode = "signin" | "signup";
 
@@ -67,10 +64,11 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 							onClick={() => {
 								void (async () => {
 									try {
-										await authClient.signOut();
-										removeAuthSession(queryClient);
-										await router.invalidate();
-										await navigate({ to: "/" });
+										await signOutCurrentUser({
+											queryClient,
+											router,
+											navigate,
+										});
 									} catch (error) {
 										toast.error(getErrorMessage(error, "Unable to sign out right now."));
 									}
@@ -100,7 +98,8 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 									provider: "google",
 									callbackURL,
 								});
-								await Promise.all([refreshAuthSession(queryClient), router.invalidate()]);
+								await refreshAuthSession(queryClient);
+								await router.invalidate();
 							} catch (error) {
 								setErrorMessage("Failed to sign in with Google");
 								toast.error(getErrorMessage(error, "Failed to sign in with Google"));
