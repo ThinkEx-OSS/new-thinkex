@@ -24,23 +24,11 @@ export function applyWorkspaceEventToPage(
 		case "workspace.item.moved":
 		case "workspace.item.color.updated":
 		case "workspace.item.content.updated":
-			return upsertWorkspaceItemInPage(
-				page,
-				event.payload.item,
-				event.revision,
-			);
+			return upsertWorkspaceItemInPage(page, event.payload.item, event.revision);
 		case "workspace.items.moved":
-			return upsertWorkspaceItemsInPage(
-				page,
-				event.payload.items,
-				event.revision,
-			);
+			return upsertWorkspaceItemsInPage(page, event.payload.items, event.revision);
 		case "workspace.item.deleted":
-			return removeWorkspaceItemsFromPage(
-				page,
-				event.payload.deletedItemIds,
-				event.revision,
-			);
+			return removeWorkspaceItemsFromPage(page, event.payload.deletedItemIds, event.revision);
 	}
 }
 
@@ -185,9 +173,7 @@ export function upsertWorkspaceItemsInPage(
 	const nextItemsById = new Map(nextItems.map((item) => [item.id, item]));
 	const currentItemIds = new Set(page.items.map((item) => item.id));
 	const items = [
-		...page.items.map(
-			(candidate) => nextItemsById.get(candidate.id) ?? candidate,
-		),
+		...page.items.map((candidate) => nextItemsById.get(candidate.id) ?? candidate),
 		...nextItems.filter((item) => !currentItemIds.has(item.id)),
 	];
 
@@ -212,10 +198,7 @@ export function removeWorkspaceItemsFromPage(
 	};
 }
 
-function compareWorkspaceItems(
-	left: WorkspaceItemSummary,
-	right: WorkspaceItemSummary,
-) {
+function compareWorkspaceItems(left: WorkspaceItemSummary, right: WorkspaceItemSummary) {
 	return (
 		(left.parentId ?? "").localeCompare(right.parentId ?? "") ||
 		left.sortOrder - right.sortOrder ||
@@ -223,10 +206,7 @@ function compareWorkspaceItems(
 	);
 }
 
-function getNextWorkspaceItemSortOrder(
-	items: WorkspaceItemSummary[],
-	parentId: string | null,
-) {
+function getNextWorkspaceItemSortOrder(items: WorkspaceItemSummary[], parentId: string | null) {
 	let maxSortOrder = 0;
 
 	for (const item of items) {

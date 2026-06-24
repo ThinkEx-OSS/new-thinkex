@@ -1,10 +1,5 @@
 import type { DocumentState } from "@embedpdf/core";
-import {
-	type PdfPageObject,
-	type Rotation,
-	restoreRect,
-	transformSize,
-} from "@embedpdf/models";
+import { type PdfPageObject, type Rotation, restoreRect, transformSize } from "@embedpdf/models";
 import { useInteractionManagerCapability } from "@embedpdf/plugin-interaction-manager/react";
 import type { RenderCapability } from "@embedpdf/plugin-render";
 import type { PageLayout } from "@embedpdf/plugin-scroll";
@@ -135,12 +130,8 @@ async function renderPdfCapture({
 		rotatedSize.width > 0
 			? pageLayout.rotatedWidth / rotatedSize.width
 			: pageLayout.width / page.size.width;
-	const pdfRect = clampRectToPage(
-		restoreRect(page.size, rect, rotation, scale || 1),
-		page,
-	);
-	const renderScale =
-		(scale || 1) * captureOutputScaleFactor(rect.size.width, rect.size.height);
+	const pdfRect = clampRectToPage(restoreRect(page.size, rect, rotation, scale || 1), page);
+	const renderScale = (scale || 1) * captureOutputScaleFactor(rect.size.width, rect.size.height);
 
 	return renderCapability
 		.renderPageRect({
@@ -157,22 +148,11 @@ async function renderPdfCapture({
 		.toPromise();
 }
 
-function clampRectToPage(
-	rect: WorkspaceRegionRect,
-	page: PdfPageObject,
-): WorkspaceRegionRect {
+function clampRectToPage(rect: WorkspaceRegionRect, page: PdfPageObject): WorkspaceRegionRect {
 	const left = clampNumber(rect.origin.x, 0, page.size.width);
 	const top = clampNumber(rect.origin.y, 0, page.size.height);
-	const right = clampNumber(
-		rect.origin.x + rect.size.width,
-		left,
-		page.size.width,
-	);
-	const bottom = clampNumber(
-		rect.origin.y + rect.size.height,
-		top,
-		page.size.height,
-	);
+	const right = clampNumber(rect.origin.x + rect.size.width, left, page.size.width);
+	const bottom = clampNumber(rect.origin.y + rect.size.height, top, page.size.height);
 
 	return {
 		origin: { x: left, y: top },

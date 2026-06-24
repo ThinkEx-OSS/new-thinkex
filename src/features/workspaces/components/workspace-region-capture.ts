@@ -13,14 +13,8 @@ export function resolveCaptureOutputSize(
 	screenWidth: number,
 	screenHeight: number,
 ): { height: number; width: number } {
-	const width = Math.max(
-		1,
-		Math.round(screenWidth * WORKSPACE_CAPTURE_MAX_RENDER_SCALE),
-	);
-	const height = Math.max(
-		1,
-		Math.round(screenHeight * WORKSPACE_CAPTURE_MAX_RENDER_SCALE),
-	);
+	const width = Math.max(1, Math.round(screenWidth * WORKSPACE_CAPTURE_MAX_RENDER_SCALE));
+	const height = Math.max(1, Math.round(screenHeight * WORKSPACE_CAPTURE_MAX_RENDER_SCALE));
 	const longestSide = Math.max(width, height);
 
 	if (longestSide <= WORKSPACE_CAPTURE_MAX_OUTPUT_SIDE) {
@@ -36,10 +30,7 @@ export function resolveCaptureOutputSize(
 }
 
 /** Scale factor to apply on top of display/page scale so output matches resolveCaptureOutputSize. */
-export function captureOutputScaleFactor(
-	screenWidth: number,
-	screenHeight: number,
-): number {
+export function captureOutputScaleFactor(screenWidth: number, screenHeight: number): number {
 	if (screenWidth <= 0 || screenHeight <= 0) {
 		return 1;
 	}
@@ -96,10 +87,7 @@ export function regionRectFromTwoPoints(
 	};
 }
 
-export function regionRectToClientRect(
-	region: WorkspaceRegionRect,
-	element: HTMLElement,
-) {
+export function regionRectToClientRect(region: WorkspaceRegionRect, element: HTMLElement) {
 	const bounds = element.getBoundingClientRect();
 
 	return new DOMRect(

@@ -28,10 +28,7 @@ export type KernelEventRow = {
 	created_at: number;
 };
 
-export function mapKernelItemRow(
-	row: KernelItemRow,
-	workspaceId: string,
-): WorkspaceItemSummary {
+export function mapKernelItemRow(row: KernelItemRow, workspaceId: string): WorkspaceItemSummary {
 	const type = workspaceItemTypeSchema.parse(row.type);
 
 	return {
@@ -67,8 +64,6 @@ export function mapKernelEventRow(
 	} as WorkspaceRealtimeEvent;
 }
 
-function parseWorkspaceEventPayload(
-	row: KernelEventRow,
-): WorkspaceRealtimeEvent["payload"] {
+function parseWorkspaceEventPayload(row: KernelEventRow): WorkspaceRealtimeEvent["payload"] {
 	return JSON.parse(row.payload_json) as WorkspaceRealtimeEvent["payload"];
 }

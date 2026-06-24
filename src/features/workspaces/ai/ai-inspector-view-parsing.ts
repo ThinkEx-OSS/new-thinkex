@@ -4,9 +4,7 @@ import type {
 	AIInspectorToolDefinitionView,
 } from "#/features/workspaces/ai/ai-inspector-view-types";
 
-export function parseToolDefinitions(
-	tools: unknown,
-): AIInspectorToolDefinitionView[] {
+export function parseToolDefinitions(tools: unknown): AIInspectorToolDefinitionView[] {
 	if (!Array.isArray(tools)) {
 		return [];
 	}
@@ -43,9 +41,7 @@ export function parseMessages(messages: unknown): AIInspectorMessageView[] {
 	});
 }
 
-export function parseToolPreviews(
-	content: unknown,
-): AIInspectorToolCallPreview[] {
+export function parseToolPreviews(content: unknown): AIInspectorToolCallPreview[] {
 	if (!Array.isArray(content)) {
 		return [];
 	}
@@ -91,18 +87,13 @@ export function normalizeText(value: unknown): string {
 	return textParts.join("\n");
 }
 
-export function getStepNumber(
-	payload: Record<string, unknown>,
-	fallback: number,
-) {
+export function getStepNumber(payload: Record<string, unknown>, fallback: number) {
 	const stepNumber = getNumber(payload.stepNumber);
 	return typeof stepNumber === "number" ? stepNumber + 1 : fallback;
 }
 
 export function asRecord(value: unknown): Record<string, unknown> {
-	return value && typeof value === "object"
-		? (value as Record<string, unknown>)
-		: {};
+	return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 export function getNestedString(

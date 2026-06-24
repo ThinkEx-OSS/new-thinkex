@@ -19,9 +19,7 @@ export default function WorkspacePageRoute() {
 	});
 	const [recordedWorkspaceIds] = useState(() => new Set<string>());
 	const recordWorkspaceOpenedMutation = useRecordWorkspaceOpenedMutation();
-	const { data: page } = useSuspenseQuery(
-		workspacePageQueryOptions(workspaceId),
-	);
+	const { data: page } = useSuspenseQuery(workspacePageQueryOptions(workspaceId));
 
 	useEffect(() => {
 		if (recordedWorkspaceIds.has(workspaceId)) {

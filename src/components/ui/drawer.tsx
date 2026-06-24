@@ -19,10 +19,7 @@ function DrawerClose({ ...props }: DialogPrimitive.Close.Props) {
 	return <DialogPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
-function DrawerOverlay({
-	className,
-	...props
-}: DialogPrimitive.Backdrop.Props) {
+function DrawerOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
 	return (
 		<DialogPrimitive.Backdrop
 			data-slot="drawer-overlay"
@@ -35,11 +32,7 @@ function DrawerOverlay({
 	);
 }
 
-function DrawerContent({
-	className,
-	children,
-	...props
-}: DialogPrimitive.Popup.Props) {
+function DrawerContent({ className, children, ...props }: DialogPrimitive.Popup.Props) {
 	return (
 		<DrawerPortal data-slot="drawer-portal">
 			<DrawerOverlay />
@@ -62,10 +55,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="drawer-header"
-			className={cn(
-				"flex flex-col gap-0.5 p-4 text-center md:gap-1.5",
-				className,
-			)}
+			className={cn("flex flex-col gap-0.5 p-4 text-center md:gap-1.5", className)}
 			{...props}
 		/>
 	);
@@ -91,10 +81,7 @@ function DrawerTitle({ className, ...props }: DialogPrimitive.Title.Props) {
 	);
 }
 
-function DrawerDescription({
-	className,
-	...props
-}: DialogPrimitive.Description.Props) {
+function DrawerDescription({ className, ...props }: DialogPrimitive.Description.Props) {
 	return (
 		<DialogPrimitive.Description
 			data-slot="drawer-description"

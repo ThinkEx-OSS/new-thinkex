@@ -56,10 +56,7 @@ export async function getWorkspaceMemberRole(
 	return membership?.role ?? null;
 }
 
-export async function canReadWorkspace(
-	db: Db,
-	input: { workspaceId: string; userId: string },
-) {
+export async function canReadWorkspace(db: Db, input: { workspaceId: string; userId: string }) {
 	const role = await getWorkspaceMemberRole(db, input);
 	return role !== null;
 }

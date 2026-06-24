@@ -39,10 +39,7 @@ export function useCopyToClipboard({
 					window.clearTimeout(timeoutRef.current);
 				}
 
-				timeoutRef.current = window.setTimeout(
-					() => setCopied(false),
-					resetTimeoutMs,
-				);
+				timeoutRef.current = window.setTimeout(() => setCopied(false), resetTimeoutMs);
 
 				return true;
 			} catch (error) {

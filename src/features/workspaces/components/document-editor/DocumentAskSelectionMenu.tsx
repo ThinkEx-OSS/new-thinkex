@@ -23,9 +23,7 @@ export function DocumentAskSelectionMenu({
 	scrollTarget: HTMLElement | null;
 	workspaceId: string;
 }) {
-	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(
-		null,
-	);
+	const [selectionPoint, setSelectionPoint] = useState<ClientPoint | null>(null);
 
 	useEffect(() => {
 		const element = editor?.view.dom;
@@ -50,11 +48,7 @@ export function DocumentAskSelectionMenu({
 		return () => {
 			element.removeEventListener("pointerup", handlePointerUp, true);
 			element.removeEventListener("keydown", clearSelectionPoint);
-			selectionScrollTarget.removeEventListener(
-				"scroll",
-				clearSelectionPoint,
-				true,
-			);
+			selectionScrollTarget.removeEventListener("scroll", clearSelectionPoint, true);
 			window.removeEventListener("resize", clearSelectionPoint);
 		};
 	}, [editor, scrollTarget]);

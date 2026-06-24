@@ -1,7 +1,4 @@
-import type {
-	ChatErrorClassification,
-	ChatErrorContext,
-} from "@cloudflare/think";
+import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Message, MessageContent } from "#/components/ai-elements/message";
@@ -116,20 +113,11 @@ export default function AiChatMessageList({
 
 					const { display, message } = row;
 					return (
-						<AiChatTranscriptRail
-							key={message.id}
-							className="pb-5"
-							withTopInset={rows[0] === row}
-						>
+						<AiChatTranscriptRail key={message.id} className="pb-5" withTopInset={rows[0] === row}>
 							<AiChatMessageRow
 								display={display}
-								isRegenerable={
-									message.id === lastAssistantMessageId && status === "ready"
-								}
-								isStreaming={
-									message.id === lastAssistantMessageId &&
-									isAiChatStreamActive(status)
-								}
+								isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+								isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
 								message={message}
 								onRegenerate={onRegenerateLastResponse}
 							/>
@@ -137,10 +125,7 @@ export default function AiChatMessageList({
 					);
 				})}
 				{assistantError ? (
-					<AiChatTranscriptRail
-						className="pb-5"
-						withTopInset={rows.length === 0}
-					>
+					<AiChatTranscriptRail className="pb-5" withTopInset={rows.length === 0}>
 						<AiChatAssistantError
 							canRetry={Boolean(onRegenerateLastResponse)}
 							errorState={assistantError}
@@ -194,10 +179,7 @@ function AiChatAssistantError({
 			<MessageContent>
 				<div className="flex flex-col items-start gap-3 rounded-md border border-destructive/25 bg-destructive/8 p-4">
 					<div className="flex items-start gap-2">
-						<AlertCircle
-							className="mt-0.5 size-4 shrink-0 text-destructive"
-							aria-hidden="true"
-						/>
+						<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
 						<p className="text-sm text-foreground">
 							{getChatErrorMessage({
 								errorState,
@@ -206,13 +188,7 @@ function AiChatAssistantError({
 						</p>
 					</div>
 					{canRetry ? (
-						<Button
-							type="button"
-							variant="outline"
-							size="xs"
-							className="gap-1.5"
-							onClick={onRetry}
-						>
+						<Button type="button" variant="outline" size="xs" className="gap-1.5" onClick={onRetry}>
 							<RotateCcw className="size-3" />
 							Try again
 						</Button>

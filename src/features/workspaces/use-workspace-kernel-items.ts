@@ -39,8 +39,7 @@ export function useCreateWorkspaceItemMutation() {
 
 	const mutation = useMutation({
 		mutationFn: (preparedInput: CreateWorkspaceItemInput) => {
-			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(preparedInput);
+			const inputWithClientMutation = prepareWorkspaceClientMutationInput(preparedInput);
 			return createWorkspaceItem({ data: inputWithClientMutation });
 		},
 		onMutate: async (preparedInput) => {
@@ -60,34 +59,24 @@ export function useCreateWorkspaceItemMutation() {
 		},
 		onError: (error, preparedInput) => {
 			if (preparedInput.id) {
-				removeWorkspaceItemsFromPageCache(
-					queryClient,
-					preparedInput.workspaceId,
-					[preparedInput.id],
-				);
+				removeWorkspaceItemsFromPageCache(queryClient, preparedInput.workspaceId, [
+					preparedInput.id,
+				]);
 			}
-			toast.error(
-				getErrorMessage(error, "Unable to create workspace item right now."),
-			);
+			toast.error(getErrorMessage(error, "Unable to create workspace item right now."));
 		},
 	});
 
 	return {
 		...mutation,
-		mutate: (
-			input: CreateWorkspaceItemInput,
-			options?: Parameters<typeof mutation.mutate>[1],
-		) => {
+		mutate: (input: CreateWorkspaceItemInput, options?: Parameters<typeof mutation.mutate>[1]) => {
 			mutation.mutate(prepareCreateWorkspaceItemInput(input), options);
 		},
 		mutateAsync: (
 			input: CreateWorkspaceItemInput,
 			options?: Parameters<typeof mutation.mutateAsync>[1],
 		) => {
-			return mutation.mutateAsync(
-				prepareCreateWorkspaceItemInput(input),
-				options,
-			);
+			return mutation.mutateAsync(prepareCreateWorkspaceItemInput(input), options);
 		},
 	};
 }
@@ -98,17 +87,14 @@ export function useRenameWorkspaceItemMutation() {
 
 	return useMutation({
 		mutationFn: (input: RenameWorkspaceItemInput) => {
-			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(input);
+			const inputWithClientMutation = prepareWorkspaceClientMutationInput(input);
 			return renameWorkspaceItem({ data: inputWithClientMutation });
 		},
 		onSuccess: (command) => {
 			applyWorkspaceEventToCache(queryClient, command.event);
 		},
 		onError: (error) => {
-			toast.error(
-				getErrorMessage(error, "Unable to rename workspace item right now."),
-			);
+			toast.error(getErrorMessage(error, "Unable to rename workspace item right now."));
 		},
 	});
 }
@@ -119,8 +105,7 @@ export function useMoveWorkspaceItemsMutation() {
 
 	return useMutation({
 		mutationFn: (input: MoveWorkspaceItemsInput) => {
-			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(input);
+			const inputWithClientMutation = prepareWorkspaceClientMutationInput(input);
 			return moveWorkspaceItems({ data: inputWithClientMutation });
 		},
 		onMutate: async (input) => {
@@ -151,29 +136,18 @@ export function useUpdateWorkspaceItemColorMutation() {
 				getKey: getWorkspaceItemColorCommitKey,
 				wait: workspaceItemColorCommitDelayMs,
 				onExecute: (input) => {
-					const inputWithClientMutation =
-						prepareWorkspaceClientMutationInput(input);
+					const inputWithClientMutation = prepareWorkspaceClientMutationInput(input);
 
-					updateWorkspaceItemColor({ data: inputWithClientMutation }).catch(
-						(error: unknown) => {
-							if (
-								getWorkspaceItemColorInPageCache(queryClient, input) !==
-								input.color
-							) {
-								return;
-							}
+					updateWorkspaceItemColor({ data: inputWithClientMutation }).catch((error: unknown) => {
+						if (getWorkspaceItemColorInPageCache(queryClient, input) !== input.color) {
+							return;
+						}
 
-							queryClient.invalidateQueries({
-								queryKey: workspacePageQueryKey(input.workspaceId),
-							});
-							toast.error(
-								getErrorMessage(
-									error,
-									"Unable to update item color right now.",
-								),
-							);
-						},
-					);
+						queryClient.invalidateQueries({
+							queryKey: workspacePageQueryKey(input.workspaceId),
+						});
+						toast.error(getErrorMessage(error, "Unable to update item color right now."));
+					});
 				},
 			}),
 		[queryClient, updateWorkspaceItemColor],
@@ -196,23 +170,14 @@ export function useDeleteWorkspaceItemsMutation() {
 
 	return useMutation({
 		mutationFn: (input: DeleteWorkspaceItemsInput) => {
-			const inputWithClientMutation =
-				prepareWorkspaceClientMutationInput(input);
+			const inputWithClientMutation = prepareWorkspaceClientMutationInput(input);
 			const deletePromise = deleteWorkspaceItems({
 				data: inputWithClientMutation,
 			});
 
 			void toast.promise(deletePromise, {
-				loading: getDeleteWorkspaceItemsToastMessage(
-					"Deleting",
-					input.itemIds.length,
-					"...",
-				),
-				success: getDeleteWorkspaceItemsToastMessage(
-					"Deleted",
-					input.itemIds.length,
-					".",
-				),
+				loading: getDeleteWorkspaceItemsToastMessage("Deleting", input.itemIds.length, "..."),
+				success: getDeleteWorkspaceItemsToastMessage("Deleted", input.itemIds.length, "."),
 				error: (error) =>
 					getErrorMessage(
 						error,

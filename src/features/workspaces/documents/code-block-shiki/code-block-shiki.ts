@@ -52,8 +52,7 @@ export const CodeBlockShiki = CodeBlock.extend<CodeBlockShikiOptions>({
 	},
 
 	renderHTML({ node, HTMLAttributes }) {
-		const language =
-			typeof node.attrs.language === "string" ? node.attrs.language : "";
+		const language = typeof node.attrs.language === "string" ? node.attrs.language : "";
 
 		return [
 			"pre",
@@ -64,9 +63,7 @@ export const CodeBlockShiki = CodeBlock.extend<CodeBlockShikiOptions>({
 			[
 				"code",
 				{
-					class: language
-						? `${this.options.languageClassPrefix}${language}`
-						: null,
+					class: language ? `${this.options.languageClassPrefix}${language}` : null,
 				},
 				0,
 			],

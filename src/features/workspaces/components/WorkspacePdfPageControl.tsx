@@ -23,18 +23,13 @@ function clampPageNumber(value: string, fallback: number, totalPages: number) {
 	return Math.min(Math.max(parsedPage, 1), totalPages);
 }
 
-export function WorkspacePdfPageControl({
-	documentId,
-}: {
-	documentId: string;
-}) {
+export function WorkspacePdfPageControl({ documentId }: { documentId: string }) {
 	const {
 		provides: scroll,
 		state: { currentPage, totalPages },
 	} = useScroll(documentId);
 	const [draftPage, setDraftPage] = useState<string | null>(null);
-	const { controls, interactionHandlers, isVisible } =
-		useAutoHideControls(HIDE_DELAY_MS);
+	const { controls, interactionHandlers, isVisible } = useAutoHideControls(HIDE_DELAY_MS);
 	const hasPages = totalPages > 0;
 	const currentPageNumber = currentPage || 1;
 	const inputValue = draftPage ?? String(currentPageNumber);

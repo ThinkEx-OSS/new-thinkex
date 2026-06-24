@@ -35,9 +35,7 @@ export default class ClientErrorBoundary extends Component<
 
 		return (
 			<ErrorFallbackScreen
-				message={
-					error.message || "Something went wrong while loading this page."
-				}
+				message={error.message || "Something went wrong while loading this page."}
 				showRetry
 				homeLink={<a href="/">Back to home</a>}
 				stack={error.stack}

@@ -12,9 +12,7 @@ export const Route = createFileRoute("/login")({
 			.optional(),
 	}),
 	beforeLoad: async ({ context, search }) => {
-		const session = await context.queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+		const session = await context.queryClient.ensureQueryData(getAuthSessionQueryOptions());
 
 		if (session) {
 			throw redirect({ to: search.redirect || "/home" });

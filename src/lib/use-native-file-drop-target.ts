@@ -9,10 +9,7 @@ export function isPromptInputLocalDropTarget(event: Event) {
 	);
 }
 
-function isPointerInsideElement(
-	element: HTMLElement,
-	relatedTarget: EventTarget | null,
-) {
+function isPointerInsideElement(element: HTMLElement, relatedTarget: EventTarget | null) {
 	return relatedTarget instanceof Node && element.contains(relatedTarget);
 }
 

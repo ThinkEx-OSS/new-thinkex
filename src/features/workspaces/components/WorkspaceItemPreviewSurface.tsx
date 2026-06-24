@@ -21,9 +21,7 @@ interface WorkspaceItemPreviewSurfaceProps {
 	item: WorkspaceItem;
 }
 
-export default function WorkspaceItemPreviewSurface({
-	item,
-}: WorkspaceItemPreviewSurfaceProps) {
+export default function WorkspaceItemPreviewSurface({ item }: WorkspaceItemPreviewSurfaceProps) {
 	switch (item.type) {
 		case "document":
 			return <WorkspaceItemDocumentPreview item={item} />;

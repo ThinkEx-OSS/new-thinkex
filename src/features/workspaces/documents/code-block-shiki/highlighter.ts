@@ -58,10 +58,7 @@ export type CodeLanguageOption = {
 	value: SupportedCodeLanguage;
 };
 
-type WorkspaceDocumentHighlighter = HighlighterGeneric<
-	SupportedCodeLanguage,
-	SupportedCodeTheme
->;
+type WorkspaceDocumentHighlighter = HighlighterGeneric<SupportedCodeLanguage, SupportedCodeTheme>;
 type LanguageModule = { default: LanguageInput };
 type ThemeModule = { default: ThemeInput };
 type HighlighterOptions = {
@@ -137,10 +134,7 @@ export const codeLanguageOptions: CodeLanguageOption[] = [
 	{ label: "Makefile", value: "make" },
 	{ label: "Diff", value: "diff" },
 ];
-const languageLoaders: Record<
-	SupportedCodeLanguage,
-	() => Promise<LanguageModule>
-> = {
+const languageLoaders: Record<SupportedCodeLanguage, () => Promise<LanguageModule>> = {
 	astro: () => import("shiki/langs/astro.mjs"),
 	bash: () => import("shiki/langs/bash.mjs"),
 	c: () => import("shiki/langs/c.mjs"),
@@ -217,9 +211,7 @@ export function normalizeCodeLanguage(
 
 export function getCodeLanguageLabel(language: string | null | undefined) {
 	const normalizedLanguage = normalizeCodeLanguage(language);
-	const option = codeLanguageOptions.find(
-		(candidate) => candidate.value === normalizedLanguage,
-	);
+	const option = codeLanguageOptions.find((candidate) => candidate.value === normalizedLanguage);
 
 	return option?.label ?? "Code";
 }
@@ -275,12 +267,10 @@ async function loadHighlighter(opts: HighlighterOptions) {
 	registerCustomThemes(opts.customThemes);
 
 	if (!highlighter && !highlighterPromise) {
-		highlighterPromise = createWorkspaceDocumentHighlighter(opts).catch(
-			(error) => {
-				highlighterPromise = undefined;
-				throw error;
-			},
-		);
+		highlighterPromise = createWorkspaceDocumentHighlighter(opts).catch((error) => {
+			highlighterPromise = undefined;
+			throw error;
+		});
 		await highlighterPromise;
 		await Promise.all(opts.languages.map((language) => loadLanguage(language)));
 		return true;

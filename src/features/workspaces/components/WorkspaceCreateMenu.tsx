@@ -30,16 +30,10 @@ import {
 
 interface WorkspaceCreateMenuProps {
 	parentId: string | null;
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
+	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
 }
 
-export default function WorkspaceCreateMenu({
-	parentId,
-	onCreateItem,
-}: WorkspaceCreateMenuProps) {
+export default function WorkspaceCreateMenu({ parentId, onCreateItem }: WorkspaceCreateMenuProps) {
 	const { capabilities } = useWorkspaceMutationAccess();
 
 	if (!capabilities.canMutateContent) {
@@ -53,10 +47,7 @@ export default function WorkspaceCreateMenu({
 				<span className="hidden sm:inline">New</span>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-56">
-				<WorkspaceCreateMenuContent
-					parentId={parentId}
-					onCreateItem={onCreateItem}
-				/>
+				<WorkspaceCreateMenuContent parentId={parentId} onCreateItem={onCreateItem} />
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -89,9 +80,7 @@ export function WorkspaceCreateMenuContent({
 	);
 }
 
-export function WorkspaceCreateContextMenuContent(
-	props: WorkspaceCreateMenuProps,
-) {
+export function WorkspaceCreateContextMenuContent(props: WorkspaceCreateMenuProps) {
 	return (
 		<WorkspaceCreateMenuContent
 			{...props}
@@ -109,15 +98,13 @@ function getWorkspaceCreateMenuActions({
 	onUploadFile: (parentId: string | null) => void;
 }) {
 	return [
-		...workspaceItemPrimaryCreateActions.map(
-			({ type, label, Icon, iconClassName }) => ({
-				kind: "item" as const,
-				id: type,
-				label,
-				leading: <Icon className={`size-4 ${iconClassName}`} />,
-				onSelect: () => onCreateItem({ type, parentId }),
-			}),
-		),
+		...workspaceItemPrimaryCreateActions.map(({ type, label, Icon, iconClassName }) => ({
+			kind: "item" as const,
+			id: type,
+			label,
+			leading: <Icon className={`size-4 ${iconClassName}`} />,
+			onSelect: () => onCreateItem({ type, parentId }),
+		})),
 		...workspaceItemAcquisitionActions.map(
 			({ id, label, description, Icon, iconClassName, disabled }) => ({
 				kind: "item" as const,
@@ -126,20 +113,17 @@ function getWorkspaceCreateMenuActions({
 				trailing: description,
 				disabled,
 				leading: <Icon className={`size-4 ${iconClassName}`} />,
-				onSelect:
-					id === "upload-file" ? () => onUploadFile(parentId) : undefined,
+				onSelect: id === "upload-file" ? () => onUploadFile(parentId) : undefined,
 			}),
 		),
-		...workspaceItemLearnCreateActions.map(
-			({ type, label, Icon, iconClassName }) => ({
-				kind: "item" as const,
-				id: type,
-				label,
-				trailing: "Soon",
-				disabled: true,
-				leading: <Icon className={`size-4 ${iconClassName}`} />,
-				onSelect: () => onCreateItem({ type, parentId }),
-			}),
-		),
+		...workspaceItemLearnCreateActions.map(({ type, label, Icon, iconClassName }) => ({
+			kind: "item" as const,
+			id: type,
+			label,
+			trailing: "Soon",
+			disabled: true,
+			leading: <Icon className={`size-4 ${iconClassName}`} />,
+			onSelect: () => onCreateItem({ type, parentId }),
+		})),
 	];
 }

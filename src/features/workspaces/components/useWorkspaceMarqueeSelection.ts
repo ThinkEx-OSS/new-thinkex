@@ -33,8 +33,7 @@ export function useWorkspaceMarqueeSelection({
 }: WorkspaceMarqueeSelectionInput) {
 	const [itemElements] = useState(() => new Map<string, HTMLElement>());
 	const marqueeStateRef = useRef<WorkspaceMarqueeState | null>(null);
-	const [marqueeState, setMarqueeState] =
-		useState<WorkspaceMarqueeState | null>(null);
+	const [marqueeState, setMarqueeState] = useState<WorkspaceMarqueeState | null>(null);
 	const marqueeRect = marqueeState?.started
 		? getWorkspaceMarqueeRect(marqueeState.start, marqueeState.current)
 		: null;
@@ -51,10 +50,7 @@ export function useWorkspaceMarqueeSelection({
 		itemElements.delete(itemId);
 	};
 	const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
-		if (
-			event.target instanceof Element &&
-			!event.currentTarget.contains(event.target)
-		) {
+		if (event.target instanceof Element && !event.currentTarget.contains(event.target)) {
 			return;
 		}
 
@@ -146,19 +142,14 @@ export function useWorkspaceMarqueeSelection({
 	};
 }
 
-function getWorkspaceMarqueePoint(
-	event: PointerEvent<HTMLElement>,
-): WorkspaceMarqueePoint {
+function getWorkspaceMarqueePoint(event: PointerEvent<HTMLElement>): WorkspaceMarqueePoint {
 	return {
 		x: event.clientX,
 		y: event.clientY,
 	};
 }
 
-function getWorkspaceMarqueeDistance(
-	first: WorkspaceMarqueePoint,
-	second: WorkspaceMarqueePoint,
-) {
+function getWorkspaceMarqueeDistance(first: WorkspaceMarqueePoint, second: WorkspaceMarqueePoint) {
 	return Math.hypot(first.x - second.x, first.y - second.y);
 }
 
@@ -197,10 +188,7 @@ function getWorkspaceMarqueeSelection({
 	return selectedItemIds;
 }
 
-function doRectsIntersect(
-	first: WorkspaceMarqueeRect,
-	second: DOMRectReadOnly,
-) {
+function doRectsIntersect(first: WorkspaceMarqueeRect, second: DOMRectReadOnly) {
 	return (
 		first.x < second.right &&
 		first.x + first.width > second.left &&

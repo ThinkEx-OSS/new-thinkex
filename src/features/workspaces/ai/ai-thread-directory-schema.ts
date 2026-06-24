@@ -9,9 +9,7 @@ interface ChatMetaSqlStore {
 
 export function ensureChatMetaColumns(store: ChatMetaSqlStore) {
 	const existingColumns = new Set(
-		store.sql<{ name: string }>`PRAGMA table_info(chat_meta)`.map(
-			(column) => column.name,
-		),
+		store.sql<{ name: string }>`PRAGMA table_info(chat_meta)`.map((column) => column.name),
 	);
 
 	if (!existingColumns.has("title_generated_at")) {

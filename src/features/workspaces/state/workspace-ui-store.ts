@@ -42,10 +42,7 @@ export type WorkspacePresentation =
 			restorePresentation: RestorableWorkspacePresentation;
 	  };
 
-type RestorableWorkspacePresentation = Exclude<
-	WorkspacePresentation,
-	{ mode: "maximized" }
->;
+type RestorableWorkspacePresentation = Exclude<WorkspacePresentation, { mode: "maximized" }>;
 
 export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
@@ -65,26 +62,12 @@ type WorkspaceUiState = {
 		Record<string, WorkspaceItemViewState | undefined> | undefined
 	>;
 	sessionsByWorkspaceId: Record<string, WorkspaceUiSession>;
-	ensureWorkspaceSession: (
-		input: EnsureWorkspaceUiSessionInput,
-	) => WorkspaceUiSession;
+	ensureWorkspaceSession: (input: EnsureWorkspaceUiSessionInput) => WorkspaceUiSession;
 	clearItemViewState: (workspaceId: string, itemId?: string) => void;
-	setChatSurfaceMode: (
-		workspaceId: string,
-		mode: WorkspaceAiChatSurfaceMode,
-	) => void;
-	setActiveAiChatThread: (
-		workspaceId: string,
-		threadId: string | undefined,
-	) => void;
-	setAiChatModel: (
-		workspaceId: string,
-		modelId: WorkspaceAiChatModelId,
-	) => void;
-	setItemViewState: (
-		workspaceId: string,
-		viewState: WorkspaceItemViewState,
-	) => void;
+	setChatSurfaceMode: (workspaceId: string, mode: WorkspaceAiChatSurfaceMode) => void;
+	setActiveAiChatThread: (workspaceId: string, threadId: string | undefined) => void;
+	setAiChatModel: (workspaceId: string, modelId: WorkspaceAiChatModelId) => void;
+	setItemViewState: (workspaceId: string, viewState: WorkspaceItemViewState) => void;
 	toggleChatPanel: (workspaceId: string) => void;
 	maximizeItem: (workspaceId: string, itemId: string) => void;
 	restorePresentation: (workspaceId: string) => void;
@@ -101,9 +84,8 @@ type WorkspaceUiState = {
 
 export { defaultWorkspaceUiSession, getWorkspaceUiSession };
 
-export const EMPTY_ITEM_VIEW_STATES: Readonly<
-	Record<string, WorkspaceItemViewState | undefined>
-> = {};
+export const EMPTY_ITEM_VIEW_STATES: Readonly<Record<string, WorkspaceItemViewState | undefined>> =
+	{};
 
 function updateWorkspaceUiSession(
 	state: WorkspaceUiState,
@@ -112,10 +94,7 @@ function updateWorkspaceUiSession(
 ) {
 	const currentSession = state.sessionsByWorkspaceId[workspaceId];
 	const currentNormalizedSession = getWorkspaceUiSession(currentSession);
-	const nextSession = getUpdatedWorkspaceUiSession(
-		currentSession,
-		updateSession,
-	);
+	const nextSession = getUpdatedWorkspaceUiSession(currentSession, updateSession);
 
 	if (nextSession === currentNormalizedSession) {
 		return state;
@@ -145,26 +124,18 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 				sessionsByWorkspaceId: {},
 				ensureWorkspaceSession: ({ workspaceId, validItemIds }) => {
 					const currentSession = get().sessionsByWorkspaceId[workspaceId];
-					const nextSession = normalizeWorkspaceUiSession(
-						currentSession,
-						validItemIds,
-					);
+					const nextSession = normalizeWorkspaceUiSession(currentSession, validItemIds);
 
 					if (nextSession !== currentSession) {
-						set((state) =>
-							withWorkspaceUiSession(state, workspaceId, nextSession),
-						);
+						set((state) => withWorkspaceUiSession(state, workspaceId, nextSession));
 					}
 
 					return nextSession;
 				},
 				clearItemViewState: (workspaceId, itemId) =>
 					set((state) => {
-						const currentDetails =
-							state.itemViewStatesByWorkspaceId[workspaceId];
-						const currentViewState = itemId
-							? currentDetails?.[itemId]
-							: currentDetails;
+						const currentDetails = state.itemViewStatesByWorkspaceId[workspaceId];
+						const currentViewState = itemId ? currentDetails?.[itemId] : currentDetails;
 
 						if (!currentViewState) {
 							return state;
@@ -191,9 +162,7 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					}),
 				setChatSurfaceMode: (workspaceId, mode) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () =>
-							setChatSurfaceModeSession(mode),
-						),
+						updateWorkspaceUiSession(state, workspaceId, () => setChatSurfaceModeSession(mode)),
 					),
 				setActiveAiChatThread: (workspaceId, threadId) =>
 					set((state) =>
@@ -203,17 +172,12 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					),
 				setAiChatModel: (workspaceId, modelId) =>
 					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () =>
-							setAiChatModelSession(modelId),
-						),
+						updateWorkspaceUiSession(state, workspaceId, () => setAiChatModelSession(modelId)),
 					),
 				setItemViewState: (workspaceId, viewState) =>
 					set((state) => {
 						const normalized = normalizeWorkspaceItemViewState(viewState);
-						const current =
-							state.itemViewStatesByWorkspaceId[workspaceId]?.[
-								viewState.itemId
-							];
+						const current = state.itemViewStatesByWorkspaceId[workspaceId]?.[viewState.itemId];
 
 						if (isSameWorkspaceItemViewState(current, normalized)) {
 							return state;
@@ -230,13 +194,7 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 						};
 					}),
 				toggleChatPanel: (workspaceId) =>
-					set((state) =>
-						updateWorkspaceUiSession(
-							state,
-							workspaceId,
-							toggleChatPanelSession,
-						),
-					),
+					set((state) => updateWorkspaceUiSession(state, workspaceId, toggleChatPanelSession)),
 				maximizeItem: (workspaceId, itemId) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, (session) =>
@@ -245,16 +203,9 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 					),
 				restorePresentation: (workspaceId) =>
 					set((state) =>
-						updateWorkspaceUiSession(
-							state,
-							workspaceId,
-							restoreWorkspacePresentationSession,
-						),
+						updateWorkspaceUiSession(state, workspaceId, restoreWorkspacePresentationSession),
 					),
-				setSplitPresentation: (
-					workspaceId,
-					{ direction, panes, activePaneId },
-				) =>
+				setSplitPresentation: (workspaceId, { direction, panes, activePaneId }) =>
 					set((state) =>
 						updateWorkspaceUiSession(state, workspaceId, () =>
 							splitWorkspacePresentationSession({
@@ -292,8 +243,7 @@ export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
 			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
-					.activeAiChatThreadId,
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]).activeAiChatThreadId,
 			[workspaceId],
 		),
 	);
@@ -303,8 +253,7 @@ export function useWorkspaceAiChatModelId(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
 			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
-					.aiChatModelId,
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]).aiChatModelId,
 			[workspaceId],
 		),
 	);
@@ -314,8 +263,7 @@ export function useWorkspaceAiChatSurfaceMode(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
 			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId])
-					.chatSurfaceMode,
+				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]).chatSurfaceMode,
 			[workspaceId],
 		),
 	);
@@ -325,8 +273,7 @@ export function useWorkspaceItemViewStates(workspaceId: string) {
 	return useWorkspaceUiStore(
 		useMemo(
 			() => (state: WorkspaceUiState) =>
-				state.itemViewStatesByWorkspaceId[workspaceId] ??
-				EMPTY_ITEM_VIEW_STATES,
+				state.itemViewStatesByWorkspaceId[workspaceId] ?? EMPTY_ITEM_VIEW_STATES,
 			[workspaceId],
 		),
 	);

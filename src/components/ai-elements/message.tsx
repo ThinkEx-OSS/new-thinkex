@@ -4,11 +4,7 @@ import type { UIMessage } from "ai";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { Streamdown } from "streamdown";
 import { Button } from "#/components/ui/button.tsx";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip.tsx";
 import { cn } from "#/lib/utils.ts";
 
 import { MarkdownCodeBlock } from "./code-block";
@@ -30,11 +26,7 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
 
 export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 
-export const MessageContent = ({
-	children,
-	className,
-	...props
-}: MessageContentProps) => (
+export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
 	<div
 		className={cn(
 			"is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
@@ -50,11 +42,7 @@ export const MessageContent = ({
 
 export type MessageActionsProps = ComponentProps<"div">;
 
-export const MessageActions = ({
-	className,
-	children,
-	...props
-}: MessageActionsProps) => (
+export const MessageActions = ({ className, children, ...props }: MessageActionsProps) => (
 	<div className={cn("flex items-center gap-1", className)} {...props}>
 		{children}
 	</div>
@@ -100,16 +88,9 @@ const streamdownPlugins = { cjk, math };
 const streamdownComponents = { code: MarkdownCodeBlock };
 const streamdownLinkSafety = { enabled: false };
 
-export const MessageResponse = ({
-	className,
-	components,
-	...props
-}: MessageResponseProps) => (
+export const MessageResponse = ({ className, components, ...props }: MessageResponseProps) => (
 	<Streamdown
-		className={cn(
-			"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-			className,
-		)}
+		className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
 		components={{ ...streamdownComponents, ...components }}
 		linkSafety={streamdownLinkSafety}
 		plugins={streamdownPlugins}
@@ -119,18 +100,8 @@ export const MessageResponse = ({
 
 export type MessageToolbarProps = ComponentProps<"div">;
 
-export const MessageToolbar = ({
-	className,
-	children,
-	...props
-}: MessageToolbarProps) => (
-	<div
-		className={cn(
-			"mt-4 flex w-full items-center justify-between gap-4",
-			className,
-		)}
-		{...props}
-	>
+export const MessageToolbar = ({ className, children, ...props }: MessageToolbarProps) => (
+	<div className={cn("mt-4 flex w-full items-center justify-between gap-4", className)} {...props}>
 		{children}
 	</div>
 );

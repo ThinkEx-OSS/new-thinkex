@@ -105,10 +105,7 @@ export function getAIInspectorSnapshot(
 	return { isEnabled: true, threadId, events };
 }
 
-function ensureAIInspectorSchema(
-	host: AIInspectorSqlHost,
-	state: AIInspectorRecorderState,
-) {
+function ensureAIInspectorSchema(host: AIInspectorSqlHost, state: AIInspectorRecorderState) {
 	if (state.hasSchema) {
 		return;
 	}

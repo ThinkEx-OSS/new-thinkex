@@ -1,8 +1,4 @@
-import {
-	WorkflowEntrypoint,
-	type WorkflowEvent,
-	type WorkflowStep,
-} from "cloudflare:workers";
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
 import { createMarkdownExtractionProvider } from "#/features/workspaces/extraction/providers/index";
@@ -26,10 +22,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 		const artifactKey = getExtractionArtifactKey(event.instanceId);
 
 		await step.do("mark extraction processing", async () => {
-			const kernel = await getWorkspaceKernelFromEnv(
-				this.env,
-				params.workspaceId,
-			);
+			const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 			await kernel.upsertFileProjection({
 				itemId: params.itemId,
 				format: "markdown",
@@ -52,21 +45,13 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					timeout: "10 minutes",
 				},
 				async () => {
-					const kernel = await getWorkspaceKernelFromEnv(
-						this.env,
-						params.workspaceId,
-					);
+					const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 					const source = await kernel.readFileContent({
 						itemId: params.itemId,
 					});
 					const sourceHash = await sha256Base64Url(source.bytes);
-					const route = getWorkspaceUploadFamily(
-						params.assetKind,
-					).extractionRoute;
-					const provider = createMarkdownExtractionProvider(
-						route.provider,
-						this.env,
-					);
+					const route = getWorkspaceUploadFamily(params.assetKind).extractionRoute;
+					const provider = createMarkdownExtractionProvider(route.provider, this.env);
 					const extraction = await provider.extract({
 						workspaceId: params.workspaceId,
 						itemId: params.itemId,
@@ -78,13 +63,9 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						mode: route.mode,
 					});
 
-					await this.env.WORKSPACE_KERNEL_FILES.put(
-						artifactKey,
-						extraction.markdown,
-						{
-							httpMetadata: { contentType: "text/markdown" },
-						},
-					);
+					await this.env.WORKSPACE_KERNEL_FILES.put(artifactKey, extraction.markdown, {
+						httpMetadata: { contentType: "text/markdown" },
+					});
 
 					return {
 						artifactKey,
@@ -108,18 +89,11 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					timeout: "5 minutes",
 				},
 				async () => {
-					const kernel = await getWorkspaceKernelFromEnv(
-						this.env,
-						params.workspaceId,
-					);
-					const artifact = await this.env.WORKSPACE_KERNEL_FILES.get(
-						extraction.artifactKey,
-					);
+					const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
+					const artifact = await this.env.WORKSPACE_KERNEL_FILES.get(extraction.artifactKey);
 
 					if (!artifact) {
-						throw new Error(
-							"Staged markdown extraction artifact was not found.",
-						);
+						throw new Error("Staged markdown extraction artifact was not found.");
 					}
 
 					const markdown = await artifact.text();
@@ -159,10 +133,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 			return result;
 		} catch (error) {
 			await step.do("mark extraction failed", async () => {
-				const kernel = await getWorkspaceKernelFromEnv(
-					this.env,
-					params.workspaceId,
-				);
+				const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 				const errorMessage = getErrorMessage(error);
 				await kernel.upsertFileProjection({
 					itemId: params.itemId,

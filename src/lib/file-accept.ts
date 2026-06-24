@@ -10,8 +10,6 @@ export function fileMatchesAccept(file: File, accept: string | undefined) {
 			return pattern ? [pattern] : [];
 		})
 		.some((pattern) =>
-			pattern.endsWith("/*")
-				? file.type.startsWith(pattern.slice(0, -1))
-				: file.type === pattern,
+			pattern.endsWith("/*") ? file.type.startsWith(pattern.slice(0, -1)) : file.type === pattern,
 		);
 }

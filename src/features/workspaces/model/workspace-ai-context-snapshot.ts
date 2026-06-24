@@ -51,10 +51,7 @@ export function buildWorkspaceAiContextSnapshot(
 				context.tabs.find((tab) => tab.id === context.activeTabId),
 				buildContext,
 			),
-			presentation: getWorkspaceAiContextPresentationReference(
-				context.presentation,
-				buildContext,
-			),
+			presentation: getWorkspaceAiContextPresentationReference(context.presentation, buildContext),
 		},
 		selectedItems: context.selectedItemIds.flatMap((itemId, index) => {
 			const item = context.itemsById.get(itemId);
@@ -75,9 +72,7 @@ export function buildWorkspaceAiContextSnapshot(
 				},
 			];
 		}),
-		openTabs: context.tabs.map((tab) =>
-			getWorkspaceAiContextTabReference(tab, buildContext),
-		),
+		openTabs: context.tabs.map((tab) => getWorkspaceAiContextTabReference(tab, buildContext)),
 		selectedQuotes: context.selectedQuotes.map((quote, index) =>
 			getWorkspaceAiContextSelectedQuoteReference({
 				buildContext,
@@ -209,10 +204,7 @@ function getWorkspaceAiContextPresentationReference(
 	if (presentation.mode === "maximized") {
 		return {
 			mode: "maximized",
-			activePane: getWorkspaceAiContextPaneReference(
-				presentation.pane,
-				buildContext,
-			),
+			activePane: getWorkspaceAiContextPaneReference(presentation.pane, buildContext),
 			restoreMode: presentation.restorePresentation.mode,
 		};
 	}

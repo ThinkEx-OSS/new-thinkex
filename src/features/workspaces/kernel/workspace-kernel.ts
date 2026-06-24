@@ -83,10 +83,7 @@ export class WorkspaceKernel extends Agent<Env> {
 		initializeWorkspaceKernelStorage(this.kernelSql);
 	}
 
-	onConnect(
-		connection: Connection<WorkspaceConnectionState>,
-		context: ConnectionContext,
-	) {
+	onConnect(connection: Connection<WorkspaceConnectionState>, context: ConnectionContext) {
 		const user = getWorkspaceKernelUserFromHeaders(context.request);
 
 		if (!user) {
@@ -198,8 +195,6 @@ export class WorkspaceKernel extends Agent<Env> {
 	}
 
 	private getPresenceUsers() {
-		return getWorkspaceKernelPresenceUsers(
-			this.getConnections<WorkspaceConnectionState>(),
-		);
+		return getWorkspaceKernelPresenceUsers(this.getConnections<WorkspaceConnectionState>());
 	}
 }

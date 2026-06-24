@@ -21,10 +21,7 @@ export function WorkspaceTabContextMenuContent({
 }: WorkspaceTabActionsMenuProps & {
 	renderer?: WorkspaceMenuRenderer;
 }) {
-	return renderWorkspaceMenuActions(
-		getWorkspaceTabMenuActions(props),
-		renderer,
-	);
+	return renderWorkspaceMenuActions(getWorkspaceTabMenuActions(props), renderer);
 }
 
 function getWorkspaceTabMenuActions({

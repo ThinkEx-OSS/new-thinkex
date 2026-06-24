@@ -10,10 +10,7 @@ export function getClientOrigin() {
 	return window.location.origin;
 }
 
-export function buildClientAbsoluteUrl(
-	path: string,
-	origin = getClientOrigin(),
-) {
+export function buildClientAbsoluteUrl(path: string, origin = getClientOrigin()) {
 	if (!origin) {
 		return path;
 	}

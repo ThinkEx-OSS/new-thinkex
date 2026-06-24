@@ -28,19 +28,16 @@ export async function requestWorkspaceFileExtraction(input: {
 	});
 
 	try {
-		const [instance] = await env.WORKSPACE_FILE_EXTRACTION_WORKFLOW.createBatch(
-			[
-				{
-					id: workflowId,
-					params,
-				},
-			],
-		);
+		const [instance] = await env.WORKSPACE_FILE_EXTRACTION_WORKFLOW.createBatch([
+			{
+				id: workflowId,
+				params,
+			},
+		]);
 
 		return { workflowId, queued: Boolean(instance) };
 	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : "Failed to queue extraction.";
+		const errorMessage = error instanceof Error ? error.message : "Failed to queue extraction.";
 		await kernel.upsertFileProjection({
 			itemId: input.itemId,
 			format: "markdown",

@@ -1,13 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import {
-	workspacePageQueryKey,
-	workspacesQueryKey,
-} from "#/features/workspaces/cache";
-import {
-	getWorkspacePageFn,
-	listWorkspacesFn,
-} from "#/features/workspaces/server/functions";
+import { workspacePageQueryKey, workspacesQueryKey } from "#/features/workspaces/cache";
+import { getWorkspacePageFn, listWorkspacesFn } from "#/features/workspaces/server/functions";
 
 export function workspacesQueryOptions() {
 	return queryOptions({

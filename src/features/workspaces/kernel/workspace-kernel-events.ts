@@ -40,12 +40,7 @@ export class WorkspaceKernelEventBus {
 		return rows.map((row) => mapKernelEventRow(row, this.workspaceId()));
 	}
 
-	commit(
-		input: Omit<
-			WorkspaceRealtimeEvent,
-			"id" | "revision" | "workspaceId" | "createdAt"
-		>,
-	) {
+	commit(input: Omit<WorkspaceRealtimeEvent, "id" | "revision" | "workspaceId" | "createdAt">) {
 		const createdAt = Date.now();
 		const event = {
 			id: crypto.randomUUID(),

@@ -1,9 +1,4 @@
-import {
-	type QueryClient,
-	queryOptions,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
@@ -14,9 +9,7 @@ import {
 import { isInviteExpired } from "#/features/workspaces/invites/workspace-invite-rules";
 import { listWorkspaceMembersFn } from "#/features/workspaces/members/workspace-member-functions";
 
-export type WorkspaceInviteLinkResult = Awaited<
-	ReturnType<typeof getWorkspaceInviteLinkFn>
->;
+export type WorkspaceInviteLinkResult = Awaited<ReturnType<typeof getWorkspaceInviteLinkFn>>;
 
 function parseInviteExpiresAt(expiresAt: Date | string | null | undefined) {
 	if (expiresAt == null) {
@@ -31,9 +24,7 @@ function parseInviteExpiresAt(expiresAt: Date | string | null | undefined) {
 	return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export function isWorkspaceInviteLinkCacheValid(
-	data: WorkspaceInviteLinkResult | undefined,
-) {
+export function isWorkspaceInviteLinkCacheValid(data: WorkspaceInviteLinkResult | undefined) {
 	if (!data?.path) {
 		return false;
 	}
@@ -66,10 +57,7 @@ export function getWorkspaceEmailInvitesQueryKey(workspaceId: string) {
 	return ["workspace-email-invites", workspaceId] as const;
 }
 
-export function getWorkspaceInviteLinkQueryKey(
-	workspaceId: string,
-	role: WorkspaceMembershipRole,
-) {
+export function getWorkspaceInviteLinkQueryKey(workspaceId: string, role: WorkspaceMembershipRole) {
 	return ["workspace-invite-link", workspaceId, role] as const;
 }
 
@@ -114,9 +102,7 @@ export async function resolveWorkspaceInviteLink(
 	role: WorkspaceMembershipRole,
 ) {
 	const options = getWorkspaceInviteLinkQueryOptions(workspaceId, role);
-	const cached = queryClient.getQueryData<WorkspaceInviteLinkResult>(
-		options.queryKey,
-	);
+	const cached = queryClient.getQueryData<WorkspaceInviteLinkResult>(options.queryKey);
 
 	if (isWorkspaceInviteLinkCacheValid(cached)) {
 		return cached as WorkspaceInviteLinkResult;
@@ -132,9 +118,7 @@ export function prefetchWorkspaceInviteLinks(
 ) {
 	return Promise.all(
 		roles.map((role) =>
-			queryClient.prefetchQuery(
-				getWorkspaceInviteLinkQueryOptions(workspaceId, role),
-			),
+			queryClient.prefetchQuery(getWorkspaceInviteLinkQueryOptions(workspaceId, role)),
 		),
 	);
 }

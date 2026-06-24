@@ -15,10 +15,7 @@ import {
 	getOrCreateWorkspaceInviteLink,
 	getWorkspaceInvitePreview,
 } from "#/features/workspaces/invites/workspace-invites.server";
-import {
-	withDb,
-	withWorkspaceDb,
-} from "#/features/workspaces/server/workspace-db";
+import { withDb, withWorkspaceDb } from "#/features/workspaces/server/workspace-db";
 
 const workspaceInviteLinkInputSchema = z.object({
 	workspaceId: z.string().min(1),
@@ -42,9 +39,7 @@ const cancelWorkspaceEmailInviteInputSchema = z.object({
 
 export const getWorkspaceInvitePreviewFn = createServerFn({ method: "GET" })
 	.validator(workspaceInviteTokenSchema)
-	.handler(async ({ data }) =>
-		withDb((db) => getWorkspaceInvitePreview(db, data.token)),
-	);
+	.handler(async ({ data }) => withDb((db) => getWorkspaceInvitePreview(db, data.token)));
 
 export const acceptWorkspaceInviteFn = createServerFn({ method: "POST" })
 	.validator(workspaceInviteTokenSchema)

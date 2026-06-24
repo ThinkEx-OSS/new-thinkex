@@ -33,20 +33,13 @@ import {
 	type WorkspaceMenuAction,
 } from "#/features/workspaces/components/workspace-menu-actions";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
-import type {
-	WorkspaceItemType,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceDisplay } from "#/features/workspaces/model/display";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { getWorkspaceBreadcrumbItems } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceBrowseParentId } from "#/features/workspaces/model/view";
-import {
-	formatAppHotkey,
-	getAppHotkey,
-	useAppHotkey,
-} from "#/lib/hotkeys-core";
+import { formatAppHotkey, getAppHotkey, useAppHotkey } from "#/lib/hotkeys-core";
 import { cn } from "#/lib/utils";
 
 const breadcrumbContentClassName = "flex min-w-0 items-center gap-1.5 truncate";
@@ -59,10 +52,7 @@ interface WorkspaceContextBarProps {
 	activeItem?: WorkspaceItem;
 	itemsById: Map<string, WorkspaceItem>;
 	toolbarSlotId?: string;
-	onCreateItem: (input: {
-		type: WorkspaceItemType;
-		parentId: string | null;
-	}) => void;
+	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
 	onCloseItemView?: () => void;
 	onNavigateToRoot: () => void;
 	onNavigateToItem: (item: WorkspaceItem) => void;
@@ -100,9 +90,7 @@ export default function WorkspaceContextBar({
 		setRenamingItem,
 	} = useWorkspaceItemActionDialogState();
 	const workspaceItems = Array.from(itemsById.values());
-	const searchHotkey = formatAppHotkey(
-		getAppHotkey("workspace.search.open").hotkey,
-	);
+	const searchHotkey = formatAppHotkey(getAppHotkey("workspace.search.open").hotkey);
 	const openWorkspaceSearch = () => setSearchOpen(true);
 
 	useAppHotkey("workspace.search.open", () => {
@@ -161,9 +149,7 @@ export default function WorkspaceContextBar({
 				</Breadcrumb>
 
 				<WorkspaceToolbarGroup className="min-w-0 shrink-0">
-					<WorkspaceItemToolbarSlot
-						activeToolbarSlotId={toolbarSlotId ?? activeItem?.id}
-					/>
+					<WorkspaceItemToolbarSlot activeToolbarSlotId={toolbarSlotId ?? activeItem?.id} />
 					<WorkspaceContextActions
 						activeItem={activeItem}
 						createParentId={createParentId}
@@ -362,12 +348,7 @@ function CrumbButton({
 	if (isCurrent) {
 		return (
 			<BreadcrumbPage className={breadcrumbCurrentClassName}>
-				<CrumbContent
-					icon={Icon}
-					label={label}
-					iconClassName={iconColor}
-					isCurrent={true}
-				/>
+				<CrumbContent icon={Icon} label={label} iconClassName={iconColor} isCurrent={true} />
 			</BreadcrumbPage>
 		);
 	}
@@ -403,28 +384,16 @@ function CrumbContent({
 }) {
 	return (
 		<>
-			<Icon
-				className={cn("size-3.5 shrink-0", iconClassName)}
-				aria-hidden={true}
-			/>
+			<Icon className={cn("size-3.5 shrink-0", iconClassName)} aria-hidden={true} />
 			<CrumbLabel label={label} isCurrent={isCurrent} />
 			{showDisclosure ? (
-				<ChevronDown
-					className="size-3 shrink-0 text-muted-foreground"
-					aria-hidden={true}
-				/>
+				<ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden={true} />
 			) : null}
 		</>
 	);
 }
 
-function CrumbLabel({
-	label,
-	isCurrent,
-}: {
-	label: string;
-	isCurrent: boolean;
-}) {
+function CrumbLabel({ label, isCurrent }: { label: string; isCurrent: boolean }) {
 	return (
 		<span
 			className={cn(

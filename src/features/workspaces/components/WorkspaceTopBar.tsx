@@ -5,11 +5,7 @@ import { type ReactNode, useState } from "react";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import UserProfileDropdown from "#/components/UserProfileDropdown";
 import { Kbd } from "#/components/ui/kbd";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { WorkspacePresence } from "#/features/workspaces/components/WorkspacePresence";
 import { WorkspaceShareDialog } from "#/features/workspaces/components/WorkspaceShareDialog";
 import WorkspaceTabBar from "#/features/workspaces/components/WorkspaceTabBar";
@@ -64,13 +60,9 @@ export default function WorkspaceTopBar({
 	onDuplicateTab,
 }: WorkspaceTopBarProps) {
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspace.id);
-	const setChatSurfaceMode = useWorkspaceUiStore(
-		(state) => state.setChatSurfaceMode,
-	);
+	const setChatSurfaceMode = useWorkspaceUiStore((state) => state.setChatSurfaceMode);
 	const [shareOpen, setShareOpen] = useState(false);
-	const aiChatHotkey = formatAppHotkey(
-		getAppHotkey("workspace.aiChat.toggle").hotkey,
-	);
+	const aiChatHotkey = formatAppHotkey(getAppHotkey("workspace.aiChat.toggle").hotkey);
 
 	return (
 		<header className="sticky top-0 z-40 bg-muted">
@@ -81,9 +73,7 @@ export default function WorkspaceTopBar({
 						className="flex shrink-0 items-center gap-3 rounded-md text-foreground no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<ThinkExLogo size={28} />
-						<span className="text-xl font-semibold tracking-tight sm:text-2xl">
-							ThinkEx
-						</span>
+						<span className="text-xl font-semibold tracking-tight sm:text-2xl">ThinkEx</span>
 					</Link>
 					<WorkspaceTabBar
 						workspace={workspace}
@@ -100,10 +90,7 @@ export default function WorkspaceTopBar({
 					/>
 				</div>
 
-				<nav
-					className="flex shrink-0 items-center gap-2"
-					aria-label="Workspace global actions"
-				>
+				<nav className="flex shrink-0 items-center gap-2" aria-label="Workspace global actions">
 					<WorkspacePresence status={presence.status} users={presence.users} />
 					<WorkspaceToolbarIconButton
 						aria-label="Share workspace"

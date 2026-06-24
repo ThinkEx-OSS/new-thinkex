@@ -36,8 +36,7 @@ export async function getWorkspacePromptScope({
 		}
 
 		return {
-			canMutate: getWorkspaceMemberCapabilities(membership.role)
-				.canMutateContent,
+			canMutate: getWorkspaceMemberCapabilities(membership.role).canMutateContent,
 			workspaceName: membership.name,
 		};
 	} finally {

@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/a11y/noLabelWithoutControl: callers provide htmlFor or wrap controls at usage sites. */
 import type * as React from "react";
 
 import { cn } from "#/lib/utils.ts";

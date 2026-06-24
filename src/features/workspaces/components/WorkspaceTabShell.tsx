@@ -33,10 +33,8 @@ export function WorkspaceTabShell({
 		<div
 			className={cn(
 				"group/tab flex min-w-0 flex-1 touch-none items-center border text-sm",
-				variant === "active-attached" &&
-					"workspace-tab-active h-8 text-foreground",
-				variant === "active" &&
-					"h-8 rounded-md border-transparent bg-background text-foreground",
+				variant === "active-attached" && "workspace-tab-active h-8 text-foreground",
+				variant === "active" && "h-8 rounded-md border-transparent bg-background text-foreground",
 				variant === "idle" &&
 					"h-8 rounded-md border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 				isDragSource && "cursor-grabbing",
@@ -52,10 +50,7 @@ export function WorkspaceTabShell({
 				)}
 				onClick={onActivate}
 			>
-				<TabIcon
-					className={cn("size-3.5 shrink-0", iconClassName)}
-					aria-hidden="true"
-				/>
+				<TabIcon className={cn("size-3.5 shrink-0", iconClassName)} aria-hidden="true" />
 				<span className="truncate">{title}</span>
 			</button>
 			{showClose && closeLabel && onClose ? (

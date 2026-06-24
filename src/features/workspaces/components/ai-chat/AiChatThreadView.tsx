@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 
-import {
-	Conversation,
-	ConversationContent,
-} from "#/components/ai-elements/conversation";
+import { Conversation, ConversationContent } from "#/components/ai-elements/conversation";
 import type { PromptInputMessage } from "#/components/ai-elements/prompt-input";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
@@ -93,10 +90,7 @@ export default function AiChatThreadView({
 	return (
 		<div className="relative flex min-h-0 flex-1 flex-col">
 			<Conversation className="min-h-0">
-				<ConversationContent
-					scrollClassName="min-h-0 overflow-hidden"
-					className="p-0"
-				>
+				<ConversationContent scrollClassName="min-h-0 overflow-hidden" className="p-0">
 					<AiChatMessageList
 						assistantError={assistantError}
 						messages={messages}
@@ -125,9 +119,7 @@ export default function AiChatThreadView({
 	);
 }
 
-function getChatMessageFromPrompt(
-	message: PromptInputMessage,
-): AiChatSendMessage | null {
+function getChatMessageFromPrompt(message: PromptInputMessage): AiChatSendMessage | null {
 	const trimmedText = message.text.trim();
 	const parts = [
 		...(trimmedText ? [{ type: "text" as const, text: trimmedText }] : []),

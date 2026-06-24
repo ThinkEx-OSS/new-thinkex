@@ -23,9 +23,7 @@ const THINKING_LOTTIE_PREFETCHES = [
 	{ href: THINKING_LOTTIE_BY_THEME.light },
 ];
 
-let dotLottieModulePromise:
-	| Promise<typeof import("@lottiefiles/dotlottie-react")>
-	| undefined;
+let dotLottieModulePromise: Promise<typeof import("@lottiefiles/dotlottie-react")> | undefined;
 
 const LazyDotLottieReact = lazy(async () => ({
 	default: (await loadDotLottieReact()).DotLottieReact,
@@ -68,13 +66,11 @@ function prewarmAiChatThinkingLoader() {
 }
 
 function loadDotLottieReact() {
-	dotLottieModulePromise ??= import("@lottiefiles/dotlottie-react").then(
-		(module) => {
-			module.setWasmUrl(buildClientAbsoluteUrl(DOTLOTTIE_WASM_SRC));
+	dotLottieModulePromise ??= import("@lottiefiles/dotlottie-react").then((module) => {
+		module.setWasmUrl(buildClientAbsoluteUrl(DOTLOTTIE_WASM_SRC));
 
-			return module;
-		},
-	);
+		return module;
+	});
 
 	return dotLottieModulePromise;
 }
@@ -107,11 +103,7 @@ function prefetchStaticAsset({
 	document.head.appendChild(link);
 }
 
-export function AiChatAssistantPending({
-	pending,
-}: {
-	pending: AssistantPendingKind;
-}) {
+export function AiChatAssistantPending({ pending }: { pending: AssistantPendingKind }) {
 	return (
 		<Message from="assistant" className="max-w-full">
 			<MessageContent>
@@ -121,11 +113,7 @@ export function AiChatAssistantPending({
 	);
 }
 
-function AiChatAssistantPendingBody({
-	pending,
-}: {
-	pending: AssistantPendingKind;
-}) {
+function AiChatAssistantPendingBody({ pending }: { pending: AssistantPendingKind }) {
 	if (pending === "recovering") {
 		return (
 			<div className="flex items-center gap-2 text-muted-foreground">

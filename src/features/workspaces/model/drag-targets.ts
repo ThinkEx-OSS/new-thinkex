@@ -152,18 +152,11 @@ export function getWorkspaceItemSortableGroup(input: {
 	parentId: string | null;
 	row: "folder" | "item";
 }) {
-	return [
-		"workspace-items",
-		input.workspaceId,
-		input.parentId ?? "root",
-		input.row,
-	].join(":");
+	return ["workspace-items", input.workspaceId, input.parentId ?? "root", input.row].join(":");
 }
 
 export function getWorkspaceItemDragTypeForRow(row: WorkspaceDragRow) {
-	return row === "folder"
-		? WORKSPACE_FOLDER_DRAG_TYPE
-		: WORKSPACE_ITEM_DRAG_TYPE;
+	return row === "folder" ? WORKSPACE_FOLDER_DRAG_TYPE : WORKSPACE_ITEM_DRAG_TYPE;
 }
 
 export function getWorkspaceItemSortableAccept(row: WorkspaceDragRow) {

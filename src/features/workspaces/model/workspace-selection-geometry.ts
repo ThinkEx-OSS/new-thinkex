@@ -3,10 +3,7 @@ export type ClientPoint = {
 	y: number;
 };
 
-export type SelectionRect = Pick<
-	DOMRectReadOnly,
-	"height" | "left" | "top" | "width"
->;
+export type SelectionRect = Pick<DOMRectReadOnly, "height" | "left" | "top" | "width">;
 
 export function getPointerClientPoint(
 	event: Pick<PointerEvent, "clientX" | "clientY">,
@@ -17,18 +14,12 @@ export function getPointerClientPoint(
 	};
 }
 
-export function getRangeClientRect(
-	range: Range,
-	point?: ClientPoint | null,
-): DOMRect | null {
+export function getRangeClientRect(range: Range, point?: ClientPoint | null): DOMRect | null {
 	const rects = Array.from(range.getClientRects()).filter(hasArea);
 
 	if (point && rects.length > 0) {
 		return rects.reduce((closest, rect) =>
-			getPointDistanceToRect(point, rect) <
-			getPointDistanceToRect(point, closest)
-				? rect
-				: closest,
+			getPointDistanceToRect(point, rect) < getPointDistanceToRect(point, closest) ? rect : closest,
 		);
 	}
 
@@ -68,17 +59,12 @@ export function getBottomPreferredSelectionMenuPlacement({
 	const aboveTop = rect.top - menu.offset - menu.height;
 	const belowTop = rect.top + rect.height + menu.offset;
 	const canPlaceAbove = aboveTop >= menu.viewportMargin;
-	const canPlaceBelow =
-		belowTop + menu.height <= viewport.height - menu.viewportMargin;
+	const canPlaceBelow = belowTop + menu.height <= viewport.height - menu.viewportMargin;
 	const top = canPlaceBelow || !canPlaceAbove ? belowTop : aboveTop;
 
 	return {
 		left: clamp(referenceX, minCenterX, maxCenterX),
-		top: clamp(
-			top,
-			menu.viewportMargin,
-			viewport.height - menu.viewportMargin - menu.height,
-		),
+		top: clamp(top, menu.viewportMargin, viewport.height - menu.viewportMargin - menu.height),
 	};
 }
 
@@ -96,17 +82,9 @@ function hasArea(rect: DOMRectReadOnly) {
 
 function getPointDistanceToRect(point: ClientPoint, rect: DOMRectReadOnly) {
 	const dx =
-		point.x < rect.left
-			? rect.left - point.x
-			: point.x > rect.right
-				? point.x - rect.right
-				: 0;
+		point.x < rect.left ? rect.left - point.x : point.x > rect.right ? point.x - rect.right : 0;
 	const dy =
-		point.y < rect.top
-			? rect.top - point.y
-			: point.y > rect.bottom
-				? point.y - rect.bottom
-				: 0;
+		point.y < rect.top ? rect.top - point.y : point.y > rect.bottom ? point.y - rect.bottom : 0;
 
 	return dx * dx + dy * dy;
 }

@@ -13,8 +13,9 @@ export type WorkspaceTabCloseResizeLockState =
 			tabCount: number;
 	  };
 
-export const IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK: WorkspaceTabCloseResizeLockState =
-	{ phase: "idle" };
+export const IDLE_WORKSPACE_TAB_CLOSE_RESIZE_LOCK: WorkspaceTabCloseResizeLockState = {
+	phase: "idle",
+};
 
 export function createWorkspaceTabCloseResizeLock(input: {
 	tabCount: number;
@@ -71,9 +72,7 @@ export function getWorkspaceTabCloseResizeLockView(
 
 	return {
 		lockedTabWidth:
-			appliesToCurrentTabSet && lockState.phase === "locked"
-				? lockState.tabWidth
-				: null,
+			appliesToCurrentTabSet && lockState.phase === "locked" ? lockState.tabWidth : null,
 		shouldAnimateResize: appliesToCurrentTabSet,
 	};
 }

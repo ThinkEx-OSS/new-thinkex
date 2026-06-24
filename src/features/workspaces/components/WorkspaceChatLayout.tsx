@@ -1,19 +1,7 @@
-import {
-	type ReactElement,
-	type ReactNode,
-	useLayoutEffect,
-	useRef,
-} from "react";
-import type {
-	OnPanelResize,
-	PanelImperativeHandle,
-} from "react-resizable-panels";
+import { type ReactElement, type ReactNode, useLayoutEffect, useRef } from "react";
+import type { OnPanelResize, PanelImperativeHandle } from "react-resizable-panels";
 
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "#/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "#/components/ui/resizable";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
 import type { WorkspaceAiChatSurfaceMode } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
@@ -67,11 +55,7 @@ export default function WorkspaceChatLayout({
 				className="h-full min-h-0"
 				resizeTargetMinimumSize={{ coarse: 24, fine: 15 }}
 			>
-				<ResizablePanel
-					id="workspace"
-					minSize="45%"
-					className="min-h-0 overflow-hidden"
-				>
+				<ResizablePanel id="workspace" minSize="45%" className="min-h-0 overflow-hidden">
 					<WorkspaceFrame chrome={chrome} content={content} />
 				</ResizablePanel>
 
@@ -103,8 +87,7 @@ export default function WorkspaceChatLayout({
 								className={cn(
 									"h-full min-h-0",
 									isChatHidden && "pointer-events-none invisible",
-									isChatFullscreen &&
-										"fixed inset-0 z-50 h-screen w-screen bg-background",
+									isChatFullscreen && "fixed inset-0 z-50 h-screen w-screen bg-background",
 								)}
 							>
 								{chatPanel}

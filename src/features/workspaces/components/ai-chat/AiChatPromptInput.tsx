@@ -23,10 +23,7 @@ import {
 	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
 } from "#/features/workspaces/components/ai-chat/constants";
-import type {
-	AiChatModelId,
-	AiChatStatus,
-} from "#/features/workspaces/components/ai-chat/types";
+import type { AiChatModelId, AiChatStatus } from "#/features/workspaces/components/ai-chat/types";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
 import {
 	WorkspaceToolbarGroup,
@@ -49,9 +46,7 @@ const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
 const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
-			const module = await import(
-				"#/features/workspaces/components/ai-chat/AiChatInspectorDialog"
-			);
+			const module = await import("#/features/workspaces/components/ai-chat/AiChatInspectorDialog");
 
 			return { default: module.AiChatInspectorDialog };
 		})
@@ -98,19 +93,12 @@ export default function AiChatPromptInput({
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const draftFiles = useWorkspaceAiComposerDraftFiles(context.workspaceId);
 	const attachmentsReady =
-		draftFiles.length === 0 ||
-		draftFiles.every((file) => file.status === "ready");
+		draftFiles.length === 0 || draftFiles.every((file) => file.status === "ready");
 	const canType = status !== "submitted" && attachmentsReady;
 	const canSend = status === "ready" && attachmentsReady;
-	const addDraftFiles = useWorkspaceAiComposerDraftStore(
-		(state) => state.addFiles,
-	);
-	const removeDraftFile = useWorkspaceAiComposerDraftStore(
-		(state) => state.removeFile,
-	);
-	const clearDraftFiles = useWorkspaceAiComposerDraftStore(
-		(state) => state.clearFiles,
-	);
+	const addDraftFiles = useWorkspaceAiComposerDraftStore((state) => state.addFiles);
+	const removeDraftFile = useWorkspaceAiComposerDraftStore((state) => state.removeFile);
+	const clearDraftFiles = useWorkspaceAiComposerDraftStore((state) => state.clearFiles);
 	useTypeToFocusPrompt({
 		enabled: canType,
 		setInput,
@@ -179,10 +167,7 @@ export default function AiChatPromptInput({
 					<PromptInputTools>
 						<AiChatAttachmentButton />
 
-						<AiChatModelPicker
-							modelId={modelId}
-							onModelChange={handleModelChange}
-						/>
+						<AiChatModelPicker modelId={modelId} onModelChange={handleModelChange} />
 
 						{import.meta.env.DEV && getInspectorSnapshot ? (
 							<WorkspaceToolbarIconButton

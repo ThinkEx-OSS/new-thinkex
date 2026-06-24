@@ -20,10 +20,7 @@ import {
 	type SupportedCodeLanguage,
 } from "#/features/workspaces/documents/code-block-shiki/highlighter";
 
-export function CodeBlockNodeView({
-	node,
-	updateAttributes,
-}: ReactNodeViewProps) {
+export function CodeBlockNodeView({ node, updateAttributes }: ReactNodeViewProps) {
 	const language = normalizeCodeLanguage(node.attrs.language as string | null);
 	const code = node.textContent;
 	const codeLanguage = language ?? "text";
@@ -34,17 +31,13 @@ export function CodeBlockNodeView({
 			data-language-label={getCodeLanguageLabel(language)}
 			data-workspace-code-block=""
 		>
-			<CodeBlockHeader
-				className="workspace-document-code-block-header"
-				contentEditable={false}
-			>
+			<CodeBlockHeader className="workspace-document-code-block-header" contentEditable={false}>
 				<CodeBlockTitle>
 					<CodeBlockLanguageSelector
 						value={language ?? "plain"}
 						onValueChange={(value) => {
 							updateAttributes({
-								language:
-									value === "plain" ? null : (value as SupportedCodeLanguage),
+								language: value === "plain" ? null : (value as SupportedCodeLanguage),
 							});
 						}}
 					>
@@ -60,10 +53,7 @@ export function CodeBlockNodeView({
 								Plain text
 							</CodeBlockLanguageSelectorItem>
 							{codeLanguageOptions.map((option) => (
-								<CodeBlockLanguageSelectorItem
-									key={option.value}
-									value={option.value}
-								>
+								<CodeBlockLanguageSelectorItem key={option.value} value={option.value}>
 									{option.label}
 								</CodeBlockLanguageSelectorItem>
 							))}
@@ -76,10 +66,7 @@ export function CodeBlockNodeView({
 				</CodeBlockActions>
 			</CodeBlockHeader>
 			<pre className="workspace-document-code-block-body">
-				<NodeViewContent
-					className="workspace-document-code-block-content"
-					spellCheck={false}
-				/>
+				<NodeViewContent className="workspace-document-code-block-content" spellCheck={false} />
 			</pre>
 		</NodeViewWrapper>
 	);

@@ -114,10 +114,7 @@ export function resolveWorkspaceKernelAiPath(input: {
 			status: "item",
 		};
 	} catch (error) {
-		if (
-			error instanceof WorkspaceKernelPathError &&
-			error.code === "path_not_absolute"
-		) {
+		if (error instanceof WorkspaceKernelPathError && error.code === "path_not_absolute") {
 			return {
 				code: error.code,
 				path: input.path,
@@ -129,9 +126,7 @@ export function resolveWorkspaceKernelAiPath(input: {
 	}
 }
 
-export function resolveWorkspaceKernelAiExistingItemPath<
-	TRootCode extends string,
->(input: {
+export function resolveWorkspaceKernelAiExistingItemPath<TRootCode extends string>(input: {
 	path: string;
 	rootFailureCode: TRootCode;
 	tree: WorkspaceKernelTree;

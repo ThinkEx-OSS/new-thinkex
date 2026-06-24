@@ -33,13 +33,7 @@ export function InspectorBlock({
 	);
 }
 
-export function JsonDisclosure({
-	title,
-	value,
-}: {
-	title: string;
-	value: unknown;
-}) {
+export function JsonDisclosure({ title, value }: { title: string; value: unknown }) {
 	return (
 		<details className="min-w-0 max-w-full overflow-hidden rounded-md border bg-muted/20">
 			<summary className="min-w-0 cursor-pointer truncate px-3 py-2 font-medium text-xs marker:content-none">
@@ -50,13 +44,7 @@ export function JsonDisclosure({
 	);
 }
 
-export function TextDisclosure({
-	text,
-	title,
-}: {
-	text: string;
-	title: string;
-}) {
+export function TextDisclosure({ text, title }: { text: string; title: string }) {
 	return (
 		<details className="min-w-0 max-w-full overflow-hidden rounded-md border bg-muted/20">
 			<summary className="min-w-0 cursor-pointer truncate px-3 py-2 font-medium text-xs marker:content-none">
@@ -69,13 +57,7 @@ export function TextDisclosure({
 	);
 }
 
-export function TextBlock({
-	className,
-	text,
-}: {
-	className?: string;
-	text: string;
-}) {
+export function TextBlock({ className, text }: { className?: string; text: string }) {
 	return (
 		<div
 			className={cn(
@@ -88,13 +70,7 @@ export function TextBlock({
 	);
 }
 
-export function JsonBlock({
-	className,
-	value,
-}: {
-	className?: string;
-	value: unknown;
-}) {
+export function JsonBlock({ className, value }: { className?: string; value: unknown }) {
 	return (
 		<pre
 			className={cn(
@@ -120,11 +96,7 @@ export function Metric({ label, value }: { label: string; value: ReactNode }) {
 	);
 }
 
-export function StatusBadge({
-	status,
-}: {
-	status: AIInspectorRunView["status"];
-}) {
+export function StatusBadge({ status }: { status: AIInspectorRunView["status"] }) {
 	if (status === "failed") {
 		return (
 			<Badge variant="destructive" className="rounded-full font-normal">

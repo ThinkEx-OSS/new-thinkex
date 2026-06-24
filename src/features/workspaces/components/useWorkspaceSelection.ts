@@ -11,23 +11,12 @@ interface UseWorkspaceSelectionInput {
 	workspaceId: string;
 }
 
-export function useWorkspaceSelection({
-	items,
-	workspaceId,
-}: UseWorkspaceSelectionInput) {
+export function useWorkspaceSelection({ items, workspaceId }: UseWorkspaceSelectionInput) {
 	const storedSelectionItemIds = useWorkspaceSelectionItemIds(workspaceId);
-	const clearStoredSelection = useWorkspaceSelectionStore(
-		(state) => state.clearSelection,
-	);
-	const pruneStoredSelection = useWorkspaceSelectionStore(
-		(state) => state.pruneSelection,
-	);
-	const setStoredItemSelected = useWorkspaceSelectionStore(
-		(state) => state.setItemSelected,
-	);
-	const setStoredSelectedItemIds = useWorkspaceSelectionStore(
-		(state) => state.setSelectedItemIds,
-	);
+	const clearStoredSelection = useWorkspaceSelectionStore((state) => state.clearSelection);
+	const pruneStoredSelection = useWorkspaceSelectionStore((state) => state.pruneSelection);
+	const setStoredItemSelected = useWorkspaceSelectionStore((state) => state.setItemSelected);
+	const setStoredSelectedItemIds = useWorkspaceSelectionStore((state) => state.setSelectedItemIds);
 	const selectedItemIds = new Set(storedSelectionItemIds);
 	const selectedItems = items.filter((item) => selectedItemIds.has(item.id));
 	const setSelectedItemIds = (itemIds: Iterable<string>) => {

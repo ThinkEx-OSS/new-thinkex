@@ -1,7 +1,4 @@
-import type {
-	WorkspaceItemSummary,
-	WorkspaceItemType,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemSummary, WorkspaceItemType } from "#/features/workspaces/contracts";
 import {
 	buildWorkspaceKernelTree,
 	joinWorkspacePathSegment,
@@ -94,10 +91,7 @@ function collectWorkspaceKernelListItems({
 	const visitedIds = new Set<string>();
 	let truncated = false;
 
-	const visit = (
-		currentParentId: string | null,
-		relativeParentPath: string,
-	): boolean => {
+	const visit = (currentParentId: string | null, relativeParentPath: string): boolean => {
 		for (const child of childrenByParentId.get(currentParentId) ?? []) {
 			if (visitedIds.has(child.id)) {
 				continue;
@@ -105,10 +99,7 @@ function collectWorkspaceKernelListItems({
 
 			visitedIds.add(child.id);
 
-			const relativePath = joinWorkspacePathSegment(
-				relativeParentPath,
-				child.name,
-			);
+			const relativePath = joinWorkspacePathSegment(relativeParentPath, child.name);
 
 			if (items.length >= limit) {
 				truncated = true;

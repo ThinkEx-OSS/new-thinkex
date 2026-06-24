@@ -53,8 +53,7 @@ export function AiChatInspectorDialog({
 		selectedRunIdDraft && runs.some((run) => run.runId === selectedRunIdDraft)
 			? selectedRunIdDraft
 			: runs[0]?.runId;
-	const selectedRun =
-		runs.find((run) => run.runId === selectedRunId) ?? runs[0];
+	const selectedRun = runs.find((run) => run.runId === selectedRunId) ?? runs[0];
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,18 +105,13 @@ export function AiChatInspectorDialog({
 									<Button
 										key={run.runId}
 										type="button"
-										variant={
-											run.runId === selectedRun?.runId ? "secondary" : "outline"
-										}
+										variant={run.runId === selectedRun?.runId ? "secondary" : "outline"}
 										size="sm"
 										className="gap-2"
 										onClick={() => setSelectedRunIdDraft(run.runId)}
 									>
 										Run {runs.length - index}
-										<Badge
-											variant="outline"
-											className="rounded-full font-normal"
-										>
+										<Badge variant="outline" className="rounded-full font-normal">
 											{run.eventCount}
 										</Badge>
 									</Button>

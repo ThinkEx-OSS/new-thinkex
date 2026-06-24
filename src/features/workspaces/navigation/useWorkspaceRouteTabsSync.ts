@@ -28,9 +28,7 @@ export function useWorkspaceRouteTabsSync({
 	activeViewFromUrl,
 	navigateToTab,
 }: UseWorkspaceRouteTabsSyncInput) {
-	const ensureWorkspaceSession = useWorkspaceTabsStore(
-		(state) => state.ensureWorkspaceSession,
-	);
+	const ensureWorkspaceSession = useWorkspaceTabsStore((state) => state.ensureWorkspaceSession);
 	const replaceTabView = useWorkspaceTabsStore((state) => state.replaceTabView);
 
 	useEffect(() => {
@@ -40,11 +38,9 @@ export function useWorkspaceRouteTabsSync({
 			requestedTabId: activeTabIdFromUrl,
 			validItemIds,
 		});
-		let nextActiveTab =
-			getActiveWorkspaceTab(nextSession) ?? nextSession.tabs[0];
+		let nextActiveTab = getActiveWorkspaceTab(nextSession) ?? nextSession.tabs[0];
 		const requestedTabExists =
-			!activeTabIdFromUrl ||
-			nextSession.tabs.some((tab) => tab.id === activeTabIdFromUrl);
+			!activeTabIdFromUrl || nextSession.tabs.some((tab) => tab.id === activeTabIdFromUrl);
 		const hasExplicitView = typeof activeViewFromUrl === "string";
 		const shouldApplyView = hasExplicitView || Boolean(activeTabIdFromUrl);
 

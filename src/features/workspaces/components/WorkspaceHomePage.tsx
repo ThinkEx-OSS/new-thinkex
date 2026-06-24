@@ -29,10 +29,7 @@ export function WorkspaceHomePage() {
 						<WorkspaceCard
 							key={workspace.id}
 							workspace={workspace}
-							search={getWorkspaceCardSearch(
-								workspace.id,
-								persistedStoresHydrated,
-							)}
+							search={getWorkspaceCardSearch(workspace.id, persistedStoresHydrated)}
 						/>
 					))}
 				</section>
@@ -41,10 +38,7 @@ export function WorkspaceHomePage() {
 	);
 }
 
-function getWorkspaceCardSearch(
-	workspaceId: string,
-	persistedStoresHydrated: boolean,
-) {
+function getWorkspaceCardSearch(workspaceId: string, persistedStoresHydrated: boolean) {
 	if (!persistedStoresHydrated) {
 		return getWorkspaceRootTabSearch();
 	}

@@ -18,9 +18,7 @@ function hasHydratedAllStores() {
 }
 
 function subscribeToHydration(listener: () => void) {
-	const unsubscribers = persistedStores.map((store) =>
-		store.persist.onFinishHydration(listener),
-	);
+	const unsubscribers = persistedStores.map((store) => store.persist.onFinishHydration(listener));
 
 	return () => {
 		for (const unsubscribe of unsubscribers) {
@@ -30,11 +28,7 @@ function subscribeToHydration(listener: () => void) {
 }
 
 export function useWorkspacePersistedStoresHydrated() {
-	return useSyncExternalStore(
-		subscribeToHydration,
-		hasHydratedAllStores,
-		() => false,
-	);
+	return useSyncExternalStore(subscribeToHydration, hasHydratedAllStores, () => false);
 }
 
 export function WorkspacePersistedStoresHydrator() {

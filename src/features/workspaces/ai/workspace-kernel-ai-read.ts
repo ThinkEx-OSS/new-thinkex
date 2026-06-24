@@ -149,9 +149,7 @@ async function readWorkspaceKernelAiItem(input: {
 
 	if (item.type === "document") {
 		const { content } = await input.kernel.readItem({ itemId: item.id });
-		const markdown = serializeTiptapDocumentToMarkdown(
-			parseTiptapDocumentJson(content),
-		);
+		const markdown = serializeTiptapDocumentToMarkdown(parseTiptapDocumentJson(content));
 		const page = pageWorkspaceAiMarkdown(markdown, {
 			limit: input.contentLimit,
 			offset: input.contentOffset,
@@ -246,10 +244,7 @@ function pageWorkspaceAiMarkdown(
 	input: { limit?: number; offset?: number },
 ): { content: string; page?: WorkspaceKernelAiContentPage } {
 	const offset = input.offset ?? 1;
-	const limit = Math.min(
-		input.limit ?? DEFAULT_AI_READ_CONTENT_LIMIT,
-		MAX_AI_READ_CONTENT_LINES,
-	);
+	const limit = Math.min(input.limit ?? DEFAULT_AI_READ_CONTENT_LIMIT, MAX_AI_READ_CONTENT_LINES);
 	const lines = content === "" ? [] : content.split(/\r?\n/);
 
 	if (offset > Math.max(lines.length, 1)) {

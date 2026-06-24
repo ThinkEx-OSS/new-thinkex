@@ -2,10 +2,7 @@ import { env as workerEnv } from "cloudflare:workers";
 
 import { buildInvitePath } from "#/lib/client-url";
 
-const LOCAL_TRUSTED_ORIGINS = [
-	"http://localhost:3000",
-	"http://127.0.0.1:3000",
-] as const;
+const LOCAL_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
 
 const isProduction = import.meta.env.PROD;
 
@@ -46,9 +43,7 @@ export function getAppOrigin() {
 }
 
 export function getTrustedAppOrigins(appOrigin: string) {
-	return Array.from(
-		new Set([appOrigin, ...(isProduction ? [] : LOCAL_TRUSTED_ORIGINS)]),
-	);
+	return Array.from(new Set([appOrigin, ...(isProduction ? [] : LOCAL_TRUSTED_ORIGINS)]));
 }
 
 export function buildInviteUrl(token: string, appOrigin = getAppOrigin()) {

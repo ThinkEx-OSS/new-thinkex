@@ -23,8 +23,7 @@ export function useCreateWorkspaceMutation() {
 		onMutate: async () => {
 			await queryClient.cancelQueries({ queryKey: workspacesQueryKey });
 
-			const previousWorkspaces =
-				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
+			const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 
 			return {
 				previousWorkspaces,
@@ -49,9 +48,7 @@ export function useCreateWorkspaceMutation() {
 			restoreWorkspaceListCache(queryClient, context?.previousWorkspaces);
 
 			void navigate({ to: "/home" });
-			toast.error(
-				getErrorMessage(error, "Unable to create workspace right now."),
-			);
+			toast.error(getErrorMessage(error, "Unable to create workspace right now."));
 		},
 	});
 }

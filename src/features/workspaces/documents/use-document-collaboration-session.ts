@@ -8,10 +8,7 @@ import { getCollaborationUserColor } from "#/lib/design-system-colors";
 const idleDestroyDelayMs = 300_000;
 const maxIdleSessions = 8;
 
-export type DocumentCollaborationStatus =
-	| "connecting"
-	| "connected"
-	| "disconnected";
+export type DocumentCollaborationStatus = "connecting" | "connected" | "disconnected";
 
 interface DocumentCollaborationUser {
 	id: string;
@@ -28,8 +25,7 @@ export interface DocumentCollaborationSession {
 	ydoc: Y.Doc;
 }
 
-interface CachedDocumentCollaborationSession
-	extends DocumentCollaborationSession {
+interface CachedDocumentCollaborationSession extends DocumentCollaborationSession {
 	destroy(): void;
 	destroyTimer: ReturnType<typeof setTimeout> | null;
 	key: string;
@@ -40,10 +36,7 @@ interface CachedDocumentCollaborationSession
 	subscribers: Set<() => void>;
 }
 
-const documentSessionCache = new Map<
-	string,
-	CachedDocumentCollaborationSession
->();
+const documentSessionCache = new Map<string, CachedDocumentCollaborationSession>();
 
 export function useDocumentCollaborationSession(input: {
 	itemId: string;
@@ -54,9 +47,7 @@ export function useDocumentCollaborationSession(input: {
 }) {
 	const { itemId, userId, userImage, userName, workspaceId } = input;
 	const sessionKey =
-		userId && userName
-			? getDocumentSessionCacheKey({ itemId, workspaceId })
-			: null;
+		userId && userName ? getDocumentSessionCacheKey({ itemId, workspaceId }) : null;
 
 	const subscribe = useCallback(
 		(listener: () => void) => {
@@ -90,9 +81,7 @@ export function useDocumentCollaborationSession(input: {
 			return null;
 		}
 
-		return sessionKey
-			? (documentSessionCache.get(sessionKey)?.publicSession ?? null)
-			: null;
+		return sessionKey ? (documentSessionCache.get(sessionKey)?.publicSession ?? null) : null;
 	}, [sessionKey, userId, userName]);
 
 	const session = useSyncExternalStore(subscribe, getSnapshot, () => null);
@@ -121,10 +110,7 @@ function acquireDocumentSession(input: {
 			clearTimeout(cachedSession.destroyTimer);
 			cachedSession.destroyTimer = null;
 		}
-		cachedSession.provider.awareness.setLocalStateField(
-			"user",
-			getCollaborationUser(input.user),
-		);
+		cachedSession.provider.awareness.setLocalStateField("user", getCollaborationUser(input.user));
 		return cachedSession;
 	}
 
@@ -146,10 +132,7 @@ function acquireDocumentSession(input: {
 		ydoc,
 	});
 
-	provider.awareness.setLocalStateField(
-		"user",
-		getCollaborationUser(input.user),
-	);
+	provider.awareness.setLocalStateField("user", getCollaborationUser(input.user));
 	documentSessionCache.set(key, session);
 	pruneIdleDocumentSessions();
 
@@ -255,10 +238,7 @@ function getPublicSession(
 	};
 }
 
-function getDocumentSessionCacheKey(input: {
-	itemId: string;
-	workspaceId: string;
-}) {
+function getDocumentSessionCacheKey(input: { itemId: string; workspaceId: string }) {
 	return `${input.workspaceId}:${input.itemId}`;
 }
 

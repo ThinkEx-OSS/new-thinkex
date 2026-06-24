@@ -19,10 +19,7 @@ export function createRootWorkspaceTab(workspaceName: string): WorkspaceTab {
 	};
 }
 
-export function createWorkspaceItemTab(input: {
-	itemId: string;
-	title: string;
-}): WorkspaceTab {
+export function createWorkspaceItemTab(input: { itemId: string; title: string }): WorkspaceTab {
 	const now = Date.now();
 
 	return {
@@ -42,11 +39,7 @@ export function moveWorkspaceTabByIndex(input: {
 	const { tabs, fromIndex, toIndex } = input;
 	const boundedToIndex = Math.max(0, Math.min(toIndex, tabs.length - 1));
 
-	if (
-		fromIndex < 0 ||
-		fromIndex >= tabs.length ||
-		fromIndex === boundedToIndex
-	) {
+	if (fromIndex < 0 || fromIndex >= tabs.length || fromIndex === boundedToIndex) {
 		return undefined;
 	}
 

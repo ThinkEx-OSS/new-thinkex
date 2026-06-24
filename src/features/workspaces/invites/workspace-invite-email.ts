@@ -7,9 +7,7 @@ import { buildInviteUrl } from "#/lib/app-origin";
 const DEFAULT_FROM_EMAIL = "invites@thinkex.app";
 const DEFAULT_FROM_NAME = "ThinkEx";
 
-export type WorkspaceInviteEmailDeliveryFailureReason =
-	| "missing_binding"
-	| "send_failed";
+export type WorkspaceInviteEmailDeliveryFailureReason = "missing_binding" | "send_failed";
 
 export interface WorkspaceInviteEmailDeliveryFailure {
 	email: string;
@@ -102,12 +100,8 @@ export async function sendWorkspaceInviteEmails(input: {
 				});
 				return null;
 			} catch (error) {
-				const message =
-					error instanceof Error ? error.message : "Unknown send error";
-				const code =
-					error instanceof Error && "code" in error
-						? String(error.code)
-						: undefined;
+				const message = error instanceof Error ? error.message : "Unknown send error";
+				const code = error instanceof Error && "code" in error ? String(error.code) : undefined;
 
 				console.warn("[WorkspaceInviteEmail] Send failed", {
 					email: invite.email,

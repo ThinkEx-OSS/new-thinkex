@@ -7,10 +7,7 @@ import {
 	workspaceKernelAgentName,
 } from "#/features/workspaces/agent-routes";
 import { setWorkspaceKernelUserHeaders } from "#/features/workspaces/kernel/workspace-kernel";
-import {
-	canReadWorkspace,
-	WorkspaceAuthError,
-} from "#/features/workspaces/server/permissions";
+import { canReadWorkspace, WorkspaceAuthError } from "#/features/workspaces/server/permissions";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 export async function routeWorkspaceKernelRequest(request: Request, env: Env) {
@@ -50,10 +47,7 @@ export async function routeWorkspaceKernelRequest(request: Request, env: Env) {
 				name: session.user.name,
 				image: session.user.image ?? null,
 			};
-			const kernel = await getAgentByName(
-				env[workspaceKernelAgentName],
-				workspaceId,
-			);
+			const kernel = await getAgentByName(env[workspaceKernelAgentName], workspaceId);
 
 			return kernel.fetch(setWorkspaceKernelUserHeaders(request, user));
 		} finally {

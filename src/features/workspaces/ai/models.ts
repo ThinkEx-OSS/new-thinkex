@@ -8,8 +8,7 @@ export const WORKSPACE_AI_CHAT_PROVIDERS = [
 	{ id: "google", label: "Google" },
 ] as const;
 
-export type WorkspaceAiChatProvider =
-	(typeof WORKSPACE_AI_CHAT_PROVIDERS)[number]["id"];
+export type WorkspaceAiChatProvider = (typeof WORKSPACE_AI_CHAT_PROVIDERS)[number]["id"];
 
 // Simple 1-4 scales aimed at non-technical users. Higher is "more" of the
 // named quality (faster, smarter, pricier) — rendered as little segment bars in
@@ -56,8 +55,7 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 		gatewayModel: "anthropic/claude-haiku-4.5",
 		provider: "anthropic",
 		tagline: "Fast and lightweight",
-		description:
-			"A quicker Claude for fast questions, short drafts, and everyday back-and-forth.",
+		description: "A quicker Claude for fast questions, short drafts, and everyday back-and-forth.",
 		bestFor: "Quick help & short drafts",
 		intelligence: 2,
 		speed: 4,
@@ -82,8 +80,7 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 		gatewayModel: "openai/gpt-5.4-mini",
 		provider: "openai",
 		tagline: "Quick and capable",
-		description:
-			"A faster ChatGPT for quick help, everyday questions, and practical tasks.",
+		description: "A faster ChatGPT for quick help, everyday questions, and practical tasks.",
 		bestFor: "Fast help, tools & coding",
 		intelligence: 2,
 		speed: 4,
@@ -121,27 +118,18 @@ export type WorkspaceAiChatModel = (typeof WORKSPACE_AI_CHAT_MODELS)[number];
 
 export type WorkspaceAiChatModelId = WorkspaceAiChatModel["id"];
 
-export function resolveWorkspaceAiChatModelId(
-	value: unknown,
-): WorkspaceAiChatModelId {
-	if (
-		typeof value === "string" &&
-		WORKSPACE_AI_CHAT_MODELS.some((model) => model.id === value)
-	) {
+export function resolveWorkspaceAiChatModelId(value: unknown): WorkspaceAiChatModelId {
+	if (typeof value === "string" && WORKSPACE_AI_CHAT_MODELS.some((model) => model.id === value)) {
 		return value as WorkspaceAiChatModelId;
 	}
 
 	return DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID;
 }
 
-export function getWorkspaceAiChatModelById(
-	modelId: WorkspaceAiChatModelId,
-): WorkspaceAiChatModel {
+export function getWorkspaceAiChatModelById(modelId: WorkspaceAiChatModelId): WorkspaceAiChatModel {
 	return (
 		WORKSPACE_AI_CHAT_MODELS.find((model) => model.id === modelId) ??
-		WORKSPACE_AI_CHAT_MODELS.find(
-			(model) => model.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-		) ??
+		WORKSPACE_AI_CHAT_MODELS.find((model) => model.id === DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID) ??
 		WORKSPACE_AI_CHAT_MODELS[0]
 	);
 }
