@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5a6ec64e-217d-4d80-a371-89bcd9e48419",
+  "id": "a92f0019-cb28-4722-838c-98c35d69bd85",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -503,7 +503,20 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "workspace_invites_role_check": {
+          "name": "workspace_invites_role_check",
+          "value": "\"workspace_invites\".\"role\" in ('owner', 'admin', 'editor', 'viewer')"
+        },
+        "workspace_invites_type_check": {
+          "name": "workspace_invites_type_check",
+          "value": "\"workspace_invites\".\"type\" in ('email', 'link')"
+        },
+        "workspace_invites_status_check": {
+          "name": "workspace_invites_status_check",
+          "value": "\"workspace_invites\".\"status\" in ('pending', 'accepted', 'revoked', 'expired')"
+        }
+      }
     },
     "workspace_members": {
       "name": "workspace_members",
@@ -614,7 +627,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "workspace_members_role_check": {
+          "name": "workspace_members_role_check",
+          "value": "\"workspace_members\".\"role\" in ('owner', 'admin', 'editor', 'viewer')"
+        }
+      }
     },
     "workspaces": {
       "name": "workspaces",

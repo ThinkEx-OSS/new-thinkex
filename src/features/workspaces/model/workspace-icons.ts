@@ -139,12 +139,7 @@ export const workspaceIconOptions = [
 		"class",
 		"homework",
 	]),
-	icon("book-open", "Reading", BookOpen, "study", [
-		"book",
-		"textbook",
-		"literature",
-		"notes",
-	]),
+	icon("book-open", "Reading", BookOpen, "study", ["book", "textbook", "literature", "notes"]),
 	icon("book-open-text", "Textbook", BookOpenText, "study", [
 		"course reading",
 		"chapter",
@@ -164,24 +159,9 @@ export const workspaceIconOptions = [
 		"degree",
 		"academic",
 	]),
-	icon("library-big", "Library", LibraryBig, "study", [
-		"archive",
-		"research",
-		"books",
-		"sources",
-	]),
-	icon("school", "School", School, "study", [
-		"campus",
-		"classroom",
-		"teacher",
-		"student",
-	]),
-	icon("notebook-pen", "Notes", NotebookPen, "study", [
-		"writing",
-		"journal",
-		"draft",
-		"worksheet",
-	]),
+	icon("library-big", "Library", LibraryBig, "study", ["archive", "research", "books", "sources"]),
+	icon("school", "School", School, "study", ["campus", "classroom", "teacher", "student"]),
+	icon("notebook-pen", "Notes", NotebookPen, "study", ["writing", "journal", "draft", "worksheet"]),
 	icon("notebook-tabs", "Notebook", NotebookTabs, "study", [
 		"binder",
 		"sections",
@@ -194,12 +174,7 @@ export const workspaceIconOptions = [
 		"review",
 		"important",
 	]),
-	icon("file-text", "Paper", FileText, "study", [
-		"essay",
-		"document",
-		"report",
-		"article",
-	]),
+	icon("file-text", "Paper", FileText, "study", ["essay", "document", "report", "article"]),
 	icon("file-chart-column", "Findings", FileChartColumn, "study", [
 		"data report",
 		"results",
@@ -218,24 +193,14 @@ export const workspaceIconOptions = [
 		"research folder",
 		"investigation",
 	]),
-	icon("archive", "Archive", Archive, "study", [
-		"records",
-		"library",
-		"stored work",
-		"repository",
-	]),
+	icon("archive", "Archive", Archive, "study", ["records", "library", "stored work", "repository"]),
 	icon("clipboard-list", "Tasks", ClipboardList, "planning", [
 		"todo",
 		"checklist",
 		"assignment",
 		"operations",
 	]),
-	icon("kanban", "Board", Kanban, "planning", [
-		"workflow",
-		"sprint",
-		"pipeline",
-		"status",
-	]),
+	icon("kanban", "Board", Kanban, "planning", ["workflow", "sprint", "pipeline", "status"]),
 	icon("list-todo", "Todo", ListTodo, "planning", [
 		"tasks",
 		"checklist",
@@ -254,30 +219,15 @@ export const workspaceIconOptions = [
 		"dates",
 		"timeline",
 	]),
-	icon("clock-3", "Time", Clock3, "planning", [
-		"history",
-		"deadline",
-		"duration",
-		"timeline",
-	]),
-	icon("target", "Goal", Target, "planning", [
-		"objective",
-		"milestone",
-		"focus",
-		"outcome",
-	]),
+	icon("clock-3", "Time", Clock3, "planning", ["history", "deadline", "duration", "timeline"]),
+	icon("target", "Goal", Target, "planning", ["objective", "milestone", "focus", "outcome"]),
 	icon("lightbulb", "Idea", Lightbulb, "planning", [
 		"insight",
 		"concept",
 		"innovation",
 		"brainstorm",
 	]),
-	icon("brain", "Cognition", Brain, "science", [
-		"psychology",
-		"neuroscience",
-		"mind",
-		"learning",
-	]),
+	icon("brain", "Cognition", Brain, "science", ["psychology", "neuroscience", "mind", "learning"]),
 	icon("brain-circuit", "Neuroscience", BrainCircuit, "science", [
 		"cognition",
 		"neural network",
@@ -290,12 +240,7 @@ export const workspaceIconOptions = [
 		"strategy",
 		"discovery",
 	]),
-	icon("map", "Map", MapIcon, "humanities", [
-		"geography",
-		"planning",
-		"location",
-		"route",
-	]),
+	icon("map", "Map", MapIcon, "humanities", ["geography", "planning", "location", "route"]),
 	icon("globe-2", "Global", Globe2, "humanities", [
 		"world",
 		"international",
@@ -320,12 +265,7 @@ export const workspaceIconOptions = [
 		"current events",
 		"article",
 	]),
-	icon("palette", "Art", Palette, "humanities", [
-		"design",
-		"visual arts",
-		"creative",
-		"studio",
-	]),
+	icon("palette", "Art", Palette, "humanities", ["design", "visual arts", "creative", "studio"]),
 	icon("swatch-book", "Design System", SwatchBook, "humanities", [
 		"brand",
 		"colors",
@@ -344,24 +284,14 @@ export const workspaceIconOptions = [
 		"layout",
 		"technical drawing",
 	]),
-	icon("music", "Music", Music, "humanities", [
-		"audio",
-		"composition",
-		"performance",
-		"sound",
-	]),
+	icon("music", "Music", Music, "humanities", ["audio", "composition", "performance", "sound"]),
 	icon("audio-lines", "Audio", AudioLines, "humanities", [
 		"sound",
 		"waveform",
 		"recording",
 		"speech",
 	]),
-	icon("mic", "Interview", Mic, "humanities", [
-		"podcast",
-		"voice",
-		"oral history",
-		"recording",
-	]),
+	icon("mic", "Interview", Mic, "humanities", ["podcast", "voice", "oral history", "recording"]),
 	icon("headphones", "Listening", Headphones, "humanities", [
 		"audio",
 		"language lab",
@@ -380,55 +310,24 @@ export const workspaceIconOptions = [
 		"media",
 		"presentation",
 	]),
-	icon("theater", "Theater", Theater, "humanities", [
-		"drama",
-		"performance",
-		"acting",
-		"arts",
-	]),
-	icon("scale", "Law", Scale, "humanities", [
-		"justice",
-		"policy",
-		"ethics",
-		"government",
-	]),
-	icon("gavel", "Legal", Gavel, "humanities", [
-		"law",
-		"court",
-		"judge",
-		"regulation",
-	]),
-	icon("vote", "Politics", Vote, "humanities", [
-		"election",
-		"civics",
-		"government",
-		"policy",
-	]),
+	icon("theater", "Theater", Theater, "humanities", ["drama", "performance", "acting", "arts"]),
+	icon("scale", "Law", Scale, "humanities", ["justice", "policy", "ethics", "government"]),
+	icon("gavel", "Legal", Gavel, "humanities", ["law", "court", "judge", "regulation"]),
+	icon("vote", "Politics", Vote, "humanities", ["election", "civics", "government", "policy"]),
 	icon("landmark", "Institutions", Landmark, "humanities", [
 		"government",
 		"economics",
 		"history",
 		"museum",
 	]),
-	icon(
-		"message-square-text",
-		"Communication",
-		MessageSquareText,
-		"humanities",
-		["discussion", "rhetoric", "conversation", "feedback"],
-	),
-	icon("users", "People", Users, "work", [
-		"team",
-		"group",
-		"customers",
-		"class",
+	icon("message-square-text", "Communication", MessageSquareText, "humanities", [
+		"discussion",
+		"rhetoric",
+		"conversation",
+		"feedback",
 	]),
-	icon("helping-hand", "Support", HelpingHand, "work", [
-		"help",
-		"service",
-		"community",
-		"care",
-	]),
+	icon("users", "People", Users, "work", ["team", "group", "customers", "class"]),
+	icon("helping-hand", "Support", HelpingHand, "work", ["help", "service", "community", "care"]),
 	icon("handshake", "Partnership", Handshake, "work", [
 		"agreement",
 		"client",
@@ -477,24 +376,9 @@ export const workspaceIconOptions = [
 		"project plan",
 		"schedule",
 	]),
-	icon("chart-pie", "Finance", ChartPie, "work", [
-		"budget",
-		"accounting",
-		"portfolio",
-		"market",
-	]),
-	icon("banknote", "Revenue", Banknote, "work", [
-		"cash",
-		"money",
-		"income",
-		"sales",
-	]),
-	icon("piggy-bank", "Savings", PiggyBank, "work", [
-		"budget",
-		"reserve",
-		"finance",
-		"planning",
-	]),
+	icon("chart-pie", "Finance", ChartPie, "work", ["budget", "accounting", "portfolio", "market"]),
+	icon("banknote", "Revenue", Banknote, "work", ["cash", "money", "income", "sales"]),
+	icon("piggy-bank", "Savings", PiggyBank, "work", ["budget", "reserve", "finance", "planning"]),
 	icon("receipt-text", "Expenses", ReceiptText, "work", [
 		"receipt",
 		"invoice",
@@ -513,12 +397,7 @@ export const workspaceIconOptions = [
 		"expenses",
 		"finance",
 	]),
-	icon("store", "Sales", Store, "work", [
-		"retail",
-		"commerce",
-		"shop",
-		"market",
-	]),
+	icon("store", "Sales", Store, "work", ["retail", "commerce", "shop", "market"]),
 	icon("factory", "Manufacturing", Factory, "work", [
 		"production",
 		"operations",
@@ -531,12 +410,7 @@ export const workspaceIconOptions = [
 		"transportation",
 		"supply chain",
 	]),
-	icon("package", "Inventory", Package, "work", [
-		"product",
-		"stock",
-		"warehouse",
-		"fulfillment",
-	]),
+	icon("package", "Inventory", Package, "work", ["product", "stock", "warehouse", "fulfillment"]),
 	icon("shield-check", "Compliance", ShieldCheck, "work", [
 		"security",
 		"risk",
@@ -549,24 +423,9 @@ export const workspaceIconOptions = [
 		"inspection",
 		"verification",
 	]),
-	icon("atom", "Physics", Atom, "science", [
-		"science",
-		"quantum",
-		"chemistry",
-		"particle",
-	]),
-	icon("orbit", "Orbit", Orbit, "science", [
-		"astronomy",
-		"space",
-		"physics",
-		"planetary science",
-	]),
-	icon("magnet", "Magnetism", Magnet, "science", [
-		"physics",
-		"electromagnetism",
-		"field",
-		"force",
-	]),
+	icon("atom", "Physics", Atom, "science", ["science", "quantum", "chemistry", "particle"]),
+	icon("orbit", "Orbit", Orbit, "science", ["astronomy", "space", "physics", "planetary science"]),
+	icon("magnet", "Magnetism", Magnet, "science", ["physics", "electromagnetism", "field", "force"]),
 	icon("flask-conical", "Lab", FlaskConical, "science", [
 		"chemistry",
 		"experiment",
@@ -579,42 +438,22 @@ export const workspaceIconOptions = [
 		"biology",
 		"assay",
 	]),
-	icon("microscope", "Microscope", Microscope, "science", [
-		"biology",
-		"research",
-		"cells",
-		"lab",
-	]),
+	icon("microscope", "Microscope", Microscope, "science", ["biology", "research", "cells", "lab"]),
 	icon("activity", "Physiology", Activity, "health", [
 		"signal",
 		"biomedical",
 		"vitals",
 		"measurement",
 	]),
-	icon("dna", "Genetics", Dna, "science", [
-		"biology",
-		"genome",
-		"medicine",
-		"life science",
-	]),
-	icon("sigma", "Math", Sigma, "science", [
-		"statistics",
-		"equation",
-		"algebra",
-		"formula",
-	]),
+	icon("dna", "Genetics", Dna, "science", ["biology", "genome", "medicine", "life science"]),
+	icon("sigma", "Math", Sigma, "science", ["statistics", "equation", "algebra", "formula"]),
 	icon("calculator", "Calculator", Calculator, "science", [
 		"math",
 		"accounting",
 		"numbers",
 		"finance",
 	]),
-	icon("ruler", "Measure", Ruler, "science", [
-		"geometry",
-		"design",
-		"measurement",
-		"engineering",
-	]),
+	icon("ruler", "Measure", Ruler, "science", ["geometry", "design", "measurement", "engineering"]),
 	icon("drafting-compass", "Engineering", DraftingCompass, "science", [
 		"architecture",
 		"design",
@@ -639,30 +478,15 @@ export const workspaceIconOptions = [
 		"bits",
 		"information",
 	]),
-	icon("database", "Database", Database, "technology", [
-		"data",
-		"storage",
-		"sql",
-		"warehouse",
-	]),
+	icon("database", "Database", Database, "technology", ["data", "storage", "sql", "warehouse"]),
 	icon("bot", "AI", Bot, "technology", [
 		"artificial intelligence",
 		"machine learning",
 		"automation",
 		"agent",
 	]),
-	icon("code-2", "Code", Code2, "technology", [
-		"programming",
-		"software",
-		"developer",
-		"web",
-	]),
-	icon("wrench", "Build", Wrench, "technology", [
-		"tools",
-		"maintenance",
-		"operations",
-		"repair",
-	]),
+	icon("code-2", "Code", Code2, "technology", ["programming", "software", "developer", "web"]),
+	icon("wrench", "Build", Wrench, "technology", ["tools", "maintenance", "operations", "repair"]),
 	icon("stethoscope", "Medicine", Stethoscope, "health", [
 		"healthcare",
 		"doctor",
@@ -681,12 +505,7 @@ export const workspaceIconOptions = [
 		"vitals",
 		"nursing",
 	]),
-	icon("pill", "Pharmacy", Pill, "health", [
-		"medicine",
-		"drug",
-		"treatment",
-		"pharmaceutical",
-	]),
+	icon("pill", "Pharmacy", Pill, "health", ["medicine", "drug", "treatment", "pharmaceutical"]),
 	icon("pill-bottle", "Medication", PillBottle, "health", [
 		"prescription",
 		"pharmacy",
@@ -699,24 +518,9 @@ export const workspaceIconOptions = [
 		"sustainability",
 		"biology",
 	]),
-	icon("sprout", "Agriculture", Sprout, "environment", [
-		"plant",
-		"farming",
-		"growth",
-		"botany",
-	]),
-	icon("earth", "Earth", Earth, "environment", [
-		"planet",
-		"climate",
-		"geology",
-		"environment",
-	]),
-	icon("waves", "Ocean", Waves, "environment", [
-		"marine science",
-		"water",
-		"hydrology",
-		"coast",
-	]),
+	icon("sprout", "Agriculture", Sprout, "environment", ["plant", "farming", "growth", "botany"]),
+	icon("earth", "Earth", Earth, "environment", ["planet", "climate", "geology", "environment"]),
+	icon("waves", "Ocean", Waves, "environment", ["marine science", "water", "hydrology", "coast"]),
 	icon("droplet", "Water", Droplet, "environment", [
 		"chemistry",
 		"fluid",
@@ -729,12 +533,7 @@ export const workspaceIconOptions = [
 		"heat",
 		"measurement",
 	]),
-	icon("flame", "Fire", Flame, "environment", [
-		"energy",
-		"heat",
-		"combustion",
-		"wildfire",
-	]),
+	icon("flame", "Fire", Flame, "environment", ["energy", "heat", "combustion", "wildfire"]),
 	icon("mountain", "Geology", Mountain, "environment", [
 		"earth science",
 		"terrain",
@@ -753,30 +552,19 @@ export const workspaceIconOptions = [
 		"physics",
 		"observatory",
 	]),
-	icon("rocket", "Aerospace", Rocket, "science", [
-		"space",
-		"engineering",
-		"launch",
-		"mission",
-	]),
+	icon("rocket", "Aerospace", Rocket, "science", ["space", "engineering", "launch", "mission"]),
 	icon("satellite", "Satellite", Satellite, "science", [
 		"space",
 		"remote sensing",
 		"communications",
 		"orbit",
 	]),
-	icon("zap", "Energy", Zap, "science", [
-		"electricity",
-		"power",
-		"physics",
-		"fast",
-	]),
+	icon("zap", "Energy", Zap, "science", ["electricity", "power", "physics", "fast"]),
 ] as const satisfies ReadonlyArray<WorkspaceIconOption>;
 
-export const workspaceIcons: Record<WorkspaceIcon, LucideIcon> =
-	Object.fromEntries(
-		workspaceIconOptions.map(({ value, Icon }) => [value, Icon]),
-	) as Record<WorkspaceIcon, LucideIcon>;
+export const workspaceIcons: Record<WorkspaceIcon, LucideIcon> = Object.fromEntries(
+	workspaceIconOptions.map(({ value, Icon }) => [value, Icon]),
+) as Record<WorkspaceIcon, LucideIcon>;
 
 assertWorkspaceIconRegistryIsComplete();
 
@@ -808,17 +596,12 @@ function icon(
 	return { value, label, Icon, category, aliases };
 }
 
-function getWorkspaceIconSearchScore(
-	option: WorkspaceIconOption,
-	tokens: readonly string[],
-) {
+function getWorkspaceIconSearchScore(option: WorkspaceIconOption, tokens: readonly string[]) {
 	const terms = getWorkspaceIconSearchTerms(option);
 	let score = 0;
 
 	for (const token of tokens) {
-		const tokenScore = Math.max(
-			...terms.map((term) => getSearchTermScore(term, token)),
-		);
+		const tokenScore = Math.max(...terms.map((term) => getSearchTermScore(term, token)));
 
 		if (tokenScore === 0) {
 			return 0;
@@ -861,16 +644,10 @@ function normalizeIconSearchTerm(value: string) {
 }
 
 function assertWorkspaceIconRegistryIsComplete() {
-	const optionValues = new Set(
-		workspaceIconOptions.map((option) => option.value),
-	);
-	const missingValues = workspaceIconValues.filter(
-		(value) => !optionValues.has(value),
-	);
+	const optionValues = new Set(workspaceIconOptions.map((option) => option.value));
+	const missingValues = workspaceIconValues.filter((value) => !optionValues.has(value));
 
 	if (missingValues.length > 0) {
-		throw new Error(
-			`Missing workspace icon options: ${missingValues.join(", ")}`,
-		);
+		throw new Error(`Missing workspace icon options: ${missingValues.join(", ")}`);
 	}
 }

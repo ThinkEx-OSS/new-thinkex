@@ -1,14 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import {
-	Laptop,
-	LogOut,
-	MessageSquarePlus,
-	Moon,
-	Settings,
-	Sun,
-	SunMoon,
-} from "lucide-react";
+import { Laptop, LogOut, MessageSquarePlus, Moon, Settings, Sun, SunMoon } from "lucide-react";
 import { toast } from "sonner";
 
 import { type Theme, useTheme } from "#/components/theme-provider";
@@ -92,21 +84,15 @@ export default function UserProfileDropdown() {
 				>
 					<Avatar className="size-full">
 						<AvatarImage src={session.user.image ?? undefined} alt="" />
-						<AvatarFallback>
-							{displayName.charAt(0).toUpperCase()}
-						</AvatarFallback>
+						<AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
 					</Avatar>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-64">
 					<DropdownMenuGroup>
 						<DropdownMenuLabel>
 							<div className="space-y-1">
-								<p className="text-sm font-medium text-foreground">
-									{displayName}
-								</p>
-								<p className="text-xs font-normal text-muted-foreground">
-									{session.user.email}
-								</p>
+								<p className="text-sm font-medium text-foreground">{displayName}</p>
+								<p className="text-xs font-normal text-muted-foreground">{session.user.email}</p>
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSub>
@@ -156,11 +142,7 @@ export default function UserProfileDropdown() {
 	}
 
 	return (
-		<Button
-			nativeButton={false}
-			render={<Link to="/login" />}
-			variant="outline"
-		>
+		<Button nativeButton={false} render={<Link to="/login" />} variant="outline">
 			Sign in
 		</Button>
 	);

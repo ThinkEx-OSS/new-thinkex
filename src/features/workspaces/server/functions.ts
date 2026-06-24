@@ -34,15 +34,13 @@ const workspaceIdInputSchema = z.object({
 	workspaceId: z.string().min(1),
 });
 
-export const listWorkspacesFn = createServerFn({ method: "GET" }).handler(
-	async () => listWorkspacesForCurrentUser(),
+export const listWorkspacesFn = createServerFn({ method: "GET" }).handler(async () =>
+	listWorkspacesForCurrentUser(),
 );
 
 export const getWorkspacePageFn = createServerFn({ method: "GET" })
 	.validator(workspaceIdInputSchema)
-	.handler(async ({ data }) =>
-		getWorkspacePageForCurrentUser(data.workspaceId),
-	);
+	.handler(async ({ data }) => getWorkspacePageForCurrentUser(data.workspaceId));
 
 export const createWorkspaceFn = createServerFn({ method: "POST" })
 	.validator(createWorkspaceInputSchema)
@@ -50,9 +48,7 @@ export const createWorkspaceFn = createServerFn({ method: "POST" })
 
 export const recordWorkspaceOpenedFn = createServerFn({ method: "POST" })
 	.validator(workspaceIdInputSchema)
-	.handler(async ({ data }) =>
-		recordWorkspaceOpenedForCurrentUser(data.workspaceId),
-	);
+	.handler(async ({ data }) => recordWorkspaceOpenedForCurrentUser(data.workspaceId));
 
 export const updateWorkspaceFn = createServerFn({ method: "POST" })
 	.validator(updateWorkspaceInputSchema)

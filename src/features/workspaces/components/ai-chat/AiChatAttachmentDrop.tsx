@@ -1,11 +1,4 @@
-import {
-	createContext,
-	type ReactNode,
-	type RefObject,
-	use,
-	useRef,
-	useState,
-} from "react";
+import { createContext, type ReactNode, type RefObject, use, useRef, useState } from "react";
 
 import { usePromptInputAttachments } from "#/components/ai-elements/prompt-input";
 import {
@@ -20,14 +13,9 @@ type AiChatAttachmentDropContextValue = {
 	setDropActive: (isActive: boolean) => void;
 };
 
-const AiChatAttachmentDropContext =
-	createContext<AiChatAttachmentDropContextValue | null>(null);
+const AiChatAttachmentDropContext = createContext<AiChatAttachmentDropContextValue | null>(null);
 
-export function AiChatAttachmentDropProvider({
-	children,
-}: {
-	children: ReactNode;
-}) {
+export function AiChatAttachmentDropProvider({ children }: { children: ReactNode }) {
 	const panelRef = useRef<HTMLElement | null>(null);
 	const [isDropActive, setDropActive] = useState(false);
 	const mergePanelRef = (element: HTMLElement | null) => {
@@ -51,9 +39,7 @@ export function AiChatAttachmentDropProvider({
 export function useAiChatAttachmentDrop() {
 	const context = use(AiChatAttachmentDropContext);
 	if (!context) {
-		throw new Error(
-			"useAiChatAttachmentDrop must be used within AiChatAttachmentDropProvider",
-		);
+		throw new Error("useAiChatAttachmentDrop must be used within AiChatAttachmentDropProvider");
 	}
 
 	return context;

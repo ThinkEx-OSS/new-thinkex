@@ -77,10 +77,7 @@ export function getAvailableWorkspaceItemName(input: {
 	return `${baseName} ${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export function normalizeWorkspaceItemName(
-	name: string | null | undefined,
-	fallback = "Untitled",
-) {
+export function normalizeWorkspaceItemName(name: string | null | undefined, fallback = "Untitled") {
 	const normalized =
 		stripControlCharacters(name ?? "")
 			.replace(/[\\/]+/g, "-")

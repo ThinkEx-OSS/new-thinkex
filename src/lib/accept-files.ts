@@ -13,17 +13,12 @@ export type AcceptFilesOptions = {
 	onError?: (error: AcceptFilesError) => void;
 };
 
-export function acceptIncomingFiles(
-	incoming: File[],
-	options: AcceptFilesOptions = {},
-): File[] {
+export function acceptIncomingFiles(incoming: File[], options: AcceptFilesOptions = {}): File[] {
 	if (incoming.length === 0) {
 		return [];
 	}
 
-	const accepted = incoming.filter((file) =>
-		fileMatchesAccept(file, options.accept),
-	);
+	const accepted = incoming.filter((file) => fileMatchesAccept(file, options.accept));
 	if (accepted.length === 0) {
 		options.onError?.({
 			code: "accept",
@@ -47,8 +42,7 @@ export function acceptIncomingFiles(
 		typeof options.maxFiles === "number"
 			? Math.max(0, options.maxFiles - (options.currentCount ?? 0))
 			: undefined;
-	const capped =
-		typeof capacity === "number" ? sized.slice(0, capacity) : sized;
+	const capped = typeof capacity === "number" ? sized.slice(0, capacity) : sized;
 
 	if (typeof capacity === "number" && sized.length > capacity) {
 		options.onError?.({

@@ -33,9 +33,7 @@ export function getWorkspaceKernelRouteWorkspaceId(pathname: string) {
 		return null;
 	}
 
-	const [workspaceId] = pathname
-		.slice(workspaceKernelPathPrefix.length + 1)
-		.split("/");
+	const [workspaceId] = pathname.slice(workspaceKernelPathPrefix.length + 1).split("/");
 
 	return workspaceId || null;
 }
@@ -45,9 +43,7 @@ export function getDocumentSessionRouteParams(pathname: string) {
 		return null;
 	}
 
-	const [workspaceId, itemId] = pathname
-		.slice(documentSessionPathPrefix.length + 1)
-		.split("/");
+	const [workspaceId, itemId] = pathname.slice(documentSessionPathPrefix.length + 1).split("/");
 
 	if (!workspaceId || !itemId) {
 		return null;
@@ -63,10 +59,7 @@ export function getWorkspaceKernelRealtimePath(workspaceId: string) {
 	return `${workspaceId}/${workspaceKernelRealtimeSegment}`;
 }
 
-export function getDocumentSessionRoomName(input: {
-	itemId: string;
-	workspaceId: string;
-}) {
+export function getDocumentSessionRoomName(input: { itemId: string; workspaceId: string }) {
 	return `${input.workspaceId}:${input.itemId}`;
 }
 
@@ -77,10 +70,7 @@ export function getDocumentSessionBaseUrl(workspaceId: string) {
 		return "";
 	}
 
-	const url = new URL(
-		`${documentSessionPathPrefix}/${encodeURIComponent(workspaceId)}`,
-		origin,
-	);
+	const url = new URL(`${documentSessionPathPrefix}/${encodeURIComponent(workspaceId)}`, origin);
 	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 
 	return url.toString();

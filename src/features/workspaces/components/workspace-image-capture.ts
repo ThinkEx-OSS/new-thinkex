@@ -50,18 +50,13 @@ export async function renderImageRegionCapture(
 		throw new Error("Capture region does not overlap the image.");
 	}
 
-	const sourceX =
-		((left - imageRect.left) / imageRect.width) * image.naturalWidth;
-	const sourceY =
-		((top - imageRect.top) / imageRect.height) * image.naturalHeight;
+	const sourceX = ((left - imageRect.left) / imageRect.width) * image.naturalWidth;
+	const sourceY = ((top - imageRect.top) / imageRect.height) * image.naturalHeight;
 	const sourceWidth = (width / imageRect.width) * image.naturalWidth;
 	const sourceHeight = (height / imageRect.height) * image.naturalHeight;
 
 	// Screen-resolution output, capped for fast chat attachments.
-	const { width: outputWidth, height: outputHeight } = resolveCaptureOutputSize(
-		width,
-		height,
-	);
+	const { width: outputWidth, height: outputHeight } = resolveCaptureOutputSize(width, height);
 
 	const canvas = document.createElement("canvas");
 	canvas.width = outputWidth;

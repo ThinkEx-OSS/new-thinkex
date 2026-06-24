@@ -9,9 +9,7 @@ import type {
 const defaultFirecrawlApiUrl = "https://api.firecrawl.dev";
 const firecrawlParseTimeoutMs = 300_000;
 
-export function createFirecrawlPdfExtractionProvider(
-	env: Env,
-): MarkdownExtractionProvider {
+export function createFirecrawlPdfExtractionProvider(env: Env): MarkdownExtractionProvider {
 	return {
 		id: "firecrawl",
 		async extract(input) {
@@ -50,9 +48,7 @@ export function createFirecrawlPdfExtractionProvider(
 			const markdown = getFirecrawlMarkdown(responseJson);
 
 			if (!markdown) {
-				throw new Error(
-					"Firecrawl PDF parsing completed without markdown output.",
-				);
+				throw new Error("Firecrawl PDF parsing completed without markdown output.");
 			}
 
 			return {
@@ -65,9 +61,7 @@ export function createFirecrawlPdfExtractionProvider(
 	};
 }
 
-function normalizeFirecrawlMode(
-	mode: MarkdownExtractionInput["mode"],
-): FirecrawlPdfMode {
+function normalizeFirecrawlMode(mode: MarkdownExtractionInput["mode"]): FirecrawlPdfMode {
 	if (mode === "fast" || mode === "ocr") {
 		return mode;
 	}
@@ -104,18 +98,14 @@ function getFirecrawlMarkdown(value: unknown): string | null {
 function getFirecrawlMetadata(value: unknown) {
 	const data = getRecordValue(value, "data");
 	const usage = getRecordValue(value, "usage") ?? getRecordValue(data, "usage");
-	const metadata =
-		getRecordValue(data, "metadata") ?? getRecordValue(value, "metadata");
+	const metadata = getRecordValue(data, "metadata") ?? getRecordValue(value, "metadata");
 	const creditsUsed =
 		getNumberValue(metadata, "creditsUsed") ??
 		getNumberValue(usage, "credits") ??
 		getNumberValue(data, "creditsUsed") ??
 		getNumberValue(value, "creditsUsed");
-	const title =
-		getStringValue(metadata, "title") ?? getStringValue(data, "title");
-	const sourceFile =
-		getStringValue(metadata, "sourceFile") ??
-		getStringValue(data, "sourceFile");
+	const title = getStringValue(metadata, "title") ?? getStringValue(data, "title");
+	const sourceFile = getStringValue(metadata, "sourceFile") ?? getStringValue(data, "sourceFile");
 	const pageCount =
 		getNumberValue(metadata, "numPages") ??
 		getNumberValue(metadata, "pageCount") ??

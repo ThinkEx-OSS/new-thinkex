@@ -1,10 +1,4 @@
-import {
-	EllipsisVertical,
-	FolderInput,
-	Palette,
-	Pencil,
-	Trash2,
-} from "lucide-react";
+import { EllipsisVertical, FolderInput, Palette, Pencil, Trash2 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 
 import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
@@ -70,11 +64,7 @@ export default function WorkspaceItemActionsMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					trigger ?? (
-						<WorkspaceToolbarIconButton
-							aria-label={`Open actions for ${item.name}`}
-						/>
-					)
+					trigger ?? <WorkspaceToolbarIconButton aria-label={`Open actions for ${item.name}`} />
 				}
 			>
 				{triggerChildren ?? (trigger ? null : <EllipsisVertical />)}
@@ -107,8 +97,7 @@ export function WorkspaceItemActionsMenuContent({
 	menuKind?: "dropdown" | "context";
 }) {
 	const { capabilities } = useWorkspaceMutationAccess();
-	const updateWorkspaceItemColorMutation =
-		useUpdateWorkspaceItemColorMutation();
+	const updateWorkspaceItemColorMutation = useUpdateWorkspaceItemColorMutation();
 	const readOnly = !capabilities.canMutateContent;
 
 	return (
@@ -187,9 +176,7 @@ function WorkspaceItemRenameMenuItem({
 	renderer: WorkspaceMenuRenderer;
 	onRenameItem: (item: WorkspaceItem) => void;
 }) {
-	const interaction = workspaceMenuItemInteraction(readOnly, () =>
-		onRenameItem(item),
-	);
+	const interaction = workspaceMenuItemInteraction(readOnly, () => onRenameItem(item));
 
 	return renderer.item({
 		id: "rename",
@@ -263,9 +250,7 @@ function WorkspaceItemMoveMenuItem({
 	renderer: WorkspaceMenuRenderer;
 	onMoveItem: (item: WorkspaceItem) => void;
 }) {
-	const interaction = workspaceMenuItemInteraction(readOnly, () =>
-		onMoveItem(item),
-	);
+	const interaction = workspaceMenuItemInteraction(readOnly, () => onMoveItem(item));
 
 	return renderer.item({
 		id: "move",
@@ -290,9 +275,7 @@ function WorkspaceItemDeleteMenuItem({
 	renderer: WorkspaceMenuRenderer;
 	onDeleteItem: (item: WorkspaceItem) => void;
 }) {
-	const interaction = workspaceMenuItemInteraction(readOnly, () =>
-		onDeleteItem(item),
-	);
+	const interaction = workspaceMenuItemInteraction(readOnly, () => onDeleteItem(item));
 
 	return renderer.item({
 		id: "delete",

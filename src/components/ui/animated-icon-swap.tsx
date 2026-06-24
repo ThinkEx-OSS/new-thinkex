@@ -34,18 +34,9 @@ interface AnimatedIconSwapProps {
  * swap never shifts layout, and `initial={false}` keeps the mounted icon static
  * on first render — it only animates on subsequent state changes.
  */
-export function AnimatedIconSwap({
-	swapKey,
-	children,
-	className,
-}: AnimatedIconSwapProps) {
+export function AnimatedIconSwap({ swapKey, children, className }: AnimatedIconSwapProps) {
 	return (
-		<span
-			className={cn(
-				"relative grid place-items-center *:[grid-area:1/1]",
-				className,
-			)}
-		>
+		<span className={cn("relative grid place-items-center *:[grid-area:1/1]", className)}>
 			<AnimatePresence initial={false}>
 				<motion.span
 					key={String(swapKey)}

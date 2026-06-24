@@ -19,23 +19,15 @@ type AiChatThreadForDialog = {
 	title: string;
 };
 
-export function useAiChatPanelController({
-	workspaceId,
-}: UseAiChatPanelControllerInput) {
+export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControllerInput) {
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
 	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const modelId = useWorkspaceAiChatModelId(workspaceId);
-	const setChatSurfaceMode = useWorkspaceUiStore(
-		(state) => state.setChatSurfaceMode,
-	);
-	const setActiveAiChatThread = useWorkspaceUiStore(
-		(state) => state.setActiveAiChatThread,
-	);
+	const setChatSurfaceMode = useWorkspaceUiStore((state) => state.setChatSurfaceMode);
+	const setActiveAiChatThread = useWorkspaceUiStore((state) => state.setActiveAiChatThread);
 	const setAiChatModel = useWorkspaceUiStore((state) => state.setAiChatModel);
-	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] =
-		useState(false);
-	const [threadPendingDeletion, setThreadPendingDeletion] =
-		useState<AiChatThreadForDialog>();
+	const [isDeleteThreadDialogOpen, setIsDeleteThreadDialogOpen] = useState(false);
+	const [threadPendingDeletion, setThreadPendingDeletion] = useState<AiChatThreadForDialog>();
 	const [markingViewedThreadIds] = useState(() => new Set<string>());
 	const {
 		createThread,
@@ -96,19 +88,10 @@ export function useAiChatPanelController({
 			return;
 		}
 
-		if (
-			!activeThreadId ||
-			!threads.some((thread) => thread.id === activeThreadId)
-		) {
+		if (!activeThreadId || !threads.some((thread) => thread.id === activeThreadId)) {
 			setActiveAiChatThread(workspaceId, threads[0].id);
 		}
-	}, [
-		activeThreadId,
-		areThreadsReady,
-		setActiveAiChatThread,
-		threads,
-		workspaceId,
-	]);
+	}, [activeThreadId, areThreadsReady, setActiveAiChatThread, threads, workspaceId]);
 
 	useEffect(() => {
 		if (!activeThread?.hasUnreadUpdate) {
@@ -123,12 +106,7 @@ export function useAiChatPanelController({
 		void markThreadViewed(activeThread.id).finally(() => {
 			markingViewedThreadIds.delete(activeThread.id);
 		});
-	}, [
-		activeThread?.hasUnreadUpdate,
-		activeThread?.id,
-		markingViewedThreadIds,
-		markThreadViewed,
-	]);
+	}, [activeThread?.hasUnreadUpdate, activeThread?.id, markingViewedThreadIds, markThreadViewed]);
 
 	return {
 		activeThreadId,
@@ -150,15 +128,12 @@ export function useAiChatPanelController({
 			setIsDeleteThreadDialogOpen(true);
 		},
 		onMaximize: () => setChatSurfaceMode(workspaceId, "fullscreen"),
-		onModelChange: (nextModelId: AiChatModelId) =>
-			setAiChatModel(workspaceId, nextModelId),
+		onModelChange: (nextModelId: AiChatModelId) => setAiChatModel(workspaceId, nextModelId),
 		onNewChat: () => void handleNewChat(),
 		onRestore: () => setChatSurfaceMode(workspaceId, "docked"),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
-			thread.id === activeThreadId
-				? { ...thread, hasUnreadUpdate: false }
-				: thread,
+			thread.id === activeThreadId ? { ...thread, hasUnreadUpdate: false } : thread,
 		),
 	};
 }

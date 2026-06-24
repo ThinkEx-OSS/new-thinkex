@@ -7,10 +7,7 @@ interface WorkspaceCardMetaRowProps {
 	trailing?: ReactNode | null;
 }
 
-export function WorkspaceCardMetaRow({
-	leading,
-	trailing,
-}: WorkspaceCardMetaRowProps) {
+export function WorkspaceCardMetaRow({ leading, trailing }: WorkspaceCardMetaRowProps) {
 	const hasLeading = leading != null;
 	const hasTrailing = trailing != null;
 

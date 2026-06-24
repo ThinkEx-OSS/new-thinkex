@@ -1,11 +1,6 @@
 import { findChildren } from "@tiptap/core";
 import type { Node as ProsemirrorNode } from "@tiptap/pm/model";
-import {
-	type EditorState,
-	Plugin,
-	PluginKey,
-	type PluginView,
-} from "@tiptap/pm/state";
+import { type EditorState, Plugin, PluginKey, type PluginView } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { SpecialLanguage, ThemeRegistration } from "shiki/core";
 
@@ -102,10 +97,7 @@ function getLoadedLanguage({
 }): HighlightLanguage {
 	const normalizedLanguage = normalizeCodeLanguage(language) ?? defaultLanguage;
 
-	if (
-		normalizedLanguage &&
-		highlighter.getLoadedLanguages().includes(normalizedLanguage)
-	) {
+	if (normalizedLanguage && highlighter.getLoadedLanguages().includes(normalizedLanguage)) {
 		return normalizedLanguage;
 	}
 
@@ -226,10 +218,7 @@ export function ShikiPlugin({
 							oldDoc: oldState.doc,
 						}));
 
-				if (
-					transaction.getMeta("workspaceDocumentCodeBlockShiki") ||
-					didChangeAroundCodeBlock
-				) {
+				if (transaction.getMeta("workspaceDocumentCodeBlockShiki") || didChangeAroundCodeBlock) {
 					return getDecorations({
 						defaultLanguage,
 						doc: transaction.doc,
@@ -322,9 +311,7 @@ export function ShikiPlugin({
 						this.loadedKey = loadKey;
 
 						if (didLoad) {
-							view.dispatch(
-								view.state.tr.setMeta("workspaceDocumentCodeBlockShiki", true),
-							);
+							view.dispatch(view.state.tr.setMeta("workspaceDocumentCodeBlockShiki", true));
 						}
 					} finally {
 						this.activeLoadKey = null;

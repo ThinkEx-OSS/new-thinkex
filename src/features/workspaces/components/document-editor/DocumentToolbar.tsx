@@ -1,13 +1,5 @@
 import type { Editor } from "@tiptap/react";
-import {
-	Check,
-	Download,
-	EllipsisVertical,
-	FileText,
-	Printer,
-	Redo2,
-	Undo2,
-} from "lucide-react";
+import { Check, Download, EllipsisVertical, FileText, Redo2, Undo2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import {
@@ -19,11 +11,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "#/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import {
 	type DocumentEditorUiState,
 	getActiveInlineFormat,
@@ -83,19 +71,12 @@ function BlockTypeMenu({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				render={
-					<WorkspaceToolbarIconButton
-						disabled={!editor}
-						aria-label="Text block"
-					/>
-				}
+				render={<WorkspaceToolbarIconButton disabled={!editor} aria-label="Text block" />}
 			>
 				{editorState.block.kind === "structure" ? (
 					getStructureBlockIcon(editorState.block.type)
 				) : (
-					<span className="truncate">
-						{getFontSizeIcon(editorState.block.size)}
-					</span>
+					<span className="truncate">{getFontSizeIcon(editorState.block.size)}</span>
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-44">
@@ -136,12 +117,7 @@ function AlignMenu({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				render={
-					<WorkspaceToolbarIconButton
-						disabled={disabled}
-						aria-label="Text alignment"
-					/>
-				}
+				render={<WorkspaceToolbarIconButton disabled={disabled} aria-label="Text alignment" />}
 			>
 				{getTextAlignIcon(editorState.textAlign)}
 			</DropdownMenuTrigger>
@@ -180,9 +156,7 @@ function InlineFormatMenu({
 					/>
 				}
 			>
-				{activeFormat
-					? getInlineMarkIcon(activeFormat)
-					: getInlineMarkIcon("bold")}
+				{activeFormat ? getInlineMarkIcon(activeFormat) : getInlineMarkIcon("bold")}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-44">
 				{documentInlineActions.map((action) => (
@@ -224,9 +198,7 @@ function DocumentMenuAction({
 				{action.icon}
 			</span>
 			{action.label}
-			{active ? (
-				<Check className="ml-auto size-3.5 text-muted-foreground" />
-			) : null}
+			{active ? <Check className="ml-auto size-3.5 text-muted-foreground" /> : null}
 		</DropdownMenuItem>
 	);
 }
@@ -236,10 +208,7 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<WorkspaceToolbarIconButton
-						disabled={disabled}
-						aria-label="More document actions"
-					/>
+					<WorkspaceToolbarIconButton disabled={disabled} aria-label="More document actions" />
 				}
 			>
 				<EllipsisVertical />
@@ -247,35 +216,19 @@ function DocumentMoreMenu({ disabled }: { disabled?: boolean }) {
 			<DropdownMenuContent className="w-48" align="end">
 				<DropdownMenuGroup>
 					<DropdownMenuLabel>Export</DropdownMenuLabel>
-					<DropdownMenuItem
-						className="[&_svg:not([class*='size-'])]:size-4"
-						disabled
-					>
+					<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<Download />
 						</span>
-						Export as PDF
+						Export to PDF
+						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
-					<DropdownMenuItem
-						className="[&_svg:not([class*='size-'])]:size-4"
-						disabled
-					>
+					<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
 						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 							<FileText />
 						</span>
-						Export as Markdown
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem
-						className="[&_svg:not([class*='size-'])]:size-4"
-						disabled
-					>
-						<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
-							<Printer />
-						</span>
-						Print
+						Export to Google Docs
+						<span className="ml-auto text-xs text-muted-foreground">Soon</span>
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>
@@ -295,11 +248,7 @@ function ToolbarButton({
 	onClick?: () => void;
 }) {
 	const button = (
-		<WorkspaceToolbarIconButton
-			disabled={disabled}
-			aria-label={label}
-			onClick={onClick}
-		>
+		<WorkspaceToolbarIconButton disabled={disabled} aria-label={label} onClick={onClick}>
 			{children}
 		</WorkspaceToolbarIconButton>
 	);

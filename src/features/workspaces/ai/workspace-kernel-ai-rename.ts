@@ -22,11 +22,7 @@ export interface RenameWorkspaceKernelAiItemsInput {
 }
 
 export interface RenameWorkspaceKernelAiFailure {
-	code:
-		| "cannot_rename_root"
-		| "path_already_exists"
-		| "path_not_absolute"
-		| "path_not_found";
+	code: "cannot_rename_root" | "path_already_exists" | "path_not_absolute" | "path_not_found";
 	index: number;
 	path: string;
 }
@@ -82,9 +78,7 @@ export async function renameWorkspaceKernelAiItems(
 		});
 	}
 
-	const renamed: Array<
-		RenameWorkspaceKernelAiRenamedItem & { itemId: string }
-	> = [];
+	const renamed: Array<RenameWorkspaceKernelAiRenamedItem & { itemId: string }> = [];
 
 	for (const resolved of resolvedItems) {
 		let command: Awaited<ReturnType<typeof context.kernel.renameItem>>;
@@ -112,10 +106,7 @@ export async function renameWorkspaceKernelAiItems(
 
 		renamed.push({
 			itemId: command.result.id,
-			path: joinWorkspaceItemPath(
-				getParentWorkspacePath(resolved.path),
-				command.result.name,
-			),
+			path: joinWorkspaceItemPath(getParentWorkspacePath(resolved.path), command.result.name),
 			previousPath: resolved.path,
 			type: command.result.type,
 		});
@@ -123,9 +114,7 @@ export async function renameWorkspaceKernelAiItems(
 
 	const finalPaths =
 		renamed.length > 0
-			? buildWorkspaceKernelItemPathIndex(
-					(await context.kernel.getPage()).items,
-				)
+			? buildWorkspaceKernelItemPathIndex((await context.kernel.getPage()).items)
 			: new Map<string, string>();
 
 	return {

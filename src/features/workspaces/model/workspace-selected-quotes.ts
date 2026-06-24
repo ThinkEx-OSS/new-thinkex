@@ -82,9 +82,7 @@ export function createPdfSelectedQuote(input: {
 	};
 }
 
-export function normalizeWorkspaceSelectedQuote(
-	quote: unknown,
-): WorkspaceSelectedQuote | null {
+export function normalizeWorkspaceSelectedQuote(quote: unknown): WorkspaceSelectedQuote | null {
 	if (!isRecord(quote) || !isWorkspaceSelectedQuoteSource(quote.source)) {
 		return null;
 	}
@@ -133,9 +131,7 @@ function isWorkspaceSelectedQuoteSource(
 		typeof source.itemId === "string" &&
 		Boolean(source.itemId.trim()) &&
 		Array.isArray(source.pageNumbers) &&
-		source.pageNumbers.every(
-			(pageNumber) => Number.isInteger(pageNumber) && pageNumber > 0,
-		)
+		source.pageNumbers.every((pageNumber) => Number.isInteger(pageNumber) && pageNumber > 0)
 	);
 }
 

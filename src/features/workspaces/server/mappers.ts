@@ -6,14 +6,8 @@ import type {
 	WorkspaceMembershipRole,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
-import {
-	workspaceColorSchema,
-	workspaceIconSchema,
-} from "#/features/workspaces/contracts";
-import {
-	DEFAULT_WORKSPACE_COLOR,
-	DEFAULT_WORKSPACE_ICON,
-} from "#/features/workspaces/defaults";
+import { workspaceColorSchema, workspaceIconSchema } from "#/features/workspaces/contracts";
+import { DEFAULT_WORKSPACE_COLOR, DEFAULT_WORKSPACE_ICON } from "#/features/workspaces/defaults";
 
 type WorkspaceRow = InferSelectModel<typeof workspaces>;
 type WorkspaceSummaryRow = WorkspaceRow & {

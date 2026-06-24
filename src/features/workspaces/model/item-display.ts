@@ -15,8 +15,7 @@ import {
 export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	const typeDisplay = getWorkspaceObjectRegistryEntry(item.type);
 	const palette = getWorkspaceItemPalette(item);
-	const fileDescriptor =
-		item.type === "file" ? resolveWorkspaceFileTypeFromItem(item) : null;
+	const fileDescriptor = item.type === "file" ? resolveWorkspaceFileTypeFromItem(item) : null;
 
 	return {
 		...typeDisplay,
@@ -27,34 +26,31 @@ export function getWorkspaceItemDisplay(item: WorkspaceItem) {
 	};
 }
 
-export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map(
-	(display) => ({
-		type: display.type,
-		label: display.menuLabel,
-		group: display.menuGroup,
-		Icon: display.icon,
-		iconClassName:
-			workspaceColors[workspaceItemTypeColors[display.type]].iconClassName,
-	}),
-);
+export const workspaceItemCreateActions = creatableWorkspaceObjectEntries.map((display) => ({
+	type: display.type,
+	label: display.menuLabel,
+	group: display.menuGroup,
+	Icon: display.icon,
+	iconClassName: workspaceColors[workspaceItemTypeColors[display.type]].iconClassName,
+}));
 
 const workspaceItemPrimaryCreateActionOrder = ["document", "folder"] as const;
 
-export const workspaceItemPrimaryCreateActions =
-	workspaceItemPrimaryCreateActionOrder.map((type) => {
-		const action = workspaceItemCreateActions.find(
-			(item) => item.type === type,
-		);
+export const workspaceItemPrimaryCreateActions = workspaceItemPrimaryCreateActionOrder.map(
+	(type) => {
+		const action = workspaceItemCreateActions.find((item) => item.type === type);
 
 		if (!action) {
 			throw new Error(`Missing workspace create action for type: ${type}`);
 		}
 
 		return action;
-	});
+	},
+);
 
-export const workspaceItemLearnCreateActions =
-	workspaceItemCreateActions.filter((action) => action.group === "learn");
+export const workspaceItemLearnCreateActions = workspaceItemCreateActions.filter(
+	(action) => action.group === "learn",
+);
 
 export interface WorkspaceItemAcquisitionAction {
 	id: "upload-file" | "record-audio";
@@ -65,22 +61,20 @@ export interface WorkspaceItemAcquisitionAction {
 	disabled: boolean;
 }
 
-export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] =
-	[
-		{
-			id: "upload-file",
-			label: "Upload",
-			Icon: Upload,
-			iconClassName:
-				workspaceColors[workspaceItemTypeColors.file].iconClassName,
-			disabled: false,
-		},
-		{
-			id: "record-audio",
-			label: "Record",
-			description: "Soon",
-			Icon: Mic,
-			iconClassName: workspaceColors.orange.iconClassName,
-			disabled: true,
-		},
-	];
+export const workspaceItemAcquisitionActions: WorkspaceItemAcquisitionAction[] = [
+	{
+		id: "upload-file",
+		label: "Upload",
+		Icon: Upload,
+		iconClassName: workspaceColors[workspaceItemTypeColors.file].iconClassName,
+		disabled: false,
+	},
+	{
+		id: "record-audio",
+		label: "Record",
+		description: "Soon",
+		Icon: Mic,
+		iconClassName: workspaceColors.orange.iconClassName,
+		disabled: true,
+	},
+];

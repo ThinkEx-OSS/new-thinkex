@@ -1,7 +1,4 @@
-import type {
-	WorkspaceItemSummary,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspaceItemSummary, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 import {
 	workspaceColorOptions,
@@ -21,21 +18,13 @@ const workspaceRecencyDateFormatter = new Intl.DateTimeFormat(undefined, {
 	month: "short",
 	day: "numeric",
 });
-const workspaceRecencyDateWithYearFormatter = new Intl.DateTimeFormat(
-	undefined,
-	{
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	},
-);
+const workspaceRecencyDateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
+	month: "short",
+	day: "numeric",
+	year: "numeric",
+});
 
-export {
-	filterWorkspaceIconOptions,
-	workspaceColorOptions,
-	workspaceColors,
-	workspaceIconOptions,
-};
+export { filterWorkspaceIconOptions, workspaceColorOptions, workspaceColors, workspaceIconOptions };
 
 export function getWorkspaceDisplay(workspace: WorkspaceSummary) {
 	const icon = workspace.icon ?? "compass";
@@ -74,9 +63,7 @@ export function getWorkspaceItemRecencyLabel(
 	const createdAt = Date.parse(item.createdAt);
 	const updatedAt = Date.parse(item.updatedAt);
 	const isCreatedState =
-		!Number.isNaN(createdAt) &&
-		!Number.isNaN(updatedAt) &&
-		updatedAt <= createdAt;
+		!Number.isNaN(createdAt) && !Number.isNaN(updatedAt) && updatedAt <= createdAt;
 	const prefix = isCreatedState ? "Created" : "Edited";
 	const timestamp = isCreatedState ? item.createdAt : item.updatedAt;
 
@@ -114,16 +101,8 @@ function isSameLocalDay(left: Date, right: Date) {
 }
 
 function getLocalDayDelta(date: Date, now: Date) {
-	const dateDay = new Date(
-		date.getFullYear(),
-		date.getMonth(),
-		date.getDate(),
-	).getTime();
-	const nowDay = new Date(
-		now.getFullYear(),
-		now.getMonth(),
-		now.getDate(),
-	).getTime();
+	const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+	const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
 	return Math.floor((nowDay - dateDay) / 86_400_000);
 }

@@ -25,8 +25,7 @@ export interface EditWorkspaceKernelAiItemInput {
 	workspaceId: string;
 }
 
-type EditWorkspaceKernelAiFailure =
-	DocumentSessionApplyMarkdownEditsResult["failures"][number];
+type EditWorkspaceKernelAiFailure = DocumentSessionApplyMarkdownEditsResult["failures"][number];
 
 export interface EditWorkspaceKernelAiItemResult {
 	applied: number;
@@ -51,20 +50,14 @@ export async function editWorkspaceKernelAiItem(
 	if (resolution.status === "failed") {
 		return {
 			path: resolution.failure.path,
-			...failedWorkspaceAiEditResult(
-				resolution.failure.code,
-				input.edits.length,
-			),
+			...failedWorkspaceAiEditResult(resolution.failure.code, input.edits.length),
 		};
 	}
 
 	if (resolution.item.type !== "document") {
 		return {
 			path: resolution.path,
-			...failedWorkspaceAiEditResult(
-				"unsupported_item_type",
-				input.edits.length,
-			),
+			...failedWorkspaceAiEditResult("unsupported_item_type", input.edits.length),
 		};
 	}
 
@@ -84,10 +77,7 @@ export async function editWorkspaceKernelAiItem(
 	};
 }
 
-async function getDocumentSession(input: {
-	itemId: string;
-	workspaceId: string;
-}) {
+async function getDocumentSession(input: { itemId: string; workspaceId: string }) {
 	const { env } = await import("cloudflare:workers");
 	const documentSessionNamespace = env.DocumentSession as unknown as {
 		getByName(name: string): DocumentSessionClient;

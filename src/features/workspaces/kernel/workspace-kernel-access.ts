@@ -111,12 +111,8 @@ export interface WorkspaceKernelClient {
 		fileName: string;
 		sizeBytes: number;
 	}>;
-	readFilePreview(input: {
-		itemId: string;
-	}): Promise<ReadWorkspaceKernelFilePreviewResult | null>;
-	upsertFileProjection(
-		input: UpsertWorkspaceKernelFileProjectionArgs,
-	): Promise<void>;
+	readFilePreview(input: { itemId: string }): Promise<ReadWorkspaceKernelFilePreviewResult | null>;
+	upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs): Promise<void>;
 	readFileProjection(
 		input: ReadWorkspaceKernelFileProjectionArgs,
 	): Promise<ReadWorkspaceKernelFileProjectionResult | null>;

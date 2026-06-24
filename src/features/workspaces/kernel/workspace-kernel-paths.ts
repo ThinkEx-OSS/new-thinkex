@@ -22,9 +22,7 @@ export class WorkspaceKernelPathError extends Error {
 	}
 }
 
-export function buildWorkspaceKernelTree(
-	items: WorkspaceItemSummary[],
-): WorkspaceKernelTree {
+export function buildWorkspaceKernelTree(items: WorkspaceItemSummary[]): WorkspaceKernelTree {
 	const childrenByParentId = new Map<string | null, WorkspaceItemSummary[]>();
 
 	for (const item of items) {
@@ -149,9 +147,7 @@ export function joinWorkspaceItemPath(parentPath: string, name: string) {
 	return `${parentPath}/${relativePath}`;
 }
 
-export function buildWorkspaceKernelItemPathIndex(
-	items: WorkspaceItemSummary[],
-) {
+export function buildWorkspaceKernelItemPathIndex(items: WorkspaceItemSummary[]) {
 	const tree = buildWorkspaceKernelTree(items);
 	const paths = new Map<string, string>();
 
@@ -172,10 +168,7 @@ export function toWorkspacePathSegment(name: string) {
 	return normalizeWorkspaceItemName(name);
 }
 
-function compareWorkspaceKernelItems(
-	left: WorkspaceItemSummary,
-	right: WorkspaceItemSummary,
-) {
+function compareWorkspaceKernelItems(left: WorkspaceItemSummary, right: WorkspaceItemSummary) {
 	return (
 		left.sortOrder - right.sortOrder ||
 		left.name.localeCompare(right.name) ||

@@ -83,18 +83,13 @@ export default function AiChatPanelToolbar({
 				<WorkspaceToolbarGroup className="gap-1">
 					<DropdownMenu open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
 						<DropdownMenuTrigger
-							render={
-								<WorkspaceToolbarIconButton aria-label="Open chat history" />
-							}
+							render={<WorkspaceToolbarIconButton aria-label="Open chat history" />}
 						>
 							<History aria-hidden="true" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-72">
 							<DropdownMenuGroup>
-								<DropdownMenuItem
-									disabled={isNewChatDisabled}
-									onClick={handleNewChat}
-								>
+								<DropdownMenuItem disabled={isNewChatDisabled} onClick={handleNewChat}>
 									<Plus className="size-4" aria-hidden="true" />
 									New chat
 								</DropdownMenuItem>
@@ -104,10 +99,7 @@ export default function AiChatPanelToolbar({
 									<DropdownMenuSeparator />
 									<DropdownMenuGroup>
 										{threads.map((thread) => (
-											<div
-												key={thread.id}
-												className="group/thread-row relative"
-											>
+											<div key={thread.id} className="group/thread-row relative">
 												<DropdownMenuItem
 													className={cn(
 														"min-w-0 items-start py-2 pr-9",
@@ -127,8 +119,7 @@ export default function AiChatPanelToolbar({
 																thread={thread}
 																isActive={thread.id === activeThreadId}
 																isRecovering={
-																	thread.id === activeThreadId &&
-																	activeThreadIsRecovering
+																	thread.id === activeThreadId && activeThreadIsRecovering
 																}
 															/>
 														</span>
@@ -156,10 +147,7 @@ export default function AiChatPanelToolbar({
 						{isMaximized ? <Minimize2 /> : <Maximize2 />}
 					</WorkspaceToolbarIconButton>
 
-					<WorkspaceToolbarIconButton
-						aria-label="Close AI chat"
-						onClick={onClose}
-					>
+					<WorkspaceToolbarIconButton aria-label="Close AI chat" onClick={onClose}>
 						<X />
 					</WorkspaceToolbarIconButton>
 				</WorkspaceToolbarGroup>

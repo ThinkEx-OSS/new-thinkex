@@ -1,35 +1,19 @@
 import { relations, sql } from "drizzle-orm";
-import {
-	check,
-	index,
-	integer,
-	sqliteTable,
-	text,
-	uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const WORKSPACE_ROLES = ["owner", "admin", "editor", "viewer"] as const;
 const WORKSPACE_INVITE_TYPES = ["email", "link"] as const;
-const WORKSPACE_INVITE_STATUSES = [
-	"pending",
-	"accepted",
-	"revoked",
-	"expired",
-] as const;
+const WORKSPACE_INVITE_STATUSES = ["pending", "accepted", "revoked", "expired"] as const;
 
 function sqlEnumValues(values: readonly string[]) {
-	return sql.raw(
-		values.map((value) => `'${value.replaceAll("'", "''")}'`).join(", "),
-	);
+	return sql.raw(values.map((value) => `'${value.replaceAll("'", "''")}'`).join(", "));
 }
 
 export const user = sqliteTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
-	emailVerified: integer("email_verified", { mode: "boolean" })
-		.default(false)
-		.notNull(),
+	emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
 	image: text("image"),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.$defaultFn(() => /* @__PURE__ */ new Date())
@@ -158,19 +142,13 @@ export const workspaceMembers = sqliteTable(
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("workspace_members_workspace_user_unique").on(
-			table.workspaceId,
-			table.userId,
-		),
+		uniqueIndex("workspace_members_workspace_user_unique").on(table.workspaceId, table.userId),
 		check(
 			"workspace_members_role_check",
 			sql`${table.role} in (${sqlEnumValues(WORKSPACE_ROLES)})`,
 		),
 		index("workspace_members_user_id_idx").on(table.userId),
-		index("workspace_members_user_last_opened_at_idx").on(
-			table.userId,
-			table.lastOpenedAt,
-		),
+		index("workspace_members_user_last_opened_at_idx").on(table.userId, table.lastOpenedAt),
 	],
 );
 
@@ -183,9 +161,7 @@ export const workspaceInvites = sqliteTable(
 			.references(() => workspaces.id, { onDelete: "cascade" }),
 		role: text("role", { enum: WORKSPACE_ROLES }).notNull(),
 		type: text("type", { enum: WORKSPACE_INVITE_TYPES }).notNull(),
-		status: text("status", { enum: WORKSPACE_INVITE_STATUSES })
-			.default("pending")
-			.notNull(),
+		status: text("status", { enum: WORKSPACE_INVITE_STATUSES }).default("pending").notNull(),
 		email: text("email"),
 		token: text("token"),
 		createdByUserId: text("created_by_user_id")
@@ -255,30 +231,24 @@ export const workspaceRelations = relations(workspaces, ({ one, many }) => ({
 	invites: many(workspaceInvites),
 }));
 
-export const workspaceMemberRelations = relations(
-	workspaceMembers,
-	({ one }) => ({
-		workspace: one(workspaces, {
-			fields: [workspaceMembers.workspaceId],
-			references: [workspaces.id],
-		}),
-		user: one(user, {
-			fields: [workspaceMembers.userId],
-			references: [user.id],
-		}),
+export const workspaceMemberRelations = relations(workspaceMembers, ({ one }) => ({
+	workspace: one(workspaces, {
+		fields: [workspaceMembers.workspaceId],
+		references: [workspaces.id],
 	}),
-);
+	user: one(user, {
+		fields: [workspaceMembers.userId],
+		references: [user.id],
+	}),
+}));
 
-export const workspaceInviteRelations = relations(
-	workspaceInvites,
-	({ one }) => ({
-		workspace: one(workspaces, {
-			fields: [workspaceInvites.workspaceId],
-			references: [workspaces.id],
-		}),
-		createdBy: one(user, {
-			fields: [workspaceInvites.createdByUserId],
-			references: [user.id],
-		}),
+export const workspaceInviteRelations = relations(workspaceInvites, ({ one }) => ({
+	workspace: one(workspaces, {
+		fields: [workspaceInvites.workspaceId],
+		references: [workspaces.id],
 	}),
-);
+	createdBy: one(user, {
+		fields: [workspaceInvites.createdByUserId],
+		references: [user.id],
+	}),
+}));

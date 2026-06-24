@@ -36,8 +36,7 @@ export function useWorkspaceSelectionItemIds(workspaceId: string) {
 	return useWorkspaceSelectionStore(
 		useMemo(
 			() => (state: WorkspaceSelectionState) =>
-				state.itemIdsByWorkspaceId[workspaceId] ??
-				EMPTY_WORKSPACE_SELECTION_ITEM_IDS,
+				state.itemIdsByWorkspaceId[workspaceId] ?? EMPTY_WORKSPACE_SELECTION_ITEM_IDS,
 			[workspaceId],
 		),
 	);
@@ -70,11 +69,7 @@ export const useWorkspaceSelectionStore = create<WorkspaceSelectionState>()(
 						? appendWorkspaceSelectionItemId(currentItemIds, itemId)
 						: currentItemIds.filter((currentId) => currentId !== itemId);
 
-					return getNextWorkspaceSelectionState(
-						state,
-						workspaceId,
-						nextItemIds,
-					);
+					return getNextWorkspaceSelectionState(state, workspaceId, nextItemIds);
 				}),
 			setSelectedItemIds: ({ workspaceId, itemIds, validItemIds }) =>
 				set((state) =>
@@ -97,10 +92,7 @@ function getValidWorkspaceSelectionItemIds(
 	const seenItemIds = new Set<string>();
 
 	for (const itemId of itemIds) {
-		if (
-			seenItemIds.has(itemId) ||
-			(validItemIds && !validItemIds.has(itemId))
-		) {
+		if (seenItemIds.has(itemId) || (validItemIds && !validItemIds.has(itemId))) {
 			continue;
 		}
 
@@ -111,10 +103,7 @@ function getValidWorkspaceSelectionItemIds(
 	return nextItemIds;
 }
 
-function appendWorkspaceSelectionItemId(
-	itemIds: readonly string[],
-	itemId: string,
-) {
+function appendWorkspaceSelectionItemId(itemIds: readonly string[], itemId: string) {
 	return itemIds.includes(itemId) ? [...itemIds] : [...itemIds, itemId];
 }
 

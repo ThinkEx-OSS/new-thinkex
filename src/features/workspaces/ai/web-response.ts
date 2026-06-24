@@ -30,8 +30,7 @@ export async function readResponseText(
 			break;
 		}
 
-		const chunk =
-			value.byteLength > remaining ? value.slice(0, remaining) : value;
+		const chunk = value.byteLength > remaining ? value.slice(0, remaining) : value;
 		chunks.push(chunk);
 		received += chunk.byteLength;
 

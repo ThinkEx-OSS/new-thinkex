@@ -172,12 +172,8 @@ export class WorkspaceKernelItemCommands {
 		input: MoveWorkspaceKernelItemsArgs,
 	): Promise<WorkspaceCommandResult<MoveWorkspaceKernelItemsResult>> {
 		const parentId = input.parentId ?? null;
-		const movesByItemId = new Map(
-			input.items.map((item) => [item.itemId, item]),
-		);
-		const roots = this.getUniqueRootRows(
-			input.items.map((item) => item.itemId),
-		);
+		const movesByItemId = new Map(input.items.map((item) => [item.itemId, item]));
+		const roots = this.getUniqueRootRows(input.items.map((item) => item.itemId));
 		const movedItems: WorkspaceItemSummary[] = [];
 
 		this.store.assertParentIsValid(parentId);
@@ -336,8 +332,7 @@ export class WorkspaceKernelItemCommands {
 
 		await this.workspace.writeFile(
 			input.shellPath,
-			input.initialContent ??
-				getInitialWorkspaceKernelContent(input.type, input.name),
+			input.initialContent ?? getInitialWorkspaceKernelContent(input.type, input.name),
 			getWorkspaceKernelContentMimeType(input.type),
 		);
 	}
@@ -431,10 +426,7 @@ export class WorkspaceKernelItemCommands {
 			.filter((row) => !this.hasSelectedAncestor(row, selectedItemIds));
 	}
 
-	private hasSelectedAncestor(
-		row: KernelItemRow,
-		selectedItemIds: ReadonlySet<string>,
-	) {
+	private hasSelectedAncestor(row: KernelItemRow, selectedItemIds: ReadonlySet<string>) {
 		const seenItemIds = new Set<string>([row.id]);
 		let parentId = row.parent_id;
 

@@ -1,7 +1,4 @@
-import type {
-	ChatErrorClassification,
-	ChatErrorContext,
-} from "@cloudflare/think";
+import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
 
 import { ensureChatMetaColumns } from "#/features/workspaces/ai/ai-thread-directory-schema";
 import type {
@@ -65,10 +62,7 @@ export function ensureChatMetaStore(store: ChatMetaStore) {
 		ON chat_meta (workspace_id, archived_at, last_activity_at)`;
 }
 
-export function insertThreadMeta(
-	store: ChatMetaStore,
-	input: InsertThreadMetaInput,
-) {
+export function insertThreadMeta(store: ChatMetaStore, input: InsertThreadMetaInput) {
 	store.sql`
 		INSERT INTO chat_meta (
 			id,
@@ -115,11 +109,7 @@ export function insertThreadMeta(
 	`;
 }
 
-export function markThreadMetaViewed(
-	store: ChatMetaStore,
-	threadId: string,
-	now: number,
-) {
+export function markThreadMetaViewed(store: ChatMetaStore, threadId: string, now: number) {
 	store.sql`
 		UPDATE chat_meta
 		SET last_viewed_at = ${now}, updated_at = ${now}
@@ -159,10 +149,7 @@ export function markThreadRunStarted(
 	`;
 }
 
-export function markThreadRunFinished(
-	store: ChatMetaStore,
-	input: FinishThreadRunInput,
-) {
+export function markThreadRunFinished(store: ChatMetaStore, input: FinishThreadRunInput) {
 	store.sql`
 		UPDATE chat_meta
 		SET

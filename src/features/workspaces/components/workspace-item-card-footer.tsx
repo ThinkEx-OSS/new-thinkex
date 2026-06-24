@@ -8,9 +8,7 @@ interface WorkspaceItemCardFooterProps {
 	item: WorkspaceItem;
 }
 
-export function WorkspaceItemCardFooter({
-	item,
-}: WorkspaceItemCardFooterProps) {
+export function WorkspaceItemCardFooter({ item }: WorkspaceItemCardFooterProps) {
 	const { Icon, iconClassName, label } = getWorkspaceItemDisplay(item);
 
 	return (

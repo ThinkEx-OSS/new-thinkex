@@ -9,15 +9,9 @@ export const workspaceFileExtractionProviders = [
 	"llama_parse",
 ] as const;
 
-export type WorkspaceFileExtractionProviderId =
-	(typeof workspaceFileExtractionProviders)[number];
+export type WorkspaceFileExtractionProviderId = (typeof workspaceFileExtractionProviders)[number];
 
-export type WorkspaceFileExtractionMode =
-	| "fast"
-	| "auto"
-	| "ocr"
-	| "default"
-	| "stub";
+export type WorkspaceFileExtractionMode = "fast" | "auto" | "ocr" | "default" | "stub";
 
 export interface WorkspaceFileExtractionRoute {
 	provider: WorkspaceFileExtractionProviderId;
@@ -27,6 +21,4 @@ export interface WorkspaceFileExtractionRoute {
 
 export type WorkspaceFilePreviewGeneratorId = "pdf_webp" | "image_webp";
 
-export type WorkspaceFileAiReadStrategy =
-	| "markdown_extraction"
-	| "metadata_only";
+export type WorkspaceFileAiReadStrategy = "markdown_extraction" | "metadata_only";

@@ -11,11 +11,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 } from "#/components/ui/dropdown-menu";
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "#/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "#/components/ui/hover-card";
 import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 
 export const workspaceViewerHovercardTitle = "View-only access";
@@ -50,12 +46,7 @@ export function WorkspaceViewerRoleBadge() {
 						<Badge
 							variant="secondary"
 							className={workspaceViewerRoleBadgeClassName}
-							render={
-								<button
-									type="button"
-									aria-label={workspaceViewerHovercardTitle}
-								/>
-							}
+							render={<button type="button" aria-label={workspaceViewerHovercardTitle} />}
 						/>
 					}
 				>
@@ -78,15 +69,12 @@ export function WorkspaceViewerMenuNotice({
 }: {
 	menuKind?: keyof typeof workspaceViewerMenuNoticeComponents;
 }) {
-	const { Group, Label, Separator } =
-		workspaceViewerMenuNoticeComponents[menuKind];
+	const { Group, Label, Separator } = workspaceViewerMenuNoticeComponents[menuKind];
 
 	return (
 		<>
 			<Group>
-				<Label className="font-normal leading-snug">
-					{workspaceViewerMenuNoticeText}
-				</Label>
+				<Label className="font-normal leading-snug">{workspaceViewerMenuNoticeText}</Label>
 			</Group>
 			<Separator />
 		</>

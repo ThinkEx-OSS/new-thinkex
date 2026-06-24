@@ -20,10 +20,7 @@ interface UseWorkspaceAiChatOptions {
 	threadId: string;
 }
 
-export function useWorkspaceAiChat({
-	modelId,
-	threadId,
-}: UseWorkspaceAiChatOptions) {
+export function useWorkspaceAiChat({ modelId, threadId }: UseWorkspaceAiChatOptions) {
 	const agent = useAgent({
 		agent: userAIAgentName,
 		basePath: userAIBasePath,
@@ -66,10 +63,7 @@ export function useWorkspaceAiChat({
 					: status;
 	const canSend = inputStatus === "ready" && !presentation.isBusy;
 
-	const sendMessage = (
-		message: AiChatSendMessage,
-		options?: AiChatSendMessageOptions,
-	) => {
+	const sendMessage = (message: AiChatSendMessage, options?: AiChatSendMessageOptions) => {
 		if (message.parts.length === 0 || !canSend) {
 			return false;
 		}

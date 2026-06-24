@@ -6,16 +6,11 @@ import {
 	type WorkspaceAiContextScope,
 } from "#/features/workspaces/model/workspace-ai-context";
 
-export default function AiChatPromptContextBar({
-	context,
-}: {
-	context: WorkspaceAiContextScope;
-}) {
+export default function AiChatPromptContextBar({ context }: { context: WorkspaceAiContextScope }) {
 	const attachments = usePromptInputAttachments();
 	const hasAttachments = attachments.files.length > 0;
 	const hasWorkspaceContext =
-		getWorkspaceAiContextChips(context).length > 0 ||
-		context.selectedQuotes.length > 0;
+		getWorkspaceAiContextChips(context).length > 0 || context.selectedQuotes.length > 0;
 
 	if (!hasAttachments && !hasWorkspaceContext) {
 		return null;

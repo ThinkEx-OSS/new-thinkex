@@ -9,20 +9,14 @@ import { getTiptapDocumentSchemaExtensions } from "#/features/workspaces/documen
 
 let documentMarkdownManager: MarkdownManager | null = null;
 
-export function serializeTiptapDocumentToMarkdown(
-	document: TiptapDocumentJson,
-) {
+export function serializeTiptapDocumentToMarkdown(document: TiptapDocumentJson) {
 	return getDocumentMarkdownManager()
 		.serialize(document as JSONContent)
 		.trimEnd();
 }
 
-export function parseMarkdownToTiptapDocument(
-	markdown: string,
-): TiptapDocumentJson {
-	return tiptapDocumentJsonSchema.parse(
-		getDocumentMarkdownManager().parse(markdown),
-	);
+export function parseMarkdownToTiptapDocument(markdown: string): TiptapDocumentJson {
+	return tiptapDocumentJsonSchema.parse(getDocumentMarkdownManager().parse(markdown));
 }
 
 function getDocumentMarkdownManager() {

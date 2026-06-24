@@ -129,31 +129,23 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 	},
 ] as const satisfies readonly WorkspaceUploadFamily[];
 
-const workspaceUploadFamilyByKind: Record<
-	WorkspaceFileAssetKind,
-	WorkspaceFileTypeDescriptor
-> = {
+const workspaceUploadFamilyByKind: Record<WorkspaceFileAssetKind, WorkspaceFileTypeDescriptor> = {
 	pdf: {
 		...WORKSPACE_UPLOAD_FAMILIES[0],
-		extensions: WORKSPACE_UPLOAD_FORMATS.filter(
-			(format) => format.assetKind === "pdf",
-		).map(({ ext, mime }) => ({ ext, mime })),
+		extensions: WORKSPACE_UPLOAD_FORMATS.filter((format) => format.assetKind === "pdf").map(
+			({ ext, mime }) => ({ ext, mime }),
+		),
 	},
 	image: {
 		...WORKSPACE_UPLOAD_FAMILIES[1],
-		extensions: WORKSPACE_UPLOAD_FORMATS.filter(
-			(format) => format.assetKind === "image",
-		).map(({ ext, mime }) => ({ ext, mime })),
+		extensions: WORKSPACE_UPLOAD_FORMATS.filter((format) => format.assetKind === "image").map(
+			({ ext, mime }) => ({ ext, mime }),
+		),
 	},
 };
 
 export const workspaceFileUploadAccept = [
-	...new Set(
-		WORKSPACE_UPLOAD_FORMATS.flatMap((format) => [
-			format.mime,
-			`.${format.ext}`,
-		]),
-	),
+	...new Set(WORKSPACE_UPLOAD_FORMATS.flatMap((format) => [format.mime, `.${format.ext}`])),
 ].join(",");
 
 export const workspaceFileUploadTypeLabel = formatUploadTypeLabel(
@@ -259,11 +251,7 @@ export function requireWorkspaceFileTypeFromHint(
 export function resolveWorkspaceUploadFormat(
 	input: WorkspaceFileUploadHint,
 ): WorkspaceUploadFormat | null {
-	return (
-		WORKSPACE_UPLOAD_FORMATS.find((format) =>
-			matchesUploadHint(format, input),
-		) ?? null
-	);
+	return WORKSPACE_UPLOAD_FORMATS.find((format) => matchesUploadHint(format, input)) ?? null;
 }
 
 export function resolveWorkspaceFileTypeFromHint(
@@ -302,10 +290,7 @@ export function normalizeWorkspaceUploadFileName(
 		fileName.split(/[\\/]/).at(-1),
 		descriptor.defaultFileName,
 	);
-	const matchedFormat = resolveMatchedUploadFormat(
-		{ fileName: name },
-		descriptor,
-	);
+	const matchedFormat = resolveMatchedUploadFormat({ fileName: name }, descriptor);
 
 	if (matchedFormat) {
 		return name;
@@ -367,15 +352,12 @@ function matchesUploadHint(
 	const contentType = normalizeUploadContentType(input.contentType);
 
 	return (
-		fileName.endsWith(`.${format.ext}`) ||
-		(contentType !== null && contentType === format.mime)
+		fileName.endsWith(`.${format.ext}`) || (contentType !== null && contentType === format.mime)
 	);
 }
 
 function getWorkspaceUploadDeniedMessage(input: WorkspaceFileUploadHint) {
-	const denied = WORKSPACE_UPLOAD_DENIED_FORMATS.find((format) =>
-		matchesUploadHint(format, input),
-	);
+	const denied = WORKSPACE_UPLOAD_DENIED_FORMATS.find((format) => matchesUploadHint(format, input));
 
 	return denied?.message ?? null;
 }
@@ -400,9 +382,7 @@ function stripFileExtension(fileName: string) {
 	return fileName.slice(0, lastDot);
 }
 
-function formatUploadTypeLabel(
-	descriptors: readonly WorkspaceFileTypeDescriptor[],
-) {
+function formatUploadTypeLabel(descriptors: readonly WorkspaceFileTypeDescriptor[]) {
 	const labels = descriptors.map((descriptor) => descriptor.pluralLabel);
 
 	if (labels.length <= 1) {

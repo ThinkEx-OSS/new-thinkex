@@ -62,9 +62,7 @@ const workspaceListItemsInputSchema = z.object({
 	recursive: z
 		.boolean()
 		.optional()
-		.describe(
-			"Include nested descendants. Defaults to false for immediate children only.",
-		),
+		.describe("Include nested descendants. Defaults to false for immediate children only."),
 });
 
 const workspaceReadItemsInputSchema = z.object({
@@ -93,10 +91,7 @@ const workspaceReadItemsInputSchema = z.object({
 });
 
 const workspaceEditItemInputSchema = z.object({
-	path: z
-		.string()
-		.min(1)
-		.describe("Absolute path of one actual ThinkEx workspace item to edit."),
+	path: z.string().min(1).describe("Absolute path of one actual ThinkEx workspace item to edit."),
 	edits: z
 		.array(documentMarkdownEditSchema)
 		.min(1)
@@ -108,18 +103,11 @@ const workspaceRenameItemsInputSchema = z.object({
 	items: z
 		.array(
 			z.object({
-				name: z
-					.string()
-					.trim()
-					.min(1)
-					.max(160)
-					.describe("New user-visible item name."),
+				name: z.string().trim().min(1).max(160).describe("New user-visible item name."),
 				path: z
 					.string()
 					.min(1)
-					.describe(
-						"Absolute path of one actual ThinkEx workspace item to rename.",
-					),
+					.describe("Absolute path of one actual ThinkEx workspace item to rename."),
 			}),
 		)
 		.min(1)
@@ -133,16 +121,12 @@ const workspaceMoveItemsInputSchema = z.object({
 	destinationPath: z
 		.string()
 		.min(1)
-		.describe(
-			"Absolute path of the destination folder. Use / for the workspace root.",
-		),
+		.describe("Absolute path of the destination folder. Use / for the workspace root."),
 	paths: z
 		.array(z.string().min(1))
 		.min(1)
 		.max(20)
-		.describe(
-			"Absolute paths of one or more actual ThinkEx workspace items to move.",
-		),
+		.describe("Absolute paths of one or more actual ThinkEx workspace items to move."),
 });
 
 const workspaceCreateItemsInputSchema = z.object({
@@ -151,17 +135,11 @@ const workspaceCreateItemsInputSchema = z.object({
 			z.discriminatedUnion("type", [
 				z.object({
 					type: z.literal("folder"),
-					path: z
-						.string()
-						.min(1)
-						.describe("Final absolute path for the folder to create."),
+					path: z.string().min(1).describe("Final absolute path for the folder to create."),
 				}),
 				z.object({
 					type: z.literal("document"),
-					path: z
-						.string()
-						.min(1)
-						.describe("Final absolute path for the document to create."),
+					path: z.string().min(1).describe("Final absolute path for the document to create."),
 					initialContent: z
 						.string()
 						.describe("Optional initial Markdown content for the document.")
@@ -181,9 +159,7 @@ const workspaceDeleteItemsInputSchema = z.object({
 		.array(z.string().min(1))
 		.min(1)
 		.max(20)
-		.describe(
-			"Absolute paths of one or more actual ThinkEx workspace items to delete.",
-		),
+		.describe("Absolute paths of one or more actual ThinkEx workspace items to delete."),
 });
 
 const workspaceListItemsInputExamples = createInputExamples<
@@ -197,7 +173,7 @@ const workspaceListItemsInputExamples = createInputExamples<
 const workspaceReadItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceReadItemsInputSchema>
 >({
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 	contentLimit: 200,
 });
 
@@ -206,8 +182,8 @@ const workspaceRenameItemsInputExamples = createInputExamples<
 >({
 	items: [
 		{
-			path: "/Demo Folder/Demo Document.md",
-			name: "Tool Demo.md",
+			path: "/Demo Folder/Demo Document",
+			name: "Tool Demo",
 		},
 	],
 });
@@ -216,7 +192,7 @@ const workspaceMoveItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceMoveItemsInputSchema>
 >({
 	destinationPath: "/Archive",
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 });
 
 const workspaceCreateItemsInputExamples = createInputExamples<
@@ -229,9 +205,8 @@ const workspaceCreateItemsInputExamples = createInputExamples<
 		},
 		{
 			type: "document",
-			path: "/Demo Folder/Demo Document.md",
-			initialContent:
-				"# Demo Document\nThis document was created as part of a tool demo.",
+			path: "/Demo Folder/Demo Document",
+			initialContent: "# Demo Document\nThis document was created as part of a tool demo.",
 		},
 	],
 });
@@ -239,18 +214,17 @@ const workspaceCreateItemsInputExamples = createInputExamples<
 const workspaceDeleteItemsInputExamples = createInputExamples<
 	z.input<typeof workspaceDeleteItemsInputSchema>
 >({
-	paths: ["/Demo Folder/Demo Document.md"],
+	paths: ["/Demo Folder/Demo Document"],
 });
 
 const workspaceEditItemInputExamples = createInputExamples<
 	z.input<typeof workspaceEditItemInputSchema>
 >({
-	path: "/Demo Folder/Demo Document.md",
+	path: "/Demo Folder/Demo Document",
 	edits: [
 		{
 			type: "overwrite",
-			content:
-				"# Demo Document\nThis document was updated as part of the demo.",
+			content: "# Demo Document\nThis document was updated as part of the demo.",
 		},
 	],
 });
@@ -260,10 +234,9 @@ const workspaceListItemsOutputSchema = z.object({
 	more: z.boolean(),
 	items: z.array(workspacePathItemSchema),
 	failed: z.array(
-		createFailureSchema(
-			["path_not_absolute", "path_not_folder", "path_not_found"],
-			{ includeIndex: false },
-		),
+		createFailureSchema(["path_not_absolute", "path_not_folder", "path_not_found"], {
+			includeIndex: false,
+		}),
 	),
 });
 
@@ -310,11 +283,7 @@ const workspaceCreateItemsOutputSchema = z.object({
 const workspaceDeleteItemsOutputSchema = z.object({
 	items: z.array(workspacePathItemSchema),
 	failed: z.array(
-		createFailureSchema([
-			"cannot_delete_root",
-			"path_not_absolute",
-			"path_not_found",
-		]),
+		createFailureSchema(["cannot_delete_root", "path_not_absolute", "path_not_found"]),
 	),
 });
 
@@ -408,14 +377,8 @@ function createWorkspaceThreadTool<
 export function createAIThreadWorkspaceTools(input: {
 	getThreadContext: () => Promise<AIThreadContext | null>;
 }): ToolSet {
-	const createThreadTool = <
-		TInputSchema extends z.ZodTypeAny,
-		TOutputSchema extends z.ZodTypeAny,
-	>(
-		config: Omit<
-			WorkspaceThreadToolConfig<TInputSchema, TOutputSchema>,
-			"getThreadContext"
-		>,
+	const createThreadTool = <TInputSchema extends z.ZodTypeAny, TOutputSchema extends z.ZodTypeAny>(
+		config: Omit<WorkspaceThreadToolConfig<TInputSchema, TOutputSchema>, "getThreadContext">,
 	) => {
 		return createWorkspaceThreadTool({
 			...config,
@@ -425,8 +388,7 @@ export function createAIThreadWorkspaceTools(input: {
 
 	return {
 		workspace_list_items: createThreadTool({
-			description:
-				"List items in the actual ThinkEx workspace by absolute path.",
+			description: "List items in the actual ThinkEx workspace by absolute path.",
 			inputSchema: workspaceListItemsInputSchema,
 			inputExamples: workspaceListItemsInputExamples,
 			outputSchema: workspaceListItemsOutputSchema,
@@ -500,8 +462,7 @@ export function createAIThreadWorkspaceTools(input: {
 			},
 		}),
 		workspace_delete_items: createThreadTool({
-			description:
-				"Delete one or more actual ThinkEx workspace items by absolute path.",
+			description: "Delete one or more actual ThinkEx workspace items by absolute path.",
 			inputSchema: workspaceDeleteItemsInputSchema,
 			inputExamples: workspaceDeleteItemsInputExamples,
 			outputSchema: workspaceDeleteItemsOutputSchema,
@@ -531,9 +492,7 @@ export function createAIThreadWorkspaceTools(input: {
 	};
 }
 
-async function requireThreadContext(
-	getThreadContext: () => Promise<AIThreadContext | null>,
-) {
+async function requireThreadContext(getThreadContext: () => Promise<AIThreadContext | null>) {
 	const thread = await getThreadContext();
 
 	if (!thread) {

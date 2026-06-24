@@ -1,8 +1,4 @@
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "#/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "#/components/ui/resizable";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
 import type { WorkspacePresentationProps } from "#/features/workspaces/components/workspace-presentation-model";
 import type { WorkspacePane } from "#/features/workspaces/state/workspace-ui-store";

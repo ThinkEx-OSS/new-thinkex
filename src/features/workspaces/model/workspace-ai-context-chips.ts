@@ -3,10 +3,7 @@ import {
 	getWorkspaceAiContextItemReference,
 	getWorkspaceAiContextVisibleItemIds,
 } from "./workspace-ai-context-reference";
-import type {
-	WorkspaceAiContextChip,
-	WorkspaceAiContextScope,
-} from "./workspace-ai-context-types";
+import type { WorkspaceAiContextChip, WorkspaceAiContextScope } from "./workspace-ai-context-types";
 import { formatWorkspaceAiContextItemViewState } from "./workspace-item-view-state";
 
 export function getWorkspaceAiContextChips(
@@ -31,9 +28,7 @@ export function getWorkspaceAiContextChips(
 		});
 
 		chips.push({
-			viewStateLabel: formatWorkspaceAiContextItemViewState(
-				reference.state.viewState,
-			),
+			viewStateLabel: formatWorkspaceAiContextItemViewState(reference.state.viewState),
 			id: item.id,
 			item,
 			isActiveVisible: reference.state.activeVisible,

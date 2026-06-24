@@ -38,18 +38,12 @@ export function createWorkspaceFolderDropTargetData(input: {
 	};
 }
 
-export function getWorkspaceDragData(
-	data: unknown,
-): WorkspaceDragData | undefined {
+export function getWorkspaceDragData(data: unknown): WorkspaceDragData | undefined {
 	if (!isRecord(data)) {
 		return undefined;
 	}
 
-	if (
-		data.kind === "workspace-tab" &&
-		typeof data.tabId === "string" &&
-		data.tabId
-	) {
+	if (data.kind === "workspace-tab" && typeof data.tabId === "string" && data.tabId) {
 		return {
 			kind: "workspace-tab",
 			tabId: data.tabId,
@@ -73,9 +67,7 @@ export function getWorkspaceDragData(
 	return undefined;
 }
 
-export function getWorkspaceDropTargetData(
-	data: unknown,
-): WorkspaceDropTargetData | undefined {
+export function getWorkspaceDropTargetData(data: unknown): WorkspaceDropTargetData | undefined {
 	if (!isRecord(data)) {
 		return undefined;
 	}

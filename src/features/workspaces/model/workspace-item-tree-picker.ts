@@ -46,18 +46,14 @@ export function getWorkspaceMoveTargetExcludedFolderIds(input: {
 	return getWorkspaceSubtreeItemIds(input.items, input.itemIds);
 }
 
-export function getCommonWorkspaceItemParentId(
-	items: readonly WorkspaceItem[],
-) {
+export function getCommonWorkspaceItemParentId(items: readonly WorkspaceItem[]) {
 	if (items.length === 0) {
 		return undefined;
 	}
 
 	const parentId = items[0].parentId;
 
-	return items.every((item) => item.parentId === parentId)
-		? parentId
-		: undefined;
+	return items.every((item) => item.parentId === parentId) ? parentId : undefined;
 }
 
 function createWorkspaceTreePickerNode(input: {
@@ -106,10 +102,7 @@ function getWorkspaceItemPickerPath(parentPath: string, itemName: string) {
 	return parentPath === "/" ? `/${itemName}` : `${parentPath}/${itemName}`;
 }
 
-function compareWorkspaceTreePickerItems(
-	first: WorkspaceItem,
-	second: WorkspaceItem,
-) {
+function compareWorkspaceTreePickerItems(first: WorkspaceItem, second: WorkspaceItem) {
 	const orderDelta = first.sortOrder - second.sortOrder;
 
 	if (orderDelta !== 0) {

@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/a11y/useSemanticElements: shadcn registry groups arbitrary controls in div wrappers. */
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -38,11 +37,7 @@ function ButtonGroup({
 	);
 }
 
-function ButtonGroupText({
-	className,
-	render,
-	...props
-}: useRender.ComponentProps<"div">) {
+function ButtonGroupText({ className, render, ...props }: useRender.ComponentProps<"div">) {
 	return useRender({
 		defaultTagName: "div",
 		props: mergeProps<"div">(
@@ -79,9 +74,4 @@ function ButtonGroupSeparator({
 	);
 }
 
-export {
-	ButtonGroup,
-	ButtonGroupSeparator,
-	ButtonGroupText,
-	buttonGroupVariants,
-};
+export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants };

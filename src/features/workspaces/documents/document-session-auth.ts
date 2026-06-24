@@ -4,10 +4,7 @@ import {
 	getDocumentSessionRouteParams,
 	isDocumentSessionRequestPath,
 } from "#/features/workspaces/agent-routes";
-import {
-	canReadWorkspace,
-	WorkspaceAuthError,
-} from "#/features/workspaces/server/permissions";
+import { canReadWorkspace, WorkspaceAuthError } from "#/features/workspaces/server/permissions";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
 export async function routeDocumentSessionRequest(request: Request, env: Env) {
@@ -42,9 +39,7 @@ export async function routeDocumentSessionRequest(request: Request, env: Env) {
 				return new Response("Forbidden", { status: 403 });
 			}
 
-			const documentSession = env.DocumentSession.getByName(
-				getDocumentSessionRoomName(params),
-			);
+			const documentSession = env.DocumentSession.getByName(getDocumentSessionRoomName(params));
 
 			return documentSession.fetch(request);
 		} finally {

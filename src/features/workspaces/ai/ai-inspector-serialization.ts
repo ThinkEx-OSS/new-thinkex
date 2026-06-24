@@ -38,10 +38,7 @@ export async function summarizeInspectorTools(tools: unknown) {
 
 	return await Promise.all(
 		Object.entries(tools).map(async ([name, tool]) => {
-			const record =
-				tool && typeof tool === "object"
-					? (tool as Record<string, unknown>)
-					: {};
+			const record = tool && typeof tool === "object" ? (tool as Record<string, unknown>) : {};
 
 			return sanitizeInspectorValue({
 				name,
@@ -187,9 +184,7 @@ export function summarizeInspectorToolResultList(toolResults: unknown) {
 		return sanitizeInspectorValue(toolResults);
 	}
 
-	return toolResults.map((toolResult) =>
-		summarizeInspectorToolResult(toolResult),
-	);
+	return toolResults.map((toolResult) => summarizeInspectorToolResult(toolResult));
 }
 
 export function summarizeInspectorChunk(chunk: unknown) {
@@ -221,16 +216,11 @@ export function createInspectorChunkAccumulator(): AIInspectorChunkAccumulator {
 	};
 }
 
-export function resetInspectorChunkAccumulator(
-	accumulator: AIInspectorChunkAccumulator,
-) {
+export function resetInspectorChunkAccumulator(accumulator: AIInspectorChunkAccumulator) {
 	accumulator.rawStreamEvents = [];
 }
 
-export function recordInspectorChunk(
-	accumulator: AIInspectorChunkAccumulator,
-	chunk: unknown,
-) {
+export function recordInspectorChunk(accumulator: AIInspectorChunkAccumulator, chunk: unknown) {
 	const summary = summarizeInspectorChunk(chunk);
 	if (!summary || typeof summary !== "object") {
 		if (accumulator.rawStreamEvents.length < 20) {
@@ -251,9 +241,7 @@ export function recordInspectorChunk(
 	}
 }
 
-export function summarizeInspectorChunks(
-	accumulator: AIInspectorChunkAccumulator,
-) {
+export function summarizeInspectorChunks(accumulator: AIInspectorChunkAccumulator) {
 	if (accumulator.rawStreamEvents.length === 0) {
 		return undefined;
 	}

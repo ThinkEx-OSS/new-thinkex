@@ -1,7 +1,4 @@
-import type {
-	WorkspaceTab,
-	WorkspaceTabSession,
-} from "#/features/workspaces/model/tab-types";
+import type { WorkspaceTab, WorkspaceTabSession } from "#/features/workspaces/model/tab-types";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 
 export const WORKSPACE_ROOT_VIEW = "root";
@@ -41,26 +38,17 @@ export function getWorkspaceSessionTab(
 	return session?.tabs.find((tab) => tab.id === tabId);
 }
 
-export function getActiveWorkspaceTab(
-	session: WorkspaceTabSession | undefined,
-) {
+export function getActiveWorkspaceTab(session: WorkspaceTabSession | undefined) {
 	return getWorkspaceSessionTab(session, session?.activeTabId);
 }
 
-export function getWorkspaceSessionTabSearch(
-	session: WorkspaceTabSession | undefined,
-) {
+export function getWorkspaceSessionTabSearch(session: WorkspaceTabSession | undefined) {
 	const activeTab = getActiveWorkspaceTab(session);
 
-	return activeTab
-		? getWorkspaceTabSearch(activeTab)
-		: getWorkspaceRootTabSearch();
+	return activeTab ? getWorkspaceTabSearch(activeTab) : getWorkspaceRootTabSearch();
 }
 
-export function findItemForTab(
-	tab: WorkspaceTab,
-	itemsById: Map<string, WorkspaceItem>,
-) {
+export function findItemForTab(tab: WorkspaceTab, itemsById: Map<string, WorkspaceItem>) {
 	return getWorkspaceItemForViewId(tab.viewItemId, itemsById);
 }
 

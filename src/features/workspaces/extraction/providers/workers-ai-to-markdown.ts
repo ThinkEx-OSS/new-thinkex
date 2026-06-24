@@ -4,9 +4,7 @@ import type {
 	MarkdownExtractionResult,
 } from "#/features/workspaces/extraction/types";
 
-export function createWorkersAiToMarkdownProvider(
-	env: Env,
-): MarkdownExtractionProvider {
+export function createWorkersAiToMarkdownProvider(env: Env): MarkdownExtractionProvider {
 	return {
 		id: "workers_ai_to_markdown",
 		async extract(input) {
@@ -33,9 +31,7 @@ export function createWorkersAiToMarkdownProvider(
 			const markdown = result.data.trim();
 
 			if (!markdown) {
-				throw new Error(
-					"Workers AI toMarkdown completed without markdown output.",
-				);
+				throw new Error("Workers AI toMarkdown completed without markdown output.");
 			}
 
 			return {
@@ -48,10 +44,7 @@ export function createWorkersAiToMarkdownProvider(
 	};
 }
 
-function getWorkersAiToMarkdownMetadata(result: {
-	mimeType: string;
-	tokens: number;
-}) {
+function getWorkersAiToMarkdownMetadata(result: { mimeType: string; tokens: number }) {
 	return {
 		mimeType: result.mimeType,
 		tokens: result.tokens,

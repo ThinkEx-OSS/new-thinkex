@@ -73,16 +73,8 @@ function WorkspaceSearchResult({
 	const Icon = itemDisplay.Icon;
 
 	return (
-		<CommandItem
-			value={item.name}
-			data-checked={active}
-			className="gap-2 py-2"
-			onSelect={onSelect}
-		>
-			<Icon
-				className={cn("size-4 shrink-0", itemDisplay.iconClassName)}
-				aria-hidden="true"
-			/>
+		<CommandItem value={item.name} data-checked={active} className="gap-2 py-2" onSelect={onSelect}>
+			<Icon className={cn("size-4 shrink-0", itemDisplay.iconClassName)} aria-hidden="true" />
 			<span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
 		</CommandItem>
 	);

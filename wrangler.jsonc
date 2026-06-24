@@ -1,41 +1,43 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "new-thinkex",
+	// Default config is used for local development. Deploys should target an
+	// explicit Wrangler environment.
+	"name": "thinkex",
 	"compatibility_date": "2026-03-24",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "src/server.ts",
 	"workers_dev": true,
 	"preview_urls": true,
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
 	"ai": {
 		"binding": "AI",
-		"remote": true
+		"remote": true,
 	},
 	"worker_loaders": [
 		{
-			"binding": "LOADER"
-		}
+			"binding": "LOADER",
+		},
 	],
 	"browser": {
-		"binding": "BROWSER"
+		"binding": "BROWSER",
 	},
 	"vars": {
 		"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
-		"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app"
+		"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app",
 	},
 	"send_email": [
 		{
 			"name": "EMAIL",
-			"remote": true
-		}
+			"remote": true,
+		},
 	],
 	"r2_buckets": [
 		{
 			"binding": "WORKSPACE_KERNEL_FILES",
-			"bucket_name": "thinkex-workspace-kernel-files"
-		}
+			"bucket_name": "thinkex-workspace-kernel-files",
+		},
 	],
 	"secrets": {
 		"required": [
@@ -44,53 +46,134 @@
 			"GOOGLE_CLIENT_ID",
 			"GOOGLE_CLIENT_SECRET",
 			"FIRECRAWL_API_KEY",
-			"AI_GATEWAY_API_KEY"
-		]
+			"AI_GATEWAY_API_KEY",
+		],
 	},
 	"workflows": [
 		{
 			"name": "workspace-file-extraction",
 			"binding": "WORKSPACE_FILE_EXTRACTION_WORKFLOW",
-			"class_name": "WorkspaceFileExtractionWorkflow"
-		}
+			"class_name": "WorkspaceFileExtractionWorkflow",
+		},
 	],
 	"upload_source_maps": true,
 	"durable_objects": {
 		"bindings": [
 			{
 				"name": "UserAIStore",
-				"class_name": "UserAIStore"
+				"class_name": "UserAIStore",
 			},
 			{
 				"name": "WorkspaceKernel",
-				"class_name": "WorkspaceKernel"
+				"class_name": "WorkspaceKernel",
 			},
 			{
 				"name": "DocumentSession",
-				"class_name": "DocumentSession"
-			}
-		]
+				"class_name": "DocumentSession",
+			},
+		],
 	},
 	"migrations": [
 		{
 			"tag": "v2_user_ai_store",
-			"new_sqlite_classes": ["UserAIStore"]
+			"new_sqlite_classes": ["UserAIStore"],
 		},
 		{
 			"tag": "v3_workspace_kernel",
-			"new_sqlite_classes": ["WorkspaceKernel"]
+			"new_sqlite_classes": ["WorkspaceKernel"],
 		},
 		{
 			"tag": "v4_document_session",
-			"new_sqlite_classes": ["DocumentSession"]
-		}
+			"new_sqlite_classes": ["DocumentSession"],
+		},
 	],
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "new-thinkex",
-			"database_id": "f963e219-cbfa-4832-b261-cf8364f7b533",
-			"migrations_dir": "drizzle"
-		}
-	]
+			"database_name": "thinkex",
+			"database_id": "e5ff462d-fab3-4ab2-9259-fd107c2df809",
+			"migrations_dir": "drizzle",
+		},
+	],
+	"env": {
+		"staging": {
+			"name": "thinkex-staging",
+			"routes": [
+				{
+					"pattern": "staging.thinkex.app",
+					"custom_domain": true,
+				},
+			],
+			// Provision dedicated staging resources before the first deploy.
+			"vars": {
+				"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
+				"WORKSPACE_INVITE_FROM_EMAIL": "invites@thinkex.app",
+			},
+			"secrets": {
+				"required": [
+					"BETTER_AUTH_URL",
+					"BETTER_AUTH_SECRET",
+					"GOOGLE_CLIENT_ID",
+					"GOOGLE_CLIENT_SECRET",
+					"FIRECRAWL_API_KEY",
+					"AI_GATEWAY_API_KEY",
+				],
+			},
+			"ai": {
+				"binding": "AI",
+				"remote": true,
+			},
+			"worker_loaders": [
+				{
+					"binding": "LOADER",
+				},
+			],
+			"browser": {
+				"binding": "BROWSER",
+			},
+			"send_email": [
+				{
+					"name": "EMAIL",
+					"remote": true,
+				},
+			],
+			"r2_buckets": [
+				{
+					"binding": "WORKSPACE_KERNEL_FILES",
+					"bucket_name": "thinkex-workspace-kernel-files-staging",
+				},
+			],
+			"workflows": [
+				{
+					"name": "workspace-file-extraction-staging",
+					"binding": "WORKSPACE_FILE_EXTRACTION_WORKFLOW",
+					"class_name": "WorkspaceFileExtractionWorkflow",
+				},
+			],
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "UserAIStore",
+						"class_name": "UserAIStore",
+					},
+					{
+						"name": "WorkspaceKernel",
+						"class_name": "WorkspaceKernel",
+					},
+					{
+						"name": "DocumentSession",
+						"class_name": "DocumentSession",
+					},
+				],
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "thinkex-staging",
+					"database_id": "babf13a7-a12d-4946-83da-29370106d728",
+					"migrations_dir": "drizzle",
+				},
+			],
+		},
+	},
 }

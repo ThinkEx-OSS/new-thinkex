@@ -7,9 +7,7 @@ import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceDragSource, getWorkspaceDropTarget } from "./drag-targets";
 import type { WorkspaceDragCommand, WorkspaceDragEndEvent } from "./drag-types";
 
-export type DndDragEndEvent = Parameters<
-	NonNullable<DragDropEventHandlers["onDragEnd"]>
->[0];
+export type DndDragEndEvent = Parameters<NonNullable<DragDropEventHandlers["onDragEnd"]>>[0];
 
 export type WorkspaceDropIntent =
 	| { kind: "workspace-drag-command"; command: WorkspaceDragCommand }
@@ -119,10 +117,7 @@ export function getWorkspaceItemMoveInput(input: {
 		};
 	}
 
-	if (
-		dropTarget?.kind !== "workspace-item" ||
-		dropTarget.row !== dragSource.row
-	) {
+	if (dropTarget?.kind !== "workspace-item" || dropTarget.row !== dragSource.row) {
 		return undefined;
 	}
 
@@ -136,9 +131,7 @@ export function getWorkspaceItemMoveInput(input: {
 		.filter(
 			(item) =>
 				item.parentId === movedItem.parentId &&
-				(dragSource.row === "folder"
-					? item.type === "folder"
-					: item.type !== "folder"),
+				(dragSource.row === "folder" ? item.type === "folder" : item.type !== "folder"),
 		)
 		.sort(compareWorkspaceItems);
 	const currentIds = siblings.map((item) => item.id);
@@ -151,8 +144,7 @@ export function getWorkspaceItemMoveInput(input: {
 	}
 
 	const previousId = nextIndex > 0 ? orderedIds[nextIndex - 1] : undefined;
-	const nextId =
-		nextIndex < orderedIds.length - 1 ? orderedIds[nextIndex + 1] : undefined;
+	const nextId = nextIndex < orderedIds.length - 1 ? orderedIds[nextIndex + 1] : undefined;
 	const siblingsById = new Map(siblings.map((item) => [item.id, item]));
 	const sortOrder = getSortOrderBetween({
 		previous: previousId ? siblingsById.get(previousId) : undefined,
@@ -216,10 +208,7 @@ function compareWorkspaceItems(left: WorkspaceItem, right: WorkspaceItem) {
 	return left.name.localeCompare(right.name);
 }
 
-function getSortOrderBetween(input: {
-	previous?: WorkspaceItem;
-	next?: WorkspaceItem;
-}) {
+function getSortOrderBetween(input: { previous?: WorkspaceItem; next?: WorkspaceItem }) {
 	if (input.previous && input.next) {
 		return Math.floor((input.previous.sortOrder + input.next.sortOrder) / 2);
 	}

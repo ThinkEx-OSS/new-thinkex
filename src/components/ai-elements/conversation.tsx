@@ -12,10 +12,7 @@ export type ConversationProps = ComponentProps<"div">;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (
 	<div
-		className={cn(
-			"relative flex min-h-0 flex-1 flex-col overflow-hidden",
-			className,
-		)}
+		className={cn("relative flex min-h-0 flex-1 flex-col overflow-hidden", className)}
 		role="log"
 		{...props}
 	/>
@@ -59,9 +56,7 @@ export const ConversationEmptyState = ({
 			<EmptyHeader>
 				{icon ? <EmptyMedia variant="icon">{icon}</EmptyMedia> : null}
 				<EmptyTitle className="text-sm">{title}</EmptyTitle>
-				{description ? (
-					<EmptyDescription>{description}</EmptyDescription>
-				) : null}
+				{description ? <EmptyDescription>{description}</EmptyDescription> : null}
 			</EmptyHeader>
 		)}
 	</Empty>

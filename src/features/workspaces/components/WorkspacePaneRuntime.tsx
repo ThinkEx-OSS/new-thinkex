@@ -10,8 +10,7 @@ type WorkspacePaneRuntimeValue = {
 	isActive: boolean;
 };
 
-const WorkspacePaneRuntimeContext =
-	createContext<WorkspacePaneRuntimeValue | null>(null);
+const WorkspacePaneRuntimeContext = createContext<WorkspacePaneRuntimeValue | null>(null);
 
 function WorkspacePaneRuntimeProvider({
 	children,
@@ -20,11 +19,7 @@ function WorkspacePaneRuntimeProvider({
 	children: ReactNode;
 	isActive: boolean;
 }) {
-	return (
-		<WorkspacePaneRuntimeContext value={{ isActive }}>
-			{children}
-		</WorkspacePaneRuntimeContext>
-	);
+	return <WorkspacePaneRuntimeContext value={{ isActive }}>{children}</WorkspacePaneRuntimeContext>;
 }
 
 function useWorkspacePaneRuntime() {

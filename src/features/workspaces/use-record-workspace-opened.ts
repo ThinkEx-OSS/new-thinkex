@@ -7,10 +7,7 @@ import {
 	workspaceQueryKey,
 	workspacesQueryKey,
 } from "#/features/workspaces/cache";
-import type {
-	WorkspacePage,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspacePage, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { recordWorkspaceOpenedFn } from "#/features/workspaces/server/functions";
 
 interface RecordWorkspaceOpenedVariables {
@@ -28,8 +25,7 @@ export function useRecordWorkspaceOpenedMutation() {
 			await queryClient.cancelQueries({ queryKey: workspacesQueryKey });
 
 			const openedAt = new Date().toISOString();
-			const previousWorkspaces =
-				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
+			const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 			const previousWorkspace = queryClient.getQueryData<WorkspaceSummary>(
 				workspaceQueryKey(workspaceId),
 			);
@@ -47,33 +43,20 @@ export function useRecordWorkspaceOpenedMutation() {
 		},
 		onSuccess: (workspace, { workspaceId }) => {
 			if (workspace?.lastOpenedAt) {
-				markWorkspaceOpenedInCache(
-					queryClient,
-					workspaceId,
-					workspace.lastOpenedAt,
-				);
+				markWorkspaceOpenedInCache(queryClient, workspaceId, workspace.lastOpenedAt);
 			}
 		},
 		onError: (_error, { workspaceId }, context) => {
 			if (context?.previousWorkspaces) {
-				queryClient.setQueryData(
-					workspacesQueryKey,
-					context.previousWorkspaces,
-				);
+				queryClient.setQueryData(workspacesQueryKey, context.previousWorkspaces);
 			}
 
 			if (context?.previousWorkspace) {
-				queryClient.setQueryData(
-					workspaceQueryKey(workspaceId),
-					context.previousWorkspace,
-				);
+				queryClient.setQueryData(workspaceQueryKey(workspaceId), context.previousWorkspace);
 			}
 
 			if (context?.previousPage) {
-				queryClient.setQueryData(
-					workspacePageQueryKey(workspaceId),
-					context.previousPage,
-				);
+				queryClient.setQueryData(workspacePageQueryKey(workspaceId), context.previousPage);
 			}
 		},
 	});

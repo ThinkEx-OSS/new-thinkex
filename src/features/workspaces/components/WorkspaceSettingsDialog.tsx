@@ -48,8 +48,10 @@ import { cn } from "#/lib/utils";
 
 interface WorkspaceSettingsDialogProps {
 	workspace: WorkspaceSummary;
-	trigger: ReactElement;
 	capabilities: WorkspaceMemberCapabilities;
+	trigger?: ReactElement;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 interface WorkspaceSettingsDraft {
@@ -58,9 +60,7 @@ interface WorkspaceSettingsDraft {
 	color: WorkspaceColor;
 }
 
-const getWorkspaceSettingsDraft = (
-	workspace: WorkspaceSummary,
-): WorkspaceSettingsDraft => ({
+const getWorkspaceSettingsDraft = (workspace: WorkspaceSummary): WorkspaceSettingsDraft => ({
 	name: workspace.name,
 	icon: workspace.icon ?? "compass",
 	color: workspace.color ?? "sky",
@@ -68,13 +68,14 @@ const getWorkspaceSettingsDraft = (
 
 export default function WorkspaceSettingsDialog({
 	workspace,
-	trigger,
 	capabilities,
+	trigger,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 }: WorkspaceSettingsDialogProps) {
-	const [open, setOpen] = useState(false);
-	const [draft, setDraft] = useState(() =>
-		getWorkspaceSettingsDraft(workspace),
-	);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+	const [draft, setDraft] = useState(() => getWorkspaceSettingsDraft(workspace));
+	const open = controlledOpen ?? uncontrolledOpen;
 
 	if (!capabilities.canMutateContent) {
 		return null;
@@ -85,12 +86,16 @@ export default function WorkspaceSettingsDialog({
 			setDraft(getWorkspaceSettingsDraft(workspace));
 		}
 
-		setOpen(nextOpen);
+		controlledOnOpenChange?.(nextOpen);
+
+		if (controlledOpen === undefined) {
+			setUncontrolledOpen(nextOpen);
+		}
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger render={trigger} />
+			{trigger ? <DialogTrigger render={trigger} /> : null}
 			<WorkspaceSettingsDialogContent
 				canDelete={capabilities.canDeleteWorkspace}
 				draft={draft}
@@ -129,13 +134,9 @@ function WorkspaceSettingsDialogContent({
 			draft.icon !== workspaceDraft.icon ||
 			draft.color !== workspaceDraft.color);
 	const updateError =
-		updateWorkspaceMutation.error instanceof Error
-			? updateWorkspaceMutation.error.message
-			: null;
+		updateWorkspaceMutation.error instanceof Error ? updateWorkspaceMutation.error.message : null;
 	const deleteError =
-		deleteWorkspaceMutation.error instanceof Error
-			? deleteWorkspaceMutation.error.message
-			: null;
+		deleteWorkspaceMutation.error instanceof Error ? deleteWorkspaceMutation.error.message : null;
 
 	const handleSave = () => {
 		if (!canSave) {
@@ -155,9 +156,7 @@ function WorkspaceSettingsDialogContent({
 		<DialogContent className="sm:max-w-lg">
 			<DialogHeader>
 				<DialogTitle>Workspace settings</DialogTitle>
-				<DialogDescription>
-					Update this workspace's name, icon, and color.
-				</DialogDescription>
+				<DialogDescription>Update this workspace's name, icon, and color.</DialogDescription>
 			</DialogHeader>
 
 			<FieldGroup className="gap-5">
@@ -206,9 +205,7 @@ function WorkspaceSettingsDialogContent({
 				</div>
 
 				{updateError || deleteError ? (
-					<p className="text-destructive text-sm">
-						{deleteError ?? updateError}
-					</p>
+					<p className="text-destructive text-sm">{deleteError ?? updateError}</p>
 				) : null}
 			</FieldGroup>
 
@@ -228,11 +225,7 @@ function WorkspaceSettingsDialogContent({
 					<div />
 				)}
 				<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpenChange(false)}
-					>
+					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
 					<Button type="button" disabled={!canSave} onClick={handleSave}>
@@ -257,9 +250,7 @@ function WorkspaceIconDropdown({
 }) {
 	const searchInputId = useId();
 	const [query, setQuery] = useState("");
-	const selectedIcon = workspaceIconOptions.find(
-		(option) => option.value === value,
-	);
+	const selectedIcon = workspaceIconOptions.find((option) => option.value === value);
 	const SelectedIcon = selectedIcon?.Icon ?? workspaceIconOptions[0].Icon;
 	const filteredIconOptions = filterWorkspaceIconOptions(query);
 
@@ -275,11 +266,7 @@ function WorkspaceIconDropdown({
 		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="outline"
-						className="w-full justify-between"
-					>
+					<Button type="button" variant="outline" className="w-full justify-between">
 						<span className="flex min-w-0 items-center gap-2">
 							<SelectedIcon className="size-4" aria-hidden="true" />
 							<span className="truncate">{selectedIcon?.label ?? "Icon"}</span>
@@ -306,30 +293,24 @@ function WorkspaceIconDropdown({
 				</div>
 				{filteredIconOptions.length > 0 ? (
 					<div className="mt-2 grid max-h-72 grid-cols-7 gap-1.5 overflow-y-auto pr-1">
-						{filteredIconOptions.map(
-							({ value: optionValue, label, Icon, aliases }) => (
-								<button
-									key={optionValue}
-									type="button"
-									className={cn(
-										"flex size-9 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
-										value === optionValue
-											? "bg-muted text-foreground"
-											: "text-muted-foreground",
-									)}
-									aria-label={`${label}. ${aliases.join(", ")}`}
-									aria-pressed={value === optionValue}
-									onClick={() => onValueChange(optionValue)}
-								>
-									<Icon className="size-5" aria-hidden="true" />
-								</button>
-							),
-						)}
+						{filteredIconOptions.map(({ value: optionValue, label, Icon, aliases }) => (
+							<button
+								key={optionValue}
+								type="button"
+								className={cn(
+									"flex size-9 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+									value === optionValue ? "bg-muted text-foreground" : "text-muted-foreground",
+								)}
+								aria-label={`${label}. ${aliases.join(", ")}`}
+								aria-pressed={value === optionValue}
+								onClick={() => onValueChange(optionValue)}
+							>
+								<Icon className="size-5" aria-hidden="true" />
+							</button>
+						))}
 					</div>
 				) : (
-					<p className="px-2 py-6 text-center text-muted-foreground text-sm">
-						No icons found.
-					</p>
+					<p className="px-2 py-6 text-center text-muted-foreground text-sm">No icons found.</p>
 				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
@@ -353,23 +334,16 @@ function WorkspaceColorDropdown({
 		<DropdownMenu open={open} onOpenChange={onOpenChange}>
 			<DropdownMenuTrigger
 				render={
-					<Button
-						type="button"
-						variant="outline"
-						className="w-full justify-between"
-					>
+					<Button type="button" variant="outline" className="w-full justify-between">
 						<span className="flex min-w-0 items-center gap-2">
 							<span
 								className={cn(
 									"size-4 rounded-[4px]",
-									selectedColor?.swatchClassName ??
-										workspaceColors.sky.swatchClassName,
+									selectedColor?.swatchClassName ?? workspaceColors.sky.swatchClassName,
 								)}
 								aria-hidden="true"
 							/>
-							<span className="truncate">
-								{selectedColor?.label ?? "Color"}
-							</span>
+							<span className="truncate">{selectedColor?.label ?? "Color"}</span>
 						</span>
 						<ChevronDown className="size-4 text-muted-foreground" />
 					</Button>
@@ -386,8 +360,7 @@ function WorkspaceColorDropdown({
 						value: option.value,
 						label: option.label,
 						swatchClassName: option.swatchClassName,
-						checkClassName:
-							"checkClassName" in option ? option.checkClassName : undefined,
+						checkClassName: "checkClassName" in option ? option.checkClassName : undefined,
 					}))}
 					onValueChange={onValueChange}
 					showLabels={false}

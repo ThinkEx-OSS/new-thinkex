@@ -69,15 +69,11 @@ export default function WorkspaceTabBar({
 					const previousTab = tabs[tabIndex - 1];
 					const showDivider = tabIndex > 0;
 					const showDividerLine =
-						showDivider &&
-						tab.id !== activeTab.id &&
-						previousTab?.id !== activeTab.id;
+						showDivider && tab.id !== activeTab.id && previousTab?.id !== activeTab.id;
 					const item = findItemForTab(tab, itemsById);
 					const isRootTab = !tab.viewItemId;
 					const itemDisplay = item ? getWorkspaceItemDisplay(item) : null;
-					const TabIcon = isRootTab
-						? Icon
-						: (itemDisplay?.Icon ?? FileQuestion);
+					const TabIcon = isRootTab ? Icon : (itemDisplay?.Icon ?? FileQuestion);
 					const title = item?.name ?? (isRootTab ? workspace.name : tab.title);
 					const iconClassName = isRootTab
 						? color.text

@@ -9,19 +9,15 @@ export const workspaceOverlayPillClassName =
 export const workspaceOverlayPillFocusClassName =
 	"has-focus-visible:border-border has-focus-visible:text-foreground";
 
-export const workspaceOverlayPillSegmentClassName =
-	"flex min-w-0 items-center gap-0.5";
+export const workspaceOverlayPillSegmentClassName = "flex min-w-0 items-center gap-0.5";
 
 export const workspaceOverlaySlashClassName = "text-muted-foreground/35";
 
-export const workspaceOverlaySecondaryClassName =
-	"min-w-3 text-muted-foreground/55 tabular-nums";
+export const workspaceOverlaySecondaryClassName = "min-w-3 text-muted-foreground/55 tabular-nums";
 
 export const workspaceOverlayLabelClassName = "ml-1 text-muted-foreground/55";
 
-export function workspaceOverlayPillClassNames(options?: {
-	focusable?: boolean;
-}) {
+export function workspaceOverlayPillClassNames(options?: { focusable?: boolean }) {
 	return cn(
 		workspaceOverlayPillClassName,
 		options?.focusable && workspaceOverlayPillFocusClassName,

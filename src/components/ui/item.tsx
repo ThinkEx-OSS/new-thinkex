@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/a11y/useSemanticElements: shadcn registry supports arbitrary item wrappers. */
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -20,10 +19,7 @@ function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function ItemSeparator({
-	className,
-	...props
-}: React.ComponentProps<typeof Separator>) {
+function ItemSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
 	return (
 		<Separator
 			data-slot="item-separator"
@@ -153,11 +149,7 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
 	return (
-		<div
-			data-slot="item-actions"
-			className={cn("flex items-center gap-2", className)}
-			{...props}
-		/>
+		<div data-slot="item-actions" className={cn("flex items-center gap-2", className)} {...props} />
 	);
 }
 
@@ -165,10 +157,7 @@ function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="item-header"
-			className={cn(
-				"flex basis-full items-center justify-between gap-2",
-				className,
-			)}
+			className={cn("flex basis-full items-center justify-between gap-2", className)}
 			{...props}
 		/>
 	);
@@ -178,10 +167,7 @@ function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="item-footer"
-			className={cn(
-				"flex basis-full items-center justify-between gap-2",
-				className,
-			)}
+			className={cn("flex basis-full items-center justify-between gap-2", className)}
 			{...props}
 		/>
 	);

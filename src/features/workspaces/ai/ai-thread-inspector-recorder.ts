@@ -87,12 +87,7 @@ export class AIThreadInspectorRecorder {
 	}
 
 	recordTurnError(error: unknown) {
-		recordAIInspectorEvent(
-			this.host,
-			this.state,
-			"turn.error",
-			getInspectorErrorPayload(error),
-		);
+		recordAIInspectorEvent(this.host, this.state, "turn.error", getInspectorErrorPayload(error));
 	}
 
 	recordToolFinished(ctx: ToolCallResultContext) {

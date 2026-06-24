@@ -14,12 +14,7 @@ interface AiChatToolCardProps {
 export default function AiChatToolCard({ part }: AiChatToolCardProps) {
 	const header =
 		part.type === "dynamic-tool" ? (
-			<ToolHeader
-				title={part.title}
-				type={part.type}
-				toolName={part.toolName}
-				state={part.state}
-			/>
+			<ToolHeader title={part.title} type={part.type} toolName={part.toolName} state={part.state} />
 		) : (
 			<ToolHeader title={part.title} type={part.type} state={part.state} />
 		);

@@ -12,21 +12,13 @@ async function handleListWorkspaces(request: Request) {
 		const session = await getSessionFromRequest(request);
 
 		if (!session) {
-			return apiError(
-				requestId,
-				401,
-				"UNAUTHORIZED",
-				"You must be signed in to view workspaces.",
-			);
+			return apiError(requestId, 401, "UNAUTHORIZED", "You must be signed in to view workspaces.");
 		}
 
 		const dbContext = await createDbContext();
 
 		try {
-			const workspaces = await listWorkspacesForUser(
-				dbContext.db,
-				session.user.id,
-			);
+			const workspaces = await listWorkspacesForUser(dbContext.db, session.user.id);
 			return apiJson({ workspaces }, requestId);
 		} finally {
 			await dbContext.dispose();

@@ -19,14 +19,9 @@ export interface WorkspaceFilePreviewResult {
 	height: number;
 }
 
-type PreviewGenerator = (
-	bytes: Uint8Array,
-) => Promise<WorkspaceFilePreviewResult>;
+type PreviewGenerator = (bytes: Uint8Array) => Promise<WorkspaceFilePreviewResult>;
 
-const workspaceFilePreviewGenerators: Record<
-	WorkspaceFilePreviewGeneratorId,
-	PreviewGenerator
-> = {
+const workspaceFilePreviewGenerators: Record<WorkspaceFilePreviewGeneratorId, PreviewGenerator> = {
 	pdf_webp: generatePdfPreviewWebp,
 	image_webp: generateImagePreviewWebp,
 };
@@ -85,11 +80,7 @@ export async function generatePdfPreviewWebp(
 
 function rgbaToPreviewWebp(image: ImageDataLike): WorkspaceFilePreviewResult {
 	const inputImage = new PhotonImage(
-		new Uint8Array(
-			image.data.buffer,
-			image.data.byteOffset,
-			image.data.byteLength,
-		),
+		new Uint8Array(image.data.buffer, image.data.byteOffset, image.data.byteLength),
 		image.width,
 		image.height,
 	);
@@ -101,9 +92,7 @@ function rgbaToPreviewWebp(image: ImageDataLike): WorkspaceFilePreviewResult {
 	}
 }
 
-function encodePreviewWebp(
-	inputImage: PhotonImage,
-): WorkspaceFilePreviewResult {
+function encodePreviewWebp(inputImage: PhotonImage): WorkspaceFilePreviewResult {
 	const outputImage = resizePreviewImage(inputImage);
 	const previewBytes = outputImage.get_bytes_webp();
 	const result = {

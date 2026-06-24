@@ -76,10 +76,7 @@ export async function createWorkspaceKernelAiItems(
 	});
 	const items: CreateWorkspaceKernelAiCreatedItem[] = [];
 	const failed: CreateWorkspaceKernelAiFailure[] = [];
-	const createdItemsByPath = new Map<
-		string,
-		{ id: string; type: WorkspaceItemSummary["type"] }
-	>();
+	const createdItemsByPath = new Map<string, { id: string; type: WorkspaceItemSummary["type"] }>();
 
 	for (const [index, itemInput] of input.items.entries()) {
 		const path = resolveWorkspaceKernelAiCreatePath(itemInput.path);
@@ -147,9 +144,7 @@ export async function createWorkspaceKernelAiItems(
 		const createdPath = joinWorkspaceItemPath(parent.path, command.result.name);
 
 		if (createdPath !== path.path) {
-			throw new Error(
-				`Workspace create path mismatch: expected ${path.path}, got ${createdPath}`,
-			);
+			throw new Error(`Workspace create path mismatch: expected ${path.path}, got ${createdPath}`);
 		}
 
 		items.push({
@@ -169,10 +164,7 @@ export async function createWorkspaceKernelAiItems(
 }
 
 function resolveWorkspaceKernelAiCreateParent(input: {
-	createdItemsByPath: ReadonlyMap<
-		string,
-		{ id: string; type: WorkspaceItemSummary["type"] }
-	>;
+	createdItemsByPath: ReadonlyMap<string, { id: string; type: WorkspaceItemSummary["type"] }>;
 	parentPath: string;
 	tree: WorkspaceKernelTree;
 }):
@@ -216,9 +208,7 @@ function resolveWorkspaceKernelAiCreateParent(input: {
 	});
 
 	if (parent.status === "invalid_path") {
-		throw new Error(
-			`Unexpected invalid create parent path: ${input.parentPath}`,
-		);
+		throw new Error(`Unexpected invalid create parent path: ${input.parentPath}`);
 	}
 
 	if (parent.status === "not_found") {
@@ -246,9 +236,7 @@ function resolveWorkspaceKernelAiCreateParent(input: {
 	};
 }
 
-function resolveWorkspaceKernelAiCreatePath(
-	path: string,
-): WorkspaceKernelAiCreatePathResolution {
+function resolveWorkspaceKernelAiCreatePath(path: string): WorkspaceKernelAiCreatePathResolution {
 	try {
 		const normalizedPath = normalizeWorkspacePath(path);
 
@@ -279,10 +267,7 @@ function resolveWorkspaceKernelAiCreatePath(
 			status: "ready",
 		};
 	} catch (error) {
-		if (
-			error instanceof WorkspaceKernelPathError &&
-			error.code === "path_not_absolute"
-		) {
+		if (error instanceof WorkspaceKernelPathError && error.code === "path_not_absolute") {
 			return {
 				code: error.code,
 				path,
@@ -294,9 +279,7 @@ function resolveWorkspaceKernelAiCreatePath(
 	}
 }
 
-function getWorkspaceKernelAiCreateInitialContent(
-	input: CreateWorkspaceKernelAiItemInput,
-):
+function getWorkspaceKernelAiCreateInitialContent(input: CreateWorkspaceKernelAiItemInput):
 	| {
 			content?: string;
 			status: "ready";

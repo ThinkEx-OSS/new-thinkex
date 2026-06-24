@@ -1,9 +1,6 @@
 import type { Workspace as ShellWorkspace } from "@cloudflare/shell";
 
-import type {
-	JsonValue,
-	WorkspaceItemSummary,
-} from "#/features/workspaces/contracts";
+import type { JsonValue, WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
 import {
 	resolveUploadPreviewGenerator,
@@ -89,10 +86,7 @@ export class WorkspaceKernelFileCommands {
 		const now = Date.now();
 		const itemId = crypto.randomUUID();
 		const color = null;
-		const requestedName = normalizeWorkspaceUploadFileName(
-			input.fileName,
-			descriptor,
-		);
+		const requestedName = normalizeWorkspaceUploadFileName(input.fileName, descriptor);
 		const name = this.store.resolveItemName({
 			itemId,
 			type: "file",
@@ -231,9 +225,7 @@ export class WorkspaceKernelFileCommands {
 		};
 	}
 
-	async upsertFileProjection(
-		input: UpsertWorkspaceKernelFileProjectionArgs,
-	): Promise<void> {
+	async upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs): Promise<void> {
 		const row = this.store.assertActiveItem(input.itemId);
 
 		if (row.type !== "file") {
@@ -282,9 +274,7 @@ export class WorkspaceKernelFileCommands {
 		}
 
 		if (input.projection.contentBytes != null) {
-			const previewShellPath = getWorkspaceKernelFilePreviewShellPath(
-				input.itemId,
-			);
+			const previewShellPath = getWorkspaceKernelFilePreviewShellPath(input.itemId);
 
 			await this.workspace.mkdir(`/items/${input.itemId}/derivatives`, {
 				recursive: true,
@@ -373,10 +363,7 @@ export class WorkspaceKernelFileCommands {
 		return this.getProjectionRow(input)?.content_shell_path ?? null;
 	}
 
-	private getProjectionRow(input: {
-		itemId: string;
-		format: WorkspaceKernelFileProjectionFormat;
-	}) {
+	private getProjectionRow(input: { itemId: string; format: WorkspaceKernelFileProjectionFormat }) {
 		return (
 			this.sql<KernelItemProjectionRow>`
 				SELECT *
@@ -389,9 +376,7 @@ export class WorkspaceKernelFileCommands {
 
 	private async tryCreateUploadPreview(input: {
 		bytes: Uint8Array;
-		generate: (
-			bytes: Uint8Array,
-		) => Promise<{ bytes: Uint8Array; width: number; height: number }>;
+		generate: (bytes: Uint8Array) => Promise<{ bytes: Uint8Array; width: number; height: number }>;
 		itemId: string;
 		label: string;
 		now: number;
@@ -417,10 +402,7 @@ export class WorkspaceKernelFileCommands {
 				},
 			});
 		} catch (error) {
-			console.warn(
-				`[WorkspaceKernel] Unable to generate ${input.label} preview`,
-				error,
-			);
+			console.warn(`[WorkspaceKernel] Unable to generate ${input.label} preview`, error);
 
 			await this.writeProjectionRow({
 				itemId: input.itemId,

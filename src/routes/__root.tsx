@@ -1,15 +1,7 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import {
-	createRootRouteWithContext,
-	HeadContent,
-	Scripts,
-} from "@tanstack/react-router";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-
-// import PostHogProvider from '../integrations/posthog/provider'
-
-import type { QueryClient } from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "#/components/ui/sonner";
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { WorkspacePersistedStoresHydrator } from "#/features/workspaces/state/persisted-store-hydration";
@@ -17,6 +9,7 @@ import type { AuthSession } from "#/lib/auth.functions";
 import { AppHotkeysProvider } from "#/lib/hotkeys";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { ThemeProvider } from "../components/theme-provider";
+import PostHogProvider from "../integrations/posthog/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -96,52 +89,49 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
+function AuthSessionRefresher() {
+	useQuery(getAuthSessionQueryOptions());
+	return null;
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 				{import.meta.env.DEV ? (
-					<script
-						src="https://unpkg.com/react-grab/dist/index.global.js"
-						crossOrigin="anonymous"
-					/>
+					<script src="https://unpkg.com/react-grab/dist/index.global.js" crossOrigin="anonymous" />
 				) : null}
 			</head>
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="theme">
-					<AppHotkeysProvider>
-						<TooltipProvider>
-							{/* <PostHogProvider> */}
-							<WorkspacePersistedStoresHydrator />
-							<AuthSessionRefresher />
-							{children}
-							<Toaster />
-							{import.meta.env.DEV ? (
-								<TanStackDevtools
-									config={{
-										position: "bottom-right",
-									}}
-									plugins={[
-										{
-											name: "Tanstack Router",
-											render: <TanStackRouterDevtoolsPanel />,
-										},
-										TanStackQueryDevtools,
-									]}
-								/>
-							) : null}
-							{/* </PostHogProvider> */}
-						</TooltipProvider>
-					</AppHotkeysProvider>
+					<AuthSessionRefresher />
+					<PostHogProvider>
+						<AppHotkeysProvider>
+							<TooltipProvider>
+								<WorkspacePersistedStoresHydrator />
+								{children}
+								<Toaster />
+								{import.meta.env.DEV ? (
+									<TanStackDevtools
+										config={{
+											position: "bottom-right",
+										}}
+										plugins={[
+											{
+												name: "Tanstack Router",
+												render: <TanStackRouterDevtoolsPanel />,
+											},
+											TanStackQueryDevtools,
+										]}
+									/>
+								) : null}
+							</TooltipProvider>
+						</AppHotkeysProvider>
+					</PostHogProvider>
 				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>
 	);
-}
-
-function AuthSessionRefresher() {
-	useQuery(getAuthSessionQueryOptions());
-	return null;
 }

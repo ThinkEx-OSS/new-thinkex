@@ -50,15 +50,12 @@ function WorkspaceImageViewerContent({
 	workspaceId: string;
 }) {
 	const imageRef = useRef<HTMLImageElement>(null);
-	const [status, setStatus] = useState<"loading" | "ready" | "error">(
-		"loading",
-	);
+	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [isCaptureActive, setIsCaptureActive] = useState(false);
-	const { containerRef, contentStyle, deferCaptureSelection } =
-		useWorkspaceImageViewerTransform({
-			enabled: status !== "error",
-			isCaptureActive,
-		});
+	const { containerRef, contentStyle, deferCaptureSelection } = useWorkspaceImageViewerTransform({
+		enabled: status !== "error",
+		isCaptureActive,
+	});
 
 	useFileItemToolbar({
 		capture: {
@@ -101,9 +98,7 @@ function WorkspaceImageViewerContent({
 			ref={containerRef}
 			className={cn(
 				"relative h-full min-h-0 overflow-hidden bg-background touch-none",
-				isCaptureActive
-					? "cursor-crosshair"
-					: "cursor-grab active:cursor-grabbing",
+				isCaptureActive ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing",
 			)}
 		>
 			{status === "loading" ? (

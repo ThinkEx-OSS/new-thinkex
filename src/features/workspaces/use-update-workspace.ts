@@ -21,13 +21,11 @@ export function useUpdateWorkspaceMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: UpdateWorkspaceInput) =>
-			updateWorkspace({ data: input }),
+		mutationFn: (input: UpdateWorkspaceInput) => updateWorkspace({ data: input }),
 		onMutate: async (input) => {
 			await queryClient.cancelQueries({ queryKey: workspacesQueryKey });
 
-			const previousWorkspaces =
-				queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
+			const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
 			const previousWorkspace = queryClient.getQueryData<WorkspaceSummary>(
 				workspaceQueryKey(input.workspaceId),
 			);
@@ -57,17 +55,11 @@ export function useUpdateWorkspaceMutation() {
 		},
 		onError: (error, input, context) => {
 			if (context?.previousWorkspaces) {
-				queryClient.setQueryData(
-					workspacesQueryKey,
-					context.previousWorkspaces,
-				);
+				queryClient.setQueryData(workspacesQueryKey, context.previousWorkspaces);
 			}
 
 			if (context?.previousWorkspace) {
-				queryClient.setQueryData(
-					workspaceQueryKey(input.workspaceId),
-					context.previousWorkspace,
-				);
+				queryClient.setQueryData(workspaceQueryKey(input.workspaceId), context.previousWorkspace);
 			} else {
 				queryClient.removeQueries({
 					queryKey: workspaceQueryKey(input.workspaceId),
@@ -75,15 +67,10 @@ export function useUpdateWorkspaceMutation() {
 			}
 
 			if (context?.previousPage) {
-				queryClient.setQueryData(
-					workspacePageQueryKey(input.workspaceId),
-					context.previousPage,
-				);
+				queryClient.setQueryData(workspacePageQueryKey(input.workspaceId), context.previousPage);
 			}
 
-			toast.error(
-				getErrorMessage(error, "Unable to update workspace right now."),
-			);
+			toast.error(getErrorMessage(error, "Unable to update workspace right now."));
 		},
 	});
 }

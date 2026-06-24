@@ -1,8 +1,5 @@
 import { Suspense, useEffect, useState } from "react";
-import {
-	Conversation,
-	ConversationContent,
-} from "#/components/ai-elements/conversation";
+import { Conversation, ConversationContent } from "#/components/ai-elements/conversation";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -41,8 +38,7 @@ export default function AiChatPanel({ context }: AiChatPanelProps) {
 }
 
 function AiChatPanelLayout({ context }: AiChatPanelProps) {
-	const [activeThreadIsRecovering, setActiveThreadIsRecovering] =
-		useState(false);
+	const [activeThreadIsRecovering, setActiveThreadIsRecovering] = useState(false);
 	const {
 		activeThreadId,
 		areThreadsReady,
@@ -92,26 +88,18 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 			/>
 
 			{panelBodyPhase.kind === "empty" ? (
-				<AiChatPanelEmpty
-					isCreatingThread={isCreatingThread}
-					onNewChat={onNewChat}
-				/>
+				<AiChatPanelEmpty isCreatingThread={isCreatingThread} onNewChat={onNewChat} />
 			) : panelBodyPhase.kind === "loading" ? (
 				<AiChatPanelLoading />
 			) : (
-				<Suspense
-					key={panelBodyPhase.threadId}
-					fallback={<AiChatPanelLoading />}
-				>
+				<Suspense key={panelBodyPhase.threadId} fallback={<AiChatPanelLoading />}>
 					<AiChatThreadView
 						context={context}
 						getInspectorSnapshot={getThreadInspectorSnapshot}
 						modelId={modelId}
 						onModelChange={onModelChange}
 						onRecoveringChange={setActiveThreadIsRecovering}
-						threadSummary={threads.find(
-							(thread) => thread.id === panelBodyPhase.threadId,
-						)}
+						threadSummary={threads.find((thread) => thread.id === panelBodyPhase.threadId)}
 						threadId={panelBodyPhase.threadId}
 					/>
 				</Suspense>
@@ -177,15 +165,8 @@ function AiChatPanelEmpty({
 				scrollClassName="min-h-0 overscroll-contain"
 				className="items-center justify-center gap-3 px-4 py-8 text-center"
 			>
-				<p className="text-muted-foreground text-sm">
-					No chats yet. Start a new conversation.
-				</p>
-				<Button
-					type="button"
-					size="sm"
-					disabled={isCreatingThread}
-					onClick={onNewChat}
-				>
+				<p className="text-muted-foreground text-sm">No chats yet. Start a new conversation.</p>
+				<Button type="button" size="sm" disabled={isCreatingThread} onClick={onNewChat}>
 					New chat
 				</Button>
 			</ConversationContent>

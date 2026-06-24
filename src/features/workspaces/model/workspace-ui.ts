@@ -9,10 +9,7 @@ import type {
 	WorkspaceUiSession,
 } from "#/features/workspaces/state/workspace-ui-store";
 
-type RestorableWorkspacePresentation = Exclude<
-	WorkspacePresentation,
-	{ mode: "maximized" }
->;
+type RestorableWorkspacePresentation = Exclude<WorkspacePresentation, { mode: "maximized" }>;
 
 export const standardPresentation: RestorableWorkspacePresentation = {
 	mode: "standard",
@@ -30,11 +27,8 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 	}
 
 	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
-	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(
-		session.chatSurfaceMode,
-	);
-	const presentation =
-		session.presentation ?? defaultWorkspaceUiSession.presentation;
+	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(session.chatSurfaceMode);
+	const presentation = session.presentation ?? defaultWorkspaceUiSession.presentation;
 
 	if (
 		aiChatModelId === session.aiChatModelId &&
@@ -58,10 +52,7 @@ export function normalizeWorkspaceUiSession(
 	validItemIds?: ReadonlySet<string>,
 ): WorkspaceUiSession {
 	const normalizedSession = getWorkspaceUiSession(session);
-	const presentation = normalizePresentation(
-		normalizedSession.presentation,
-		validItemIds,
-	);
+	const presentation = normalizePresentation(normalizedSession.presentation, validItemIds);
 
 	return presentation === normalizedSession.presentation
 		? normalizedSession
@@ -84,9 +75,7 @@ export function getUpdatedWorkspaceUiSession(
 	return isSameWorkspaceUiSession(session, nextSession) ? session : nextSession;
 }
 
-export function setChatSurfaceModeSession(
-	chatSurfaceMode: WorkspaceAiChatSurfaceMode,
-) {
+export function setChatSurfaceModeSession(chatSurfaceMode: WorkspaceAiChatSurfaceMode) {
 	return {
 		chatSurfaceMode,
 	};
@@ -107,16 +96,11 @@ export function setAiChatModelSession(modelId: unknown) {
 export function toggleChatPanelSession(session: WorkspaceUiSession) {
 	return {
 		chatSurfaceMode:
-			session.chatSurfaceMode === "hidden"
-				? ("docked" as const)
-				: ("hidden" as const),
+			session.chatSurfaceMode === "hidden" ? ("docked" as const) : ("hidden" as const),
 	};
 }
 
-export function maximizeItemSession(
-	session: WorkspaceUiSession,
-	itemId: string,
-) {
+export function maximizeItemSession(session: WorkspaceUiSession, itemId: string) {
 	return {
 		presentation: {
 			mode: "maximized" as const,
@@ -126,9 +110,7 @@ export function maximizeItemSession(
 	};
 }
 
-export function restoreWorkspacePresentationSession(
-	session: WorkspaceUiSession,
-) {
+export function restoreWorkspacePresentationSession(session: WorkspaceUiSession) {
 	return {
 		presentation:
 			session.presentation.mode === "maximized"
@@ -208,9 +190,7 @@ function isValidPane(pane: WorkspacePane, validItemIds: ReadonlySet<string>) {
 	return pane.kind !== "item" || validItemIds.has(pane.itemId);
 }
 
-function resolveWorkspaceAiChatSurfaceMode(
-	mode: unknown,
-): WorkspaceAiChatSurfaceMode {
+function resolveWorkspaceAiChatSurfaceMode(mode: unknown): WorkspaceAiChatSurfaceMode {
 	switch (mode) {
 		case "hidden":
 		case "docked":
@@ -221,10 +201,7 @@ function resolveWorkspaceAiChatSurfaceMode(
 	}
 }
 
-function isSameWorkspaceUiSession(
-	session: WorkspaceUiSession,
-	nextSession: WorkspaceUiSession,
-) {
+function isSameWorkspaceUiSession(session: WorkspaceUiSession, nextSession: WorkspaceUiSession) {
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
 		session.aiChatModelId === nextSession.aiChatModelId &&

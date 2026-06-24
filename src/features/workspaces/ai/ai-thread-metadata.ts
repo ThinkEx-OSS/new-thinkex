@@ -1,7 +1,4 @@
-import type {
-	ChatErrorClassification,
-	ChatErrorContext,
-} from "@cloudflare/think";
+import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
 
 export type AIThreadRunState = "idle" | "running";
 export type AIThreadRunResult = "completed" | "skipped" | "aborted" | "error";
@@ -96,22 +93,17 @@ export function normalizeThreadErrorMessage(error: unknown) {
 		return "Chat response failed";
 	}
 
-	return normalized.length > 240
-		? `${normalized.slice(0, 237).trimEnd()}...`
-		: normalized;
+	return normalized.length > 240 ? `${normalized.slice(0, 237).trimEnd()}...` : normalized;
 }
 
 export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
-	const lastVisibleUpdateAt =
-		row.last_visible_update_at ?? row.last_assistant_message_at;
+	const lastVisibleUpdateAt = row.last_visible_update_at ?? row.last_assistant_message_at;
 
 	return {
 		id: row.id,
 		workspaceId: row.workspace_id,
 		title: row.title,
-		hasUnreadUpdate: Boolean(
-			lastVisibleUpdateAt && lastVisibleUpdateAt > row.last_viewed_at,
-		),
+		hasUnreadUpdate: Boolean(lastVisibleUpdateAt && lastVisibleUpdateAt > row.last_viewed_at),
 		isRunning: row.status === "running",
 		lastRunResult: row.last_run_result,
 		lastErrorMessage: row.last_error_message,
@@ -129,10 +121,7 @@ export function mapThreadMetaRow(row: AIThreadMetaRow): AIThreadSummary {
 	};
 }
 
-export function compareThreadRecentFirst(
-	left: AIThreadSummary,
-	right: AIThreadSummary,
-) {
+export function compareThreadRecentFirst(left: AIThreadSummary, right: AIThreadSummary) {
 	return (
 		right.lastActivityAt.localeCompare(left.lastActivityAt) ||
 		right.createdAt.localeCompare(left.createdAt)

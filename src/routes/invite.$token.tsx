@@ -13,9 +13,7 @@ import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/invite/$token")({
 	loader: async ({ context, params }) => {
-		const session = await context.queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+		const session = await context.queryClient.ensureQueryData(getAuthSessionQueryOptions());
 
 		if (session) {
 			// Signed-in visitors accept immediately — same UX as opening a share link while logged in.
@@ -75,15 +73,10 @@ function InviteLandingPage() {
 	return (
 		<InviteScreen>
 			<div className="space-y-2">
-				<h1 className="text-2xl font-medium tracking-tight">
-					Join {preview.workspaceName}
-				</h1>
+				<h1 className="text-2xl font-medium tracking-tight">Join {preview.workspaceName}</h1>
 				<p className="text-sm leading-6 text-muted-foreground">
 					{preview.inviterName} invited you as{" "}
-					<span className="font-medium text-foreground">
-						{workspaceRoleLabels[preview.role]}
-					</span>
-					.
+					<span className="font-medium text-foreground">{workspaceRoleLabels[preview.role]}</span>.
 				</p>
 			</div>
 			<div className="w-full">
@@ -97,9 +90,7 @@ function InviteUnavailablePage() {
 	return (
 		<InviteScreen>
 			<div className="space-y-2">
-				<h1 className="text-2xl font-medium tracking-tight">
-					Invite unavailable
-				</h1>
+				<h1 className="text-2xl font-medium tracking-tight">Invite unavailable</h1>
 				<p className="text-sm leading-6 text-muted-foreground">
 					This invite link is invalid, expired, or has been revoked.
 				</p>

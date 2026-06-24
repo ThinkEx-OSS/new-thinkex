@@ -55,9 +55,7 @@ export function useWorkspaceRealtime({
 	onReconnect,
 	onRevisionGap,
 }: UseWorkspaceRealtimeInput) {
-	const [presence, setPresence] = useState(() =>
-		getInitialPresenceState(workspaceId),
-	);
+	const [presence, setPresence] = useState(() => getInitialPresenceState(workspaceId));
 	const hasConnectedRef = useRef(false);
 	const connectionWorkspaceRef = useRef(workspaceId);
 	const lastSeenRevisionRef = useRef(lastSeenRevision ?? 0);
@@ -92,10 +90,7 @@ export function useWorkspaceRealtime({
 		}
 
 		latestRevisionInputRef.current = lastSeenRevision;
-		lastSeenRevisionRef.current = Math.max(
-			lastSeenRevisionRef.current,
-			lastSeenRevision,
-		);
+		lastSeenRevisionRef.current = Math.max(lastSeenRevisionRef.current, lastSeenRevision);
 	}, [lastSeenRevision, workspaceId]);
 
 	const handleOpen = useCallback(() => {
@@ -137,10 +132,7 @@ export function useWorkspaceRealtime({
 		(event: MessageEvent) => {
 			const message = parseServerMessage(event.data);
 
-			if (
-				message?.type === "presence.snapshot" &&
-				message.workspaceId === workspaceId
-			) {
+			if (message?.type === "presence.snapshot" && message.workspaceId === workspaceId) {
 				setPresence((current) => ({
 					...current,
 					users: message.users,
@@ -148,25 +140,16 @@ export function useWorkspaceRealtime({
 				}));
 			}
 
-			if (
-				message?.type === "workspace.event" &&
-				message.workspaceId === workspaceId
-			) {
+			if (message?.type === "workspace.event" && message.workspaceId === workspaceId) {
 				const lastSeenRevision = lastSeenRevisionRef.current;
 
-				if (
-					lastSeenRevision > 0 &&
-					message.event.revision > lastSeenRevision + 1
-				) {
+				if (lastSeenRevision > 0 && message.event.revision > lastSeenRevision + 1) {
 					onRevisionGapRef.current?.(message.event);
 					lastSeenRevisionRef.current = message.event.revision;
 					return;
 				}
 
-				lastSeenRevisionRef.current = Math.max(
-					lastSeenRevisionRef.current,
-					message.event.revision,
-				);
+				lastSeenRevisionRef.current = Math.max(lastSeenRevisionRef.current, message.event.revision);
 				onEventRef.current?.(message.event);
 			}
 		},

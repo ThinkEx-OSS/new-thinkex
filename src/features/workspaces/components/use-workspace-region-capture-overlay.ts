@@ -30,15 +30,24 @@ export function useWorkspaceRegionCaptureOverlay({
 	const onCaptureRef = useRef(onCapture);
 	const deferCaptureSelectionRef = useRef(deferCaptureSelection);
 
-	draftRef.current = draft;
-	activeRef.current = active;
-	onCaptureRef.current = onCapture;
-	deferCaptureSelectionRef.current = deferCaptureSelection;
+	useEffect(() => {
+		draftRef.current = draft;
+	}, [draft]);
+
+	useEffect(() => {
+		activeRef.current = active;
+	}, [active]);
+
+	useEffect(() => {
+		onCaptureRef.current = onCapture;
+	}, [onCapture]);
+
+	useEffect(() => {
+		deferCaptureSelectionRef.current = deferCaptureSelection;
+	}, [deferCaptureSelection]);
 
 	const visible = active || draft;
-	const selectionRect = draft
-		? regionRectFromTwoPoints(draft.start, draft.current)
-		: null;
+	const selectionRect = draft ? regionRectFromTwoPoints(draft.start, draft.current) : null;
 
 	useEffect(() => {
 		if (!visible) {
@@ -108,29 +117,13 @@ export function useWorkspaceRegionCaptureOverlay({
 		bounds.addEventListener("pointerdown", handlePointerDown, listenerOptions);
 		bounds.addEventListener("pointermove", handlePointerMove, listenerOptions);
 		bounds.addEventListener("pointerup", handlePointerUp, listenerOptions);
-		bounds.addEventListener(
-			"pointercancel",
-			handlePointerCancel,
-			listenerOptions,
-		);
+		bounds.addEventListener("pointercancel", handlePointerCancel, listenerOptions);
 
 		return () => {
-			bounds.removeEventListener(
-				"pointerdown",
-				handlePointerDown,
-				listenerOptions,
-			);
-			bounds.removeEventListener(
-				"pointermove",
-				handlePointerMove,
-				listenerOptions,
-			);
+			bounds.removeEventListener("pointerdown", handlePointerDown, listenerOptions);
+			bounds.removeEventListener("pointermove", handlePointerMove, listenerOptions);
 			bounds.removeEventListener("pointerup", handlePointerUp, listenerOptions);
-			bounds.removeEventListener(
-				"pointercancel",
-				handlePointerCancel,
-				listenerOptions,
-			);
+			bounds.removeEventListener("pointercancel", handlePointerCancel, listenerOptions);
 		};
 	}, [boundsRef, visible]);
 

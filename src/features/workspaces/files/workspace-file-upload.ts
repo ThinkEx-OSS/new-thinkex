@@ -58,8 +58,7 @@ export async function runWorkspaceFileUploadBatch(
 	void toast.promise(uploadPromise, {
 		loading: getUploadBatchLoadingMessage(accepted),
 		success: (result) => getUploadBatchSuccessMessage(result, accepted.length),
-		error: (error) =>
-			getErrorMessage(error, "Unable to upload files right now."),
+		error: (error) => getErrorMessage(error, "Unable to upload files right now."),
 	});
 
 	const result = await uploadPromise;
@@ -82,13 +81,10 @@ async function postWorkspaceFileUpload(
 		formData.set("parentId", job.parentId);
 	}
 
-	const uploadResponse = await fetch(
-		`/api/v1/workspaces/${job.workspaceId}/file-upload`,
-		{
-			method: "POST",
-			body: formData,
-		},
-	);
+	const uploadResponse = await fetch(`/api/v1/workspaces/${job.workspaceId}/file-upload`, {
+		method: "POST",
+		body: formData,
+	});
 
 	if (!uploadResponse.ok) {
 		throw new Error(await getWorkspaceFileUploadErrorMessage(uploadResponse));
@@ -111,9 +107,7 @@ function uploadAcceptedFiles(input: {
 	parentId: string | null;
 	files: readonly File[];
 	onSuccess: (command: WorkspaceCommandResult<WorkspaceItemSummary>) => void;
-}): Promise<
-	Pick<WorkspaceFileUploadBatchResult, "successCount" | "errorCount">
-> {
+}): Promise<Pick<WorkspaceFileUploadBatchResult, "successCount" | "errorCount">> {
 	const jobs = input.files.map((file) =>
 		toUploadJob({
 			file,

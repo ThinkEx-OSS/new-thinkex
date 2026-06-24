@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import ErrorFallbackScreen from "#/components/ErrorFallbackScreen";
+import { capturePostHogClientException } from "#/integrations/posthog/provider";
 
 interface ClientErrorBoundaryProps {
 	children: ReactNode;
@@ -24,6 +25,10 @@ export default class ClientErrorBoundary extends Component<
 
 	componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		console.error("Client render failed", error, errorInfo);
+		capturePostHogClientException(error, {
+			component_stack: errorInfo.componentStack,
+			error_boundary: "ClientErrorBoundary",
+		});
 	}
 
 	render() {
@@ -35,9 +40,7 @@ export default class ClientErrorBoundary extends Component<
 
 		return (
 			<ErrorFallbackScreen
-				message={
-					error.message || "Something went wrong while loading this page."
-				}
+				message={error.message || "Something went wrong while loading this page."}
 				showRetry
 				homeLink={<a href="/">Back to home</a>}
 				stack={error.stack}

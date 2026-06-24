@@ -7,10 +7,7 @@ type WorkspaceClientMutationInput = {
 };
 
 const localClientMutationIds = new Set<string>();
-const localClientMutationTimeouts = new Map<
-	string,
-	ReturnType<typeof setTimeout>
->();
+const localClientMutationTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function trackWorkspaceClientMutationId(clientMutationId: string) {
 	localClientMutationIds.add(clientMutationId);
@@ -38,9 +35,7 @@ export function forgetWorkspaceClientMutationId(clientMutationId: string) {
 	}
 }
 
-export function shouldIgnoreWorkspaceClientMutationEcho(
-	event: WorkspaceRealtimeEvent,
-) {
+export function shouldIgnoreWorkspaceClientMutationEcho(event: WorkspaceRealtimeEvent) {
 	if (!event.clientMutationId) {
 		return false;
 	}
@@ -53,9 +48,9 @@ export function shouldIgnoreWorkspaceClientMutationEcho(
 	return true;
 }
 
-export function prepareWorkspaceClientMutationInput<
-	TInput extends WorkspaceClientMutationInput,
->(input: TInput) {
+export function prepareWorkspaceClientMutationInput<TInput extends WorkspaceClientMutationInput>(
+	input: TInput,
+) {
 	const clientMutationId = input.clientMutationId ?? crypto.randomUUID();
 	trackWorkspaceClientMutationId(clientMutationId);
 

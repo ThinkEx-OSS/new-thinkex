@@ -41,9 +41,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 	const { data: session, refetch } = authClient.useSession();
 	const alternateHref = mode === "signin" ? "/signup" : "/login";
 	const alternateAccountCta =
-		mode === "signin"
-			? "Don't have an account? Sign up"
-			: "Already have an account? Sign in";
+		mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in";
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -53,10 +51,7 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 				<div className="space-y-4 text-center">
 					<p className="text-sm leading-6 text-muted-foreground">
 						You&apos;re signed in as{" "}
-						<span className="font-medium text-foreground">
-							{session.user.email}
-						</span>
-						.
+						<span className="font-medium text-foreground">{session.user.email}</span>.
 					</p>
 					<div className="flex flex-wrap justify-center gap-3">
 						<Button nativeButton={false} render={<Link to={callbackURL} />}>
@@ -65,17 +60,17 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={async () => {
-								try {
-									await authClient.signOut();
-									removeAuthSession(queryClient);
-									await Promise.all([refetch(), router.invalidate()]);
-									await navigate({ to: "/" });
-								} catch (error) {
-									toast.error(
-										getErrorMessage(error, "Unable to sign out right now."),
-									);
-								}
+							onClick={() => {
+								void (async () => {
+									try {
+										await authClient.signOut();
+										removeAuthSession(queryClient);
+										await Promise.all([refetch(), router.invalidate()]);
+										await navigate({ to: "/" });
+									} catch (error) {
+										toast.error(getErrorMessage(error, "Unable to sign out right now."));
+									}
+								})();
 							}}
 						>
 							Sign out
@@ -91,27 +86,27 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 			<div className="mx-auto grid w-full max-w-xs gap-6">
 				<Button
 					type="button"
-					onClick={async () => {
-						setIsLoading(true);
-						setErrorMessage(null);
+					onClick={() => {
+						void (async () => {
+							setIsLoading(true);
+							setErrorMessage(null);
 
-						try {
-							await authClient.signIn.social({
-								provider: "google",
-								callbackURL,
-							});
-							await Promise.all([
-								refetch(),
-								refreshAuthSession(queryClient),
-								router.invalidate(),
-							]);
-						} catch (error) {
-							setErrorMessage("Failed to sign in with Google");
-							toast.error(
-								getErrorMessage(error, "Failed to sign in with Google"),
-							);
-							setIsLoading(false);
-						}
+							try {
+								await authClient.signIn.social({
+									provider: "google",
+									callbackURL,
+								});
+								await Promise.all([
+									refetch(),
+									refreshAuthSession(queryClient),
+									router.invalidate(),
+								]);
+							} catch (error) {
+								setErrorMessage("Failed to sign in with Google");
+								toast.error(getErrorMessage(error, "Failed to sign in with Google"));
+								setIsLoading(false);
+							}
+						})();
 					}}
 					disabled={isLoading}
 					className="w-full"

@@ -53,14 +53,12 @@ export function stageCaptureAttachmentToComposer(
 	options: StageComposerFilesOptions = {},
 ) {
 	const filesBefore =
-		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]
-			?.length ?? 0;
+		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]?.length ?? 0;
 
 	stageComposerFiles(workspaceId, [file], options);
 
 	const filesAfter =
-		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]
-			?.length ?? 0;
+		useWorkspaceAiComposerDraftStore.getState().filesByWorkspaceId[workspaceId]?.length ?? 0;
 
 	return filesAfter > filesBefore;
 }

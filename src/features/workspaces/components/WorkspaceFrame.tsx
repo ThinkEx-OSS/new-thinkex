@@ -5,10 +5,7 @@ interface WorkspaceFrameProps {
 	content: ReactNode;
 }
 
-export default function WorkspaceFrame({
-	chrome,
-	content,
-}: WorkspaceFrameProps) {
+export default function WorkspaceFrame({ chrome, content }: WorkspaceFrameProps) {
 	return (
 		<div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
 			{chrome}

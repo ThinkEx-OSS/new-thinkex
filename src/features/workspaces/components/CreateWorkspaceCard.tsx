@@ -1,11 +1,6 @@
 import { Plus } from "lucide-react";
 
-import {
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "#/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Spinner } from "#/components/ui/spinner";
 import { cn } from "#/lib/utils";
 

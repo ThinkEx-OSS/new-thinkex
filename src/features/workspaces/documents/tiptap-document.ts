@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import {
-	type JsonValue,
-	jsonValueSchema,
-} from "#/features/workspaces/contracts";
+import { type JsonValue, jsonValueSchema } from "#/features/workspaces/contracts";
 
 export interface TiptapDocumentJson {
 	type: "doc";
@@ -18,9 +15,7 @@ export const tiptapDocumentJsonSchema = z
 	})
 	.transform((value) => normalizeTiptapDocumentJson(value));
 
-export function createInitialTiptapDocumentJson(
-	name: string,
-): TiptapDocumentJson {
+export function createInitialTiptapDocumentJson(name: string): TiptapDocumentJson {
 	const title = name.trim();
 
 	return {
@@ -38,9 +33,7 @@ export function createInitialTiptapDocumentJson(
 	};
 }
 
-export function parseTiptapDocumentJson(
-	content: string | null,
-): TiptapDocumentJson {
+export function parseTiptapDocumentJson(content: string | null): TiptapDocumentJson {
 	if (!content?.trim()) {
 		throw new Error("Workspace document content is missing.");
 	}
@@ -52,17 +45,12 @@ export function stringifyTiptapDocumentJson(document: TiptapDocumentJson) {
 	return `${JSON.stringify(normalizeTiptapDocumentJson(document))}\n`;
 }
 
-function normalizeTiptapDocumentJson(
-	value: unknown,
-	_context?: unknown,
-): TiptapDocumentJson {
+function normalizeTiptapDocumentJson(value: unknown, _context?: unknown): TiptapDocumentJson {
 	if (!isRecord(value) || value.type !== "doc") {
 		throw new Error("Workspace document content is not Tiptap JSON.");
 	}
 
-	const content = Array.isArray(value.content)
-		? value.content.filter(isJsonValue)
-		: undefined;
+	const content = Array.isArray(value.content) ? value.content.filter(isJsonValue) : undefined;
 
 	return {
 		...(value as Record<string, JsonValue>),

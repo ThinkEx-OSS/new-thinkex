@@ -24,10 +24,7 @@ type WorkspaceAiComposerDraftFileError = {
 };
 
 interface WorkspaceAiComposerDraftState {
-	filesByWorkspaceId: Record<
-		string,
-		WorkspaceAiComposerDraftFile[] | undefined
-	>;
+	filesByWorkspaceId: Record<string, WorkspaceAiComposerDraftFile[] | undefined>;
 	quotesByWorkspaceId: Record<string, WorkspaceSelectedQuote[] | undefined>;
 	addFiles: (
 		workspaceId: string,
@@ -45,11 +42,10 @@ interface WorkspaceAiComposerDraftState {
 const EMPTY_DRAFT_FILES: WorkspaceAiComposerDraftFile[] = [];
 const EMPTY_DRAFT_QUOTES: WorkspaceSelectedQuote[] = [];
 
-export const useWorkspaceAiComposerDraftStore =
-	create<WorkspaceAiComposerDraftState>()((set, get) => ({
+export const useWorkspaceAiComposerDraftStore = create<WorkspaceAiComposerDraftState>()(
+	(set, get) => ({
 		addFiles: (workspaceId, fileList, options) => {
-			const current =
-				get().filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
+			const current = get().filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
 			const capped = acceptIncomingFiles([...fileList], {
 				accept: options?.accept,
 				currentCount: current.length,
@@ -79,9 +75,7 @@ export const useWorkspaceAiComposerDraftStore =
 
 				void readFileAsDataUrl(file)
 					.then((dataUrl) => {
-						set((state) =>
-							markDraftFileReady(state, workspaceId, placeholder.id, dataUrl),
-						);
+						set((state) => markDraftFileReady(state, workspaceId, placeholder.id, dataUrl));
 					})
 					.catch(() => {
 						set((state) => removeDraftFile(state, workspaceId, placeholder.id));
@@ -99,8 +93,7 @@ export const useWorkspaceAiComposerDraftStore =
 					return state;
 				}
 
-				const current =
-					state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
+				const current = state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
 
 				return {
 					quotesByWorkspaceId: {
@@ -114,12 +107,10 @@ export const useWorkspaceAiComposerDraftStore =
 			}),
 		clearDraftArtifacts: (workspaceId) =>
 			set((state) => clearDraftArtifactsForWorkspace(state, workspaceId)),
-		clearFiles: (workspaceId) =>
-			set((state) => clearFilesForWorkspace(state, workspaceId)),
+		clearFiles: (workspaceId) => set((state) => clearFilesForWorkspace(state, workspaceId)),
 		clearQuotes: (workspaceId) =>
 			set((state) => {
-				const current =
-					state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
+				const current = state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
 				if (current.length === 0) {
 					return state;
 				}
@@ -137,8 +128,7 @@ export const useWorkspaceAiComposerDraftStore =
 			set((state) => removeDraftFile(state, workspaceId, fileId)),
 		removeQuote: (workspaceId, quoteId) =>
 			set((state) => {
-				const current =
-					state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
+				const current = state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
 				if (!current.some((quote) => quote.id === quoteId)) {
 					return state;
 				}
@@ -151,7 +141,8 @@ export const useWorkspaceAiComposerDraftStore =
 					},
 				};
 			}),
-	}));
+	}),
+);
 
 export function useWorkspaceAiComposerDraftFiles(workspaceId: string) {
 	return useWorkspaceAiComposerDraftStore(
@@ -177,16 +168,10 @@ function clearDraftArtifactsForWorkspace(
 	state: WorkspaceAiComposerDraftState,
 	workspaceId: string,
 ) {
-	return clearQuotesForWorkspace(
-		clearFilesForWorkspace(state, workspaceId),
-		workspaceId,
-	);
+	return clearQuotesForWorkspace(clearFilesForWorkspace(state, workspaceId), workspaceId);
 }
 
-function clearFilesForWorkspace(
-	state: WorkspaceAiComposerDraftState,
-	workspaceId: string,
-) {
+function clearFilesForWorkspace(state: WorkspaceAiComposerDraftState, workspaceId: string) {
 	const current = state.filesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_FILES;
 	if (current.length === 0) {
 		return state;
@@ -201,10 +186,7 @@ function clearFilesForWorkspace(
 	};
 }
 
-function clearQuotesForWorkspace(
-	state: WorkspaceAiComposerDraftState,
-	workspaceId: string,
-) {
+function clearQuotesForWorkspace(state: WorkspaceAiComposerDraftState, workspaceId: string) {
 	const current = state.quotesByWorkspaceId[workspaceId] ?? EMPTY_DRAFT_QUOTES;
 	if (current.length === 0) {
 		return state;

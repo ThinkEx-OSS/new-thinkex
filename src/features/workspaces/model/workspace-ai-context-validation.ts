@@ -8,9 +8,7 @@ import type {
 	WorkspaceAiContextTabReference,
 } from "./workspace-ai-context-types";
 
-export function isWorkspaceAiContextSnapshot(
-	value: unknown,
-): value is WorkspaceAiContextSnapshot {
+export function isWorkspaceAiContextSnapshot(value: unknown): value is WorkspaceAiContextSnapshot {
 	if (!isRecord(value)) {
 		return false;
 	}
@@ -63,10 +61,7 @@ export function isWorkspaceAiContextTabReference(
 		return true;
 	}
 
-	return (
-		value.view.kind === "workspace-item" &&
-		isWorkspaceAiContextItemReference(value.view.item)
-	);
+	return value.view.kind === "workspace-item" && isWorkspaceAiContextItemReference(value.view.item);
 }
 
 export function isWorkspaceAiContextSelectedQuote(
@@ -90,10 +85,7 @@ export function isWorkspaceAiContextSelectedQuote(
 	}
 
 	if (value.source.kind === "document-selection") {
-		return (
-			value.source.item === undefined ||
-			isWorkspaceAiContextItemReference(value.source.item)
-		);
+		return value.source.item === undefined || isWorkspaceAiContextItemReference(value.source.item);
 	}
 
 	return (
@@ -101,12 +93,9 @@ export function isWorkspaceAiContextSelectedQuote(
 		Array.isArray(value.source.pageNumbers) &&
 		value.source.pageNumbers.every(
 			(pageNumber) =>
-				typeof pageNumber === "number" &&
-				Number.isInteger(pageNumber) &&
-				pageNumber > 0,
+				typeof pageNumber === "number" && Number.isInteger(pageNumber) && pageNumber > 0,
 		) &&
-		(value.source.item === undefined ||
-			isWorkspaceAiContextItemReference(value.source.item))
+		(value.source.item === undefined || isWorkspaceAiContextItemReference(value.source.item))
 	);
 }
 
@@ -118,10 +107,7 @@ export function isWorkspaceAiContextPresentationReference(
 	}
 
 	if (value.mode === "standard") {
-		return (
-			value.activePane === undefined ||
-			isWorkspaceAiContextPaneReference(value.activePane)
-		);
+		return value.activePane === undefined || isWorkspaceAiContextPaneReference(value.activePane);
 	}
 
 	if (value.mode === "maximized") {
@@ -136,8 +122,7 @@ export function isWorkspaceAiContextPresentationReference(
 		(value.direction === "horizontal" || value.direction === "vertical") &&
 		Array.isArray(value.panes) &&
 		value.panes.every(isWorkspaceAiContextPaneReference) &&
-		(value.activePane === undefined ||
-			isWorkspaceAiContextPaneReference(value.activePane))
+		(value.activePane === undefined || isWorkspaceAiContextPaneReference(value.activePane))
 	);
 }
 
@@ -184,10 +169,7 @@ function isWorkspaceAiContextPaneReference(
 		return true;
 	}
 
-	return (
-		value.kind === "workspace-item" &&
-		isWorkspaceAiContextItemReference(value.item)
-	);
+	return value.kind === "workspace-item" && isWorkspaceAiContextItemReference(value.item);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

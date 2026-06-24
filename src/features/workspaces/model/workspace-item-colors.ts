@@ -23,9 +23,7 @@ export function workspaceItemSupportsCustomColor(type: WorkspaceItemType) {
 	return type === "folder";
 }
 
-export function getWorkspaceItemColorValue(
-	color: string | null,
-): WorkspaceItemColor | null {
+export function getWorkspaceItemColorValue(color: string | null): WorkspaceItemColor | null {
 	const parsed = workspaceColorSchema.safeParse(color);
 
 	return parsed.success ? parsed.data : null;
@@ -37,9 +35,7 @@ export function resolveWorkspaceItemColor(input: {
 	color: string | null;
 }): WorkspaceItemColor {
 	if (input.type === "folder") {
-		return (
-			getWorkspaceItemColorValue(input.color) ?? workspaceItemTypeColors.folder
-		);
+		return getWorkspaceItemColorValue(input.color) ?? workspaceItemTypeColors.folder;
 	}
 
 	return workspaceItemTypeColors[input.type];
@@ -56,9 +52,6 @@ export function resolveWorkspaceItemColorForCreate(input: {
 	return null;
 }
 
-export function getWorkspaceItemPalette(input: {
-	type: WorkspaceItemType;
-	color: string | null;
-}) {
+export function getWorkspaceItemPalette(input: { type: WorkspaceItemType; color: string | null }) {
 	return workspaceColors[resolveWorkspaceItemColor(input)];
 }

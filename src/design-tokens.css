@@ -57,16 +57,7 @@
 	--chart-4: var(--tx-ui-amber-500);
 	--chart-5: var(--tx-ui-rose-500);
 	--chart-6: var(--tx-ui-violet-500);
-	--shadow-elevated: 0 14px 40px
-		color-mix(in oklch, var(--foreground) 18%, transparent);
-	--sidebar: var(--tx-neutral-50);
-	--sidebar-foreground: var(--tx-neutral-900);
-	--sidebar-primary: var(--tx-neutral-900);
-	--sidebar-primary-foreground: var(--tx-neutral-950);
-	--sidebar-accent: var(--tx-neutral-200);
-	--sidebar-accent-foreground: var(--tx-neutral-900);
-	--sidebar-border: var(--tx-neutral-300);
-	--sidebar-ring: oklch(0.708 0 0);
+	--shadow-elevated: 0 14px 40px color-mix(in oklch, var(--foreground) 18%, transparent);
 	--dialog-footer: color-mix(in oklch, var(--muted) 50%, var(--popover));
 }
 
@@ -84,8 +75,6 @@
 	--card: var(--tx-neutral-200);
 	--popover: var(--tx-neutral-200);
 	--secondary: var(--tx-neutral-300);
-	--sidebar: var(--tx-neutral-200);
-	--sidebar-accent: var(--tx-neutral-300);
 	--primary: var(--tx-neutral-900);
 	--primary-foreground: var(--tx-neutral-950);
 	--destructive: oklch(0.704 0.191 22.216);
@@ -93,9 +82,6 @@
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.556 0 0);
 	--selection: rgb(37 99 235 / 42%);
-	--shadow-elevated: 0 14px 40px
-		color-mix(in oklch, var(--foreground) 45%, transparent);
-	--sidebar-primary: var(--tx-neutral-900);
-	--sidebar-ring: oklch(0.556 0 0);
+	--shadow-elevated: 0 14px 40px color-mix(in oklch, var(--foreground) 45%, transparent);
 	--dialog-footer: color-mix(in oklch, var(--secondary) 50%, var(--popover));
 }

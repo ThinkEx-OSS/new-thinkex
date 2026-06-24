@@ -65,15 +65,10 @@ export class DocumentSession extends YServer {
 		context: ConnectionContext,
 	) {
 		const room = getDocumentSessionRoomNameParts(this.name);
-		let access: Awaited<
-			ReturnType<typeof resolveDocumentSessionConnectionAccess>
-		>;
+		let access: Awaited<ReturnType<typeof resolveDocumentSessionConnectionAccess>>;
 
 		try {
-			access = await resolveDocumentSessionConnectionAccess(
-				context.request,
-				room.workspaceId,
-			);
+			access = await resolveDocumentSessionConnectionAccess(context.request, room.workspaceId);
 		} catch {
 			connection.close(1011, "Unauthorized");
 			return;
@@ -88,7 +83,7 @@ export class DocumentSession extends YServer {
 			canMutate: access.canMutate,
 			userId: access.userId,
 		});
-		super.onConnect(connection, context);
+		void super.onConnect(connection, context);
 	}
 
 	override isReadOnly(connection: Connection<DocumentSessionConnectionState>) {
@@ -104,9 +99,7 @@ export class DocumentSession extends YServer {
 			throw new Error("Document session can only open document items.");
 		}
 
-		const persistedUpdate = await this.ctx.storage.get<Uint8Array>(
-			persistedYDocUpdateKey,
-		);
+		const persistedUpdate = await this.ctx.storage.get<Uint8Array>(persistedYDocUpdateKey);
 
 		if (persistedUpdate) {
 			Y.applyUpdate(this.document, persistedUpdate, this);
@@ -147,17 +140,12 @@ export class DocumentSession extends YServer {
 		}
 
 		try {
-			this.replaceCurrentDocument(
-				parseMarkdownToTiptapDocument(editResult.content),
-			);
+			this.replaceCurrentDocument(parseMarkdownToTiptapDocument(editResult.content));
 		} catch {
 			return {
 				applied: 0,
 				failed: input.edits.length,
-				failures: [
-					...editResult.failures,
-					{ code: "invalid_document_projection", index: -1 },
-				],
+				failures: [...editResult.failures, { code: "invalid_document_projection", index: -1 }],
 				status: "rejected",
 			};
 		}
@@ -199,31 +187,20 @@ export class DocumentSession extends YServer {
 
 		this.document.transact(() => {
 			fragment.delete(0, fragment.length);
-			prosemirrorJSONToYXmlFragment(
-				getTiptapDocumentSchema(),
-				document,
-				fragment,
-			);
+			prosemirrorJSONToYXmlFragment(getTiptapDocumentSchema(), document, fragment);
 		}, this);
 	}
 
 	private async persistYDoc() {
-		await this.ctx.storage.put(
-			persistedYDocUpdateKey,
-			Y.encodeStateAsUpdate(this.document),
-		);
+		await this.ctx.storage.put(persistedYDocUpdateKey, Y.encodeStateAsUpdate(this.document));
 	}
 
-	private async getWorkspaceKernel(
-		workspaceId: string,
-	): Promise<WorkspaceKernelClient> {
+	private async getWorkspaceKernel(workspaceId: string): Promise<WorkspaceKernelClient> {
 		return getWorkspaceKernelFromEnv(this.env, workspaceId);
 	}
 }
 
-function getDocumentSessionRoomNameParts(
-	roomName: string,
-): DocumentSessionRouteParams {
+function getDocumentSessionRoomNameParts(roomName: string): DocumentSessionRouteParams {
 	const separatorIndex = roomName.indexOf(":");
 
 	if (separatorIndex <= 0 || separatorIndex === roomName.length - 1) {

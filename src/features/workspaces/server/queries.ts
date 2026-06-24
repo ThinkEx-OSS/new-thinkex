@@ -2,26 +2,15 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
-import type {
-	WorkspacePage,
-	WorkspaceSummary,
-} from "#/features/workspaces/contracts";
+import type { WorkspacePage, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceKernelPage } from "#/features/workspaces/kernel/workspace-kernel-access";
-import {
-	mapWorkspaceDetailRow,
-	mapWorkspaceRow,
-} from "#/features/workspaces/server/mappers";
+import { mapWorkspaceDetailRow, mapWorkspaceRow } from "#/features/workspaces/server/mappers";
 import { getCurrentUserId } from "#/features/workspaces/server/permissions";
 
 type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 
-export async function listWorkspacesForCurrentUser(): Promise<
-	WorkspaceSummary[]
-> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+export async function listWorkspacesForCurrentUser(): Promise<WorkspaceSummary[]> {
+	const [userId, dbContext] = await Promise.all([getCurrentUserId(), createDbContext()]);
 
 	try {
 		return await listWorkspacesForUser(dbContext.db, userId);
@@ -30,10 +19,7 @@ export async function listWorkspacesForCurrentUser(): Promise<
 	}
 }
 
-export async function listWorkspacesForUser(
-	db: Db,
-	userId: string,
-): Promise<WorkspaceSummary[]> {
+export async function listWorkspacesForUser(db: Db, userId: string): Promise<WorkspaceSummary[]> {
 	const rows = await db
 		.select({
 			workspace: workspaces,
@@ -42,13 +28,9 @@ export async function listWorkspacesForUser(
 		})
 		.from(workspaceMembers)
 		.innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
-		.where(
-			and(eq(workspaceMembers.userId, userId), isNull(workspaces.archivedAt)),
-		)
+		.where(and(eq(workspaceMembers.userId, userId), isNull(workspaces.archivedAt)))
 		.orderBy(
-			desc(
-				sql`coalesce(${workspaceMembers.lastOpenedAt}, ${workspaces.createdAt})`,
-			),
+			desc(sql`coalesce(${workspaceMembers.lastOpenedAt}, ${workspaces.createdAt})`),
 			asc(workspaces.name),
 		);
 
@@ -66,10 +48,7 @@ export async function listWorkspacesForUser(
 export async function getWorkspacePageForCurrentUser(
 	workspaceId: string,
 ): Promise<WorkspacePage | null> {
-	const [userId, dbContext] = await Promise.all([
-		getCurrentUserId(),
-		createDbContext(),
-	]);
+	const [userId, dbContext] = await Promise.all([getCurrentUserId(), createDbContext()]);
 
 	try {
 		const [workspaceRow] = await dbContext.db

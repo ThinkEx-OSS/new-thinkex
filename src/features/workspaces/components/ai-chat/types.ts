@@ -1,10 +1,4 @@
-import type {
-	ChatRequestOptions,
-	ChatStatus,
-	DynamicToolUIPart,
-	ToolUIPart,
-	UIMessage,
-} from "ai";
+import type { ChatRequestOptions, ChatStatus, DynamicToolUIPart, ToolUIPart, UIMessage } from "ai";
 
 import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
 

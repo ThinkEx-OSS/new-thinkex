@@ -27,11 +27,7 @@ export function assertPublicHttpUrl(input: string) {
 }
 
 function normalizeHostname(hostname: string) {
-	return hostname
-		.toLowerCase()
-		.replace(/^\[/, "")
-		.replace(/\]$/, "")
-		.replace(/\.$/, "");
+	return hostname.toLowerCase().replace(/^\[/, "").replace(/\]$/, "").replace(/\.$/, "");
 }
 
 function isSingleLabelHostname(hostname: string) {

@@ -1,10 +1,4 @@
-import {
-	Camera,
-	Download,
-	EllipsisVertical,
-	Link2,
-	Printer,
-} from "lucide-react";
+import { Camera, Download, EllipsisVertical, Link2, Printer } from "lucide-react";
 
 import {
 	DropdownMenu,
@@ -58,9 +52,7 @@ export function WorkspaceFileToolbar({
 				Capture
 			</WorkspaceToolbarTextButton>
 			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={<WorkspaceToolbarIconButton aria-label="More file actions" />}
-				>
+				<DropdownMenuTrigger render={<WorkspaceToolbarIconButton aria-label="More file actions" />}>
 					<EllipsisVertical />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-48" align="end">
@@ -78,19 +70,13 @@ export function WorkspaceFileToolbar({
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
 					<DropdownMenuGroup>
-						<DropdownMenuItem
-							className="[&_svg:not([class*='size-'])]:size-4"
-							disabled
-						>
+						<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
 							<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 								<Printer />
 							</span>
 							Print
 						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="[&_svg:not([class*='size-'])]:size-4"
-							disabled
-						>
+						<DropdownMenuItem className="[&_svg:not([class*='size-'])]:size-4" disabled>
 							<span className="inline-flex size-4 items-center justify-center text-muted-foreground">
 								<Link2 />
 							</span>

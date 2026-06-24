@@ -4,9 +4,7 @@ import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/_protected")({
 	beforeLoad: async ({ context, location }) => {
-		const session = await context.queryClient.ensureQueryData(
-			getAuthSessionQueryOptions(),
-		);
+		const session = await context.queryClient.ensureQueryData(getAuthSessionQueryOptions());
 
 		if (!session) {
 			throw redirect({

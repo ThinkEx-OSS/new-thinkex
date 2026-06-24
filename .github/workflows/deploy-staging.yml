@@ -1,0 +1,48 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: true
+
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+      POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+      POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+      VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+      VITE_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "22"
+          cache: true
+
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      - name: Verify branch quality gates
+        run: vp run check && vp run test
+
+      - name: Build staging bundle
+        run: vp run build:staging
+
+      - name: Apply staging migrations
+        run: vp run db:migrate:staging
+
+      - name: Deploy staging Worker
+        run: vp run deploy:worker:staging

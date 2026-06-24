@@ -42,8 +42,7 @@ export function useTypeToFocusPrompt({
 					return;
 				}
 
-				const caretPosition =
-					pendingCaretPositionRef.current ?? promptTextarea.value.length;
+				const caretPosition = pendingCaretPositionRef.current ?? promptTextarea.value.length;
 				pendingCaretPositionRef.current = null;
 				promptTextarea.focus({ preventScroll: true });
 				promptTextarea.setSelectionRange(caretPosition, caretPosition);
