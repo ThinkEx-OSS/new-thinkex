@@ -441,6 +441,14 @@ export async function generateAIThreadTitle(input: { env: Env; messages: UIMessa
 		return undefined;
 	}
 
+	const prompt = [
+		"Write a concise chat title for this first user message.",
+		"Return only the title. No quotes. No punctuation at the end.",
+		"Use 2 to 6 words.",
+		"",
+		firstUserMessage,
+	].join("\n");
+	const startedAt = Date.now();
 	const result = await generateText({
 		model: getWorkspaceAiLanguageModelForGatewayModel(AI_THREAD_TITLE_GATEWAY_MODEL, input.env),
 		providerOptions: {
@@ -463,17 +471,17 @@ export async function generateAIThreadTitle(input: { env: Env; messages: UIMessa
 				thinkingConfig: { thinkingLevel: "low" },
 			},
 		} as WorkspaceAiProviderOptions,
-		prompt: [
-			"Write a concise chat title for this first user message.",
-			"Return only the title. No quotes. No punctuation at the end.",
-			"Use 2 to 6 words.",
-			"",
-			firstUserMessage,
-		].join("\n"),
+		prompt,
 		temperature: 0.2,
 	});
 
-	return result.text;
+	return {
+		title: result.text,
+		gatewayModel: AI_THREAD_TITLE_GATEWAY_MODEL,
+		prompt,
+		usage: result.usage,
+		latencySeconds: (Date.now() - startedAt) / 1000,
+	};
 }
 
 export function getAIThreadSoulPrompt() {

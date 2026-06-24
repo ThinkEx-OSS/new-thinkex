@@ -161,6 +161,10 @@ export class DocumentSession extends YServer {
 		};
 	}
 
+	async purgeForDeletion(): Promise<void> {
+		await this.ctx.storage.deleteAll();
+	}
+
 	private async checkpointToKernel() {
 		const room = getDocumentSessionRoomNameParts(this.name);
 		const document = tiptapDocumentJsonSchema.parse(

@@ -122,6 +122,7 @@ export interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	purgeForDeletion(): Promise<void>;
 }
 
 export async function readWorkspaceKernelFileContent(input: {

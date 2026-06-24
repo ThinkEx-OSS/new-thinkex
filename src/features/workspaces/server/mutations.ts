@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { workspaceMembers, workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import { ensureWorkspaceStarterThreadForUser } from "#/features/workspaces/ai/workspace-starter-thread.server";
+import { purgeWorkspaceResources } from "#/features/workspaces/durable-object-lifecycle";
 import type {
 	CreateWorkspaceInput,
 	DeleteWorkspaceInput,
@@ -217,6 +218,8 @@ export async function deleteWorkspaceForCurrentUser(input: DeleteWorkspaceInput)
 		if (workspace.name !== input.confirmationName.trim()) {
 			throw new Error("Workspace name confirmation does not match.");
 		}
+
+		await purgeWorkspaceResources(input.workspaceId);
 
 		const [deletedWorkspace] = await dbContext.db
 			.delete(workspaces)

@@ -18,6 +18,10 @@ const posthogServerClient =
 			})
 		: null;
 
+export function getPostHogServerClient() {
+	return posthogServerClient;
+}
+
 interface PostHogServerEvent<TEvent extends PostHogServerEventName> {
 	distinctId: string;
 	event: TEvent;
