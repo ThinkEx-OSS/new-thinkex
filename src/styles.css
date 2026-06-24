@@ -114,9 +114,25 @@
 		animation: workspace-ask-selection-button-in 100ms ease-out 120ms both;
 	}
 
+	.thinkex-thinking-mark {
+		overflow: visible;
+	}
+
+	.thinkex-thinking-block {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: thinkex-thinking-block 1.12s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
+		opacity: 0.34;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.workspace-ask-selection-button {
 			animation: none;
+		}
+
+		.thinkex-thinking-block {
+			animation: none;
+			opacity: 1;
 		}
 	}
 
@@ -129,6 +145,28 @@
 		to {
 			opacity: 1;
 			transform: scale(1);
+		}
+	}
+
+	@keyframes thinkex-thinking-block {
+		0% {
+			opacity: 0.34;
+			transform: translateY(8px) scale(0.92);
+		}
+
+		32% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+
+		58% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+
+		100% {
+			opacity: 0.34;
+			transform: translateY(0) scale(0.97);
 		}
 	}
 
