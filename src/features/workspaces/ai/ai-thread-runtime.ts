@@ -74,8 +74,10 @@ export function createAIThreadTurnToolConfig(input: {
 	const workspaceFs = isWorkspaceFsLike(input.workspace) ? input.workspace : undefined;
 	const state = workspaceFs ? createWorkspaceStateBackend(workspaceFs) : undefined;
 	const hasState = workspaceFs !== undefined;
+	const activeToolNames = toolCatalog.getActiveToolNames(input.canMutate);
+
 	return {
-		activeTools: toolCatalog.getActiveToolNames(input.canMutate),
+		activeTools: activeToolNames,
 		tools: {
 			codemode_execute: createExecuteTool({
 				ctx: input.ctx,
