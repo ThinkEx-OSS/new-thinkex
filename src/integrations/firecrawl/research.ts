@@ -5,6 +5,7 @@ import {
 	getRecordArrayValue,
 	getRecordValue,
 	getStringValue,
+	truncateFirecrawlText,
 } from "#/integrations/firecrawl/client";
 
 const MAX_RESEARCH_TEXT_CHARS = 4_000;
@@ -114,7 +115,7 @@ async function searchResearchGithub(input: { env: Env; query: string; limit: num
 			repo: getStringValue(item, "repo"),
 			url: getStringValue(item, "url"),
 			title: getStringValue(item, "title"),
-			snippet: truncateString(
+			snippet: truncateFirecrawlText(
 				getStringValue(item, "snippet") ?? getStringValue(item, "contentMd"),
 				MAX_RESEARCH_TEXT_CHARS,
 			),
@@ -136,7 +137,7 @@ function normalizePaperSummary(
 		primary_id: primaryId,
 		title: getStringValue(value, "title"),
 		abstract: options?.includeAbstract
-			? truncateString(getStringValue(value, "abstract"), MAX_RESEARCH_TEXT_CHARS)
+			? truncateFirecrawlText(getStringValue(value, "abstract"), MAX_RESEARCH_TEXT_CHARS)
 			: undefined,
 		score: options?.includeScore ? getNumberValue(value, "score") : undefined,
 		url: getPaperUrl(value, primaryId),
@@ -149,7 +150,7 @@ function normalizePassages(value: unknown) {
 
 	return results
 		.map((item) => ({
-			text: truncateString(
+			text: truncateFirecrawlText(
 				getStringValue(item, "text") ??
 					getStringValue(item, "content") ??
 					getStringValue(item, "contentMd") ??
@@ -188,12 +189,4 @@ function getPaperUrl(value: unknown, primaryId: string | null) {
 	}
 
 	return null;
-}
-
-function truncateString(value: string | null, maxLength: number) {
-	if (!value || value.length <= maxLength) {
-		return value;
-	}
-
-	return `${value.slice(0, maxLength)}...`;
 }

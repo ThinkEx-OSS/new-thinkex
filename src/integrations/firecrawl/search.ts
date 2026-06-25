@@ -3,6 +3,7 @@ import {
 	getRecordArrayValue,
 	getRecordValue,
 	getStringValue,
+	truncateFirecrawlText,
 } from "#/integrations/firecrawl/client";
 
 const MAX_WEB_SEARCH_SNIPPET_CHARS = 600;
@@ -24,7 +25,7 @@ export async function searchPublicWeb(input: {
 		body: JSON.stringify({
 			query: input.query,
 			limit: input.limit,
-			sources: ["web"],
+			sources: [{ type: "web" }],
 			ignoreInvalidURLs: true,
 			includeDomains: normalizeHostnameList(input.includeDomains),
 		}),
@@ -42,7 +43,7 @@ export async function searchPublicWeb(input: {
 					getStringValue(item, "url") ??
 					getStringValue(getRecordValue(item, "metadata"), "sourceURL") ??
 					getStringValue(getRecordValue(item, "metadata"), "url"),
-				snippet: truncateString(
+				snippet: truncateFirecrawlText(
 					getStringValue(item, "description") ??
 						getStringValue(item, "snippet") ??
 						getStringValue(getRecordValue(item, "metadata"), "description"),
@@ -83,12 +84,4 @@ function normalizeHostnameList(value: string[] | undefined) {
 	);
 
 	return normalized.length > 0 ? normalized : undefined;
-}
-
-function truncateString(value: string | null, maxLength: number) {
-	if (!value || value.length <= maxLength) {
-		return value;
-	}
-
-	return `${value.slice(0, maxLength)}...`;
 }

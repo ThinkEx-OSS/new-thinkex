@@ -8,7 +8,7 @@ export async function firecrawlJsonRequest(input: {
 	body?: BodyInit | null;
 	headers?: HeadersInit;
 }) {
-	const response = await fetch(new URL(input.path, getFirecrawlApiUrl(input.env)), {
+	const response = await fetch(getFirecrawlUrl(input.env, input.path), {
 		method: input.method ?? "GET",
 		headers: {
 			Authorization: `Bearer ${input.env.FIRECRAWL_API_KEY}`,
@@ -29,6 +29,11 @@ export async function firecrawlJsonRequest(input: {
 
 export function getFirecrawlApiUrl(env: Env) {
 	return (env.FIRECRAWL_API_URL || defaultFirecrawlApiUrl).replace(/\/$/, "");
+}
+
+export function getFirecrawlUrl(env: Env, path: string) {
+	const baseUrl = `${getFirecrawlApiUrl(env)}/`;
+	return new URL(path.replace(/^\/+/, ""), baseUrl);
 }
 
 export function getFirecrawlErrorMessage(value: unknown) {
@@ -76,4 +81,12 @@ export function getNumberValue(value: unknown, key: string) {
 export function getBooleanValue(value: unknown, key: string) {
 	const field = getRecordValue(value, key);
 	return typeof field === "boolean" ? field : null;
+}
+
+export function truncateFirecrawlText(value: string | null, maxLength: number) {
+	if (!value || value.length <= maxLength) {
+		return value;
+	}
+
+	return `${value.slice(0, maxLength)}...`;
 }
