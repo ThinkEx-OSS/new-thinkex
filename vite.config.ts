@@ -7,13 +7,7 @@ import {
 export default defineConfig(({ command }) => {
 	assertRequiredPostHogBuildEnv(command);
 
-	const deployEnv =
-		process.env.CLOUDFLARE_ENV?.trim() || (command === "serve" ? "development" : "production");
-
 	return {
-		define: {
-			"import.meta.env.VITE_DEPLOY_ENV": JSON.stringify(deployEnv),
-		},
 		resolve: { tsconfigPaths: true },
 		build: {
 			sourcemap: command === "build",

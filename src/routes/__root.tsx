@@ -18,27 +18,6 @@ interface MyRouterContext {
 	session?: AuthSession | null;
 }
 
-function resolveFaviconHref() {
-	if (import.meta.env.DEV) {
-		return "/favicon-dev.svg";
-	}
-
-	if (import.meta.env.VITE_DEPLOY_ENV === "staging") {
-		return "/favicon-staging.svg";
-	}
-
-	return "/favicon.svg";
-}
-
-const faviconLinks = [
-	{
-		rel: "icon",
-		href: resolveFaviconHref(),
-		type: "image/svg+xml",
-		sizes: "any",
-	},
-];
-
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => ({
 		meta: [
@@ -58,7 +37,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				rel: "stylesheet",
 				href: appCss,
 			},
-			...faviconLinks,
+			{
+				rel: "icon",
+				href: import.meta.env.DEV
+					? "/favicon-dev.svg"
+					: import.meta.env.MODE === "staging"
+						? "/favicon-staging.svg"
+						: "/favicon.svg",
+				type: "image/svg+xml",
+				sizes: "any",
+			},
 			{
 				rel: "apple-touch-icon",
 				sizes: "180x180",

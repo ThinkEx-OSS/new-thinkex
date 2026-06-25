@@ -10,7 +10,7 @@
 		"dev:local": "vp dev --port 3000",
 		"build": "CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vp build",
 		"build:production": "CLOUDFLARE_ENV=production vp run build",
-		"build:staging": "CLOUDFLARE_ENV=staging vp run build",
+		"build:staging": "CLOUDFLARE_ENV=staging CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vp build --mode staging",
 		"preview": "vp run build && vp preview",
 		"format": "vp fmt",
 		"lint": "vp lint",
