@@ -135,11 +135,7 @@ export function WorkspaceShell({
 	});
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
-		return (
-			<WorkspaceShellSkeleton
-				chatSurfaceMode={persistedStoresHydrated ? chatSurfaceMode : "hidden"}
-			/>
-		);
+		return <WorkspaceShellSkeleton chatSurfaceMode={chatSurfaceMode} />;
 	}
 
 	const aiContextScope = {
