@@ -6,6 +6,7 @@ import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiCha
 import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
 import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
+import type { WorkspaceAiChatSurfaceMode } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
 const workspaceSkeletonCardKeys = [
@@ -18,13 +19,19 @@ const workspaceSkeletonCardKeys = [
 	"card-7",
 ] as const;
 
-export default function WorkspaceShellSkeleton() {
+interface WorkspaceShellSkeletonProps {
+	chatSurfaceMode?: WorkspaceAiChatSurfaceMode;
+}
+
+export default function WorkspaceShellSkeleton({
+	chatSurfaceMode = "hidden",
+}: WorkspaceShellSkeletonProps) {
 	return (
 		<WorkspaceChatLayout
-			chatSurfaceMode="hidden"
+			chatSurfaceMode={chatSurfaceMode}
 			chrome={<WorkspaceSkeletonChrome />}
 			content={<WorkspaceSkeletonContent />}
-			chatPanel={<WorkspaceSkeletonAiChatPanel />}
+			chatPanel={chatSurfaceMode === "hidden" ? undefined : <WorkspaceSkeletonAiChatPanel />}
 		/>
 	);
 }

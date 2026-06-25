@@ -11,11 +11,7 @@ import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/W
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
 import { WorkspacePdfEngineProvider } from "#/features/workspaces/components/WorkspacePdfEngineProvider";
 import { WorkspaceMaximizedPresentation } from "#/features/workspaces/components/WorkspacePresentation";
-import {
-	WorkspaceSkeletonAiChatPanel,
-	WorkspaceSkeletonChrome,
-	WorkspaceSkeletonContent,
-} from "#/features/workspaces/components/WorkspaceShellSkeleton";
+import WorkspaceShellSkeleton from "#/features/workspaces/components/WorkspaceShellSkeleton";
 import WorkspaceSplitPresentation from "#/features/workspaces/components/WorkspaceSplitPresentation";
 import WorkspaceStandardTabPanes from "#/features/workspaces/components/WorkspaceStandardTabPanes";
 import WorkspaceTopBar from "#/features/workspaces/components/WorkspaceTopBar";
@@ -140,11 +136,8 @@ export function WorkspaceShell({
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
 		return (
-			<WorkspaceChatLayout
-				chatSurfaceMode="hidden"
-				chrome={<WorkspaceSkeletonChrome />}
-				content={<WorkspaceSkeletonContent />}
-				chatPanel={<WorkspaceSkeletonAiChatPanel />}
+			<WorkspaceShellSkeleton
+				chatSurfaceMode={persistedStoresHydrated ? chatSurfaceMode : "hidden"}
 			/>
 		);
 	}

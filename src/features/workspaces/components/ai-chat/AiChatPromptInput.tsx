@@ -101,7 +101,7 @@ export default function AiChatPromptInput({
 	const draftFiles = useWorkspaceAiComposerDraftFiles(context.workspaceId);
 	const attachmentsReady =
 		draftFiles.length === 0 || draftFiles.every((file) => file.status === "ready");
-	const canType = status !== "submitted" && attachmentsReady;
+	const canType = true;
 	const canSend = status === "ready" && attachmentsReady;
 	const { capabilities } = useWorkspaceMutationAccess();
 	const { uploadFiles: uploadWorkspaceFiles } = useWorkspaceFileUpload();
@@ -193,7 +193,12 @@ export default function AiChatPromptInput({
 					</PromptInputTools>
 
 					<WorkspaceToolbarGroup className="ml-auto">
-						<AiChatPromptSubmit input={input} onStop={onStop} status={status} />
+						<AiChatPromptSubmit
+							attachmentsReady={attachmentsReady}
+							input={input}
+							onStop={onStop}
+							status={status}
+						/>
 					</WorkspaceToolbarGroup>
 				</PromptInputFooter>
 			</PromptInput>
