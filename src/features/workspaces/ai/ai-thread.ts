@@ -151,12 +151,24 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 				timeZone: getBodyString(ctx.body, "timeZone"),
 				workspaceAiContext: ctx.body?.workspaceAiContext,
 			});
+			const turnToolConfig = createAIThreadTurnToolConfig({
+				env: this.env,
+				ctx: this.ctx,
+				workspace: this.workspace,
+				getThreadContext: () => this._getThreadContext(),
+				canMutate: thread.promptScope.canMutate,
+				timeZone: getBodyString(ctx.body, "timeZone"),
+			});
 
 			await this.inspector.recordTurnStarted({
 				ctx,
 				modelId,
 				system,
 				thread,
+				tools: filterToolSetByNames(
+					{ ...ctx.tools, ...turnToolConfig.tools },
+					turnToolConfig.activeTools,
+				),
 			});
 			this.posthog.recordTurnStarted({
 				ctx,
@@ -171,14 +183,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 					thread,
 				}),
 				system,
-				...createAIThreadTurnToolConfig({
-					env: this.env,
-					ctx: this.ctx,
-					workspace: this.workspace,
-					getThreadContext: () => this._getThreadContext(),
-					canMutate: thread.promptScope.canMutate,
-					timeZone: getBodyString(ctx.body, "timeZone"),
-				}),
+				...turnToolConfig,
 			};
 		}
 
@@ -410,6 +415,18 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			}
 		}
 	};
+}
+
+function filterToolSetByNames(tools: ToolSet, activeToolNames: string[] | undefined): ToolSet {
+	if (!activeToolNames) {
+		return tools;
+	}
+
+	return Object.fromEntries(
+		activeToolNames
+			.map((name) => [name, tools[name]] as const)
+			.filter((entry) => entry[1] !== undefined),
+	) as ToolSet;
 }
 
 function getBodyString(body: Record<string, unknown> | undefined, key: string) {

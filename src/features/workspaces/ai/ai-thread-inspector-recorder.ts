@@ -47,6 +47,7 @@ export class AIThreadInspectorRecorder {
 		modelId: string;
 		system: string;
 		thread: AIThreadContext;
+		tools: unknown;
 	}) {
 		beginAIInspectorRun(this.state);
 		resetInspectorChunkAccumulator(this.chunks);
@@ -57,7 +58,7 @@ export class AIThreadInspectorRecorder {
 			modelId: input.modelId,
 			system: input.system,
 			thread: input.thread,
-			tools: await summarizeInspectorTools(input.ctx.tools),
+			tools: await summarizeInspectorTools(input.tools),
 		});
 	}
 
