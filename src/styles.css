@@ -56,13 +56,22 @@
 
 	html {
 		@apply font-sans;
+		height: 100%;
+		overscroll-behavior-y: none;
 	}
 
 	body {
 		@apply bg-background text-foreground;
 		margin: 0;
+		min-height: 100%;
+		overscroll-behavior-y: none;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+	}
+
+	[data-app-shell],
+	[data-scroll-root] {
+		overscroll-behavior-y: none;
 	}
 
 	button:not(:disabled),

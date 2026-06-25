@@ -29,7 +29,10 @@ export default function LandingPage() {
 	}
 
 	return (
-		<div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+		<div
+			data-app-shell
+			className="flex h-screen flex-col overflow-hidden bg-background text-foreground"
+		>
 			<header className="z-40 shrink-0 border-b border-border bg-background">
 				<div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-6">
 					<Link

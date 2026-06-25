@@ -90,7 +90,7 @@ function DocumentEditorInstance({
 
 	return (
 		<section className="relative flex h-full min-h-0 flex-col bg-background">
-			<div ref={setScrollTarget} className="min-h-0 flex-1 overflow-y-auto">
+			<div data-scroll-root ref={setScrollTarget} className="min-h-0 flex-1 overflow-y-auto">
 				<div className="min-h-full w-full pb-8">
 					<DocumentAskSelectionMenu
 						editor={editor}

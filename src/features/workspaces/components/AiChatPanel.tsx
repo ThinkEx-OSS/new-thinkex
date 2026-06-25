@@ -87,8 +87,8 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 
 			{isDropActive ? (
 				<WorkspaceFileDropOverlay
-					description="Images are attached to chat. Other supported files can be added to the workspace."
-					title="Drop files to add"
+					description="Images go into chat. Other supported files go into the workspace."
+					title="Drop files here"
 				/>
 			) : null}
 
