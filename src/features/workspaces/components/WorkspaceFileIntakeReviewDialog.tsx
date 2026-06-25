@@ -71,10 +71,7 @@ export function WorkspaceFileIntakeReviewDialog({
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 								Cancel
 							</Button>
-							<Button
-								type="button"
-								onClick={mode === "chat_fallback" ? onConfirmWorkspaceFallback : undefined}
-							>
+							<Button type="button" onClick={onConfirmWorkspaceFallback}>
 								Add supported files to workspace
 							</Button>
 						</>

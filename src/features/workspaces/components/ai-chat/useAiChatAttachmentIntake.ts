@@ -58,7 +58,7 @@ export function useAiChatAttachmentIntake({
 				const destinationParentId = resolveWorkspaceUploadDestination(activeItem);
 
 				setReviewState((prev) => ({
-					destinationParentId,
+					destinationParentId: prev?.destinationParentId ?? destinationParentId,
 					rejectedFiles: [...(prev?.rejectedFiles ?? []), ...review.rejected],
 					workspaceFallbackFiles: [
 						...(prev?.workspaceFallbackFiles ?? []),
