@@ -1,6 +1,5 @@
 import { Bug, Plus } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
-import { toast } from "sonner";
 
 import {
 	type AttachmentsContext,
@@ -19,18 +18,20 @@ import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-
 import AiChatModelPicker from "#/features/workspaces/components/ai-chat/AiChatModelPicker";
 import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
-import {
-	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-	WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
-} from "#/features/workspaces/components/ai-chat/constants";
+import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId, AiChatStatus } from "#/features/workspaces/components/ai-chat/types";
+import { useAiChatAttachmentIntake } from "#/features/workspaces/components/ai-chat/useAiChatAttachmentIntake";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
+import { WorkspaceFileIntakeReviewDialog } from "#/features/workspaces/components/WorkspaceFileIntakeReviewDialog";
+import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import {
 	WorkspaceToolbarGroup,
 	WorkspaceToolbarIconButton,
 } from "#/features/workspaces/components/WorkspaceToolbar";
 import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
+import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
+import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
 import {
 	useWorkspaceAiComposerDraftFiles,
 	useWorkspaceAiComposerDraftStore,
@@ -96,9 +97,19 @@ export default function AiChatPromptInput({
 		draftFiles.length === 0 || draftFiles.every((file) => file.status === "ready");
 	const canType = status !== "submitted" && attachmentsReady;
 	const canSend = status === "ready" && attachmentsReady;
+	const { capabilities } = useWorkspaceMutationAccess();
+	const { uploadFiles: uploadWorkspaceFiles } = useWorkspaceFileUpload();
 	const addDraftFiles = useWorkspaceAiComposerDraftStore((state) => state.addFiles);
 	const removeDraftFile = useWorkspaceAiComposerDraftStore((state) => state.removeFile);
 	const clearDraftFiles = useWorkspaceAiComposerDraftStore((state) => state.clearFiles);
+	const { addFiles, closeReview, confirmWorkspaceFallback, reviewState } =
+		useAiChatAttachmentIntake({
+			activeItem: context.activeItem,
+			addDraftFiles: (files, options) => addDraftFiles(context.workspaceId, files, options),
+			canUploadToWorkspace: capabilities.canMutateContent,
+			currentChatFileCount: draftFiles.length,
+			uploadWorkspaceFiles,
+		});
 	useTypeToFocusPrompt({
 		enabled: canType,
 		setInput,
@@ -106,12 +117,7 @@ export default function AiChatPromptInput({
 	});
 
 	const attachments: Omit<AttachmentsContext, "openFileDialog"> = {
-		add: (files) => {
-			addDraftFiles(context.workspaceId, files, {
-				...WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
-				onError: (error) => toast.error(error.message),
-			});
-		},
+		add: addFiles,
 		composerReady: canType,
 		clear: () => clearDraftFiles(context.workspaceId),
 		files: draftFiles,
@@ -139,7 +145,7 @@ export default function AiChatPromptInput({
 	return (
 		<>
 			<PromptInput
-				accept={WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept}
+				accept={workspaceFileUploadAccept}
 				attachments={attachments}
 				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
 				multiple
@@ -196,6 +202,18 @@ export default function AiChatPromptInput({
 					/>
 				</Suspense>
 			) : null}
+			<WorkspaceFileIntakeReviewDialog
+				open={Boolean(reviewState)}
+				mode="chat_fallback"
+				workspaceFallbackFiles={reviewState?.workspaceFallbackFiles ?? []}
+				rejectedFiles={reviewState?.rejectedFiles ?? []}
+				onConfirmWorkspaceFallback={confirmWorkspaceFallback}
+				onOpenChange={(open) => {
+					if (!open) {
+						closeReview();
+					}
+				}}
+			/>
 		</>
 	);
 }
