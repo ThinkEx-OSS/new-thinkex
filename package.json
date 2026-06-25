@@ -77,6 +77,7 @@
 		"@tanstack/react-router-devtools": "latest",
 		"@tanstack/react-router-ssr-query": "latest",
 		"@tanstack/react-start": "latest",
+		"@tanstack/react-virtual": "^3.14.3",
 		"@tanstack/router-plugin": "^1.168.18",
 		"@tiptap/core": "^3.27.1",
 		"@tiptap/extension-character-count": "^3.27.1",
