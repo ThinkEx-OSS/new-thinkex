@@ -10,7 +10,7 @@ Implemented in the current branch:
 
 - `wrangler.jsonc` defines a `BROWSER` binding.
 - The compatibility date is set to `2026-03-24`, which is the `env.BROWSER.quickAction()` requirement.
-- `AIThread` exposes `web_fetch_url` for cheap text fetches plus constrained Browser Run Quick Actions: `browser_markdown`, `browser_links`, and `browser_scrape`.
+- `AIThread` exposes `web_search`, `web_markdown`, `web_links`, `research_discover`, and `research_deepen`.
 - `@cloudflare/codemode` and `worker_loaders` are not installed/configured, which means full CDP/browser tools should wait.
 
 ## Options
@@ -100,11 +100,13 @@ Cons:
 - Slower and more expensive than plain fetch.
 - Crawls need approval, limits, and probably background execution.
 
-Recommended initial tools:
+Recommended tools:
 
-- `browser_markdown`: read rendered public pages as bounded Markdown
-- `browser_links`: extract rendered public-page links
-- `browser_scrape`: scrape rendered elements by CSS selector
+- `web_search`: find relevant public pages for a topic or question
+- `web_markdown`: read a specific public page as bounded Markdown
+- `web_links`: extract links from a specific public page
+- `research_discover`: find relevant research papers
+- `research_deepen`: read relevant passages or find related work for a paper
 
 Later tools:
 
