@@ -14,6 +14,7 @@ import {
 	getWorkspaceAiChatModel,
 	type resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
+import { createAIThreadResearchTools } from "#/features/workspaces/ai/research-tools";
 import { createAIThreadTimeTools } from "#/features/workspaces/ai/time-tools";
 import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
 import { createAIThreadWorkspaceTools } from "#/features/workspaces/ai/workspace-tools";
@@ -73,7 +74,6 @@ export function createAIThreadTurnToolConfig(input: {
 	const workspaceFs = isWorkspaceFsLike(input.workspace) ? input.workspace : undefined;
 	const state = workspaceFs ? createWorkspaceStateBackend(workspaceFs) : undefined;
 	const hasState = workspaceFs !== undefined;
-
 	return {
 		activeTools: toolCatalog.getActiveToolNames(input.canMutate),
 		tools: {
@@ -108,12 +108,30 @@ const AI_THREAD_SANDBOX_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 
 const AI_THREAD_WEB_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 	{
+		name: "web_search",
+		codemode: true,
+		mutating: false,
+	},
+	{
 		name: "web_markdown",
 		codemode: true,
 		mutating: false,
 	},
 	{
 		name: "web_links",
+		codemode: true,
+		mutating: false,
+	},
+];
+
+const AI_THREAD_RESEARCH_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "research_discover",
+		codemode: true,
+		mutating: false,
+	},
+	{
+		name: "research_deepen",
 		codemode: true,
 		mutating: false,
 	},
@@ -178,6 +196,7 @@ function createAIThreadToolCatalog(input: {
 }) {
 	const sandboxTools = createSandboxTools(input.workspace);
 	const webTools = createAIThreadWebTools(input.env);
+	const researchTools = createAIThreadResearchTools(input.env);
 	const timeTools = createAIThreadTimeTools({
 		defaultTimeZone: input.timeZone,
 	});
@@ -188,6 +207,7 @@ function createAIThreadToolCatalog(input: {
 
 	addAIThreadToolEntries(entries, sandboxTools, AI_THREAD_SANDBOX_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, webTools, AI_THREAD_WEB_TOOL_DESCRIPTORS);
+	addAIThreadToolEntries(entries, researchTools, AI_THREAD_RESEARCH_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, timeTools, AI_THREAD_TIME_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, workspaceTools, AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS);
 
@@ -232,7 +252,7 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 function getAIThreadCodemodeDescription(hasState: boolean) {
 	const stateLine = hasState
 		? "- `state.*` is the private assistant sandbox filesystem for scratch files and directories only. Nothing in `state.*` becomes a real ThinkEx workspace item unless you explicitly call a real workspace mutation tool through `tools.*`."
-		: "- `state.*` is unavailable in this runtime. Use `tools.*` for real workspace and web operations.";
+		: "- `state.*` is unavailable in this runtime. Use `tools.*` for real workspace, web, and research operations.";
 	const workflowLine = hasState
 		? "3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)` or `await state.readFile(args)`."
 		: "3. Call the method shown by the docs, for example `await tools.workspace_list_items(args)`.";
@@ -246,7 +266,7 @@ function getAIThreadCodemodeDescription(hasState: boolean) {
 		"## Boundaries",
 		"",
 		stateLine,
-		"- `tools.*` exposes actual ThinkEx workspace, web, and time operations.",
+		"- `tools.*` exposes actual ThinkEx workspace, web, research, and time operations.",
 		"",
 		"## Workflow",
 		"",
