@@ -8,12 +8,16 @@ export async function firecrawlJsonRequest(input: {
 	body?: BodyInit | null;
 	headers?: HeadersInit;
 }) {
+	const headers = new Headers({
+		Authorization: `Bearer ${input.env.FIRECRAWL_API_KEY}`,
+	});
+	new Headers(input.headers).forEach((value, key) => {
+		headers.set(key, value);
+	});
+
 	const response = await fetch(getFirecrawlUrl(input.env, input.path), {
 		method: input.method ?? "GET",
-		headers: {
-			Authorization: `Bearer ${input.env.FIRECRAWL_API_KEY}`,
-			...(input.headers ?? {}),
-		},
+		headers,
 		body: input.body,
 	});
 	const responseJson = (await response.json().catch(() => null)) as unknown;
