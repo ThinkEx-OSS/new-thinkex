@@ -1,4 +1,5 @@
 import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Message, MessageContent } from "#/components/ai-elements/message";
@@ -21,7 +22,6 @@ import {
 	getRangeClientRect,
 	type SelectionRect,
 } from "#/features/workspaces/model/workspace-selection-geometry";
-
 type SelectedText = {
 	rect: SelectionRect;
 	text: string;
@@ -35,12 +35,19 @@ export interface AiChatAssistantErrorState {
 type AiChatListRow =
 	| {
 			display: AssistantRowDisplay | null;
+			key: string;
 			message: AiChatMessage;
 			type: "message";
 	  }
 	| {
+			key: string;
 			pending: NonNullable<AiChatPresentation["tailPending"]>;
 			type: "pending";
+	  }
+	| {
+			errorState: AiChatAssistantErrorState;
+			key: string;
+			type: "error";
 	  };
 
 interface AiChatMessageListProps {
@@ -59,10 +66,19 @@ export default function AiChatMessageList({
 	workspaceId,
 }: AiChatMessageListProps) {
 	const { lastAssistantMessageId, status, tailPending } = presentation;
-	const rows = getAiChatListRows(messages, presentation);
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const rows = getAiChatListRows(messages, presentation, assistantError);
 	const hasAssistantContent = hasLatestAssistantContent(rows);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
+	const virtualizer = useVirtualizer({
+		count: rows.length,
+		estimateSize: (index) => estimateAiChatRowSize(rows[index]),
+		getItemKey: (index) => rows[index]?.key ?? index,
+		getScrollElement: () => scrollRef.current,
+		overscan: 6,
+	});
+	const virtualRows = virtualizer.getVirtualItems();
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -97,43 +113,46 @@ export default function AiChatMessageList({
 
 	return (
 		<div ref={listRef} className="contents">
-			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-5 pb-5">
-				{rows.map((row) => {
-					if (row.type === "pending") {
-						return (
-							<AiChatTranscriptRail
-								key="assistant-pending"
-								className="pb-5"
-								withTopInset={rows[0] === row}
-							>
-								<AiChatAssistantPending pending={row.pending} />
-							</AiChatTranscriptRail>
-						);
-					}
+			<div
+				ref={scrollRef}
+				className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-5 pb-5"
+			>
+				<div
+					className="relative w-full"
+					style={{
+						height: virtualizer.getTotalSize(),
+					}}
+				>
+					{virtualRows.map((virtualRow) => {
+						const row = rows[virtualRow.index];
 
-					const { display, message } = row;
-					return (
-						<AiChatTranscriptRail key={message.id} className="pb-5" withTopInset={rows[0] === row}>
-							<AiChatMessageRow
-								display={display}
-								isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
-								isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
-								message={message}
-								onRegenerate={onRegenerateLastResponse}
-							/>
-						</AiChatTranscriptRail>
-					);
-				})}
-				{assistantError ? (
-					<AiChatTranscriptRail className="pb-5" withTopInset={rows.length === 0}>
-						<AiChatAssistantError
-							canRetry={Boolean(onRegenerateLastResponse)}
-							errorState={assistantError}
-							hasAssistantContent={hasAssistantContent}
-							onRetry={onRegenerateLastResponse}
-						/>
-					</AiChatTranscriptRail>
-				) : null}
+						if (!row) {
+							return null;
+						}
+
+						return (
+							<div
+								key={virtualRow.key}
+								ref={virtualizer.measureElement}
+								data-index={virtualRow.index}
+								className="absolute top-0 left-0 w-full"
+								style={{
+									transform: `translateY(${virtualRow.start}px)`,
+								}}
+							>
+								<AiChatListRowView
+									canRetry={Boolean(onRegenerateLastResponse)}
+									hasAssistantContent={hasAssistantContent}
+									isFirst={virtualRow.index === 0}
+									lastAssistantMessageId={lastAssistantMessageId}
+									row={row}
+									status={status}
+									onRegenerateLastResponse={onRegenerateLastResponse}
+								/>
+							</div>
+						);
+					})}
+				</div>
 			</div>
 			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
@@ -152,6 +171,58 @@ export default function AiChatMessageList({
 				/>
 			) : null}
 		</div>
+	);
+}
+
+function AiChatListRowView({
+	canRetry,
+	hasAssistantContent,
+	isFirst,
+	lastAssistantMessageId,
+	onRegenerateLastResponse,
+	row,
+	status,
+}: {
+	canRetry: boolean;
+	hasAssistantContent: boolean;
+	isFirst: boolean;
+	lastAssistantMessageId: string | undefined;
+	onRegenerateLastResponse?: () => void;
+	row: AiChatListRow;
+	status: AiChatPresentation["status"];
+}) {
+	if (row.type === "pending") {
+		return (
+			<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
+				<AiChatAssistantPending pending={row.pending} />
+			</AiChatTranscriptRail>
+		);
+	}
+
+	if (row.type === "error") {
+		return (
+			<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
+				<AiChatAssistantError
+					canRetry={canRetry}
+					errorState={row.errorState}
+					hasAssistantContent={hasAssistantContent}
+					onRetry={onRegenerateLastResponse}
+				/>
+			</AiChatTranscriptRail>
+		);
+	}
+
+	const { display, message } = row;
+	return (
+		<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
+			<AiChatMessageRow
+				display={display}
+				isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+				isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
+				message={message}
+				onRegenerate={onRegenerateLastResponse}
+			/>
+		</AiChatTranscriptRail>
 	);
 }
 
@@ -202,6 +273,7 @@ function AiChatAssistantError({
 function getAiChatListRows(
 	messages: AiChatMessage[],
 	presentation: AiChatPresentation,
+	assistantError?: AiChatAssistantErrorState | null,
 ): AiChatListRow[] {
 	const rows: AiChatListRow[] = [];
 
@@ -214,6 +286,7 @@ function getAiChatListRows(
 
 		rows.push({
 			display,
+			key: `message:${message.id}`,
 			message,
 			type: "message",
 		});
@@ -221,12 +294,33 @@ function getAiChatListRows(
 
 	if (presentation.tailPending) {
 		rows.push({
+			key: "assistant-pending",
 			pending: presentation.tailPending,
 			type: "pending",
 		});
 	}
 
+	if (assistantError) {
+		rows.push({
+			errorState: assistantError,
+			key: "assistant-error",
+			type: "error",
+		});
+	}
+
 	return rows;
+}
+
+function estimateAiChatRowSize(row: AiChatListRow | undefined) {
+	if (!row) {
+		return 160;
+	}
+
+	if (row.type === "pending" || row.type === "error") {
+		return 96;
+	}
+
+	return row.message.role === "user" ? 112 : 220;
 }
 
 function hasLatestAssistantContent(rows: AiChatListRow[]) {

@@ -10,7 +10,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
-import { Button } from "#/components/ui/button";
 import {
 	AiChatAttachmentDropProvider,
 	useAiChatAttachmentDrop,
@@ -19,7 +18,6 @@ import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatP
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
-import { getAiChatPanelBodyPhase } from "#/features/workspaces/components/ai-chat/ai-chat-panel-phase";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
@@ -40,7 +38,6 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 	const [activeThreadIsRecovering, setActiveThreadIsRecovering] = useState(false);
 	const {
 		activeThreadId,
-		areThreadsReady,
 		deleteThreadDialog,
 		getThreadInspectorSnapshot,
 		isCreatingThread,
@@ -56,12 +53,6 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 		threads,
 	} = useAiChatPanelController({ workspaceId: context.workspaceId });
 	const { isDropActive, mergePanelRef } = useAiChatAttachmentDrop();
-
-	const panelBodyPhase = getAiChatPanelBodyPhase({
-		activeThreadId,
-		areThreadsReady,
-		threadCount: threads.length,
-	});
 
 	return (
 		<aside
@@ -82,23 +73,17 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 				threads={threads}
 			/>
 
-			{panelBodyPhase.kind === "empty" ? (
-				<AiChatPanelEmpty isCreatingThread={isCreatingThread} onNewChat={onNewChat} />
-			) : panelBodyPhase.kind === "loading" ? (
-				<AiChatPanelLoading />
-			) : (
-				<Suspense key={panelBodyPhase.threadId} fallback={<AiChatPanelLoading />}>
-					<AiChatThreadView
-						context={context}
-						getInspectorSnapshot={getThreadInspectorSnapshot}
-						modelId={modelId}
-						onModelChange={onModelChange}
-						onRecoveringChange={setActiveThreadIsRecovering}
-						threadSummary={threads.find((thread) => thread.id === panelBodyPhase.threadId)}
-						threadId={panelBodyPhase.threadId}
-					/>
-				</Suspense>
-			)}
+			<Suspense key={activeThreadId} fallback={<AiChatPanelLoading />}>
+				<AiChatThreadView
+					context={context}
+					getInspectorSnapshot={getThreadInspectorSnapshot}
+					modelId={modelId}
+					onModelChange={onModelChange}
+					onRecoveringChange={setActiveThreadIsRecovering}
+					threadSummary={threads.find((thread) => thread.id === activeThreadId)}
+					threadId={activeThreadId}
+				/>
+			</Suspense>
 
 			{isDropActive ? (
 				<WorkspaceFileDropOverlay
@@ -144,28 +129,6 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 				</AlertDialogContent>
 			</AlertDialog>
 		</aside>
-	);
-}
-
-function AiChatPanelEmpty({
-	isCreatingThread,
-	onNewChat,
-}: {
-	isCreatingThread: boolean;
-	onNewChat: () => void;
-}) {
-	return (
-		<Conversation className="h-full min-h-0">
-			<ConversationContent
-				scrollClassName="min-h-0 overscroll-contain"
-				className="items-center justify-center gap-3 px-4 py-8 text-center"
-			>
-				<p className="text-muted-foreground text-sm">No chats yet. Start a new conversation.</p>
-				<Button type="button" size="sm" disabled={isCreatingThread} onClick={onNewChat}>
-					New chat
-				</Button>
-			</ConversationContent>
-		</Conversation>
 	);
 }
 

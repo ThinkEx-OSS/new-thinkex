@@ -19,6 +19,7 @@ import {
 	markThreadRunFinished,
 	markThreadRunStarted,
 } from "#/features/workspaces/ai/ai-thread-directory-store";
+import { getWorkspaceIdFromDefaultThreadId } from "#/features/workspaces/ai/ai-thread-identity";
 import {
 	type AIThreadContext,
 	type AIThreadMetaRow,
@@ -76,6 +77,17 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 				return new Response("Forbidden", { status: 403 });
 			}
 
+			try {
+				const defaultThread = await this._ensureDefaultWorkspaceThread(name);
+				if (defaultThread) {
+					return undefined;
+				}
+			} catch (ensureError) {
+				if (ensureError instanceof AIThreadForbiddenError) {
+					return new Response("Forbidden", { status: 403 });
+				}
+			}
+
 			return new Response("Chat thread not found", { status: 404 });
 		}
 	}
@@ -83,27 +95,6 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 	@callable()
 	async createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
 		return this._createThread(input);
-	}
-
-	async ensureWorkspaceStarterThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
-		const workspaceId = input.workspaceId.trim();
-
-		if (!workspaceId) {
-			throw new Error("workspaceId is required");
-		}
-
-		await getWorkspacePromptScope({
-			userId: this.name,
-			workspaceId,
-		});
-
-		const existing = this._getWorkspaceThreadSummary(workspaceId);
-
-		if (existing) {
-			return existing;
-		}
-
-		return this._ensureWorkspaceThreadRecord(workspaceId);
 	}
 
 	private async _createThread(input: { workspaceId: string }): Promise<AIThreadSummary> {
@@ -136,44 +127,74 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		});
 	}
 
-	private async _ensureWorkspaceThreadRecord(workspaceId: string): Promise<AIThreadSummary> {
-		const existing = this._getWorkspaceThreadSummary(workspaceId);
+	private async _ensureDefaultWorkspaceThread(threadId: string): Promise<AIThreadSummary | null> {
+		const workspaceId = getWorkspaceIdFromDefaultThreadId(threadId);
 
+		if (!workspaceId) {
+			return null;
+		}
+
+		await getWorkspacePromptScope({
+			userId: this.name,
+			workspaceId,
+		}).catch(() => {
+			throw new AIThreadForbiddenError();
+		});
+
+		const existing = this._getThreadSummary(threadId);
 		if (existing) {
 			return existing;
 		}
 
-		const id = nanoid(12);
-		const now = Date.now();
-		const title = getThreadTitle();
+		const hadSubAgent = this.hasSubAgent(AIThread, threadId);
+		if (!hadSubAgent) {
+			await this.subAgent(AIThread, threadId);
+		}
 
-		await this.subAgent(AIThread, id);
-
-		const competingThread = this._getWorkspaceThreadSummary(workspaceId);
-
+		const competingThread = this._getThreadSummary(threadId);
 		if (competingThread) {
-			await this.deleteSubAgent(AIThread, id);
 			return competingThread;
 		}
 
-		return this._insertThreadRecord({
-			id,
-			workspaceId,
-			title,
-			now,
-		});
+		try {
+			return this._insertThreadRecord(
+				{
+					id: threadId,
+					workspaceId,
+					title: getThreadTitle(),
+					now: Date.now(),
+				},
+				{ cleanupSubAgentOnError: false },
+			);
+		} catch (error) {
+			const createdByCompetingRequest = this._getThreadSummary(threadId);
+			if (createdByCompetingRequest) {
+				return createdByCompetingRequest;
+			}
+
+			if (!hadSubAgent) {
+				await this.deleteSubAgent(AIThread, threadId);
+			}
+
+			throw error;
+		}
 	}
 
-	private async _insertThreadRecord(input: {
-		id: string;
-		workspaceId: string;
-		title: string;
-		now: number;
-	}): Promise<AIThreadSummary> {
+	private async _insertThreadRecord(
+		input: {
+			id: string;
+			workspaceId: string;
+			title: string;
+			now: number;
+		},
+		options: { cleanupSubAgentOnError?: boolean } = {},
+	): Promise<AIThreadSummary> {
 		try {
 			insertThreadMeta(this, input);
 		} catch (error) {
-			await this.deleteSubAgent(AIThread, input.id);
+			if (options.cleanupSubAgentOnError !== false) {
+				await this.deleteSubAgent(AIThread, input.id);
+			}
 			throw error;
 		}
 
@@ -185,12 +206,6 @@ export class UserAIStore extends Agent<Env, UserAIStoreState> {
 		}
 
 		return created;
-	}
-
-	private _getWorkspaceThreadSummary(workspaceId: string): AIThreadSummary | null {
-		const row = getActiveThreadMetaRows(this).find((thread) => thread.workspace_id === workspaceId);
-
-		return row ? mapThreadMetaRow(row) : null;
 	}
 
 	@callable()

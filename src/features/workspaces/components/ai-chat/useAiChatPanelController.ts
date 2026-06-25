@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { getDefaultWorkspaceThreadId } from "#/features/workspaces/ai/ai-thread-identity";
 import type { AiChatModelId } from "#/features/workspaces/components/ai-chat/types";
 import { useWorkspaceAiChatThreads } from "#/features/workspaces/components/ai-chat/useWorkspaceAiChatThreads";
 import {
@@ -21,7 +22,7 @@ type AiChatThreadForDialog = {
 
 export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControllerInput) {
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
-	const activeThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
+	const explicitActiveThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
 	const modelId = useWorkspaceAiChatModelId(workspaceId);
 	const setChatSurfaceMode = useWorkspaceUiStore((state) => state.setChatSurfaceMode);
 	const setActiveAiChatThread = useWorkspaceUiStore((state) => state.setActiveAiChatThread);
@@ -38,7 +39,9 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 		markThreadViewed,
 		threads,
 	} = useWorkspaceAiChatThreads({ workspaceId });
-	const activeThread = threads.find((thread) => thread.id === activeThreadId);
+	const defaultThreadId = getDefaultWorkspaceThreadId(workspaceId);
+	const resolvedActiveThreadId = explicitActiveThreadId ?? defaultThreadId;
+	const activeThread = threads.find((thread) => thread.id === resolvedActiveThreadId);
 	const isMaximized = chatSurfaceMode === "fullscreen";
 
 	const selectThread = (threadId: string | undefined) => {
@@ -59,8 +62,6 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 	};
 
 	const handleDeleteThread = async (threadId: string) => {
-		const remainingThreads = threads.filter((thread) => thread.id !== threadId);
-
 		try {
 			await deleteThread(threadId);
 			toast.success("Chat deleted.");
@@ -69,11 +70,11 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 			return;
 		}
 
-		if (activeThreadId !== threadId) {
+		if (resolvedActiveThreadId !== threadId) {
 			return;
 		}
 
-		selectThread(remainingThreads[0]?.id);
+		selectThread(undefined);
 	};
 
 	useEffect(() => {
@@ -82,16 +83,16 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 		}
 
 		if (threads.length === 0) {
-			if (activeThreadId) {
+			if (explicitActiveThreadId) {
 				setActiveAiChatThread(workspaceId, undefined);
 			}
 			return;
 		}
 
-		if (!activeThreadId || !threads.some((thread) => thread.id === activeThreadId)) {
-			setActiveAiChatThread(workspaceId, threads[0].id);
+		if (explicitActiveThreadId && !threads.some((thread) => thread.id === explicitActiveThreadId)) {
+			setActiveAiChatThread(workspaceId, undefined);
 		}
-	}, [activeThreadId, areThreadsReady, setActiveAiChatThread, threads, workspaceId]);
+	}, [areThreadsReady, explicitActiveThreadId, setActiveAiChatThread, threads, workspaceId]);
 
 	useEffect(() => {
 		if (!activeThread?.hasUnreadUpdate) {
@@ -109,8 +110,7 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 	}, [activeThread?.hasUnreadUpdate, activeThread?.id, markingViewedThreadIds, markThreadViewed]);
 
 	return {
-		activeThreadId,
-		areThreadsReady,
+		activeThreadId: resolvedActiveThreadId,
 		deleteThreadDialog: {
 			onClosed: () => setThreadPendingDeletion(undefined),
 			onConfirm: (threadId: string) => void handleDeleteThread(threadId),
@@ -133,7 +133,7 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 		onRestore: () => setChatSurfaceMode(workspaceId, "docked"),
 		onSelectThread: (threadId: string) => selectThread(threadId),
 		threads: threads.map((thread) =>
-			thread.id === activeThreadId ? { ...thread, hasUnreadUpdate: false } : thread,
+			thread.id === resolvedActiveThreadId ? { ...thread, hasUnreadUpdate: false } : thread,
 		),
 	};
 }

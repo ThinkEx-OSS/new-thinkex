@@ -48,6 +48,12 @@ export default defineConfig(({ command }) => {
 						"typescript/no-misused-spread": "off",
 					},
 				},
+				{
+					files: ["src/features/workspaces/components/ai-chat/AiChatMessageList.tsx"],
+					rules: {
+						"react/react-compiler": "off",
+					},
+				},
 			],
 		},
 		fmt: {
