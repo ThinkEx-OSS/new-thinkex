@@ -5,8 +5,14 @@ import type {
 	MarkdownExtractionProvider,
 	MarkdownExtractionResult,
 } from "#/features/workspaces/extraction/types";
+import {
+	firecrawlJsonRequest,
+	getFirstArrayRecord,
+	getNumberValue,
+	getRecordValue,
+	getStringValue,
+} from "#/integrations/firecrawl/client";
 
-const defaultFirecrawlApiUrl = "https://api.firecrawl.dev";
 const firecrawlParseTimeoutMs = 300_000;
 
 export function createFirecrawlPdfExtractionProvider(env: Env): MarkdownExtractionProvider {
@@ -30,20 +36,13 @@ export function createFirecrawlPdfExtractionProvider(env: Env): MarkdownExtracti
 				}),
 			);
 
-			const response = await fetch(`${getFirecrawlApiUrl(env)}/v2/parse`, {
+			const responseJson = await firecrawlJsonRequest({
+				env,
+				path: "/v2/parse",
+				operation: "Firecrawl PDF parsing",
 				method: "POST",
-				headers: {
-					Authorization: `Bearer ${env.FIRECRAWL_API_KEY}`,
-				},
 				body: formData,
 			});
-			const responseJson = (await response.json().catch(() => null)) as unknown;
-
-			if (!response.ok) {
-				throw new Error(
-					`Firecrawl PDF parsing failed (${response.status}): ${getFirecrawlErrorMessage(responseJson)}`,
-				);
-			}
 
 			const markdown = getFirecrawlMarkdown(responseJson);
 
@@ -67,10 +66,6 @@ function normalizeFirecrawlMode(mode: MarkdownExtractionInput["mode"]): Firecraw
 	}
 
 	return "auto";
-}
-
-function getFirecrawlApiUrl(env: Env) {
-	return (env.FIRECRAWL_API_URL || defaultFirecrawlApiUrl).replace(/\/$/, "");
 }
 
 function getFirecrawlMarkdown(value: unknown): string | null {
@@ -133,43 +128,4 @@ function getFirecrawlMetadata(value: unknown) {
 	}
 
 	return result;
-}
-
-function getFirecrawlErrorMessage(value: unknown) {
-	const error = getRecordValue(value, "error");
-	const message = getRecordValue(value, "message");
-
-	if (typeof error === "string") {
-		return error;
-	}
-
-	if (typeof message === "string") {
-		return message;
-	}
-
-	return "unknown error";
-}
-
-function getRecordValue(value: unknown, key: string) {
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
-		return null;
-	}
-
-	return (value as Record<string, unknown>)[key] ?? null;
-}
-
-function getFirstArrayRecord(value: unknown) {
-	return Array.isArray(value) ? (value[0] ?? null) : null;
-}
-
-function getNumberValue(value: unknown, key: string) {
-	const field = getRecordValue(value, key);
-
-	return typeof field === "number" ? field : null;
-}
-
-function getStringValue(value: unknown, key: string) {
-	const field = getRecordValue(value, key);
-
-	return typeof field === "string" && field.trim().length > 0 ? field : null;
 }
