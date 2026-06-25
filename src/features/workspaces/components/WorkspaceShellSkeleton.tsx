@@ -5,6 +5,7 @@ import { Skeleton } from "#/components/ui/skeleton";
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import WorkspaceCardSkeleton from "#/features/workspaces/components/WorkspaceCardSkeleton";
 import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
+import { defaultWorkspaceUiSession } from "#/features/workspaces/model/workspace-ui";
 import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import type { WorkspaceAiChatSurfaceMode } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
@@ -24,7 +25,7 @@ interface WorkspaceShellSkeletonProps {
 }
 
 export default function WorkspaceShellSkeleton({
-	chatSurfaceMode = "hidden",
+	chatSurfaceMode = defaultWorkspaceUiSession.chatSurfaceMode,
 }: WorkspaceShellSkeletonProps) {
 	return (
 		<WorkspaceChatLayout
