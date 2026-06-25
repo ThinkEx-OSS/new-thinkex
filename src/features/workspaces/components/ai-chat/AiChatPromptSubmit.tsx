@@ -4,6 +4,7 @@ import {
 	PromptInputSubmit,
 	usePromptInputAttachments,
 } from "#/components/ai-elements/prompt-input";
+import { Spinner } from "#/components/ui/spinner";
 import { isAiChatStreamActive } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatStatus } from "#/features/workspaces/components/ai-chat/types";
 import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/components/workspace-toolbar-styles";
@@ -28,13 +29,16 @@ export default function AiChatPromptSubmit({
 
 	return (
 		<PromptInputSubmit
+			aria-label={
+				isGenerating ? "Stop" : isWaitingForAttachments ? "Uploading attachments" : "Submit"
+			}
 			className={cn(workspaceToolbarButtonSizeClass, "rounded-full")}
 			disabled={isGenerating ? !canStop : !hasContent || !attachmentsReady}
-			status={isWaitingForAttachments ? "submitted" : status}
+			status={status}
 			onStop={onStop}
 			type={isGenerating ? "button" : "submit"}
 		>
-			{isGenerating ? <Square /> : <ArrowUp />}
+			{isGenerating ? <Square /> : isWaitingForAttachments ? <Spinner /> : <ArrowUp />}
 		</PromptInputSubmit>
 	);
 }
