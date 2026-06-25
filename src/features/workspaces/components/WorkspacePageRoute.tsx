@@ -24,7 +24,7 @@ export default function WorkspacePageRoute() {
 	const [recordedWorkspaceIds] = useState(() => new Set<string>());
 	const recordWorkspaceOpenedMutation = useRecordWorkspaceOpenedMutation();
 	const { chatSurfaceMode } = useWorkspaceUiSession(workspaceId);
-	const { data: page, isSuccess } = useQuery(workspacePageQueryOptions(workspaceId));
+	const { data: page, error, isSuccess } = useQuery(workspacePageQueryOptions(workspaceId));
 
 	useEffect(() => {
 		if (!page) {
@@ -50,6 +50,10 @@ export default function WorkspacePageRoute() {
 		recordedWorkspaceIds.add(workspaceId);
 		recordWorkspaceOpenedMutation.mutate({ workspaceId });
 	}, [page, recordWorkspaceOpenedMutation, recordedWorkspaceIds, workspaceId]);
+
+	if (error) {
+		throw error;
+	}
 
 	if (isSuccess && !page) {
 		throw notFound({ data: { resource: "workspace" } });
