@@ -1,15 +1,5 @@
 import { ChevronDown, Search, Trash2 } from "lucide-react";
-import {
-	type Dispatch,
-	type KeyboardEvent,
-	type PointerEvent,
-	type ReactElement,
-	type SetStateAction,
-	useEffect,
-	useId,
-	useRef,
-	useState,
-} from "react";
+import { type Dispatch, type ReactElement, type SetStateAction, useId, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { ColorSwatchPicker } from "#/components/ui/color-swatch-picker";
@@ -30,6 +20,14 @@ import {
 import { Field, FieldGroup, FieldTitle } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from "#/components/ui/popover";
 import type {
 	WorkspaceColor,
 	WorkspaceIcon,
@@ -75,6 +73,7 @@ export default function WorkspaceSettingsDialog({
 }: WorkspaceSettingsDialogProps) {
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
 	const [draft, setDraft] = useState(() => getWorkspaceSettingsDraft(workspace));
+	const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 	const open = controlledOpen ?? uncontrolledOpen;
 
 	if (!capabilities.canMutateContent) {
@@ -84,6 +83,7 @@ export default function WorkspaceSettingsDialog({
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) {
 			setDraft(getWorkspaceSettingsDraft(workspace));
+			setIsConfirmingDelete(false);
 		}
 
 		controlledOnOpenChange?.(nextOpen);
@@ -99,7 +99,9 @@ export default function WorkspaceSettingsDialog({
 			<WorkspaceSettingsDialogContent
 				canDelete={capabilities.canDeleteWorkspace}
 				draft={draft}
+				isConfirmingDelete={isConfirmingDelete}
 				setDraft={setDraft}
+				setIsConfirmingDelete={setIsConfirmingDelete}
 				workspace={workspace}
 				onOpenChange={handleOpenChange}
 			/>
@@ -110,13 +112,17 @@ export default function WorkspaceSettingsDialog({
 function WorkspaceSettingsDialogContent({
 	canDelete,
 	draft,
+	isConfirmingDelete,
 	setDraft,
+	setIsConfirmingDelete,
 	workspace,
 	onOpenChange,
 }: {
 	canDelete: boolean;
 	draft: WorkspaceSettingsDraft;
+	isConfirmingDelete: boolean;
 	setDraft: Dispatch<SetStateAction<WorkspaceSettingsDraft>>;
+	setIsConfirmingDelete: Dispatch<SetStateAction<boolean>>;
 	workspace: WorkspaceSummary;
 	onOpenChange: (open: boolean) => void;
 }) {
@@ -149,6 +155,14 @@ function WorkspaceSettingsDialogContent({
 			name: normalizedName,
 			icon: draft.icon,
 			color: draft.color,
+		});
+	};
+
+	const handleDeleteWorkspace = () => {
+		onOpenChange(false);
+		deleteWorkspaceMutation.mutate({
+			workspaceId: workspace.id,
+			confirmationName: workspace.name,
 		});
 	};
 
@@ -211,16 +225,47 @@ function WorkspaceSettingsDialogContent({
 
 			<DialogFooter className="items-center sm:justify-between">
 				{canDelete ? (
-					<HoldToDeleteButton
-						workspace={workspace}
-						disabled={deleteWorkspaceMutation.isPending}
-						onDelete={() =>
-							deleteWorkspaceMutation.mutate({
-								workspaceId: workspace.id,
-								confirmationName: workspace.name,
-							})
-						}
-					/>
+					<Popover open={isConfirmingDelete} onOpenChange={setIsConfirmingDelete}>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+									disabled={deleteWorkspaceMutation.isPending}
+								>
+									<Trash2 className="size-4" />
+									Delete workspace
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" side="top" className="w-80">
+							<PopoverHeader>
+								<PopoverTitle className="text-destructive">Delete workspace?</PopoverTitle>
+								<PopoverDescription>
+									Permanently deletes "{workspace.name}" and its contents.
+								</PopoverDescription>
+							</PopoverHeader>
+							<div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+								<Button
+									type="button"
+									variant="outline"
+									disabled={deleteWorkspaceMutation.isPending}
+									onClick={() => setIsConfirmingDelete(false)}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="button"
+									variant="destructive"
+									disabled={deleteWorkspaceMutation.isPending}
+									onClick={handleDeleteWorkspace}
+								>
+									Confirm
+								</Button>
+							</div>
+						</PopoverContent>
+					</Popover>
 				) : (
 					<div />
 				)}
@@ -368,127 +413,5 @@ function WorkspaceColorDropdown({
 				/>
 			</DropdownMenuContent>
 		</DropdownMenu>
-	);
-}
-
-function HoldToDeleteButton({
-	workspace,
-	disabled,
-	onDelete,
-}: {
-	workspace: WorkspaceSummary;
-	disabled: boolean;
-	onDelete: () => void;
-}) {
-	const holdDurationMs = 1400;
-	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const completedRef = useRef(false);
-	const [isHolding, setIsHolding] = useState(false);
-
-	const resetHold = () => {
-		if (timeoutRef.current !== null) {
-			clearTimeout(timeoutRef.current);
-			timeoutRef.current = null;
-		}
-
-		completedRef.current = false;
-		setIsHolding(false);
-	};
-
-	const completeHold = () => {
-		timeoutRef.current = null;
-		completedRef.current = true;
-		onDelete();
-		setIsHolding(false);
-	};
-
-	const beginHold = () => {
-		if (timeoutRef.current !== null) {
-			return;
-		}
-
-		completedRef.current = false;
-		setIsHolding(true);
-		timeoutRef.current = setTimeout(() => {
-			completedRef.current = true;
-			completeHold();
-		}, holdDurationMs);
-	};
-
-	useEffect(
-		() => () => {
-			if (timeoutRef.current !== null) {
-				clearTimeout(timeoutRef.current);
-			}
-		},
-		[],
-	);
-
-	const startHold = (event: PointerEvent<HTMLButtonElement>) => {
-		if (disabled) {
-			return;
-		}
-
-		event.currentTarget.setPointerCapture(event.pointerId);
-		beginHold();
-	};
-
-	const cancelHold = () => {
-		if (!completedRef.current) {
-			resetHold();
-		}
-	};
-
-	const startKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
-		if (event.key !== " " && event.key !== "Enter") {
-			return;
-		}
-
-		if (disabled || timeoutRef.current !== null) {
-			return;
-		}
-
-		event.preventDefault();
-		beginHold();
-	};
-
-	const cancelKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
-		if (event.key !== " " && event.key !== "Enter") {
-			return;
-		}
-
-		event.preventDefault();
-		cancelHold();
-	};
-
-	return (
-		<button
-			type="button"
-			className={cn(
-				"relative h-9 overflow-hidden rounded-md border border-destructive/30 px-2.5 text-sm font-medium text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:ring-3 focus-visible:ring-destructive/20 disabled:pointer-events-none disabled:opacity-50",
-				isHolding && "bg-destructive/10",
-			)}
-			disabled={disabled}
-			aria-label={`Hold to delete ${workspace.name}`}
-			onPointerDown={startHold}
-			onPointerUp={cancelHold}
-			onPointerCancel={cancelHold}
-			onPointerLeave={cancelHold}
-			onKeyDown={startKeyboardHold}
-			onKeyUp={cancelKeyboardHold}
-		>
-			<span
-				className="absolute inset-y-0 left-0 w-full origin-left bg-destructive/20 transition-transform ease-linear"
-				style={{
-					transform: isHolding ? "scaleX(1)" : "scaleX(0)",
-					transitionDuration: `${holdDurationMs}ms`,
-				}}
-				aria-hidden="true"
-			/>
-			<span className="relative flex items-center gap-1.5">
-				<Trash2 className="size-4" />
-				{isHolding ? "Keep holding" : "Hold to delete"}
-			</span>
-		</button>
 	);
 }
