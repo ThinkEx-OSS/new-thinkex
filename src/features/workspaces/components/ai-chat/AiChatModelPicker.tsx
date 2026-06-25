@@ -72,31 +72,30 @@ export default function AiChatModelPicker({ modelId, onModelChange }: AiChatMode
 				{/* Left: grouped, scrollable model list */}
 				<div className="h-full min-w-0 overflow-y-auto border-r border-border/70 p-1.5">
 					{autoModel ? (
-						<>
+						<div className="mb-1">
+							<div className="flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">
+								<Waypoints className="size-3.5 shrink-0" />
+								Picks for you
+							</div>
 							<button
 								type="button"
 								onClick={() => handleSelect(autoModel.id)}
 								onMouseEnter={() => setPreviewId(autoModel.id)}
 								onFocus={() => setPreviewId(autoModel.id)}
 								className={cn(
-									"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors",
+									"flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm outline-none transition-colors",
 									autoModel.id === (previewId ?? modelId)
 										? "bg-accent text-accent-foreground"
 										: "text-foreground hover:bg-accent/60",
 								)}
 							>
-								<span className="flex min-w-0 flex-col">
-									<span className="truncate text-sm font-medium">{autoModel.name}</span>
-									<span className="truncate text-xs text-muted-foreground">
-										{autoModel.tagline}
-									</span>
-								</span>
+								<Waypoints className="size-4 shrink-0 text-muted-foreground" />
+								<span className="truncate">{autoModel.name}</span>
 								{autoModel.id === modelId ? (
 									<Check className="ml-auto size-3.5 shrink-0 text-foreground" />
 								) : null}
 							</button>
-							<div className="my-1.5 h-px bg-border/70" />
-						</>
+						</div>
 					) : null}
 					{groups.map((group) => (
 						<div key={group.id} className="mb-1 last:mb-0">
