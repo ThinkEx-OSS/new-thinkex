@@ -29,8 +29,8 @@ export function useUpdateWorkspaceMutation() {
 				workspacePageQueryKey(input.workspaceId),
 			);
 			const currentWorkspace =
-				previousPage?.workspace ??
-				previousWorkspaces?.find((workspace) => workspace.id === input.workspaceId);
+				previousWorkspaces?.find((workspace) => workspace.id === input.workspaceId) ??
+				previousPage?.workspace;
 
 			if (currentWorkspace) {
 				updateWorkspaceInCaches(queryClient, {

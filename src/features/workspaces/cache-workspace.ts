@@ -6,7 +6,7 @@ import type {
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 
-type WorkspaceListCacheMode = "upsert" | "update-existing" | "skip";
+type WorkspaceListCacheMode = "upsert" | "update-existing";
 
 type SeedWorkspacePageInput = {
 	workspace: WorkspaceSummary;
@@ -24,25 +24,23 @@ export function seedWorkspaceCaches(
 	const { workspace } = input;
 	const listMode = options.listMode ?? "upsert";
 
-	if (listMode !== "skip") {
-		queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) => {
-			if (!current && listMode === "update-existing") {
-				return undefined;
-			}
+	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) => {
+		if (!current && listMode === "update-existing") {
+			return undefined;
+		}
 
-			if (!current) {
-				return [workspace];
-			}
+		if (!current) {
+			return [workspace];
+		}
 
-			if (current.some((item) => item.id === workspace.id)) {
-				return current
-					.map((item) => (item.id === workspace.id ? workspace : item))
-					.sort(compareWorkspaceRecentFirst);
-			}
+		if (current.some((item) => item.id === workspace.id)) {
+			return current
+				.map((item) => (item.id === workspace.id ? workspace : item))
+				.sort(compareWorkspaceRecentFirst);
+		}
 
-			return [workspace, ...current].sort(compareWorkspaceRecentFirst);
-		});
-	}
+		return [workspace, ...current].sort(compareWorkspaceRecentFirst);
+	});
 
 	if ("items" in input) {
 		queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspace.id), (current) =>
