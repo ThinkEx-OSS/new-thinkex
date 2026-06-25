@@ -10,10 +10,12 @@ import { workspaceToolbarButtonSizeClass } from "#/features/workspaces/component
 import { cn } from "#/lib/utils";
 
 export default function AiChatPromptSubmit({
+	attachmentsReady,
 	input,
 	onStop,
 	status,
 }: {
+	attachmentsReady: boolean;
 	input: string;
 	onStop?: () => void;
 	status: AiChatStatus;
@@ -21,14 +23,14 @@ export default function AiChatPromptSubmit({
 	const attachments = usePromptInputAttachments();
 	const isGenerating = isAiChatStreamActive(status);
 	const hasContent = Boolean(input.trim() || attachments.files.length > 0);
-	const composerReady = attachments.composerReady !== false;
 	const canStop = isGenerating && Boolean(onStop);
+	const isWaitingForAttachments = !attachmentsReady && hasContent;
 
 	return (
 		<PromptInputSubmit
 			className={cn(workspaceToolbarButtonSizeClass, "rounded-full")}
-			disabled={isGenerating ? !canStop : !hasContent || !composerReady}
-			status={status}
+			disabled={isGenerating ? !canStop : !hasContent || !attachmentsReady}
+			status={isWaitingForAttachments ? "submitted" : status}
 			onStop={onStop}
 			type={isGenerating ? "button" : "submit"}
 		>
