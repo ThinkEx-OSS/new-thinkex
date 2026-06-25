@@ -31,15 +31,11 @@ export default function WorkspacePageRoute() {
 			return;
 		}
 
-		seedWorkspaceCaches(
-			queryClient,
-			{
-				workspace: page.workspace,
-				items: page.items,
-				revision: page.revision,
-			},
-			{ listMode: "update-existing" },
-		);
+		seedWorkspaceCaches(queryClient, {
+			workspace: page.workspace,
+			items: page.items,
+			revision: page.revision,
+		});
 	}, [page, queryClient]);
 
 	useEffect(() => {
@@ -51,7 +47,7 @@ export default function WorkspacePageRoute() {
 		recordWorkspaceOpenedMutation.mutate({ workspaceId });
 	}, [page, recordWorkspaceOpenedMutation, recordedWorkspaceIds, workspaceId]);
 
-	if (error) {
+	if (error && !page) {
 		throw error;
 	}
 
