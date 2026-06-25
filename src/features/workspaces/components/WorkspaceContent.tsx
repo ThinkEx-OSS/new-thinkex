@@ -20,7 +20,7 @@ import {
 import { useWorkspaceSelection } from "#/features/workspaces/components/useWorkspaceSelection";
 import { WorkspaceCreateContextMenuContent } from "#/features/workspaces/components/WorkspaceCreateMenu";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
-import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
+import { useWorkspaceFileIntake } from "#/features/workspaces/components/WorkspaceFileIntakeProvider";
 import WorkspaceFileViewer from "#/features/workspaces/components/WorkspaceFileViewer";
 import {
 	DeleteWorkspaceItemAlert,
@@ -119,7 +119,7 @@ function WorkspaceBrowseContent({
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
 	const browseSurfaceRef = useRef<HTMLElement>(null);
-	const { requestFileUpload, uploadFiles } = useWorkspaceFileUpload();
+	const { requestFileUpload, uploadFiles } = useWorkspaceFileIntake();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
