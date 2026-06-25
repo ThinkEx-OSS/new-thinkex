@@ -1,9 +1,11 @@
-import { FolderOpen } from "lucide-react";
+import { Eye, FileText, FolderOpen, Image } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { Button } from "#/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "#/components/ui/context-menu";
 import {
 	Empty,
+	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -33,7 +35,12 @@ import { useWorkspacePaneHotkey } from "#/features/workspaces/components/Workspa
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
-import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
+import {
+	getWorkspaceItemDisplay,
+	workspaceItemAcquisitionActions,
+	workspaceItemPrimaryCreateActions,
+} from "#/features/workspaces/model/item-display";
+import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
 import { getWorkspaceChildren, splitWorkspaceChildren } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceBrowseParentId, isWorkspaceItemView } from "#/features/workspaces/model/view";
@@ -112,10 +119,11 @@ function WorkspaceBrowseContent({
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
 	const browseSurfaceRef = useRef<HTMLElement>(null);
-	const { uploadFiles } = useWorkspaceFileUpload();
+	const { requestFileUpload, uploadFiles } = useWorkspaceFileUpload();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
+	const isWorkspaceRoot = parentId === null;
 	const handleNativeFileDrop = (files: FileList) => {
 		if (!capabilities.canMutateContent) {
 			return;
@@ -226,15 +234,13 @@ function WorkspaceBrowseContent({
 							/>
 						) : null}
 						{children.length === 0 ? (
-							<Empty className="border border-dashed bg-muted/20">
-								<EmptyHeader>
-									<EmptyMedia variant="icon">
-										<FolderOpen />
-									</EmptyMedia>
-									<EmptyTitle>No items in this folder</EmptyTitle>
-									<EmptyDescription>Items you add will appear here</EmptyDescription>
-								</EmptyHeader>
-							</Empty>
+							<WorkspaceBrowseEmptyState
+								canMutateContent={capabilities.canMutateContent}
+								isWorkspaceRoot={isWorkspaceRoot}
+								onCreateItem={onCreateItem}
+								parentId={parentId}
+								onUploadFiles={() => requestFileUpload(parentId)}
+							/>
 						) : null}
 					</ContextMenuTrigger>
 					<ContextMenuContent className="w-56">
@@ -281,6 +287,128 @@ function WorkspaceBrowseContent({
 				onDeleted={clearSelection}
 			/>
 		</>
+	);
+}
+
+function WorkspaceBrowseEmptyState({
+	canMutateContent,
+	isWorkspaceRoot,
+	onCreateItem,
+	parentId,
+	onUploadFiles,
+}: {
+	canMutateContent: boolean;
+	isWorkspaceRoot: boolean;
+	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
+	parentId: string | null;
+	onUploadFiles: () => void;
+}) {
+	if (!isWorkspaceRoot) {
+		return (
+			<Empty className="border border-dashed bg-muted/20">
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<FolderOpen />
+					</EmptyMedia>
+					<EmptyTitle>This folder is empty</EmptyTitle>
+					<EmptyDescription>Items added here will appear in this folder.</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		);
+	}
+
+	if (!canMutateContent) {
+		return (
+			<Empty className="border border-dashed bg-muted/20">
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<Eye />
+					</EmptyMedia>
+					<EmptyTitle>This workspace is empty</EmptyTitle>
+					<EmptyDescription>
+						An editor needs to add the first items before anything appears here.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
+		);
+	}
+
+	return (
+		<Empty className="border border-dashed bg-muted/20">
+			<EmptyHeader>
+				<EmptyMedia>
+					<WorkspaceRootEmptyMedia />
+				</EmptyMedia>
+				<EmptyTitle>Add your first files</EmptyTitle>
+				<EmptyDescription>
+					Drag files into the workspace or click New to get started.
+				</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent>
+				<div className="grid w-full max-w-[15.5rem] grid-cols-3 gap-2">
+					{workspaceItemPrimaryCreateActions.map(({ type, label, Icon, iconClassName }) => (
+						<Button
+							key={type}
+							type="button"
+							variant="outline"
+							className="h-auto flex-col gap-1.5 px-3 py-2"
+							onClick={() => onCreateItem({ type, parentId })}
+						>
+							<Icon className={cn("size-5", iconClassName)} />
+							<span className="text-xs">{label}</span>
+						</Button>
+					))}
+					{workspaceItemAcquisitionActions
+						.filter((action) => action.id === "upload-file")
+						.map(({ id, label, Icon, iconClassName, disabled }) => (
+							<Button
+								key={id}
+								type="button"
+								variant="outline"
+								disabled={disabled}
+								className="h-auto flex-col gap-1.5 px-3 py-2"
+								onClick={id === "upload-file" ? onUploadFiles : undefined}
+							>
+								<Icon className={cn("size-5", iconClassName)} />
+								<span className="text-xs">{label}</span>
+							</Button>
+						))}
+				</div>
+			</EmptyContent>
+		</Empty>
+	);
+}
+
+const workspaceRootEmptyMediaIcons = [
+	{
+		Icon: FolderOpen,
+		iconClassName: workspaceColors.amber.iconClassName,
+		className: "translate-x-7 translate-y-4 rotate-[10deg]",
+	},
+	{
+		Icon: FileText,
+		iconClassName: workspaceColors.sky.iconClassName,
+		className: "-translate-y-2",
+	},
+	{
+		Icon: Image,
+		iconClassName: workspaceColors.emerald.iconClassName,
+		className: "-translate-x-7 translate-y-4 -rotate-[10deg]",
+	},
+] as const;
+
+function WorkspaceRootEmptyMedia() {
+	return (
+		<div className="relative flex h-18 w-24 items-center justify-center">
+			{workspaceRootEmptyMediaIcons.map(({ Icon, className, iconClassName }) => (
+				<div
+					key={`${Icon.displayName ?? Icon.name}-${className}`}
+					className={cn("absolute flex items-center justify-center", className)}
+				>
+					<Icon className={cn("size-8", iconClassName)} strokeWidth={1.9} aria-hidden="true" />
+				</div>
+			))}
+		</div>
 	);
 }
 
