@@ -48,7 +48,7 @@ export default function WorkspaceChatLayout({
 	};
 
 	return (
-		<div className="h-screen overflow-hidden bg-background text-foreground">
+		<div data-app-shell className="h-screen overflow-hidden bg-background text-foreground">
 			<ResizablePanelGroup
 				id="workspace-layout"
 				orientation="horizontal"

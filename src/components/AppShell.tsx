@@ -19,7 +19,10 @@ export default function AppShell({
 	children,
 }: AppShellProps) {
 	return (
-		<div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+		<div
+			data-app-shell
+			className="flex h-screen flex-col overflow-hidden bg-background text-foreground"
+		>
 			<header className="z-40 shrink-0 bg-muted">
 				<div className="flex h-12 w-full items-center gap-3 px-4">
 					<div className="flex min-w-0 shrink-0 items-center gap-3 text-foreground">
