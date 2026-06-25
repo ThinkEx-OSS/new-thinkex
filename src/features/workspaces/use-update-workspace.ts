@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
 	updateWorkspaceInCaches,
 	workspacePageQueryKey,
-	workspaceQueryKey,
 	workspacesQueryKey,
 } from "#/features/workspaces/cache";
 import type {
@@ -26,13 +25,12 @@ export function useUpdateWorkspaceMutation() {
 			await queryClient.cancelQueries({ queryKey: workspacesQueryKey });
 
 			const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
-			const previousWorkspace = queryClient.getQueryData<WorkspaceSummary>(
-				workspaceQueryKey(input.workspaceId),
-			);
 			const previousPage = queryClient.getQueryData<WorkspacePage>(
 				workspacePageQueryKey(input.workspaceId),
 			);
-			const currentWorkspace = previousWorkspace ?? previousPage?.workspace;
+			const currentWorkspace =
+				previousWorkspaces?.find((workspace) => workspace.id === input.workspaceId) ??
+				previousPage?.workspace;
 
 			if (currentWorkspace) {
 				updateWorkspaceInCaches(queryClient, {
@@ -45,7 +43,6 @@ export function useUpdateWorkspaceMutation() {
 
 			return {
 				previousWorkspaces,
-				previousWorkspace,
 				previousPage,
 			};
 		},
@@ -56,14 +53,6 @@ export function useUpdateWorkspaceMutation() {
 		onError: (error, input, context) => {
 			if (context?.previousWorkspaces) {
 				queryClient.setQueryData(workspacesQueryKey, context.previousWorkspaces);
-			}
-
-			if (context?.previousWorkspace) {
-				queryClient.setQueryData(workspaceQueryKey(input.workspaceId), context.previousWorkspace);
-			} else {
-				queryClient.removeQueries({
-					queryKey: workspaceQueryKey(input.workspaceId),
-				});
 			}
 
 			if (context?.previousPage) {

@@ -3,6 +3,7 @@ import type { OnPanelResize, PanelImperativeHandle } from "react-resizable-panel
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "#/components/ui/resizable";
 import WorkspaceFrame from "#/features/workspaces/components/WorkspaceFrame";
+import { defaultWorkspaceUiSession } from "#/features/workspaces/model/workspace-ui";
 import type { WorkspaceAiChatSurfaceMode } from "#/features/workspaces/state/workspace-ui-store";
 import { cn } from "#/lib/utils";
 
@@ -18,7 +19,7 @@ export default function WorkspaceChatLayout({
 	chrome,
 	content,
 	chatPanel,
-	chatSurfaceMode = "hidden",
+	chatSurfaceMode = defaultWorkspaceUiSession.chatSurfaceMode,
 	onDockedChatCollapse,
 }: WorkspaceChatLayoutProps) {
 	const chatPanelRef = useRef<PanelImperativeHandle | null>(null);

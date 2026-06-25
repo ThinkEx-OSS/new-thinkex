@@ -1,16 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
-import {
-	workspacePageQueryKey,
-	workspaceQueryKey,
-	workspacesQueryKey,
-} from "#/features/workspaces/cache-keys";
+import { workspacePageQueryKey, workspacesQueryKey } from "#/features/workspaces/cache-keys";
 import type {
 	WorkspaceItemSummary,
 	WorkspacePage,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
 
-type WorkspaceListCacheMode = "upsert" | "update-existing" | "skip";
+type WorkspaceListCacheMode = "upsert" | "update-existing";
 
 type SeedWorkspacePageInput = {
 	workspace: WorkspaceSummary;
@@ -28,27 +24,23 @@ export function seedWorkspaceCaches(
 	const { workspace } = input;
 	const listMode = options.listMode ?? "upsert";
 
-	if (listMode !== "skip") {
-		queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) => {
-			if (!current && listMode === "update-existing") {
-				return undefined;
-			}
+	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) => {
+		if (!current && listMode === "update-existing") {
+			return undefined;
+		}
 
-			if (!current) {
-				return [workspace];
-			}
+		if (!current) {
+			return [workspace];
+		}
 
-			if (current.some((item) => item.id === workspace.id)) {
-				return current
-					.map((item) => (item.id === workspace.id ? workspace : item))
-					.sort(compareWorkspaceRecentFirst);
-			}
+		if (current.some((item) => item.id === workspace.id)) {
+			return current
+				.map((item) => (item.id === workspace.id ? workspace : item))
+				.sort(compareWorkspaceRecentFirst);
+		}
 
-			return [workspace, ...current].sort(compareWorkspaceRecentFirst);
-		});
-	}
-
-	queryClient.setQueryData(workspaceQueryKey(workspace.id), workspace);
+		return [workspace, ...current].sort(compareWorkspaceRecentFirst);
+	});
 
 	if ("items" in input) {
 		queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspace.id), (current) =>
@@ -106,9 +98,6 @@ export function markWorkspaceOpenedInCache(
 	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) =>
 		current?.map(updateWorkspace).sort(compareWorkspaceRecentFirst),
 	);
-	queryClient.setQueryData<WorkspaceSummary>(workspaceQueryKey(workspaceId), (current) =>
-		current ? updateWorkspace(current) : current,
-	);
 	queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspaceId), (current) =>
 		current
 			? {
@@ -137,7 +126,6 @@ export function removeWorkspaceCaches(queryClient: QueryClient, workspaceId: str
 }
 
 export function removeWorkspaceDetailCaches(queryClient: QueryClient, workspaceId: string) {
-	queryClient.removeQueries({ queryKey: workspaceQueryKey(workspaceId) });
 	queryClient.removeQueries({ queryKey: workspacePageQueryKey(workspaceId) });
 }
 

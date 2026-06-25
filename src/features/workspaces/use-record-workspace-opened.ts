@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
 	markWorkspaceOpenedInCache,
 	workspacePageQueryKey,
-	workspaceQueryKey,
 	workspacesQueryKey,
 } from "#/features/workspaces/cache";
 import type { WorkspacePage, WorkspaceSummary } from "#/features/workspaces/contracts";
@@ -26,9 +25,6 @@ export function useRecordWorkspaceOpenedMutation() {
 
 			const openedAt = new Date().toISOString();
 			const previousWorkspaces = queryClient.getQueryData<WorkspaceSummary[]>(workspacesQueryKey);
-			const previousWorkspace = queryClient.getQueryData<WorkspaceSummary>(
-				workspaceQueryKey(workspaceId),
-			);
 			const previousPage = queryClient.getQueryData<WorkspacePage>(
 				workspacePageQueryKey(workspaceId),
 			);
@@ -37,7 +33,6 @@ export function useRecordWorkspaceOpenedMutation() {
 
 			return {
 				previousWorkspaces,
-				previousWorkspace,
 				previousPage,
 			};
 		},
@@ -49,10 +44,6 @@ export function useRecordWorkspaceOpenedMutation() {
 		onError: (_error, { workspaceId }, context) => {
 			if (context?.previousWorkspaces) {
 				queryClient.setQueryData(workspacesQueryKey, context.previousWorkspaces);
-			}
-
-			if (context?.previousWorkspace) {
-				queryClient.setQueryData(workspaceQueryKey(workspaceId), context.previousWorkspace);
 			}
 
 			if (context?.previousPage) {
