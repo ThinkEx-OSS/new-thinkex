@@ -89,7 +89,6 @@ export default function AiChatModelPicker({ modelId, onModelChange }: AiChatMode
 										: "text-foreground hover:bg-accent/60",
 								)}
 							>
-								<Waypoints className="size-4 shrink-0 text-muted-foreground" />
 								<span className="truncate">{autoModel.name}</span>
 								{autoModel.id === modelId ? (
 									<Check className="ml-auto size-3.5 shrink-0 text-foreground" />
