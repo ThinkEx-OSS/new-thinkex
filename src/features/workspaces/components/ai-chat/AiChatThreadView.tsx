@@ -101,7 +101,7 @@ export default function AiChatThreadView({
 				</ConversationContent>
 			</Conversation>
 
-			<div className="px-4 pb-4">
+			<div className="p-3">
 				<div className={aiChatComposerRailClassName}>
 					<AiChatPromptInput
 						activeThreadId={threadId}
