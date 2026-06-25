@@ -22,10 +22,13 @@ interface UseAiChatAttachmentIntakeInput {
 	) => void;
 	canUploadToWorkspace: boolean;
 	currentChatFileCount: number;
+	itemsById: ReadonlyMap<string, WorkspaceItem>;
 	uploadWorkspaceFiles: (files: Iterable<File>, parentId: string | null) => void;
+	workspaceName: string;
 }
 
 interface ChatAttachmentReviewState {
+	destinationLabel: string;
 	destinationParentId: string | null;
 	rejectedFiles: ReviewedIncomingFile[];
 	workspaceFallbackFiles: ReviewedIncomingFile[];
@@ -36,7 +39,9 @@ export function useAiChatAttachmentIntake({
 	addDraftFiles,
 	canUploadToWorkspace,
 	currentChatFileCount,
+	itemsById,
 	uploadWorkspaceFiles,
+	workspaceName,
 }: UseAiChatAttachmentIntakeInput) {
 	const [reviewState, setReviewState] = useState<ChatAttachmentReviewState | null>(null);
 
@@ -55,14 +60,33 @@ export function useAiChatAttachmentIntake({
 			}
 
 			if (review.workspaceFallback.length > 0 || review.rejected.length > 0) {
-				setReviewState({
-					destinationParentId: resolveWorkspaceUploadDestination(activeItem),
-					rejectedFiles: review.rejected,
-					workspaceFallbackFiles: review.workspaceFallback,
+				const destinationParentId = resolveWorkspaceUploadDestination(activeItem);
+				const destinationLabel = getWorkspaceUploadDestinationLabel({
+					activeItem,
+					destinationParentId,
+					itemsById,
+					workspaceName,
 				});
+
+				setReviewState((prev) => ({
+					destinationLabel,
+					destinationParentId,
+					rejectedFiles: [...(prev?.rejectedFiles ?? []), ...review.rejected],
+					workspaceFallbackFiles: [
+						...(prev?.workspaceFallbackFiles ?? []),
+						...review.workspaceFallback,
+					],
+				}));
 			}
 		},
-		[activeItem, addDraftFiles, canUploadToWorkspace, currentChatFileCount],
+		[
+			activeItem,
+			addDraftFiles,
+			canUploadToWorkspace,
+			currentChatFileCount,
+			itemsById,
+			workspaceName,
+		],
 	);
 
 	const confirmWorkspaceFallback = useCallback(() => {
@@ -86,4 +110,26 @@ export function useAiChatAttachmentIntake({
 		confirmWorkspaceFallback,
 		reviewState,
 	};
+}
+
+function getWorkspaceUploadDestinationLabel({
+	activeItem,
+	destinationParentId,
+	itemsById,
+	workspaceName,
+}: {
+	activeItem?: WorkspaceItem;
+	destinationParentId: string | null;
+	itemsById: ReadonlyMap<string, WorkspaceItem>;
+	workspaceName: string;
+}) {
+	if (!activeItem || destinationParentId === null) {
+		return `${workspaceName} root`;
+	}
+
+	if (activeItem.type === "folder") {
+		return activeItem.name;
+	}
+
+	return itemsById.get(destinationParentId)?.name ?? workspaceName;
 }

@@ -9,15 +9,23 @@ import {
 } from "#/components/ui/dialog";
 import type { ReviewedIncomingFile } from "#/features/workspaces/files/file-intake-review";
 
-interface WorkspaceFileIntakeReviewDialogProps {
+interface WorkspaceFileIntakeReviewDialogBaseProps {
 	open: boolean;
-	mode: "chat_fallback" | "workspace_rejection";
 	workspaceFallbackFiles: ReviewedIncomingFile[];
 	rejectedFiles: ReviewedIncomingFile[];
 	destinationLabel?: string;
-	onConfirmWorkspaceFallback?: () => void;
 	onOpenChange: (open: boolean) => void;
 }
+
+type WorkspaceFileIntakeReviewDialogProps =
+	| (WorkspaceFileIntakeReviewDialogBaseProps & {
+			mode: "chat_fallback";
+			onConfirmWorkspaceFallback: () => void;
+	  })
+	| (WorkspaceFileIntakeReviewDialogBaseProps & {
+			mode: "workspace_rejection";
+			onConfirmWorkspaceFallback?: never;
+	  });
 
 export function WorkspaceFileIntakeReviewDialog({
 	open,
@@ -70,7 +78,10 @@ export function WorkspaceFileIntakeReviewDialog({
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 								Cancel
 							</Button>
-							<Button type="button" onClick={onConfirmWorkspaceFallback}>
+							<Button
+								type="button"
+								onClick={mode === "chat_fallback" ? onConfirmWorkspaceFallback : undefined}
+							>
 								Add supported files to workspace
 							</Button>
 						</>

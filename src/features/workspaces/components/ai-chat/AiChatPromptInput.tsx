@@ -18,7 +18,10 @@ import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-
 import AiChatModelPicker from "#/features/workspaces/components/ai-chat/AiChatModelPicker";
 import AiChatPromptContextBar from "#/features/workspaces/components/ai-chat/AiChatPromptContextBar";
 import AiChatPromptSubmit from "#/features/workspaces/components/ai-chat/AiChatPromptSubmit";
-import { DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID } from "#/features/workspaces/components/ai-chat/constants";
+import {
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	WORKSPACE_AI_CHAT_ATTACHMENT_POLICY,
+} from "#/features/workspaces/components/ai-chat/constants";
 import type { AiChatModelId, AiChatStatus } from "#/features/workspaces/components/ai-chat/types";
 import { useAiChatAttachmentIntake } from "#/features/workspaces/components/ai-chat/useAiChatAttachmentIntake";
 import { useTypeToFocusPrompt } from "#/features/workspaces/components/ai-chat/useTypeToFocusPrompt";
@@ -45,6 +48,9 @@ const PROMPT_INPUT_GROUP_CLASSNAME =
 const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
 const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
 const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
+const CHAT_ATTACHMENT_PICKER_ACCEPT = [
+	...new Set([WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept, ...workspaceFileUploadAccept.split(",")]),
+].join(",");
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
 			const module = await import("#/features/workspaces/components/ai-chat/AiChatInspectorDialog");
@@ -108,7 +114,9 @@ export default function AiChatPromptInput({
 			addDraftFiles: (files, options) => addDraftFiles(context.workspaceId, files, options),
 			canUploadToWorkspace: capabilities.canMutateContent,
 			currentChatFileCount: draftFiles.length,
+			itemsById: context.itemsById,
 			uploadWorkspaceFiles,
+			workspaceName: context.workspaceName,
 		});
 	useTypeToFocusPrompt({
 		enabled: canType,
@@ -145,7 +153,7 @@ export default function AiChatPromptInput({
 	return (
 		<>
 			<PromptInput
-				accept={workspaceFileUploadAccept}
+				accept={CHAT_ATTACHMENT_PICKER_ACCEPT}
 				attachments={attachments}
 				inputGroupClassName={PROMPT_INPUT_GROUP_CLASSNAME}
 				multiple
@@ -207,6 +215,7 @@ export default function AiChatPromptInput({
 				mode="chat_fallback"
 				workspaceFallbackFiles={reviewState?.workspaceFallbackFiles ?? []}
 				rejectedFiles={reviewState?.rejectedFiles ?? []}
+				destinationLabel={reviewState?.destinationLabel}
 				onConfirmWorkspaceFallback={confirmWorkspaceFallback}
 				onOpenChange={(open) => {
 					if (!open) {
