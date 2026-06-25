@@ -2,7 +2,6 @@ import { Button } from "#/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -38,32 +37,27 @@ export function WorkspaceFileIntakeReviewDialog({
 
 	const title =
 		mode === "chat_fallback" && hasWorkspaceFallback
-			? "Add files to the workspace instead?"
+			? "Add these files to the workspace?"
 			: "Couldn't add files";
-	const description =
-		mode === "chat_fallback" && hasWorkspaceFallback
-			? "These files can't be attached to chat, but they can be added to the workspace instead."
-			: "Some files couldn't be added.";
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{description}</DialogDescription>
 				</DialogHeader>
 
 				<div className="grid gap-4">
 					{workspaceFallbackFiles.length > 0 ? (
 						<WorkspaceFileReviewSection
-							description="They won't be attached to this chat."
+							description="They can go in the workspace instead."
 							files={workspaceFallbackFiles}
-							title="Can be added to workspace"
+							title="Not added to chat"
 						/>
 					) : null}
 
 					{rejectedFiles.length > 0 ? (
-						<WorkspaceFileReviewSection files={rejectedFiles} title="Couldn't be added" />
+						<WorkspaceFileReviewSection files={rejectedFiles} title="Can't be added" />
 					) : null}
 				</div>
 
@@ -74,7 +68,7 @@ export function WorkspaceFileIntakeReviewDialog({
 								Cancel
 							</Button>
 							<Button type="button" onClick={onConfirmWorkspaceFallback}>
-								Add files to workspace
+								Add to workspace
 							</Button>
 						</>
 					) : (

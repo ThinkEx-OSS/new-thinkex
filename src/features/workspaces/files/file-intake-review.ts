@@ -105,21 +105,21 @@ function getChatFileRejection(
 	if (!fileMatchesAccept(file, WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept)) {
 		return {
 			reasonCode: "chat_unsupported",
-			message: "This file type can't be attached to chat.",
+			message: "This kind of file can't be added to chat.",
 		};
 	}
 
 	if (file.size > WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFileSize) {
 		return {
 			reasonCode: "chat_too_large",
-			message: "This file exceeds the chat attachment size limit.",
+			message: "This file is too large for chat.",
 		};
 	}
 
 	if (input.currentChatFileCount >= WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFiles) {
 		return {
 			reasonCode: "chat_too_many",
-			message: `Chat attachments are limited to ${WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFiles} files.`,
+			message: `You can attach up to ${WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.maxFiles} files to a chat.`,
 		};
 	}
 
