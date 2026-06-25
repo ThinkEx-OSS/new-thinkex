@@ -7,7 +7,7 @@ import { runWorkspaceFileUploadBatch } from "#/features/workspaces/files/workspa
 import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
 
 interface WorkspaceFileUploadContextValue {
-	requestFileUpload: (parentId: string | null) => void;
+	requestFileSelection: (onSelectFiles: (files: File[]) => void) => void;
 	uploadFiles: (files: Iterable<File>, parentId: string | null) => void;
 }
 
@@ -23,7 +23,7 @@ export function WorkspaceFileUploadProvider({
 	const queryClient = useQueryClient();
 	const { capabilities } = useWorkspaceMutationAccess();
 	const inputRef = useRef<HTMLInputElement>(null);
-	const parentIdRef = useRef<string | null>(null);
+	const onSelectFilesRef = useRef<((files: File[]) => void) | null>(null);
 
 	const uploadFiles = useCallback(
 		(files: Iterable<File>, parentId: string | null) => {
@@ -49,13 +49,8 @@ export function WorkspaceFileUploadProvider({
 		[capabilities.canMutateContent, queryClient, workspaceId],
 	);
 
-	const requestFileUpload = (parentId: string | null) => {
-		if (!capabilities.canMutateContent) {
-			return;
-		}
-
-		parentIdRef.current = parentId;
-
+	const requestFileSelection = (onSelectFiles: (files: File[]) => void) => {
+		onSelectFilesRef.current = onSelectFiles;
 		if (inputRef.current) {
 			inputRef.current.value = "";
 			inputRef.current.click();
@@ -71,11 +66,13 @@ export function WorkspaceFileUploadProvider({
 			return;
 		}
 
-		uploadFiles(selectedFiles, parentIdRef.current);
+		const onSelectFiles = onSelectFilesRef.current;
+		onSelectFilesRef.current = null;
+		onSelectFiles?.(selectedFiles);
 	};
 
 	return (
-		<WorkspaceFileUploadContext.Provider value={{ requestFileUpload, uploadFiles }}>
+		<WorkspaceFileUploadContext.Provider value={{ requestFileSelection, uploadFiles }}>
 			<input
 				ref={inputRef}
 				type="file"

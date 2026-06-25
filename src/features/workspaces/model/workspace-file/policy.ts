@@ -192,24 +192,50 @@ export function getWorkspaceFileUploadValidationError(input: {
 	return null;
 }
 
+export function getWorkspaceFileUploadBatchValidationError(input: {
+	file: File;
+	acceptedCount: number;
+	batchBytes: number;
+}): WorkspaceFileUploadValidationError | null {
+	if (input.acceptedCount >= workspaceFileUploadLimits.maxFilesPerBatch) {
+		return {
+			code: "TOO_MANY_FILES",
+			message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
+			status: 400,
+		};
+	}
+
+	const validationError = getWorkspaceFileUploadValidationError({
+		fileName: input.file.name,
+		sizeBytes: input.file.size,
+		contentType: input.file.type,
+	});
+
+	if (validationError) {
+		return validationError;
+	}
+
+	if (input.batchBytes + input.file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
+		return {
+			code: "BATCH_TOO_LARGE",
+			message: "This file would exceed the batch upload size limit.",
+			status: 413,
+		};
+	}
+
+	return null;
+}
+
 export function partitionWorkspaceUploadBatch(files: readonly File[]) {
 	const accepted: File[] = [];
 	const rejected: Array<{ file: File; message: string }> = [];
 	let batchBytes = 0;
 
-	for (const [index, file] of files.entries()) {
-		if (index >= workspaceFileUploadLimits.maxFilesPerBatch) {
-			rejected.push({
-				file,
-				message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
-			});
-			continue;
-		}
-
-		const validationError = getWorkspaceFileUploadValidationError({
-			fileName: file.name,
-			sizeBytes: file.size,
-			contentType: file.type,
+	for (const file of files) {
+		const validationError = getWorkspaceFileUploadBatchValidationError({
+			file,
+			acceptedCount: accepted.length,
+			batchBytes,
 		});
 
 		if (validationError) {

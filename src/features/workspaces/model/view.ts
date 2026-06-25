@@ -21,3 +21,15 @@ export function isWorkspaceItemView(activeItem?: WorkspaceItem): activeItem is W
 export function getWorkspaceBrowseParentId(activeItem?: WorkspaceItem) {
 	return activeItem?.type === "folder" ? activeItem.id : null;
 }
+
+export function resolveWorkspaceUploadDestination(activeItem?: WorkspaceItem) {
+	if (!activeItem) {
+		return null;
+	}
+
+	if (activeItem.type === "folder") {
+		return activeItem.id;
+	}
+
+	return activeItem.parentId ?? null;
+}

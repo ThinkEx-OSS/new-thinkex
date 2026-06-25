@@ -5,6 +5,7 @@ import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
+import { WorkspaceFileIntakeProvider } from "#/features/workspaces/components/WorkspaceFileIntakeProvider";
 import { WorkspaceFileUploadProvider } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
 import { WorkspaceItemToolbarProvider } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
 import WorkspacePaneRenderer from "#/features/workspaces/components/WorkspacePaneRenderer";
@@ -236,14 +237,16 @@ export function WorkspaceShell({
 
 	const workspaceInteractionContent = (
 		<WorkspaceFileUploadProvider workspaceId={workspace.id}>
-			<WorkspaceDragProvider
-				items={scopedItems}
-				workspaceId={workspace.id}
-				onMoveItems={moveWorkspaceItemsMutation.mutate}
-				onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
-			>
-				{presentationContent}
-			</WorkspaceDragProvider>
+			<WorkspaceFileIntakeProvider>
+				<WorkspaceDragProvider
+					items={scopedItems}
+					workspaceId={workspace.id}
+					onMoveItems={moveWorkspaceItemsMutation.mutate}
+					onWorkspaceDragCommand={dispatchWorkspaceDragCommand}
+				>
+					{presentationContent}
+				</WorkspaceDragProvider>
+			</WorkspaceFileIntakeProvider>
 		</WorkspaceFileUploadProvider>
 	);
 

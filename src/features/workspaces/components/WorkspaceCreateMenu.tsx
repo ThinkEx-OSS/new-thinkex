@@ -5,7 +5,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import { useWorkspaceFileUpload } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
+import { useWorkspaceFileIntake } from "#/features/workspaces/components/WorkspaceFileIntakeProvider";
 import {
 	workspaceContextMenuRenderer,
 	workspaceDropdownMenuRenderer,
@@ -64,7 +64,7 @@ export function WorkspaceCreateMenuContent({
 }) {
 	const { capabilities } = useWorkspaceMutationAccess();
 	const readOnly = !capabilities.canMutateContent;
-	const { requestFileUpload } = useWorkspaceFileUpload();
+	const { requestFileUpload } = useWorkspaceFileIntake();
 	const actions = getWorkspaceCreateMenuActions({
 		parentId,
 		onCreateItem,
