@@ -25,27 +25,24 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>()(
 		persist(
 			(set, get) => ({
 				sessionsByWorkspaceId: {},
-				ensureWorkspaceSession: ({ workspaceId, workspaceName, requestedTabId, validItemIds }) => {
+				ensureWorkspaceSession: ({ workspaceId, workspaceName, validItemIds }) => {
 					const currentSession = get().sessionsByWorkspaceId[workspaceId];
 					const normalizedSession = normalizeWorkspaceTabSession(
 						currentSession,
 						workspaceName,
 						validItemIds,
 					);
-					const requestedTabExists =
-						requestedTabId && normalizedSession.tabs.some((tab) => tab.id === requestedTabId);
-					const nextSession = requestedTabExists
-						? { ...normalizedSession, activeTabId: requestedTabId }
-						: normalizedSession;
 
-					set((state) => ({
-						sessionsByWorkspaceId: {
-							...state.sessionsByWorkspaceId,
-							[workspaceId]: nextSession,
-						},
-					}));
+					if (normalizedSession !== currentSession) {
+						set((state) => ({
+							sessionsByWorkspaceId: {
+								...state.sessionsByWorkspaceId,
+								[workspaceId]: normalizedSession,
+							},
+						}));
+					}
 
-					return nextSession;
+					return normalizedSession;
 				},
 				createRootTab: ({ workspaceId, workspaceName, insertIndex }) => {
 					const rootTab = createRootWorkspaceTab(workspaceName);

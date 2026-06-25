@@ -5,7 +5,6 @@ export type { WorkspaceTab, WorkspaceTabSession };
 export type EnsureWorkspaceSessionInput = {
 	workspaceId: string;
 	workspaceName: string;
-	requestedTabId?: string;
 	validItemIds?: ReadonlySet<string>;
 };
 
