@@ -1,9 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import {
-	workspacePageQueryKey,
-	workspaceQueryKey,
-	workspacesQueryKey,
-} from "#/features/workspaces/cache-keys";
+import { workspacePageQueryKey, workspacesQueryKey } from "#/features/workspaces/cache-keys";
 import type {
 	WorkspaceItemSummary,
 	WorkspacePage,
@@ -47,8 +43,6 @@ export function seedWorkspaceCaches(
 			return [workspace, ...current].sort(compareWorkspaceRecentFirst);
 		});
 	}
-
-	queryClient.setQueryData(workspaceQueryKey(workspace.id), workspace);
 
 	if ("items" in input) {
 		queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspace.id), (current) =>
@@ -106,9 +100,6 @@ export function markWorkspaceOpenedInCache(
 	queryClient.setQueryData<WorkspaceSummary[]>(workspacesQueryKey, (current) =>
 		current?.map(updateWorkspace).sort(compareWorkspaceRecentFirst),
 	);
-	queryClient.setQueryData<WorkspaceSummary>(workspaceQueryKey(workspaceId), (current) =>
-		current ? updateWorkspace(current) : current,
-	);
 	queryClient.setQueryData<WorkspacePage>(workspacePageQueryKey(workspaceId), (current) =>
 		current
 			? {
@@ -137,7 +128,6 @@ export function removeWorkspaceCaches(queryClient: QueryClient, workspaceId: str
 }
 
 export function removeWorkspaceDetailCaches(queryClient: QueryClient, workspaceId: string) {
-	queryClient.removeQueries({ queryKey: workspaceQueryKey(workspaceId) });
 	queryClient.removeQueries({ queryKey: workspacePageQueryKey(workspaceId) });
 }
 
