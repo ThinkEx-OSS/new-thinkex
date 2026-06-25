@@ -1,7 +1,7 @@
 import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Message, MessageContent } from "#/components/ai-elements/message";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
@@ -22,6 +22,9 @@ import {
 	getRangeClientRect,
 	type SelectionRect,
 } from "#/features/workspaces/model/workspace-selection-geometry";
+
+const INITIAL_TAIL_SCROLL_SETTLE_FRAMES = 2;
+
 type SelectedText = {
 	rect: SelectionRect;
 	text: string;
@@ -67,6 +70,7 @@ export default function AiChatMessageList({
 }: AiChatMessageListProps) {
 	const { lastAssistantMessageId, status, tailPending } = presentation;
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const didInitialTailScrollRef = useRef(false);
 	const rows = getAiChatListRows(messages, presentation, assistantError);
 	const hasAssistantContent = hasLatestAssistantContent(rows);
 	const listRef = useRef<HTMLDivElement>(null);
@@ -79,6 +83,56 @@ export default function AiChatMessageList({
 		overscan: 6,
 	});
 	const virtualRows = virtualizer.getVirtualItems();
+	const totalSize = virtualizer.getTotalSize();
+	const tailKey = rows.at(-1)?.key;
+
+	useLayoutEffect(() => {
+		const scrollElement = scrollRef.current;
+
+		if (!tailKey || didInitialTailScrollRef.current || !scrollElement) {
+			return;
+		}
+
+		let frame: number | null = null;
+		let remainingFrames = INITIAL_TAIL_SCROLL_SETTLE_FRAMES;
+
+		const scrollToTailWhenReady = () => {
+			if (
+				didInitialTailScrollRef.current ||
+				scrollElement.clientHeight === 0 ||
+				scrollElement.clientWidth === 0
+			) {
+				return;
+			}
+
+			if (frame !== null) {
+				cancelAnimationFrame(frame);
+			}
+
+			virtualizer.scrollToEnd({ behavior: "auto" });
+
+			if (remainingFrames === 0) {
+				didInitialTailScrollRef.current = true;
+				return;
+			}
+
+			remainingFrames -= 1;
+			frame = requestAnimationFrame(scrollToTailWhenReady);
+		};
+
+		const resizeObserver =
+			typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scrollToTailWhenReady);
+
+		resizeObserver?.observe(scrollElement);
+		frame = requestAnimationFrame(scrollToTailWhenReady);
+
+		return () => {
+			if (frame !== null) {
+				cancelAnimationFrame(frame);
+			}
+			resizeObserver?.disconnect();
+		};
+	}, [tailKey, totalSize, virtualizer]);
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -120,7 +174,7 @@ export default function AiChatMessageList({
 				<div
 					className="relative w-full"
 					style={{
-						height: virtualizer.getTotalSize(),
+						height: totalSize,
 					}}
 				>
 					{virtualRows.map((virtualRow) => {
