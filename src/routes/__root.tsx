@@ -18,23 +18,26 @@ interface MyRouterContext {
 	session?: AuthSession | null;
 }
 
-const faviconLinks = import.meta.env.DEV
-	? [
-			{
-				rel: "icon",
-				href: "/favicon-dev.svg",
-				type: "image/svg+xml",
-				sizes: "any",
-			},
-		]
-	: [
-			{
-				rel: "icon",
-				href: "/favicon.svg",
-				type: "image/svg+xml",
-				sizes: "any",
-			},
-		];
+function resolveFaviconHref() {
+	if (import.meta.env.DEV) {
+		return "/favicon-dev.svg";
+	}
+
+	if (import.meta.env.VITE_DEPLOY_ENV === "staging") {
+		return "/favicon-staging.svg";
+	}
+
+	return "/favicon.svg";
+}
+
+const faviconLinks = [
+	{
+		rel: "icon",
+		href: resolveFaviconHref(),
+		type: "image/svg+xml",
+		sizes: "any",
+	},
+];
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => ({
