@@ -5,6 +5,7 @@ export {
 } from "#/features/workspaces/model/workspace-file/metadata";
 export {
 	getWorkspaceFileShellExtension,
+	getWorkspaceFileUploadBatchValidationError,
 	getWorkspaceFileUploadValidationError,
 	getWorkspaceUploadFamily,
 	normalizeWorkspaceUploadFileName,

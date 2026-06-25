@@ -114,9 +114,7 @@ export default function AiChatPromptInput({
 			addDraftFiles: (files, options) => addDraftFiles(context.workspaceId, files, options),
 			canUploadToWorkspace: capabilities.canMutateContent,
 			currentChatFileCount: draftFiles.length,
-			itemsById: context.itemsById,
 			uploadWorkspaceFiles,
-			workspaceName: context.workspaceName,
 		});
 	useTypeToFocusPrompt({
 		enabled: canType,
@@ -215,7 +213,6 @@ export default function AiChatPromptInput({
 				mode="chat_fallback"
 				workspaceFallbackFiles={reviewState?.workspaceFallbackFiles ?? []}
 				rejectedFiles={reviewState?.rejectedFiles ?? []}
-				destinationLabel={reviewState?.destinationLabel}
 				onConfirmWorkspaceFallback={confirmWorkspaceFallback}
 				onOpenChange={(open) => {
 					if (!open) {

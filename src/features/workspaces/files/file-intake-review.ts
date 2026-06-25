@@ -1,8 +1,5 @@
 import { WORKSPACE_AI_CHAT_ATTACHMENT_POLICY } from "#/features/workspaces/components/ai-chat/constants";
-import {
-	getWorkspaceFileUploadValidationError,
-	workspaceFileUploadLimits,
-} from "#/features/workspaces/model/workspace-file";
+import { getWorkspaceFileUploadBatchValidationError } from "#/features/workspaces/model/workspace-file";
 import { fileMatchesAccept } from "#/lib/file-accept";
 
 export type ReviewedIncomingFileReasonCode =
@@ -149,22 +146,10 @@ function reviewWorkspaceCandidate(
 		};
 	}
 
-	if (input.acceptedCount >= workspaceFileUploadLimits.maxFilesPerBatch) {
-		return {
-			accepted: false,
-			reviewedFile: {
-				file,
-				filename: getReviewedFileName(file),
-				reasonCode: "workspace_too_many",
-				message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
-			},
-		};
-	}
-
-	const validationError = getWorkspaceFileUploadValidationError({
-		fileName: file.name,
-		sizeBytes: file.size,
-		contentType: file.type,
+	const validationError = getWorkspaceFileUploadBatchValidationError({
+		file,
+		acceptedCount: input.acceptedCount,
+		batchBytes: input.batchBytes,
 	});
 
 	if (validationError) {
@@ -175,18 +160,6 @@ function reviewWorkspaceCandidate(
 				filename: getReviewedFileName(file),
 				reasonCode: mapWorkspaceValidationErrorCode(validationError.code),
 				message: validationError.message,
-			},
-		};
-	}
-
-	if (input.batchBytes + file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
-		return {
-			accepted: false,
-			reviewedFile: {
-				file,
-				filename: getReviewedFileName(file),
-				reasonCode: "workspace_too_large",
-				message: "This file would exceed the batch upload size limit.",
 			},
 		};
 	}

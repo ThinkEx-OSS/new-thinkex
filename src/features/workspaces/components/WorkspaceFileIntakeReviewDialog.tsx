@@ -13,7 +13,6 @@ interface WorkspaceFileIntakeReviewDialogBaseProps {
 	open: boolean;
 	workspaceFallbackFiles: ReviewedIncomingFile[];
 	rejectedFiles: ReviewedIncomingFile[];
-	destinationLabel?: string;
 	onOpenChange: (open: boolean) => void;
 }
 
@@ -32,7 +31,6 @@ export function WorkspaceFileIntakeReviewDialog({
 	mode,
 	workspaceFallbackFiles,
 	rejectedFiles,
-	destinationLabel,
 	onConfirmWorkspaceFallback,
 	onOpenChange,
 }: WorkspaceFileIntakeReviewDialogProps) {
@@ -52,12 +50,7 @@ export function WorkspaceFileIntakeReviewDialog({
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>
-						{description}
-						{destinationLabel && workspaceFallbackFiles.length > 0
-							? ` Files will be added to ${destinationLabel}.`
-							: ""}
-					</DialogDescription>
+					<DialogDescription>{description}</DialogDescription>
 				</DialogHeader>
 
 				<div className="grid gap-4">
