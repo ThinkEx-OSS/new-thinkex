@@ -95,6 +95,10 @@ export function getAssistantRowDisplay(
 		return { kind: "content", parts: displayableParts };
 	}
 
+	if (message.parts.some((part) => isToolUIPart(part))) {
+		return { kind: "hidden" };
+	}
+
 	if (isLastAssistant && presentation.status === "ready" && !presentation.isBusy) {
 		return {
 			kind: "empty-terminal",
