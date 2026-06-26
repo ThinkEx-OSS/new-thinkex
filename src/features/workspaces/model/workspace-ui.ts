@@ -1,7 +1,3 @@
-import {
-	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
-	resolveWorkspaceAiChatModelId,
-} from "#/features/workspaces/ai/models";
 import type {
 	WorkspaceAiChatSurfaceMode,
 	WorkspacePane,
@@ -16,7 +12,6 @@ export const standardPresentation: RestorableWorkspacePresentation = {
 };
 
 export const defaultWorkspaceUiSession: WorkspaceUiSession = {
-	aiChatModelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 	chatSurfaceMode: "docked",
 	presentation: standardPresentation,
 };
@@ -26,22 +21,16 @@ export function getWorkspaceUiSession(session: WorkspaceUiSession | undefined) {
 		return defaultWorkspaceUiSession;
 	}
 
-	const aiChatModelId = resolveWorkspaceAiChatModelId(session.aiChatModelId);
 	const chatSurfaceMode = resolveWorkspaceAiChatSurfaceMode(session.chatSurfaceMode);
 	const presentation = session.presentation ?? defaultWorkspaceUiSession.presentation;
 
-	if (
-		aiChatModelId === session.aiChatModelId &&
-		chatSurfaceMode === session.chatSurfaceMode &&
-		presentation === session.presentation
-	) {
+	if (chatSurfaceMode === session.chatSurfaceMode && presentation === session.presentation) {
 		return session;
 	}
 
 	return {
 		...defaultWorkspaceUiSession,
 		...session,
-		aiChatModelId,
 		chatSurfaceMode,
 		presentation,
 	};
@@ -84,12 +73,6 @@ export function setChatSurfaceModeSession(chatSurfaceMode: WorkspaceAiChatSurfac
 export function setActiveAiChatThreadSession(threadId: string | undefined) {
 	return {
 		activeAiChatThreadId: threadId,
-	};
-}
-
-export function setAiChatModelSession(modelId: unknown) {
-	return {
-		aiChatModelId: resolveWorkspaceAiChatModelId(modelId),
 	};
 }
 
@@ -204,7 +187,6 @@ function resolveWorkspaceAiChatSurfaceMode(mode: unknown): WorkspaceAiChatSurfac
 function isSameWorkspaceUiSession(session: WorkspaceUiSession, nextSession: WorkspaceUiSession) {
 	return (
 		session.activeAiChatThreadId === nextSession.activeAiChatThreadId &&
-		session.aiChatModelId === nextSession.aiChatModelId &&
 		session.chatSurfaceMode === nextSession.chatSurfaceMode &&
 		session.presentation === nextSession.presentation
 	);

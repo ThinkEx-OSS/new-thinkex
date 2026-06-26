@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { WorkspaceAiChatModelId } from "#/features/workspaces/ai/models";
+import {
+	DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
+	resolveWorkspaceAiChatModelId,
+	type WorkspaceAiChatModelId,
+} from "#/features/workspaces/ai/models";
 import {
 	isSameWorkspaceItemViewState,
 	normalizeWorkspaceItemViewState,
@@ -15,7 +19,6 @@ import {
 	normalizeWorkspaceUiSession,
 	restoreWorkspacePresentationSession,
 	setActiveAiChatThreadSession,
-	setAiChatModelSession,
 	setChatSurfaceModeSession,
 	splitWorkspacePresentationSession,
 	toggleChatPanelSession,
@@ -46,7 +49,6 @@ type RestorableWorkspacePresentation = Exclude<WorkspacePresentation, { mode: "m
 
 export type WorkspaceUiSession = {
 	activeAiChatThreadId?: string;
-	aiChatModelId: WorkspaceAiChatModelId;
 	chatSurfaceMode: WorkspaceAiChatSurfaceMode;
 	presentation: WorkspacePresentation;
 };
@@ -57,6 +59,7 @@ type EnsureWorkspaceUiSessionInput = {
 };
 
 type WorkspaceUiState = {
+	aiChatModelId: WorkspaceAiChatModelId;
 	itemViewStatesByWorkspaceId: Record<
 		string,
 		Record<string, WorkspaceItemViewState | undefined> | undefined
@@ -66,7 +69,7 @@ type WorkspaceUiState = {
 	clearItemViewState: (workspaceId: string, itemId?: string) => void;
 	setChatSurfaceMode: (workspaceId: string, mode: WorkspaceAiChatSurfaceMode) => void;
 	setActiveAiChatThread: (workspaceId: string, threadId: string | undefined) => void;
-	setAiChatModel: (workspaceId: string, modelId: WorkspaceAiChatModelId) => void;
+	setAiChatModel: (modelId: WorkspaceAiChatModelId) => void;
 	setItemViewState: (workspaceId: string, viewState: WorkspaceItemViewState) => void;
 	toggleChatPanel: (workspaceId: string) => void;
 	maximizeItem: (workspaceId: string, itemId: string) => void;
@@ -120,6 +123,7 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 	devtools(
 		persist(
 			(set, get) => ({
+				aiChatModelId: DEFAULT_WORKSPACE_AI_CHAT_MODEL_ID,
 				itemViewStatesByWorkspaceId: {},
 				sessionsByWorkspaceId: {},
 				ensureWorkspaceSession: ({ workspaceId, validItemIds }) => {
@@ -170,10 +174,10 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 							setActiveAiChatThreadSession(threadId),
 						),
 					),
-				setAiChatModel: (workspaceId, modelId) =>
-					set((state) =>
-						updateWorkspaceUiSession(state, workspaceId, () => setAiChatModelSession(modelId)),
-					),
+				setAiChatModel: (modelId) =>
+					set({
+						aiChatModelId: resolveWorkspaceAiChatModelId(modelId),
+					}),
 				setItemViewState: (workspaceId, viewState) =>
 					set((state) => {
 						const normalized = normalizeWorkspaceItemViewState(viewState);
@@ -218,9 +222,10 @@ export const useWorkspaceUiStore = create<WorkspaceUiState>()(
 				getSession: (workspaceId) => get().sessionsByWorkspaceId[workspaceId],
 			}),
 			{
-				name: "thinkex.workspace-ui.v4",
+				name: "thinkex.workspace-ui.v5",
 				skipHydration: true,
 				partialize: (state) => ({
+					aiChatModelId: resolveWorkspaceAiChatModelId(state.aiChatModelId),
 					sessionsByWorkspaceId: state.sessionsByWorkspaceId,
 				}),
 			},
@@ -249,14 +254,8 @@ export function useWorkspaceActiveAiChatThreadId(workspaceId: string) {
 	);
 }
 
-export function useWorkspaceAiChatModelId(workspaceId: string) {
-	return useWorkspaceUiStore(
-		useMemo(
-			() => (state: WorkspaceUiState) =>
-				getWorkspaceUiSession(state.sessionsByWorkspaceId[workspaceId]).aiChatModelId,
-			[workspaceId],
-		),
-	);
+export function useWorkspaceAiChatModelId() {
+	return useWorkspaceUiStore((state) => resolveWorkspaceAiChatModelId(state.aiChatModelId));
 }
 
 export function useWorkspaceAiChatSurfaceMode(workspaceId: string) {
