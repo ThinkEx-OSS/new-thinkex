@@ -166,9 +166,10 @@ function AiChatAttachmentMedia({ data }: { data: AttachmentData }) {
 
 	if (data.type === "file" && data.url && getMediaCategory(data) === "video") {
 		return (
-			<AttachmentMedia>
-				<video className="size-full object-cover" muted src={data.url} />
-			</AttachmentMedia>
+		<AttachmentMedia>
+			{/* Thumbnail-only tile: controls omitted intentionally (40 px square). preload=metadata loads the first frame. */}
+			<video className="size-full object-cover" muted preload="metadata" src={data.url} />
+		</AttachmentMedia>
 		);
 	}
 

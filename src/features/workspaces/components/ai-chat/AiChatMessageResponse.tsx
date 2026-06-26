@@ -9,9 +9,27 @@ type AiChatMessageResponseProps = ComponentProps<typeof Streamdown> & {
 	isStreaming?: boolean;
 };
 
-const streamdownPlugins = { cjk, math };
-const streamdownComponents = { code: MarkdownCodeBlock };
+// Safety interstitial disabled — it adds friction on every link click in a chat
+// context. Instead, all external links are rendered with target="_blank" and
+// rel="noopener noreferrer" via the custom anchor component below.
 const streamdownLinkSafety = { enabled: false };
+
+function SafeAnchor({ href, children, ...props }: ComponentProps<"a">) {
+	const isExternal = typeof href === "string" && /^https?:\/\//i.test(href);
+	return (
+		<a
+			href={href}
+			target={isExternal ? "_blank" : undefined}
+			rel={isExternal ? "noopener noreferrer" : undefined}
+			{...props}
+		>
+			{children}
+		</a>
+	);
+}
+
+const streamdownPlugins = { cjk, math };
+const streamdownComponents = { code: MarkdownCodeBlock, a: SafeAnchor };
 const streamdownAnimation = {
 	animation: "fadeIn",
 	duration: 160,

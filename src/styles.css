@@ -146,9 +146,9 @@
 	.shimmer {
 		background: linear-gradient(
 			110deg,
-			currentcolor 0%,
-			color-mix(in oklch, currentcolor 35%, transparent) 38%,
-			currentcolor 76%
+			var(--color-muted-foreground) 0%,
+			color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) 38%,
+			var(--color-muted-foreground) 76%
 		);
 		background-size: 200% 100%;
 		-webkit-background-clip: text;
