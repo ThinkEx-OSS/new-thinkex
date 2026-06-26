@@ -62,8 +62,8 @@ function ActivitySummary({
 
 	if (isRunning) {
 		return (
-			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground/80 text-sm">
-				<Shimmer as="span" className="text-sm text-muted-foreground/80" duration={1.4}>
+			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-sm">
+				<Shimmer as="span" className="text-sm text-muted-foreground" duration={1.4}>
 					{activity.summary}
 				</Shimmer>
 				{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
