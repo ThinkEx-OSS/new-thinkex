@@ -1,8 +1,6 @@
 import { useState } from "react";
 
-import { Skeleton } from "#/components/ui/skeleton";
 import {
-	workspaceItemDocumentPreviewEmptyClass,
 	workspaceItemDocumentPreviewPanelClass,
 	workspaceItemDocumentPreviewTextClass,
 	workspaceItemPreviewContentLayerClass,
@@ -50,12 +48,8 @@ function WorkspaceItemDocumentPreview({ item }: { item: WorkspaceItem }) {
 
 function WorkspaceItemDocumentPreviewEmpty() {
 	return (
-		<div className={workspaceItemDocumentPreviewPanelClass} aria-hidden="true">
-			<div className={workspaceItemDocumentPreviewEmptyClass}>
-				<Skeleton className="h-2 w-[42%] rounded-sm bg-muted-foreground/10" />
-				<Skeleton className="h-2 w-full rounded-sm bg-muted-foreground/8" />
-				<Skeleton className="h-2 w-[78%] rounded-sm bg-muted-foreground/8" />
-			</div>
+		<div className={workspaceItemDocumentPreviewPanelClass}>
+			<p className={workspaceItemDocumentPreviewTextClass}>Empty document</p>
 		</div>
 	);
 }
