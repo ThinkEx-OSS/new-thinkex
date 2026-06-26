@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
 import AuthScreen from "#/components/AuthScreen";
+import { buildPublicMeta } from "#/lib/seo";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/login")({
@@ -19,15 +20,10 @@ export const Route = createFileRoute("/login")({
 		}
 	},
 	head: () => ({
-		meta: [
-			{
-				title: "Thinkex | Sign in",
-			},
-			{
-				name: "description",
-				content: "Sign in to ThinkEx with Google.",
-			},
-		],
+		meta: buildPublicMeta({
+			title: "Continue",
+			description: "Continue to ThinkEx with Google. No account? We'll create one.",
+		}),
 	}),
 	component: LoginPage,
 });
@@ -36,5 +32,5 @@ function LoginPage() {
 	const { redirect: redirectTarget } = Route.useSearch();
 	const callbackURL = redirectTarget || "/home";
 
-	return <AuthScreen callbackURL={callbackURL} mode="signin" />;
+	return <AuthScreen callbackURL={callbackURL} />;
 }

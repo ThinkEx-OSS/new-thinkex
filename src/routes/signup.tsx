@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
-import AuthScreen from "#/components/AuthScreen";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/signup")({
@@ -17,24 +16,13 @@ export const Route = createFileRoute("/signup")({
 		if (session) {
 			throw redirect({ to: search.redirect || "/home" });
 		}
+
+		throw redirect({
+			to: "/login",
+			search: {
+				redirect: search.redirect,
+			},
+		});
 	},
-	head: () => ({
-		meta: [
-			{
-				title: "ThinkEx | Create account",
-			},
-			{
-				name: "description",
-				content: "Create your ThinkEx account with Google.",
-			},
-		],
-	}),
-	component: SignupPage,
+	component: () => null,
 });
-
-function SignupPage() {
-	const { redirect: redirectTarget } = Route.useSearch();
-	const callbackURL = redirectTarget || "/home";
-
-	return <AuthScreen callbackURL={callbackURL} mode="signup" />;
-}

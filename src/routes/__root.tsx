@@ -7,6 +7,7 @@ import { TooltipProvider } from "#/components/ui/tooltip";
 import { WorkspacePersistedStoresHydrator } from "#/features/workspaces/state/persisted-store-hydration";
 import type { AuthSession } from "#/lib/auth.functions";
 import { AppHotkeysProvider } from "#/lib/hotkeys";
+import { seo } from "#/lib/seo";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 import { ThemeProvider } from "../components/theme-provider";
 import PostHogProvider from "../integrations/posthog/provider";
@@ -29,7 +30,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Thinkex",
+				title: seo.defaultTitle,
 			},
 		],
 		links: [

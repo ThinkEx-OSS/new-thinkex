@@ -9,6 +9,7 @@ import {
 	getWorkspaceInvitePreviewFn,
 } from "#/features/workspaces/invites/workspace-invite-functions";
 import { buildInvitePath } from "#/lib/client-url";
+import { buildPublicMeta } from "#/lib/seo";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/invite/$token")({
@@ -40,13 +41,16 @@ export const Route = createFileRoute("/invite/$token")({
 		}
 	},
 	head: ({ loaderData }) => ({
-		meta: [
-			{
-				title: loaderData
-					? `Thinkex | Join ${loaderData.workspaceName}`
-					: "Thinkex | Invite unavailable",
-			},
-		],
+		meta: loaderData
+			? buildPublicMeta({
+					title: `Join ${loaderData.workspaceName}`,
+					description: `${loaderData.inviterName} invited you to join ${loaderData.workspaceName} on ThinkEx.`,
+					openGraphImageAlt: `Join ${loaderData.workspaceName} on ThinkEx`,
+				})
+			: buildPublicMeta({
+					title: "Invite unavailable",
+					description: "This ThinkEx invite link is invalid, expired, or has been revoked.",
+				}),
 	}),
 	component: InviteLandingPage,
 	errorComponent: InviteUnavailablePage,
@@ -80,7 +84,7 @@ function InviteLandingPage() {
 				</p>
 			</div>
 			<div className="w-full">
-				<AuthPanel callbackURL={callbackURL} mode="signin" />
+				<AuthPanel callbackURL={callbackURL} />
 			</div>
 		</InviteScreen>
 	);
@@ -96,7 +100,7 @@ function InviteUnavailablePage() {
 				</p>
 			</div>
 			<div className="w-full">
-				<AuthPanel callbackURL="/home" mode="signin" />
+				<AuthPanel callbackURL="/home" />
 			</div>
 		</InviteScreen>
 	);
