@@ -5,15 +5,14 @@ import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/utils";
 
 export function ModeToggle({ className }: { className?: string }) {
-	const { resolvedTheme, theme, setTheme } = useTheme();
-	const currentTheme = theme === "system" ? resolvedTheme : theme;
+	const { resolvedTheme, setTheme } = useTheme();
 
 	return (
 		<Button
 			variant="ghost"
 			size="icon-sm"
 			className={cn("size-8 text-muted-foreground hover:text-foreground", className)}
-			onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+			onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
 			aria-label="Toggle theme"
 		>
 			<Sun className="size-3.5 scale-100 rotate-0 transition-transform dark:scale-0 dark:-rotate-90" />
