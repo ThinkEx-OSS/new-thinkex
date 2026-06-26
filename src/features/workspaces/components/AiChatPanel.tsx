@@ -25,7 +25,7 @@ import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiCha
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
 import {
-	aiChatLoadingScrollerContentClassName,
+	aiChatMessageScrollerContentClassName,
 	aiChatMessageScrollerViewportClassName,
 } from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
@@ -147,7 +147,7 @@ function AiChatPanelLoading() {
 		<MessageScrollerProvider>
 			<MessageScroller className="h-full min-h-0">
 				<MessageScrollerViewport className={aiChatMessageScrollerViewportClassName}>
-					<MessageScrollerContent className={aiChatLoadingScrollerContentClassName}>
+					<MessageScrollerContent className={aiChatMessageScrollerContentClassName}>
 						<MessageScrollerItem>
 							<AiChatTranscriptRail>
 								<AiChatThreadSkeleton />

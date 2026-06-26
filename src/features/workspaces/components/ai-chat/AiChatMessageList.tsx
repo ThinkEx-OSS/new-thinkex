@@ -1,7 +1,6 @@
 import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
 import { Bubble, BubbleContent } from "#/components/ui/bubble";
@@ -52,6 +51,7 @@ type AiChatListRow =
 			display: AssistantRowDisplay | null;
 			key: string;
 			message: AiChatMessage;
+			tailPending?: NonNullable<AiChatPresentation["tailPending"]>;
 			type: "message";
 	  }
 	| {
@@ -85,8 +85,6 @@ export default function AiChatMessageList({
 	const hasAssistantContent = hasLatestAssistantContent(rows);
 	const isStreamActive = isAiChatStreamActive(status);
 	const listRef = useRef<HTMLDivElement>(null);
-	const prefersReducedMotion = useReducedMotion();
-	const animatedRowKeys = useNewAiChatRowAnimationKeys(rows, !prefersReducedMotion);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
 	const showEmptyState = rows.length === 0 && !assistantError;
 
@@ -120,9 +118,8 @@ export default function AiChatMessageList({
 							className={aiChatMessageScrollerContentClassName}
 						>
 							{rows.map((row) => (
-								<AnimatedMessageScrollerItem
+								<MessageScrollerItem
 									key={row.key}
-									animateEntrance={animatedRowKeys.has(row.key)}
 									messageId={getAiChatRowMessageId(row)}
 									scrollAnchor={isAiChatRowScrollAnchor(row)}
 								>
@@ -134,7 +131,7 @@ export default function AiChatMessageList({
 										status={status}
 										onRegenerateLastResponse={onRegenerateLastResponse}
 									/>
-								</AnimatedMessageScrollerItem>
+								</MessageScrollerItem>
 							))}
 						</MessageScrollerContent>
 					</MessageScrollerViewport>
@@ -158,75 +155,6 @@ export default function AiChatMessageList({
 				/>
 			) : null}
 		</div>
-	);
-}
-
-function useNewAiChatRowAnimationKeys(rows: AiChatListRow[], enabled: boolean) {
-	const previousRowsRef = useRef<{ keys: Set<string>; length: number } | null>(null);
-
-	const animatedRowKeys = useMemo(() => {
-		const previousRows = previousRowsRef.current;
-
-		if (!enabled || previousRows === null) {
-			return new Set<string>();
-		}
-
-		return new Set(
-			rows
-				.filter(
-					(row, index) =>
-						index >= previousRows.length &&
-						shouldAnimateAiChatRow(row) &&
-						!previousRows.keys.has(row.key),
-				)
-				.map((row) => row.key),
-		);
-	}, [enabled, rows]);
-
-	useEffect(() => {
-		previousRowsRef.current = {
-			keys: new Set(rows.map((row) => row.key)),
-			length: rows.length,
-		};
-	}, [rows]);
-
-	return animatedRowKeys;
-}
-
-function AnimatedMessageScrollerItem({
-	animateEntrance,
-	children,
-	messageId,
-	scrollAnchor,
-}: {
-	animateEntrance: boolean;
-	children: ReactNode;
-	messageId: string;
-	scrollAnchor: boolean;
-}) {
-	if (!animateEntrance) {
-		return (
-			<MessageScrollerItem messageId={messageId} scrollAnchor={scrollAnchor}>
-				{children}
-			</MessageScrollerItem>
-		);
-	}
-
-	return (
-		<MessageScrollerItem messageId={messageId} scrollAnchor={scrollAnchor}>
-			<motion.div
-				initial={{ opacity: 0, scale: 0.96, y: 20 }}
-				animate={{ opacity: 1, scale: 1, y: 0 }}
-				transition={{
-					type: "spring",
-					stiffness: 520,
-					damping: 34,
-					mass: 0.8,
-				}}
-			>
-				{children}
-			</motion.div>
-		</MessageScrollerItem>
 	);
 }
 
@@ -268,16 +196,23 @@ function AiChatListRowView({
 
 	const { display, message } = row;
 	return (
-		<AiChatTranscriptRail>
-			<AiChatMessageRow
-				display={display}
-				isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
-				isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
-				isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
-				message={message}
-				onRegenerate={onRegenerateLastResponse}
-			/>
-		</AiChatTranscriptRail>
+		<>
+			<AiChatTranscriptRail>
+				<AiChatMessageRow
+					display={display}
+					isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
+					isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+					isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
+					message={message}
+					onRegenerate={onRegenerateLastResponse}
+				/>
+			</AiChatTranscriptRail>
+			{row.tailPending ? (
+				<AiChatTranscriptRail>
+					<AiChatAssistantPending pending={row.tailPending} />
+				</AiChatTranscriptRail>
+			) : null}
+		</>
 	);
 }
 
@@ -331,8 +266,6 @@ function getAiChatListRows(
 	assistantError?: AiChatAssistantErrorState | null,
 ): AiChatListRow[] {
 	const rows: AiChatListRow[] = [];
-	let previousUserMessageId: string | null = null;
-	let assistantIndexAfterUser = 0;
 
 	for (const message of messages) {
 		const display = getAssistantRowDisplay(message, presentation);
@@ -343,24 +276,19 @@ function getAiChatListRows(
 
 		rows.push({
 			display,
-			key: getAiChatMessageRowKey(message, previousUserMessageId, assistantIndexAfterUser),
+			key: `message:${message.id}`,
 			message,
 			type: "message",
 		});
-
-		if (message.role === "user") {
-			previousUserMessageId = message.id;
-			assistantIndexAfterUser = 0;
-		} else if (message.role === "assistant" && previousUserMessageId) {
-			assistantIndexAfterUser += 1;
-		}
 	}
 
-	if (presentation.tailPending) {
+	const lastRow = rows.at(-1);
+
+	if (presentation.tailPending && lastRow?.type === "message") {
+		lastRow.tailPending = presentation.tailPending;
+	} else if (presentation.tailPending) {
 		rows.push({
-			key: previousUserMessageId
-				? getAssistantAfterUserRowKey(previousUserMessageId, assistantIndexAfterUser)
-				: "assistant-pending",
+			key: "assistant-pending:tail",
 			pending: presentation.tailPending,
 			type: "pending",
 		});
@@ -375,22 +303,6 @@ function getAiChatListRows(
 	}
 
 	return rows;
-}
-
-function getAiChatMessageRowKey(
-	message: AiChatMessage,
-	previousUserMessageId: string | null,
-	assistantIndexAfterUser: number,
-) {
-	if (message.role === "assistant" && previousUserMessageId) {
-		return getAssistantAfterUserRowKey(previousUserMessageId, assistantIndexAfterUser);
-	}
-
-	return `message:${message.id}`;
-}
-
-function getAssistantAfterUserRowKey(userMessageId: string, index: number) {
-	return `assistant-after:${userMessageId}:${index}`;
 }
 
 function hasLatestAssistantContent(rows: AiChatListRow[]) {
@@ -417,10 +329,6 @@ function getAiChatRowMessageId(row: AiChatListRow) {
 
 function isAiChatRowScrollAnchor(row: AiChatListRow) {
 	return row.type === "message" && row.message.role === "user";
-}
-
-function shouldAnimateAiChatRow(row: AiChatListRow) {
-	return isAiChatRowScrollAnchor(row);
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {

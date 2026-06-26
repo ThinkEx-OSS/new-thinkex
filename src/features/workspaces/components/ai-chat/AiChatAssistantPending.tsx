@@ -36,11 +36,11 @@ function AiChatAssistantPendingBody({ pending }: { pending: AssistantPendingKind
 
 function AiChatThinkingLoader() {
 	return (
-		<Marker role="status" aria-live="polite" className="py-2">
+		<Marker role="status" aria-live="polite" className="gap-2.5 py-2">
 			<MarkerIcon className="size-[18px]">
 				<ThinkExThinkingMark />
 			</MarkerIcon>
-			<MarkerContent className="shimmer text-base">Thinking...</MarkerContent>
+			<MarkerContent className="shimmer">Thinking...</MarkerContent>
 		</Marker>
 	);
 }
