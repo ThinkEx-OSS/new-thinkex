@@ -1,0 +1,114 @@
+import { ChevronDown } from "lucide-react";
+
+import { Badge } from "#/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
+import { ThinkExThinkingMark } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
+import type { AiChatToolActivity } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import { cn } from "#/lib/utils";
+
+export function AiChatToolActivityRow({ activity }: { activity: AiChatToolActivity }) {
+	const hasDetails =
+		activity.children.length > 0 ||
+		activity.detail.input !== undefined ||
+		activity.detail.output !== undefined;
+	const isRunning = activity.status === "running";
+
+	if (!hasDetails) {
+		return <ActivitySummary activity={activity} />;
+	}
+
+	return (
+		<Collapsible className="w-fit max-w-full">
+			<CollapsibleTrigger className="w-fit max-w-full text-left">
+				<ActivitySummary activity={activity} canExpand />
+			</CollapsibleTrigger>
+			<CollapsibleContent className="mt-2 space-y-2 pl-7">
+				{activity.children.length > 0 ? (
+					<div className="space-y-1">
+						<div className="text-[11px] uppercase tracking-wide text-muted-foreground">Inside</div>
+						<div className="space-y-1">
+							{activity.children.map((child) => (
+								<div
+									key={`${child.toolName}:${child.summary}`}
+									className="text-xs text-muted-foreground"
+								>
+									{child.summary}
+								</div>
+							))}
+						</div>
+					</div>
+				) : null}
+				{activity.detail.output !== undefined ? (
+					<DetailBlock
+						label={isRunning ? "Current result" : "Result"}
+						value={formatDetailValue(activity.detail.output)}
+					/>
+				) : null}
+				{activity.detail.input !== undefined ? (
+					<DetailBlock label="Details" value={formatDetailValue(activity.detail.input)} />
+				) : null}
+				{activity.detail.errorText ? (
+					<DetailBlock label="Reason" tone="muted" value={activity.detail.errorText} />
+				) : null}
+			</CollapsibleContent>
+		</Collapsible>
+	);
+}
+
+function ActivitySummary({
+	activity,
+	canExpand = false,
+}: {
+	activity: AiChatToolActivity;
+	canExpand?: boolean;
+}) {
+	const isRunning = activity.status === "running";
+
+	return (
+		<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-xs">
+			{isRunning ? (
+				<ThinkExThinkingMark className="thinkex-thinking-mark size-3.5 shrink-0 self-center text-foreground" />
+			) : (
+				<Badge
+					variant="secondary"
+					className={cn(
+						"rounded-full px-1.5 py-0 font-normal text-[10px]",
+						activity.status === "failed" && "bg-muted text-muted-foreground",
+					)}
+				>
+					{activity.status === "failed" ? "Issue" : "Done"}
+				</Badge>
+			)}
+			<span className="truncate">{activity.summary}</span>
+			{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
+		</div>
+	);
+}
+
+function DetailBlock({ label, tone, value }: { label: string; tone?: "muted"; value: string }) {
+	return (
+		<div className="space-y-1">
+			<div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+			<pre
+				className={cn(
+					"max-h-52 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 px-3 py-2 text-xs text-foreground [overflow-wrap:anywhere]",
+					tone === "muted" && "text-muted-foreground",
+				)}
+			>
+				{value}
+			</pre>
+		</div>
+	);
+}
+
+function formatDetailValue(value: unknown) {
+	if (typeof value === "string") {
+		return value;
+	}
+
+	try {
+		return JSON.stringify(value ?? null, null, 2);
+	} catch {
+		return String(value);
+	}
+}
