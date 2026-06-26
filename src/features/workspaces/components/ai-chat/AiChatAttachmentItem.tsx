@@ -21,12 +21,7 @@ import {
 	AttachmentTitle,
 	AttachmentTrigger,
 } from "#/components/ui/attachment";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 import { Spinner } from "#/components/ui/spinner";
 import type {
 	AttachmentData,
@@ -128,10 +123,7 @@ function AiChatImageAttachment({
 						width={96}
 					/>
 				</AttachmentMedia>
-				<AttachmentTrigger
-					aria-label={`Preview ${label}`}
-					onClick={() => setIsOpen(true)}
-				/>
+				<AttachmentTrigger aria-label={`Preview ${label}`} onClick={() => setIsOpen(true)} />
 				<AiChatAttachmentRemoveAction data={data} onRemove={onRemove} />
 			</Attachment>
 
@@ -141,11 +133,7 @@ function AiChatImageAttachment({
 						<DialogTitle className="truncate text-base">{label}</DialogTitle>
 					</DialogHeader>
 					<div className="flex max-h-[78vh] min-h-0 items-center justify-center overflow-hidden rounded-lg bg-muted/40">
-						<img
-							alt={label}
-							className="max-h-[78vh] max-w-full object-contain"
-							src={data.url}
-						/>
+						<img alt={label} className="max-h-[78vh] max-w-full object-contain" src={data.url} />
 					</div>
 				</DialogContent>
 			</Dialog>
@@ -180,12 +168,7 @@ function AiChatAttachmentMedia({ data }: { data: AttachmentData }) {
 		return (
 			<AttachmentMedia>
 				{/* Thumbnail-only tile: controls omitted intentionally (40 px square). preload=metadata loads the first frame. */}
-				<video
-					className="size-full object-cover"
-					muted
-					preload="metadata"
-					src={data.url}
-				/>
+				<video className="size-full object-cover" muted preload="metadata" src={data.url} />
 			</AttachmentMedia>
 		);
 	}
@@ -203,9 +186,7 @@ function AiChatAttachmentContent({ data }: { data: AttachmentData }) {
 	return (
 		<AttachmentContent>
 			<AttachmentTitle>{getAttachmentLabel(data)}</AttachmentTitle>
-			<AttachmentDescription>
-				{getAttachmentDescription(data)}
-			</AttachmentDescription>
+			<AttachmentDescription>{getAttachmentDescription(data)}</AttachmentDescription>
 		</AttachmentContent>
 	);
 }

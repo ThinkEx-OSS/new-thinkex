@@ -27,10 +27,7 @@ interface UseWorkspaceAiChatOptions {
 	threadId: string;
 }
 
-export function useWorkspaceAiChat({
-	modelId,
-	threadId,
-}: UseWorkspaceAiChatOptions) {
+export function useWorkspaceAiChat({ modelId, threadId }: UseWorkspaceAiChatOptions) {
 	const agent = useAgent({
 		agent: userAIAgentName,
 		basePath: userAIBasePath,
@@ -56,13 +53,10 @@ export function useWorkspaceAiChat({
 		status,
 		stop,
 	} = chat;
-	const [optimisticUserMessage, setOptimisticUserMessage] =
-		useState<OptimisticUserMessage | null>(null);
-	const visibleMessages = getVisibleMessages(
-		messages,
-		status,
-		optimisticUserMessage,
+	const [optimisticUserMessage, setOptimisticUserMessage] = useState<OptimisticUserMessage | null>(
+		null,
 	);
+	const visibleMessages = getVisibleMessages(messages, status, optimisticUserMessage);
 	const presentation = deriveAiChatPresentation(visibleMessages, status, {
 		isRecovering,
 		isServerStreaming,
@@ -80,19 +74,14 @@ export function useWorkspaceAiChat({
 					: status;
 	const canSend = inputStatus === "ready" && !presentation.isBusy;
 
-	const sendMessage = (
-		message: AiChatSendMessage,
-		options?: AiChatSendMessageOptions,
-	) => {
+	const sendMessage = (message: AiChatSendMessage, options?: AiChatSendMessageOptions) => {
 		if (message.parts.length === 0 || !canSend) {
 			return false;
 		}
 
 		setOptimisticUserMessage({
 			message: createOptimisticUserMessage(message),
-			previousMessageIds: new Set(
-				messages.map((currentMessage) => currentMessage.id),
-			),
+			previousMessageIds: new Set(messages.map((currentMessage) => currentMessage.id)),
 		});
 		clearError();
 		void sendAgentMessage(message, options);
@@ -134,9 +123,7 @@ function getVisibleMessages(
 	return [...messages, optimisticUserMessage.message];
 }
 
-function createOptimisticUserMessage(
-	message: AiChatSendMessage,
-): AiChatMessage {
+function createOptimisticUserMessage(message: AiChatSendMessage): AiChatMessage {
 	return {
 		id: createOptimisticUserMessageId(),
 		role: message.role,
@@ -164,10 +151,7 @@ function hasAcceptedUserMessage(
 	);
 }
 
-function isSameMessageContent(
-	partsA: AiChatMessagePart[],
-	partsB: AiChatMessagePart[],
-): boolean {
+function isSameMessageContent(partsA: AiChatMessagePart[], partsB: AiChatMessagePart[]): boolean {
 	if (partsA.length !== partsB.length) return false;
 	return partsA.every((partA, i) => {
 		const partB = partsB[i];
