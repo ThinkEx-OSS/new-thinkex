@@ -128,11 +128,9 @@
 	}
 
 	.thinkex-thinking-block {
-		transform-box: fill-box;
-		transform-origin: center;
-		animation: thinkex-thinking-block 2.3s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
+		animation: thinkex-thinking-block 2.3s ease-in-out infinite both;
 		opacity: 0;
-		will-change: transform, opacity;
+		will-change: opacity;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -161,32 +159,26 @@
 	@keyframes thinkex-thinking-block {
 		0% {
 			opacity: 0;
-			transform: translateY(8px) scale(0.92);
 		}
 
 		12% {
 			opacity: 0;
-			transform: translateY(8px) scale(0.92);
 		}
 
 		24% {
 			opacity: 1;
-			transform: translateY(0) scale(1);
 		}
 
 		68% {
 			opacity: 1;
-			transform: translateY(0) scale(1);
 		}
 
 		82% {
 			opacity: 0;
-			transform: translateY(-3px) scale(0.98);
 		}
 
 		100% {
 			opacity: 0;
-			transform: translateY(-3px) scale(0.98);
 		}
 	}
 
