@@ -5,6 +5,7 @@ import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import {
 	buildWorkspaceItemCreateBootstrap,
 	persistDocumentItemContentUpdate,
+	prepareDocumentItemMetadata,
 	touchWorkspaceItemUpdatedAt,
 } from "#/features/workspaces/documents/document-item-content";
 import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
@@ -23,6 +24,7 @@ import type {
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
 	DeleteWorkspaceKernelItemsResult,
+	ImportWorkspaceKernelItemArgs,
 	MoveWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelItemArgs,
@@ -134,6 +136,60 @@ export class WorkspaceKernelItemCommands {
 		});
 
 		return { result: item, event };
+	}
+
+	async importItem(input: ImportWorkspaceKernelItemArgs): Promise<WorkspaceItemSummary> {
+		const type = workspaceItemTypeSchema.parse(input.type);
+		const id = input.id;
+		const parentId = input.parentId ?? null;
+		const shellPath = getWorkspaceKernelShellPath({ id, type });
+		const metadataJson =
+			type === "document"
+				? prepareDocumentItemMetadata(input.metadataJson ?? {}, input.content ?? "")
+				: (input.metadataJson ?? {});
+
+		if (this.store.getItemRowIncludingDeleted(id)) {
+			throw new Error("Workspace item id already exists.");
+		}
+
+		this.store.assertParentIsValid(parentId);
+		await this.createWorkspaceFile({
+			type,
+			name: input.name,
+			shellPath,
+			initialContent: input.content,
+		});
+
+		this.sql`
+			INSERT INTO kernel_items (
+				id,
+				parent_id,
+				type,
+				name,
+				color,
+				metadata_json,
+				sort_order,
+				shell_path,
+				created_at,
+				updated_at,
+				deleted_at
+			)
+			VALUES (
+				${id},
+				${parentId},
+				${type},
+				${input.name},
+				${input.color ?? null},
+				${JSON.stringify(metadataJson)},
+				${input.sortOrder},
+				${shellPath},
+				${input.createdAt},
+				${input.updatedAt},
+				NULL
+			)
+		`;
+
+		return this.store.requireItem(id);
 	}
 
 	async renameItem(

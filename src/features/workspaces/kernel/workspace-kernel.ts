@@ -21,6 +21,9 @@ import type {
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
 	DeleteWorkspaceKernelItemsResult,
+	ImportWorkspaceKernelFileArgs,
+	ImportWorkspaceKernelFileProjectionArgs,
+	ImportWorkspaceKernelItemArgs,
 	ListWorkspaceKernelEventsArgs,
 	ListWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemsArgs,
@@ -120,10 +123,18 @@ export class WorkspaceKernel extends Agent<Env> {
 		return await this.itemCommands.createItem(input);
 	}
 
+	async importItem(input: ImportWorkspaceKernelItemArgs): Promise<WorkspaceItemSummary> {
+		return await this.itemCommands.importItem(input);
+	}
+
 	async createFileFromUpload(
 		input: CreateWorkspaceKernelFileFromUploadArgs,
 	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 		return await this.fileCommands.createFileFromUpload(input);
+	}
+
+	async importFile(input: ImportWorkspaceKernelFileArgs): Promise<WorkspaceItemSummary> {
+		return await this.fileCommands.importFile(input);
 	}
 
 	async readFileContent(input: ReadWorkspaceKernelFileContentArgs) {
@@ -136,6 +147,10 @@ export class WorkspaceKernel extends Agent<Env> {
 
 	async upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs) {
 		return await this.fileCommands.upsertFileProjection(input);
+	}
+
+	async importFileProjection(input: ImportWorkspaceKernelFileProjectionArgs) {
+		return await this.fileCommands.importFileProjection(input);
 	}
 
 	async readFileProjection(input: ReadWorkspaceKernelFileProjectionArgs) {

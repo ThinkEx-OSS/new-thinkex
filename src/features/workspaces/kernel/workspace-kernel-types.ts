@@ -81,7 +81,7 @@ export interface ReadWorkspaceKernelFileContentResult {
 	sizeBytes: number;
 }
 
-export type WorkspaceKernelFileProjectionFormat = "markdown" | "preview";
+export type WorkspaceKernelFileProjectionFormat = "markdown" | "ocr_pages" | "preview";
 
 export type WorkspaceKernelFileProjectionStatus =
 	| "not_started"
@@ -138,6 +138,47 @@ export interface WriteWorkspaceKernelItemArgs {
 	content: string;
 	actorUserId?: string | null;
 	clientMutationId?: string | null;
+}
+
+export interface ImportWorkspaceKernelItemArgs {
+	color?: string | null;
+	content?: string;
+	createdAt: number;
+	id: string;
+	metadataJson?: Record<string, JsonValue>;
+	name: string;
+	parentId?: string | null;
+	sortOrder: number;
+	type: WorkspaceItemType;
+	updatedAt: number;
+}
+
+export interface ImportWorkspaceKernelFileArgs {
+	assetKind: WorkspaceFileAssetKind;
+	bytes: Uint8Array;
+	contentType: string;
+	createdAt: number;
+	id: string;
+	name: string;
+	originalName: string;
+	parentId?: string | null;
+	sizeBytes: number;
+	sortOrder: number;
+	updatedAt: number;
+}
+
+export interface ImportWorkspaceKernelFileProjectionArgs {
+	content?: string | null;
+	createdAt: number;
+	errorMessage?: string | null;
+	format: WorkspaceKernelFileProjectionFormat;
+	itemId: string;
+	metadataJson?: Record<string, JsonValue>;
+	provider?: string | null;
+	providerMode?: string | null;
+	sourceHash?: string | null;
+	status: WorkspaceKernelFileProjectionStatus;
+	updatedAt: number;
 }
 
 export interface CreateWorkspaceKernelFileFromUploadArgs {

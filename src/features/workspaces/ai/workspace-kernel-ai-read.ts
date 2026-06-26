@@ -9,6 +9,10 @@ import {
 } from "#/features/workspaces/ai/workspace-kernel-ai-pdf-pages";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
+import {
+	flattenLegacyOcrPagesToMarkdown,
+	parseLegacyOcrPagesProjectionContent,
+} from "#/features/workspaces/extraction/legacy-ocr-pages";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
@@ -217,6 +221,28 @@ async function readWorkspaceKernelAiFileItem(input: {
 		itemId: item.id,
 		format: "markdown",
 	});
+	const ocrProjection = await input.kernel.readFileProjection({
+		itemId: item.id,
+		format: "ocr_pages",
+	});
+
+	if (!projection && ocrProjection?.status === "ready" && ocrProjection.content !== null) {
+		const page = pageWorkspaceAiMarkdown(
+			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
+			{
+				limit: input.contentLimit,
+				offset: input.contentOffset,
+			},
+		);
+
+		return {
+			content: page.content,
+			...(page.page ? { page: page.page } : {}),
+			path: input.path,
+			status: "ready",
+			type: "file",
+		};
+	}
 
 	if (!projection) {
 		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
@@ -231,7 +257,25 @@ async function readWorkspaceKernelAiFileItem(input: {
 	}
 
 	if (projection.status !== "ready" || projection.content === null) {
-		return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+		if (ocrProjection?.status !== "ready" || ocrProjection.content === null) {
+			return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+		}
+
+		const page = pageWorkspaceAiMarkdown(
+			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
+			{
+				limit: input.contentLimit,
+				offset: input.contentOffset,
+			},
+		);
+
+		return {
+			content: page.content,
+			...(page.page ? { page: page.page } : {}),
+			path: input.path,
+			status: "ready",
+			type: "file",
+		};
 	}
 
 	if (fileType.assetKind === "pdf") {
