@@ -14,7 +14,9 @@ type AiChatMessageResponseProps = ComponentProps<typeof Streamdown> & {
 // rel="noopener noreferrer" via the custom anchor component below.
 const streamdownLinkSafety = { enabled: false };
 
-function SafeAnchor({ href, children, node: _node, ...props }: ComponentProps<"a"> & { node?: unknown }) {
+type SafeAnchorProps = ComponentProps<"a"> & { node?: unknown };
+
+function SafeAnchor({ href, children, node: _node, ...props }: SafeAnchorProps) {
 	const isExternal = typeof href === "string" && /^(https?:\/\/|\/\/)/i.test(href);
 	return (
 		<a
