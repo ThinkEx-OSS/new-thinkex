@@ -12,13 +12,11 @@ import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
 import {
+	type AiChatRenderablePart,
 	type AssistantRowDisplay,
 	getDisplayableParts,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
-import type {
-	AiChatMessage,
-	AiChatMessagePart,
-} from "#/features/workspaces/components/ai-chat/types";
+import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
 import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 import { cn } from "#/lib/utils";
@@ -110,7 +108,7 @@ export default function AiChatMessageRow({
 	);
 }
 
-function isAttachmentPart(part: AiChatMessagePart) {
+function isAttachmentPart(part: AiChatRenderablePart) {
 	return part.type === "file" || part.type === "source-document";
 }
 
@@ -204,7 +202,11 @@ function getCopyableMessageText(message: AiChatMessage) {
 	return textParts.join("\n\n").trim();
 }
 
-function getMessagePartKey(messageId: string, part: AiChatMessagePart, index: number) {
+function getMessagePartKey(messageId: string, part: AiChatRenderablePart, index: number) {
+	if (isToolGroupPart(part)) {
+		return `${messageId}-${part.type}-${part.part.toolCallId}`;
+	}
+
 	if (isToolUIPart(part)) {
 		return `${messageId}-tool-${part.toolCallId}`;
 	}
@@ -223,4 +225,10 @@ function getMessagePartKey(messageId: string, part: AiChatMessagePart, index: nu
 	}
 
 	return `${messageId}-${part.type}-${index}`;
+}
+
+function isToolGroupPart(
+	part: AiChatRenderablePart,
+): part is Extract<AiChatRenderablePart, { type: "data-tool-group" }> {
+	return part.type === "data-tool-group";
 }

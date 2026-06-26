@@ -8,12 +8,17 @@ import {
 	getFileAttachmentData,
 	getSourceDocumentAttachmentData,
 } from "#/features/workspaces/components/ai-chat/AiChatAttachmentItem";
+import type { AiChatToolGroupPart } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import { AiChatToolActivityRow } from "#/features/workspaces/components/ai-chat/AiChatToolActivityRow";
 import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat/types";
 
-export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
+export function AiChatMessagePartView({ part }: { part: AiChatMessagePart | AiChatToolGroupPart }) {
 	if (part.type === "text") {
 		return <MessageResponse>{part.text}</MessageResponse>;
+	}
+
+	if (isAiChatToolGroupPart(part)) {
+		return <AiChatToolActivityRow part={part.part} nestedChildren={part.children} />;
 	}
 
 	if (isToolUIPart(part)) {
@@ -55,4 +60,10 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
 	}
 
 	return null;
+}
+
+function isAiChatToolGroupPart(
+	part: AiChatMessagePart | AiChatToolGroupPart,
+): part is AiChatToolGroupPart {
+	return part.type === "data-tool-group" && "part" in part && "children" in part;
 }

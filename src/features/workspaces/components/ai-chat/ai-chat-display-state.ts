@@ -8,13 +8,26 @@ import type {
 } from "#/features/workspaces/components/ai-chat/types";
 
 export type AssistantPendingKind = "thinking" | "recovering";
+export interface AiChatToolChildActivity {
+	summary: string;
+	toolName: string;
+}
+
+export interface AiChatToolGroupPart {
+	type: "data-tool-group";
+	children: AiChatToolChildActivity[];
+	part: AiChatToolPart;
+}
+
+export type AiChatRenderablePart = AiChatMessagePart | AiChatToolGroupPart;
 
 export type AssistantRowDisplay =
-	| { kind: "content"; parts: AiChatMessagePart[] }
+	| { kind: "content"; parts: AiChatRenderablePart[] }
 	| { kind: "empty-terminal"; canRegenerate: boolean }
 	| { kind: "hidden" };
 
 export interface AiChatToolActivity {
+	children: AiChatToolChildActivity[];
 	detail: AiChatToolPart;
 	status: "completed" | "failed" | "running";
 	summary: string;
@@ -116,8 +129,54 @@ export function getAssistantRowDisplay(
 	return { kind: "hidden" };
 }
 
-export function getDisplayableParts(message: AiChatMessage): AiChatMessagePart[] {
-	return message.parts.filter(isDisplayableMessagePart);
+export function getDisplayableParts(message: AiChatMessage): AiChatRenderablePart[] {
+	const parts = message.parts.filter(isDisplayableMessagePart);
+	const codemodePart = parts.find(
+		(part): part is AiChatToolPart =>
+			isToolUIPart(part) && getToolPartName(part) === "codemode_execute",
+	);
+
+	if (!codemodePart) {
+		return parts;
+	}
+
+	const codemodeIndex = parts.indexOf(codemodePart);
+	const codemodeChildren = parts
+		.filter(
+			(part): part is AiChatToolPart =>
+				isToolUIPart(part) && part !== codemodePart && isVisibleToolPart(part),
+		)
+		.map((part) => {
+			const activity = getToolActivityForPart(part);
+			return activity
+				? {
+						summary: activity.summary,
+						toolName: activity.toolName,
+					}
+				: null;
+		})
+		.filter((child): child is AiChatToolChildActivity => child !== null);
+
+	const result: AiChatRenderablePart[] = [];
+
+	for (const [index, part] of parts.entries()) {
+		if (isToolUIPart(part) && part !== codemodePart && isVisibleToolPart(part)) {
+			continue;
+		}
+
+		if (part === codemodePart) {
+			result.push({
+				type: "data-tool-group",
+				part,
+				children: index === codemodeIndex ? codemodeChildren : [],
+			});
+			continue;
+		}
+
+		result.push(part);
+	}
+
+	return result;
 }
 
 export function isDisplayableMessagePart(part: AiChatMessagePart): boolean {
@@ -155,6 +214,7 @@ export function getToolActivityForPart(part: AiChatToolPart): AiChatToolActivity
 	const status = getToolActivityStatus(part);
 
 	return {
+		children: [],
 		detail: part,
 		status,
 		summary: getToolActivitySummary(part, toolName, title, status),
