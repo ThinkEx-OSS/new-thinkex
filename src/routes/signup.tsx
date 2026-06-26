@@ -24,16 +24,5 @@ export const Route = createFileRoute("/signup")({
 			},
 		});
 	},
-	head: () => ({
-		meta: [
-			{
-				title: "ThinkEx | Continue",
-			},
-			{
-				name: "description",
-				content: "Continue to ThinkEx with Google. No account? We'll create one.",
-			},
-		],
-	}),
 	component: () => null,
 });
