@@ -11,21 +11,10 @@ export interface TiptapDocumentProjection {
 	warnings: string[];
 }
 
-export function createInitialTiptapDocumentJson(name: string): TiptapDocumentJson {
-	const title = name.trim();
-
+export function createInitialTiptapDocumentJson(): TiptapDocumentJson {
 	return {
 		type: "doc",
-		content: title
-			? [
-					{
-						type: "heading",
-						attrs: { level: 1 },
-						content: [{ type: "text", text: title }],
-					},
-					{ type: "paragraph" },
-				]
-			: [{ type: "paragraph" }],
+		content: [{ type: "paragraph" }],
 	};
 }
 
