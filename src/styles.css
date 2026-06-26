@@ -125,17 +125,23 @@
 
 	.thinkex-thinking-mark {
 		overflow: visible;
+		animation: thinkex-thinking-mark 2.6s ease-in-out infinite both;
 	}
 
 	.thinkex-thinking-block {
 		transform-box: fill-box;
 		transform-origin: center;
-		animation: thinkex-thinking-block 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
+		animation: thinkex-thinking-block 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite both;
 		opacity: 0;
+		will-change: transform, opacity, filter;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.workspace-ask-selection-button {
+			animation: none;
+		}
+
+		.thinkex-thinking-mark {
 			animation: none;
 		}
 
@@ -157,35 +163,68 @@
 		}
 	}
 
+	@keyframes thinkex-thinking-mark {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+
+		35% {
+			transform: scale(1.015);
+		}
+
+		65% {
+			transform: scale(1.005);
+		}
+	}
+
 	@keyframes thinkex-thinking-block {
 		0% {
 			opacity: 0;
-			transform: translateY(10px) scale(0.88);
+			transform: translateY(12px) scale(0.8);
+			filter: brightness(0.9);
 		}
 
-		14% {
+		10% {
 			opacity: 0;
-			transform: translateY(10px) scale(0.88);
+			transform: translateY(12px) scale(0.8);
+			filter: brightness(0.9);
 		}
 
-		26% {
+		22% {
+			opacity: 0.82;
+			transform: translateY(-1px) scale(1.045);
+			filter: brightness(1.12);
+		}
+
+		32% {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+			filter: brightness(1.04);
 		}
 
-		74% {
-			opacity: 1;
+		58% {
+			opacity: 0.98;
 			transform: translateY(0) scale(1);
+			filter: brightness(1);
 		}
 
-		86% {
+		72% {
+			opacity: 0.7;
+			transform: translateY(-2px) scale(0.985);
+			filter: brightness(0.98);
+		}
+
+		84% {
 			opacity: 0;
-			transform: translateY(-4px) scale(0.96);
+			transform: translateY(-7px) scale(0.94);
+			filter: brightness(0.95);
 		}
 
 		100% {
 			opacity: 0;
-			transform: translateY(-4px) scale(0.96);
+			transform: translateY(-7px) scale(0.94);
+			filter: brightness(0.95);
 		}
 	}
 

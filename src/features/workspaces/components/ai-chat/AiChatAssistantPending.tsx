@@ -40,19 +40,21 @@ export function ThinkExThinkingMark({ className }: { className?: string }) {
 	return (
 		<svg
 			viewBox="0 0 512 512"
-			className={className ?? "thinkex-thinking-mark size-5 shrink-0 self-center text-foreground"}
+			className={
+				className ?? "thinkex-thinking-mark size-[18px] shrink-0 self-center text-foreground"
+			}
 			aria-hidden="true"
 		>
 			<g className="thinkex-thinking-block" style={{ animationDelay: "0ms" }}>
 				<rect fill="currentColor" width="139.636" height="139.636" rx="18.5818" />
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "140ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "95ms" }}>
 				<rect fill="currentColor" x="186.182" width="139.636" height="116.364" rx="18.5818" />
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "280ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "215ms" }}>
 				<rect fill="currentColor" x="372.364" width="139.636" height="139.636" rx="18.5818" />
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "420ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "355ms" }}>
 				<rect
 					fill="none"
 					stroke="#5C8BD6"
@@ -64,7 +66,7 @@ export function ThinkExThinkingMark({ className }: { className?: string }) {
 					rx="10.5818"
 				/>
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "560ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "520ms" }}>
 				<rect
 					fill="none"
 					stroke="#F7B53B"
@@ -86,7 +88,7 @@ export function ThinkExThinkingMark({ className }: { className?: string }) {
 					rx="18.5818"
 				/>
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "840ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "905ms" }}>
 				<rect
 					fill="none"
 					stroke="#73BF7A"
@@ -98,7 +100,7 @@ export function ThinkExThinkingMark({ className }: { className?: string }) {
 					rx="10.5818"
 				/>
 			</g>
-			<g className="thinkex-thinking-block" style={{ animationDelay: "980ms" }}>
+			<g className="thinkex-thinking-block" style={{ animationDelay: "1140ms" }}>
 				<rect
 					fill="none"
 					stroke="#DA4944"
