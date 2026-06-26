@@ -1,4 +1,4 @@
-import { usePromptInputAttachments } from "#/components/ai-elements/prompt-input";
+import { usePromptInputAttachments } from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
 import AiChatPromptAttachments from "#/features/workspaces/components/ai-chat/AiChatPromptAttachments";
 import WorkspaceAiChatContextChips from "#/features/workspaces/components/ai-chat/WorkspaceAiChatContextChips";
 import {

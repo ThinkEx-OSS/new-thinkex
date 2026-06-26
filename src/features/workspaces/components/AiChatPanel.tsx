@@ -1,5 +1,4 @@
 import { Suspense, useState } from "react";
-import { Conversation, ConversationContent } from "#/components/ai-elements/conversation";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -11,6 +10,13 @@ import {
 	AlertDialogTitle,
 } from "#/components/ui/alert-dialog";
 import {
+	MessageScroller,
+	MessageScrollerContent,
+	MessageScrollerItem,
+	MessageScrollerProvider,
+	MessageScrollerViewport,
+} from "#/components/ui/message-scroller";
+import {
 	AiChatAttachmentDropProvider,
 	useAiChatAttachmentDrop,
 } from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
@@ -18,6 +24,10 @@ import AiChatPanelToolbar from "#/features/workspaces/components/ai-chat/AiChatP
 import AiChatThreadSkeleton from "#/features/workspaces/components/ai-chat/AiChatThreadSkeleton";
 import AiChatThreadView from "#/features/workspaces/components/ai-chat/AiChatThreadView";
 import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
+import {
+	aiChatLoadingScrollerContentClassName,
+	aiChatMessageScrollerViewportClassName,
+} from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import { useAiChatPanelController } from "#/features/workspaces/components/ai-chat/useAiChatPanelController";
 import { WorkspaceFileDropOverlay } from "#/features/workspaces/components/WorkspaceFileDropOverlay";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
@@ -134,15 +144,18 @@ function AiChatPanelLayout({ context }: AiChatPanelProps) {
 
 function AiChatPanelLoading() {
 	return (
-		<Conversation className="h-full min-h-0">
-			<ConversationContent
-				scrollClassName="min-h-0 overscroll-contain"
-				className="gap-5 px-4 pt-5 pb-5"
-			>
-				<AiChatTranscriptRail withTopInset>
-					<AiChatThreadSkeleton />
-				</AiChatTranscriptRail>
-			</ConversationContent>
-		</Conversation>
+		<MessageScrollerProvider>
+			<MessageScroller className="h-full min-h-0">
+				<MessageScrollerViewport className={aiChatMessageScrollerViewportClassName}>
+					<MessageScrollerContent className={aiChatLoadingScrollerContentClassName}>
+						<MessageScrollerItem>
+							<AiChatTranscriptRail>
+								<AiChatThreadSkeleton />
+							</AiChatTranscriptRail>
+						</MessageScrollerItem>
+					</MessageScrollerContent>
+				</MessageScrollerViewport>
+			</MessageScroller>
+		</MessageScrollerProvider>
 	);
 }

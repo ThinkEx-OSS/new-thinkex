@@ -1,7 +1,6 @@
 import { isToolUIPart } from "ai";
 import { LinkIcon } from "lucide-react";
 
-import { MessageResponse } from "#/components/ai-elements/message";
 import {
 	AiChatAttachmentGroup,
 	AiChatAttachmentItem,
@@ -9,12 +8,19 @@ import {
 	getSourceDocumentAttachmentData,
 } from "#/features/workspaces/components/ai-chat/AiChatAttachmentItem";
 import type { AiChatToolGroupPart } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import { AiChatMessageResponse } from "#/features/workspaces/components/ai-chat/AiChatMessageResponse";
 import { AiChatToolActivityRow } from "#/features/workspaces/components/ai-chat/AiChatToolActivityRow";
 import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat/types";
 
-export function AiChatMessagePartView({ part }: { part: AiChatMessagePart | AiChatToolGroupPart }) {
+export function AiChatMessagePartView({
+	isStreaming = false,
+	part,
+}: {
+	isStreaming?: boolean;
+	part: AiChatMessagePart | AiChatToolGroupPart;
+}) {
 	if (part.type === "text") {
-		return <MessageResponse>{part.text}</MessageResponse>;
+		return <AiChatMessageResponse isStreaming={isStreaming}>{part.text}</AiChatMessageResponse>;
 	}
 
 	if (isAiChatToolGroupPart(part)) {
@@ -29,7 +35,7 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart | AiCh
 		const attachment = getFileAttachmentData(part);
 
 		return (
-			<AiChatAttachmentGroup data={attachment}>
+			<AiChatAttachmentGroup>
 				<AiChatAttachmentItem data={attachment} />
 			</AiChatAttachmentGroup>
 		);
@@ -53,7 +59,7 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart | AiCh
 		const attachment = getSourceDocumentAttachmentData(part);
 
 		return (
-			<AiChatAttachmentGroup data={attachment}>
+			<AiChatAttachmentGroup>
 				<AiChatAttachmentItem data={attachment} />
 			</AiChatAttachmentGroup>
 		);

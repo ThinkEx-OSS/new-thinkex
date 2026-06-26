@@ -1,5 +1,6 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
+import { useState } from "react";
 
 import {
 	aiThreadAgentName,
@@ -14,6 +15,11 @@ import type {
 	AiChatSendMessageOptions,
 	AiChatStatus,
 } from "#/features/workspaces/components/ai-chat/types";
+
+interface OptimisticUserMessage {
+	message: AiChatMessage;
+	previousMessageIds: Set<string>;
+}
 
 interface UseWorkspaceAiChatOptions {
 	modelId: AiChatModelId;
@@ -46,7 +52,11 @@ export function useWorkspaceAiChat({ modelId, threadId }: UseWorkspaceAiChatOpti
 		status,
 		stop,
 	} = chat;
-	const presentation = deriveAiChatPresentation(messages, status, {
+	const [optimisticUserMessage, setOptimisticUserMessage] = useState<OptimisticUserMessage | null>(
+		null,
+	);
+	const visibleMessages = getVisibleMessages(messages, status, optimisticUserMessage);
+	const presentation = deriveAiChatPresentation(visibleMessages, status, {
 		isRecovering,
 		isServerStreaming,
 		isStreaming,
@@ -68,6 +78,10 @@ export function useWorkspaceAiChat({ modelId, threadId }: UseWorkspaceAiChatOpti
 			return false;
 		}
 
+		setOptimisticUserMessage({
+			message: createOptimisticUserMessage(message),
+			previousMessageIds: new Set(messages.map((currentMessage) => currentMessage.id)),
+		});
 		clearError();
 		void sendAgentMessage(message, options);
 		return true;
@@ -84,12 +98,58 @@ export function useWorkspaceAiChat({ modelId, threadId }: UseWorkspaceAiChatOpti
 	return {
 		error,
 		inputStatus,
-		messages,
+		messages: visibleMessages,
 		presentation,
 		regenerate,
 		sendMessage,
 		stop,
 	};
+}
+
+function getVisibleMessages(
+	messages: AiChatMessage[],
+	status: AiChatStatus,
+	optimisticUserMessage: OptimisticUserMessage | null,
+) {
+	if (
+		optimisticUserMessage === null ||
+		!isSubmittedOrStreaming(status) ||
+		hasAcceptedUserMessage(messages, optimisticUserMessage)
+	) {
+		return messages;
+	}
+
+	return [...messages, optimisticUserMessage.message];
+}
+
+function createOptimisticUserMessage(message: AiChatSendMessage): AiChatMessage {
+	return {
+		id: createOptimisticUserMessageId(),
+		role: message.role,
+		parts: message.parts,
+	};
+}
+
+function createOptimisticUserMessageId() {
+	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+		return `optimistic-user:${crypto.randomUUID()}`;
+	}
+
+	return `optimistic-user:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`;
+}
+
+function hasAcceptedUserMessage(
+	messages: AiChatMessage[],
+	optimisticUserMessage: OptimisticUserMessage,
+) {
+	return messages.some(
+		(message) =>
+			message.role === "user" && !optimisticUserMessage.previousMessageIds.has(message.id),
+	);
+}
+
+function isSubmittedOrStreaming(status: AiChatStatus) {
+	return status === "submitted" || status === "streaming";
 }
 
 function getClientTimeZone() {

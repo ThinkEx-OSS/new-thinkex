@@ -102,6 +102,9 @@ importers:
       '@posthog/rollup-plugin':
         specifier: ^1.4.7
         version: 1.4.7(rollup@4.62.2)
+      '@shadcn/react':
+        specifier: ^0.1.0
+        version: 0.1.0(@types/react@19.2.17)(react@19.2.7)
       '@streamdown/cjk':
         specifier: ^1.0.3
         version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.7)(unified@11.0.5)
@@ -138,9 +141,6 @@ importers:
       '@tanstack/react-start':
         specifier: latest
         version: 1.168.26(@voidzero-dev/vite-plus-core@0.2.1(@types/node@22.19.19)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@6.0.3)(yaml@2.9.0))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@tanstack/react-virtual':
-        specifier: ^3.14.3
-        version: 3.14.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/router-plugin':
         specifier: ^1.168.18
         version: 1.168.18(@tanstack/react-router@1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@22.19.19)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(typescript@6.0.3)(yaml@2.9.0))
@@ -3491,6 +3491,17 @@ packages:
     resolution: {integrity: sha512-PywIl2jvl+tO5R4j+n72Lcf3ItanHcaMN/oL1U9ZHE8icaT2zpo2W4uOaslpQeQvqPC24HGZ3BW2etzsCFQbag==}
     engines: {node: '>=18'}
 
+  '@shadcn/react@0.1.0':
+    resolution: {integrity: sha512-6i67TEnqValsZY7e4exJ4rkHo2OdHXmDH152YulwSpuEUnTQYumHkXzFsaje7HB7GbMTWuI9x1Jn6sSduCYdeA==}
+    peerDependencies:
+      '@types/react': '>=19'
+      react: '>=19'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
+
   '@shikijs/core@4.2.0':
     resolution: {integrity: sha512-Hc87Ab1Ld/vEbZRCbwx344I5v+4RU8CVToUTRkqXL1+TjbuOp9U5Xa0M23V4GEWHxVn+yO5otb+HkQVm3ptWQQ==}
     engines: {node: '>=20'}
@@ -3870,12 +3881,6 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@tanstack/react-virtual@3.14.3':
-    resolution: {integrity: sha512-k/cnHPVaOfn46hSbiY6n4Dzf4QjCGWSF40zR5QIIYUqPAjpA6TN7InfYmcMiDVQGP2iUn9xsRbAl8u1v3UmeVQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   '@tanstack/router-core@1.171.13':
     resolution: {integrity: sha512-+NOwEj1kO/6IGmpHRIZHasYxYWpyBQGNIZAST9aNrk9Q3YlU9SgqVnl1pbLa9qAKfeNdXQIRve0RQb/0kyDeDA==}
     engines: {node: '>=20.19'}
@@ -3959,9 +3964,6 @@ packages:
 
   '@tanstack/store@0.9.3':
     resolution: {integrity: sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw==}
-
-  '@tanstack/virtual-core@3.17.1':
-    resolution: {integrity: sha512-VZyW2Uiml5tmBZwPGrSD3Sz73OxzljQMCmzYHsUTPEuTsERf5xwa+uWb01xEzkz3ZSYTjj8NEb/mKHvgKxyZdA==}
 
   '@tanstack/virtual-file-routes@1.162.0':
     resolution: {integrity: sha512-uhOeFyxLcU41HzvrxsGpiWdcMbScY1EDgbZ5K7DVRMYInbLYWAC0EA/kx9wXAoSM8q82bUG2hRl8+EAjE6XAbA==}
@@ -10917,6 +10919,11 @@ snapshots:
     dependencies:
       '@sentry/core': 10.58.0
 
+  '@shadcn/react@0.1.0(@types/react@19.2.17)(react@19.2.7)':
+    optionalDependencies:
+      '@types/react': 19.2.17
+      react: 19.2.7
+
   '@shikijs/core@4.2.0':
     dependencies:
       '@shikijs/primitive': 4.2.0
@@ -11329,12 +11336,6 @@ snapshots:
       react-dom: 19.2.7(react@19.2.7)
       use-sync-external-store: 1.6.0(react@19.2.7)
 
-  '@tanstack/react-virtual@3.14.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@tanstack/virtual-core': 3.17.1
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
   '@tanstack/router-core@1.171.13':
     dependencies:
       '@tanstack/history': 1.162.0
@@ -11457,8 +11458,6 @@ snapshots:
   '@tanstack/store@0.11.0': {}
 
   '@tanstack/store@0.9.3': {}
-
-  '@tanstack/virtual-core@3.17.1': {}
 
   '@tanstack/virtual-file-routes@1.162.0': {}
 

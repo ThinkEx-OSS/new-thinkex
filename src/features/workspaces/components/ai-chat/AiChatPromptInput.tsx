@@ -12,7 +12,7 @@ import {
 	PromptInputTextarea,
 	PromptInputTools,
 	usePromptInputAttachments,
-} from "#/components/ai-elements/prompt-input";
+} from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import { AiChatAttachmentDropBridge } from "#/features/workspaces/components/ai-chat/AiChatAttachmentDrop";
 import AiChatModelPicker from "#/features/workspaces/components/ai-chat/AiChatModelPicker";

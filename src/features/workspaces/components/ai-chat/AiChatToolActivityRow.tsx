@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 
-import { Shimmer } from "#/components/ai-elements/shimmer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
+import { Marker, MarkerContent } from "#/components/ui/marker";
 import {
 	getToolActivityForPart,
 	type AiChatToolChildActivity,
@@ -62,19 +62,19 @@ function ActivitySummary({
 
 	if (isRunning) {
 		return (
-			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-sm">
-				<Shimmer as="span" className="text-sm text-muted-foreground" duration={1.4}>
-					{activity.summary}
-				</Shimmer>
+			<Marker role="status" aria-live="polite" className="w-fit max-w-full py-1 text-sm">
+				<MarkerContent className="shimmer">{activity.summary}</MarkerContent>
 				{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
-			</div>
+			</Marker>
 		);
 	}
 
 	return (
-		<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-sm">
-			<span className="truncate text-muted-foreground/80">{activity.summary}</span>
+		<Marker className="w-fit max-w-full py-1 text-sm">
+			<MarkerContent className="truncate text-muted-foreground/80">
+				{activity.summary}
+			</MarkerContent>
 			{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
-		</div>
+		</Marker>
 	);
 }

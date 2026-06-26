@@ -1,15 +1,11 @@
 import { isToolUIPart } from "ai";
 import { Check, Copy, RotateCcw } from "lucide-react";
 
-import {
-	Message,
-	MessageAction,
-	MessageActions,
-	MessageContent,
-	MessageToolbar,
-} from "#/components/ai-elements/message";
 import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
+import { Bubble, BubbleContent } from "#/components/ui/bubble";
+import { Message, MessageContent, MessageFooter } from "#/components/ui/message";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
 import {
 	type AiChatRenderablePart,
@@ -17,23 +13,22 @@ import {
 	getDisplayableParts,
 } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatMessage } from "#/features/workspaces/components/ai-chat/types";
-import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { useCopyToClipboard } from "#/hooks/use-copy-to-clipboard";
 import { cn } from "#/lib/utils";
 
-const messageToolbarActionClass = cn(
-	workspaceToolbarIconButtonClass,
-	"text-muted-foreground/70 hover:text-foreground",
-);
+const messageToolbarActionClass =
+	"flex size-8 items-center justify-center rounded-lg text-muted-foreground/70 transition-[color,scale] duration-150 ease-out outline-none hover:bg-transparent hover:text-foreground hover:scale-105 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-100";
 
 export default function AiChatMessageRow({
 	display,
+	isLatestAssistant,
 	isRegenerable,
 	isStreaming,
 	message,
 	onRegenerate,
 }: {
 	display: AssistantRowDisplay | null;
+	isLatestAssistant: boolean;
 	isRegenerable: boolean;
 	isStreaming: boolean;
 	message: AiChatMessage;
@@ -52,14 +47,8 @@ export default function AiChatMessageRow({
 	const copyableText = isAssistant ? getCopyableMessageText(message) : "";
 
 	return (
-		<Message
-			from={message.role}
-			className={cn(
-				isAssistant ? "max-w-full" : "max-w-[88%]",
-				message.role === "user" && "ml-auto",
-			)}
-		>
-			<div className="min-w-0 max-w-full">
+		<Message align={isAssistant ? "start" : "end"}>
+			<MessageContent>
 				{userAttachmentParts.length > 0 ? (
 					<div className="mb-2 ml-auto flex w-fit max-w-full flex-col gap-2">
 						{userAttachmentParts.map((part, index) => (
@@ -68,42 +57,46 @@ export default function AiChatMessageRow({
 					</div>
 				) : null}
 				{isAssistant || userBodyParts.length > 0 ? (
-					<MessageContent>
-						{isAssistant && display ? (
-							<AssistantMessageBody
-								display={display}
-								message={message}
-								onRegenerate={onRegenerate}
-							/>
-						) : (
-							userBodyParts.map((part, index) => (
-								<AiChatMessagePartView
-									key={getMessagePartKey(message.id, part, index)}
-									part={part}
+					<Bubble variant={isAssistant ? "ghost" : "secondary"}>
+						<BubbleContent>
+							{isAssistant && display ? (
+								<AssistantMessageBody
+									display={display}
+									isStreaming={isStreaming}
+									message={message}
+									onRegenerate={onRegenerate}
 								/>
-							))
-						)}
-					</MessageContent>
+							) : (
+								userBodyParts.map((part, index) => (
+									<AiChatMessagePartView
+										key={getMessagePartKey(message.id, part, index)}
+										part={part}
+									/>
+								))
+							)}
+						</BubbleContent>
+					</Bubble>
 				) : null}
 				{isAssistant && display?.kind === "content" && display.parts.length > 0 && !isStreaming ? (
-					<MessageToolbar className="mt-2 justify-start">
-						<MessageActions className="-ms-2.5">
+					<MessageFooter
+						className={cn(
+							"px-0 transition-opacity duration-150 ease-out",
+							isLatestAssistant
+								? "opacity-100"
+								: "pointer-events-none opacity-0 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100",
+						)}
+					>
+						<div className="flex items-center gap-1">
 							{copyableText ? <CopyResponseAction text={copyableText} /> : null}
 							{isRegenerable && onRegenerate ? (
-								<MessageAction
-									tooltip="Regenerate response"
-									label="Regenerate response"
-									size="icon-sm"
-									className={messageToolbarActionClass}
-									onClick={onRegenerate}
-								>
+								<AiChatMessageAction label="Regenerate response" onClick={onRegenerate}>
 									<RotateCcw className="size-4" />
-								</MessageAction>
+								</AiChatMessageAction>
 							) : null}
-						</MessageActions>
-					</MessageToolbar>
+						</div>
+					</MessageFooter>
 				) : null}
-			</div>
+			</MessageContent>
 		</Message>
 	);
 }
@@ -114,16 +107,22 @@ function isAttachmentPart(part: AiChatRenderablePart) {
 
 function AssistantMessageBody({
 	display,
+	isStreaming,
 	message,
 	onRegenerate,
 }: {
 	display: AssistantRowDisplay;
+	isStreaming: boolean;
 	message: AiChatMessage;
 	onRegenerate?: () => void;
 }) {
 	if (display.kind === "content") {
 		return display.parts.map((part, index) => (
-			<AiChatMessagePartView key={getMessagePartKey(message.id, part, index)} part={part} />
+			<AiChatMessagePartView
+				key={getMessagePartKey(message.id, part, index)}
+				isStreaming={isStreaming}
+				part={part}
+			/>
 		));
 	}
 
@@ -174,11 +173,8 @@ function CopyResponseAction({ text }: { text: string }) {
 	const label = copied ? "Copied" : "Copy response";
 
 	return (
-		<MessageAction
-			tooltip={label}
+		<AiChatMessageAction
 			label={label}
-			size="icon-sm"
-			className={messageToolbarActionClass}
 			onClick={() => {
 				void copy(text);
 			}}
@@ -186,7 +182,30 @@ function CopyResponseAction({ text }: { text: string }) {
 			<AnimatedIconSwap swapKey={copied} className="size-4">
 				{copied ? <Check className="size-4" /> : <Copy className="size-4" />}
 			</AnimatedIconSwap>
-		</MessageAction>
+		</AiChatMessageAction>
+	);
+}
+
+function AiChatMessageAction({
+	children,
+	className,
+	label,
+	...props
+}: React.ComponentProps<"button"> & { label: string }) {
+	const button = (
+		<button type="button" className={cn(messageToolbarActionClass, className)} {...props}>
+			{children}
+			<span className="sr-only">{label}</span>
+		</button>
+	);
+
+	return (
+		<Tooltip>
+			<TooltipTrigger render={button} />
+			<TooltipContent>
+				<p>{label}</p>
+			</TooltipContent>
+		</Tooltip>
 	);
 }
 

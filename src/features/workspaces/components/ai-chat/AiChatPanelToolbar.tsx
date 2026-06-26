@@ -78,7 +78,7 @@ export default function AiChatPanelToolbar({
 		<header className="pointer-events-none absolute top-0 right-0 z-20 inline-flex">
 			<nav
 				aria-label="AI chat actions"
-				className="pointer-events-auto inline-flex rounded-bl-md bg-background p-1.5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.35)]"
+				className="pointer-events-auto inline-flex rounded-bl-md bg-background p-1 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.35)]"
 			>
 				<WorkspaceToolbarGroup className="gap-1">
 					<DropdownMenu open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>

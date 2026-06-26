@@ -12,7 +12,10 @@ import type {
 	ReactNode,
 } from "react";
 import { Children, createContext, use, useRef } from "react";
-import { type FileAttachmentData, toSendableFileParts } from "#/components/ai-elements/attachments";
+import {
+	type FileAttachmentData,
+	toSendableFileParts,
+} from "#/features/workspaces/components/ai-chat/ai-chat-attachments";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
