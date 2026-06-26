@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
 import AuthScreen from "#/components/AuthScreen";
+import { buildPublicMeta } from "#/lib/seo";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/login")({
@@ -19,15 +20,10 @@ export const Route = createFileRoute("/login")({
 		}
 	},
 	head: () => ({
-		meta: [
-			{
-				title: "ThinkEx | Continue",
-			},
-			{
-				name: "description",
-				content: "Continue to ThinkEx with Google. No account? We'll create one.",
-			},
-		],
+		meta: buildPublicMeta({
+			title: "Continue",
+			description: "Continue to ThinkEx with Google. No account? We'll create one.",
+		}),
 	}),
 	component: LoginPage,
 });

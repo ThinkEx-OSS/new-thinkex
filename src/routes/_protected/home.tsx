@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_protected/home")({
 	head: () => ({
 		meta: [
 			{
-				title: "Thinkex | Home",
+				title: "ThinkEx | Home",
 			},
 		],
 	}),

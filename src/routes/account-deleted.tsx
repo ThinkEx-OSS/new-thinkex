@@ -10,7 +10,7 @@ export const Route = createFileRoute("/account-deleted")({
 	head: () => ({
 		meta: [
 			{
-				title: "Thinkex | Account deleted",
+				title: "ThinkEx | Account deleted",
 			},
 		],
 	}),

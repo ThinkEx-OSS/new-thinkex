@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import LandingPage from "#/components/LandingPage";
+import { buildPublicMeta } from "#/lib/seo";
 import { getAuthSessionQueryOptions } from "#/lib/session-query";
 
 export const Route = createFileRoute("/")({
@@ -12,23 +13,7 @@ export const Route = createFileRoute("/")({
 		}
 	},
 	head: () => ({
-		meta: [
-			{
-				title: "ThinkEx",
-			},
-			{
-				name: "description",
-				content: "ThinkEx is an AI workspace for documents, media, notes, and persistent context.",
-			},
-			{
-				property: "og:title",
-				content: "ThinkEx",
-			},
-			{
-				property: "og:description",
-				content: "Turn AI into a workspace instead of a chat tab with context that stays visible.",
-			},
-		],
+		meta: buildPublicMeta(),
 	}),
 	component: LandingPage,
 });
