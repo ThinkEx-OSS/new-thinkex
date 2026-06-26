@@ -204,73 +204,6 @@
 		will-change: opacity;
 	}
 
-	.thinkex-logo-hover {
-		isolation: isolate;
-		overflow: visible;
-		transition:
-			filter 180ms ease,
-			transform 180ms ease;
-	}
-
-	.thinkex-logo-hover::before,
-	.thinkex-logo-hover::after {
-		position: absolute;
-		content: "";
-		pointer-events: none;
-	}
-
-	.thinkex-logo-hover::before {
-		inset: -28%;
-		z-index: -1;
-		border-radius: 999px;
-		background:
-			radial-gradient(
-				circle at 32% 30%,
-				color-mix(in oklab, var(--primary) 24%, transparent),
-				transparent 42%
-			),
-			radial-gradient(
-				circle at 68% 72%,
-				color-mix(in oklab, var(--foreground) 16%, transparent),
-				transparent 48%
-			);
-		filter: blur(7px);
-		opacity: 0;
-		transform: scale(0.72) rotate(-8deg);
-		transition:
-			opacity 180ms ease,
-			transform 220ms ease;
-	}
-
-	.thinkex-logo-hover::after {
-		inset: -18%;
-		z-index: 1;
-		border-radius: 35%;
-		background: linear-gradient(
-			115deg,
-			transparent 18%,
-			color-mix(in oklab, var(--background) 70%, transparent) 43%,
-			color-mix(in oklab, var(--foreground) 24%, transparent) 50%,
-			transparent 68%
-		);
-		opacity: 0;
-		transform: translateX(-46%) rotate(8deg);
-	}
-
-	.thinkex-logo-trigger:is(:hover, :focus-visible, :focus-within) .thinkex-logo-hover {
-		filter: drop-shadow(0 3px 8px color-mix(in oklab, var(--foreground) 12%, transparent));
-		transform: translateY(-1px);
-	}
-
-	.thinkex-logo-trigger:is(:hover, :focus-visible, :focus-within) .thinkex-logo-hover::before {
-		opacity: 1;
-		transform: scale(1) rotate(0deg);
-	}
-
-	.thinkex-logo-trigger:is(:hover, :focus-visible, :focus-within) .thinkex-logo-hover::after {
-		animation: thinkex-logo-sheen 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.workspace-ask-selection-button {
 			animation: none;
@@ -279,21 +212,6 @@
 		.thinkex-thinking-block {
 			animation: none;
 			opacity: 1;
-		}
-
-		.thinkex-logo-hover,
-		.thinkex-logo-hover::before,
-		.thinkex-logo-hover::after {
-			transition: none;
-		}
-
-		.thinkex-logo-trigger:is(:hover, :focus-visible, :focus-within) .thinkex-logo-hover {
-			transform: none;
-		}
-
-		.thinkex-logo-trigger:is(:hover, :focus-visible, :focus-within) .thinkex-logo-hover::after {
-			animation: none;
-			opacity: 0;
 		}
 	}
 
@@ -332,22 +250,6 @@
 
 		100% {
 			opacity: 0;
-		}
-	}
-
-	@keyframes thinkex-logo-sheen {
-		0% {
-			opacity: 0;
-			transform: translateX(-46%) rotate(8deg);
-		}
-
-		34% {
-			opacity: 0.72;
-		}
-
-		100% {
-			opacity: 0;
-			transform: translateX(46%) rotate(8deg);
 		}
 	}
 
