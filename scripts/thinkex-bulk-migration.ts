@@ -77,6 +77,25 @@ type ItemSkip = {
 	workspaceId: string;
 };
 
+type MigrationStats = {
+	documentsConverted: number;
+	fileDownloadsAttempted: number;
+	fileDownloadsSucceeded: number;
+	isDryRun: boolean;
+	membersImported: number;
+	usersImported: number;
+	workspacesImported: number;
+};
+
+interface MigrationTargetClient {
+	command(command: unknown): Promise<unknown>;
+	importFile(
+		metadata: Record<string, unknown>,
+		bytes: Uint8Array,
+		fileName: string,
+	): Promise<unknown>;
+}
+
 const supportedFileTypes = new Set(["pdf", "image"]);
 const supportedItemTypes = new Set(["folder", "document", "pdf", "image"]);
 const migrationAuthHeader = "x-thinkex-migration-token";
@@ -93,20 +112,34 @@ const outputDir = resolve(
 	process.env.THINKEX_MIGRATION_OUTPUT_DIR ??
 		join(process.cwd(), ".migration-artifacts", `thinkex-${Date.now()}`),
 );
+const isDryRun = process.env.THINKEX_MIGRATION_DRY_RUN === "1";
+const stats: MigrationStats = {
+	documentsConverted: 0,
+	fileDownloadsAttempted: 0,
+	fileDownloadsSucceeded: 0,
+	isDryRun,
+	membersImported: 0,
+	usersImported: 0,
+	workspacesImported: 0,
+};
+const targetApi: MigrationTargetClient = isDryRun
+	? createDryRunTargetClient()
+	: createMigrationTargetClient({
+			baseUrl: requireEnv("NEW_THINKEX_BASE_URL"),
+			token: requireEnv("THINKEX_MIGRATION_ADMIN_TOKEN"),
+		});
 
-const targetApi = createMigrationTargetClient({
-	baseUrl: requireEnv("NEW_THINKEX_BASE_URL"),
-	token: requireEnv("THINKEX_MIGRATION_ADMIN_TOKEN"),
-});
-
-const legacySupabaseUrl = requireEnv("THINKEX_LEGACY_SUPABASE_URL");
-const legacySupabaseServiceRoleKey = requireEnv("THINKEX_LEGACY_SUPABASE_SERVICE_ROLE_KEY");
+const legacySupabaseUrl = requireAnyEnv("THINKEX_LEGACY_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
+const legacySupabaseServiceRoleKey = requireAnyEnv(
+	"THINKEX_LEGACY_SUPABASE_SERVICE_ROLE_KEY",
+	"SUPABASE_SERVICE_ROLE_KEY",
+);
 
 async function main() {
 	await mkdir(outputDir, { recursive: true });
 
 	const pool = new Pool({
-		connectionString: requireEnv("THINKEX_LEGACY_DATABASE_URL"),
+		connectionString: requireAnyEnv("THINKEX_LEGACY_DATABASE_URL", "DATABASE_URL"),
 	});
 
 	try {
@@ -124,6 +157,11 @@ async function main() {
 			join(outputDir, "summary.json"),
 			JSON.stringify(
 				{
+					isDryRun,
+					documentsConverted: stats.documentsConverted,
+					fileDownloadsAttempted: stats.fileDownloadsAttempted,
+					fileDownloadsSucceeded: stats.fileDownloadsSucceeded,
+					membersImported: stats.membersImported,
 					usersImported: importedUsers.length,
 					workspacesImported: importedWorkspaces.length,
 					skippedItems: skippedItems.length,
@@ -184,6 +222,7 @@ async function importUsers(pool: Pool) {
 			legacyUserId: row.legacy_user_id,
 			newUserId,
 		});
+		stats.usersImported += 1;
 	});
 
 	return importedUsers;
@@ -226,6 +265,7 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 			newWorkspaceId,
 			ownerUserId: owner.newUserId,
 		});
+		stats.workspacesImported += 1;
 	});
 
 	return imported;
@@ -269,6 +309,7 @@ async function importWorkspaceMembers(
 				lastOpenedAt: toNullableIsoString(row.last_opened_at),
 			},
 		});
+		stats.membersImported += 1;
 	});
 }
 
@@ -384,6 +425,7 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 							content,
 						},
 					});
+					stats.documentsConverted += 1;
 					importedLegacyItemIds.add(row.item_id);
 					continue;
 				}
@@ -397,7 +439,9 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 						continue;
 					}
 
+					stats.fileDownloadsAttempted += 1;
 					const download = await downloadLegacyFile(fileUrl);
+					stats.fileDownloadsSucceeded += 1;
 					const originalName = resolveLegacyOriginalName(row, assetData, download.contentType);
 					await targetApi.importFile(
 						{
@@ -620,6 +664,17 @@ function requireEnv(name: string) {
 	return value;
 }
 
+function requireAnyEnv(...names: string[]) {
+	for (const name of names) {
+		const value = process.env[name]?.trim();
+		if (value) {
+			return value;
+		}
+	}
+
+	throw new Error(`Missing required env var: ${names.join(" or ")}`);
+}
+
 async function runWithConcurrency<T>(
 	values: readonly T[],
 	limit: number,
@@ -683,6 +738,17 @@ function createMigrationTargetClient(input: { baseUrl: string; token: string }) 
 			}
 
 			return await response.json();
+		},
+	};
+}
+
+function createDryRunTargetClient() {
+	return {
+		async command() {
+			return { ok: true };
+		},
+		async importFile() {
+			return { ok: true };
 		},
 	};
 }
