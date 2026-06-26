@@ -162,6 +162,9 @@ function isSameMessageContent(
 		if (partA.type === "text" && partB.type === "text") {
 			return partA.text === partB.text;
 		}
+		if (partA.type === "file" && partB.type === "file") {
+			return partA.url === partB.url;
+		}
 		return true;
 	});
 }
