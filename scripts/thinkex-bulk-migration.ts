@@ -77,12 +77,19 @@ type ItemSkip = {
 	workspaceId: string;
 };
 
+type WorkspaceSkip = {
+	legacyWorkspaceId: string;
+	ownerLegacyUserId: string;
+	reason: string;
+};
+
 type MigrationStats = {
 	documentsConverted: number;
 	fileDownloadsAttempted: number;
 	fileDownloadsSucceeded: number;
 	isDryRun: boolean;
 	membersImported: number;
+	skippedWorkspaces: number;
 	usersImported: number;
 	workspacesImported: number;
 };
@@ -119,6 +126,7 @@ const stats: MigrationStats = {
 	fileDownloadsSucceeded: 0,
 	isDryRun,
 	membersImported: 0,
+	skippedWorkspaces: 0,
 	usersImported: 0,
 	workspacesImported: 0,
 };
@@ -145,7 +153,7 @@ async function main() {
 	try {
 		const importedUsers = await importUsers(pool);
 		const userMap = new Map(importedUsers.map((user) => [user.legacyUserId, user]));
-		const importedWorkspaces = await importWorkspaces(pool, userMap);
+		const { importedWorkspaces, skippedWorkspaces } = await importWorkspaces(pool, userMap);
 		const workspaceMap = new Map(
 			importedWorkspaces.map((workspace) => [workspace.legacyWorkspaceId, workspace]),
 		);
@@ -162,6 +170,7 @@ async function main() {
 					fileDownloadsAttempted: stats.fileDownloadsAttempted,
 					fileDownloadsSucceeded: stats.fileDownloadsSucceeded,
 					membersImported: stats.membersImported,
+					skippedWorkspaces: skippedWorkspaces.length,
 					usersImported: importedUsers.length,
 					workspacesImported: importedWorkspaces.length,
 					skippedItems: skippedItems.length,
@@ -171,6 +180,10 @@ async function main() {
 			),
 		);
 		await writeFile(join(outputDir, "skipped-items.json"), JSON.stringify(skippedItems, null, 2));
+		await writeFile(
+			join(outputDir, "skipped-workspaces.json"),
+			JSON.stringify(skippedWorkspaces, null, 2),
+		);
 	} finally {
 		await pool.end();
 	}
@@ -236,11 +249,18 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 	`);
 
 	const imported: ImportedWorkspace[] = [];
+	const skippedWorkspaces: WorkspaceSkip[] = [];
 
 	await runWithConcurrency(result.rows, workspaceConcurrency, async (row) => {
 		const owner = userMap.get(row.user_id);
 		if (!owner) {
-			throw new Error(`Missing migrated owner for workspace ${row.id}`);
+			skippedWorkspaces.push({
+				legacyWorkspaceId: row.id,
+				ownerLegacyUserId: row.user_id,
+				reason: "owner_not_google_linked",
+			});
+			stats.skippedWorkspaces += 1;
+			return;
 		}
 
 		const newWorkspaceId = randomUUID();
@@ -268,7 +288,7 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 		stats.workspacesImported += 1;
 	});
 
-	return imported;
+	return { importedWorkspaces: imported, skippedWorkspaces };
 }
 
 async function importWorkspaceMembers(
