@@ -226,10 +226,10 @@ function getToolActivitySummary(
 	}
 
 	if (status === "failed") {
-		return `${title} — ${summarizeFailure(part, toolName)}`;
+		return summarizeFailure(part, toolName);
 	}
 
-	return `${title} — ${summarizeCompletedTool(part, toolName)}`;
+	return summarizeCompletedTool(part, toolName);
 }
 
 function summarizeFailure(part: AiChatToolPart, toolName: string) {

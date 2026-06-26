@@ -1,8 +1,7 @@
 import { ChevronDown } from "lucide-react";
 
-import { Badge } from "#/components/ui/badge";
+import { Shimmer } from "#/components/ai-elements/shimmer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
-import { ThinkExThinkingMark } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
 import {
 	getToolActivityForPart,
 	type AiChatToolActivity,
@@ -56,22 +55,27 @@ function ActivitySummary({
 }) {
 	const isRunning = activity.status === "running";
 
+	if (isRunning) {
+		return (
+			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-xs">
+				<Shimmer as="span" className="text-xs text-muted-foreground" duration={1.4}>
+					{activity.summary}
+				</Shimmer>
+				{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-xs">
-			{isRunning ? (
-				<ThinkExThinkingMark className="thinkex-thinking-mark size-3.5 shrink-0 self-center text-foreground" />
-			) : (
-				<Badge
-					variant="secondary"
-					className={cn(
-						"rounded-full px-1.5 py-0 font-normal text-[10px]",
-						activity.status === "failed" && "bg-muted text-muted-foreground",
-					)}
-				>
-					{activity.status === "failed" ? "Issue" : "Done"}
-				</Badge>
-			)}
-			<span className="truncate">{activity.summary}</span>
+			<span
+				className={cn(
+					"truncate",
+					activity.status === "failed" ? "text-muted-foreground" : "text-foreground/80",
+				)}
+			>
+				{activity.summary}
+			</span>
 			{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
 		</div>
 	);
