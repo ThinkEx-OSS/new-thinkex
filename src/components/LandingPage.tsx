@@ -79,7 +79,7 @@ export default function LandingPage() {
 								<img
 									src="/landing-workspace-screenshot.png"
 									alt="ThinkEx workspace with documents, folders, and AI assistant"
-									className="aspect-[16/10] w-full object-cover object-top"
+									className="block h-auto w-full"
 									width={2936}
 									height={1664}
 									loading="eager"
