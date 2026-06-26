@@ -3,8 +3,12 @@ import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import type * as React from "react";
 import { cn } from "#/lib/utils.ts";
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
-	return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+// Default to non-modal so opening a dropdown does not render a full-screen
+// backdrop that swallows pointer/drag events on the surfaces behind it (e.g.
+// the workspace and AI chat file dropzones). Pass `modal` explicitly to opt a
+// specific menu back into scroll-lock + outside-interaction blocking.
+function DropdownMenu({ modal = false, ...props }: MenuPrimitive.Root.Props) {
+	return <MenuPrimitive.Root data-slot="dropdown-menu" modal={modal} {...props} />;
 }
 
 function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
