@@ -106,6 +106,11 @@ interface MigrationTargetClient {
 const supportedFileTypes = new Set(["pdf", "image"]);
 const supportedItemTypes = new Set(["folder", "document", "pdf", "image"]);
 const migrationAuthHeader = "x-thinkex-migration-token";
+const userProgressLogEvery = 25;
+const workspaceProgressLogEvery = 25;
+const memberProgressLogEvery = 100;
+const itemProgressLogEvery = 100;
+const fileProgressLogEvery = 100;
 const workspaceConcurrency = Number.parseInt(
 	process.env.THINKEX_MIGRATION_WORKSPACE_CONCURRENCY ?? "4",
 	10,
@@ -145,20 +150,31 @@ const legacySupabaseServiceRoleKey = requireAnyEnv(
 
 async function main() {
 	await mkdir(outputDir, { recursive: true });
+	logInfo("Starting ThinkEx bulk migration", {
+		isDryRun,
+		memberConcurrency,
+		outputDir,
+		userConcurrency,
+		workspaceConcurrency,
+	});
 
 	const pool = new Pool({
 		connectionString: requireAnyEnv("THINKEX_LEGACY_DATABASE_URL", "DATABASE_URL"),
 	});
 
 	try {
+		logInfo("Importing users");
 		const importedUsers = await importUsers(pool);
 		const userMap = new Map(importedUsers.map((user) => [user.legacyUserId, user]));
+		logInfo("Importing workspaces");
 		const { importedWorkspaces, skippedWorkspaces } = await importWorkspaces(pool, userMap);
 		const workspaceMap = new Map(
 			importedWorkspaces.map((workspace) => [workspace.legacyWorkspaceId, workspace]),
 		);
 
+		logInfo("Importing workspace members");
 		await importWorkspaceMembers(pool, userMap, workspaceMap);
+		logInfo("Importing workspace items");
 		const skippedItems = await importWorkspaceItems(pool, workspaceMap);
 
 		await writeFile(
@@ -184,6 +200,16 @@ async function main() {
 			join(outputDir, "skipped-workspaces.json"),
 			JSON.stringify(skippedWorkspaces, null, 2),
 		);
+		logInfo("Migration run finished", {
+			documentsConverted: stats.documentsConverted,
+			fileDownloadsAttempted: stats.fileDownloadsAttempted,
+			fileDownloadsSucceeded: stats.fileDownloadsSucceeded,
+			membersImported: stats.membersImported,
+			skippedItems: skippedItems.length,
+			skippedWorkspaces: skippedWorkspaces.length,
+			usersImported: importedUsers.length,
+			workspacesImported: importedWorkspaces.length,
+		});
 	} finally {
 		await pool.end();
 	}
@@ -207,7 +233,8 @@ async function importUsers(pool: Pool) {
 			ON a.user_id = u.id
 			AND a.provider_id = 'google'
 		ORDER BY u.created_at ASC, u.id ASC
-	`);
+		`);
+	logInfo("Loaded legacy Google-linked users", { total: result.rows.length });
 
 	const importedUsers: ImportedUser[] = [];
 
@@ -236,6 +263,12 @@ async function importUsers(pool: Pool) {
 			newUserId,
 		});
 		stats.usersImported += 1;
+		if (
+			stats.usersImported % userProgressLogEvery === 0 ||
+			stats.usersImported === result.rows.length
+		) {
+			logInfo("User import progress", { imported: stats.usersImported, total: result.rows.length });
+		}
 	});
 
 	return importedUsers;
@@ -246,10 +279,12 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 		SELECT id, user_id, name, description, icon, color, created_at, updated_at, last_opened_at
 		FROM workspaces
 		ORDER BY created_at ASC, id ASC
-	`);
+		`);
+	logInfo("Loaded legacy workspaces", { total: result.rows.length });
 
 	const imported: ImportedWorkspace[] = [];
 	const skippedWorkspaces: WorkspaceSkip[] = [];
+	let processed = 0;
 
 	await runWithConcurrency(result.rows, workspaceConcurrency, async (row) => {
 		const owner = userMap.get(row.user_id);
@@ -260,6 +295,15 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 				reason: "owner_not_google_linked",
 			});
 			stats.skippedWorkspaces += 1;
+			processed += 1;
+			if (processed % workspaceProgressLogEvery === 0 || processed === result.rows.length) {
+				logInfo("Workspace import progress", {
+					imported: imported.length,
+					processed,
+					skipped: skippedWorkspaces.length,
+					total: result.rows.length,
+				});
+			}
 			return;
 		}
 
@@ -286,6 +330,15 @@ async function importWorkspaces(pool: Pool, userMap: Map<string, ImportedUser>) 
 			ownerUserId: owner.newUserId,
 		});
 		stats.workspacesImported += 1;
+		processed += 1;
+		if (processed % workspaceProgressLogEvery === 0 || processed === result.rows.length) {
+			logInfo("Workspace import progress", {
+				imported: imported.length,
+				processed,
+				skipped: skippedWorkspaces.length,
+				total: result.rows.length,
+			});
+		}
 	});
 
 	return { importedWorkspaces: imported, skippedWorkspaces };
@@ -310,6 +363,8 @@ async function importWorkspaceMembers(
 		`,
 		[workspaceIds],
 	);
+	logInfo("Loaded legacy collaborator memberships", { total: result.rows.length });
+	let processed = 0;
 
 	await runWithConcurrency(result.rows, memberConcurrency, async (row) => {
 		const workspace = workspaceMap.get(row.workspace_id);
@@ -330,6 +385,14 @@ async function importWorkspaceMembers(
 			},
 		});
 		stats.membersImported += 1;
+		processed += 1;
+		if (processed % memberProgressLogEvery === 0 || processed === result.rows.length) {
+			logInfo("Workspace member import progress", {
+				imported: stats.membersImported,
+				processed,
+				total: result.rows.length,
+			});
+		}
 	});
 }
 
@@ -337,6 +400,10 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 	const skippedItems: ItemSkip[] = [];
 
 	await runWithConcurrency([...workspaceMap.values()], workspaceConcurrency, async (workspace) => {
+		logInfo("Importing workspace items", {
+			legacyWorkspaceId: workspace.legacyWorkspaceId,
+			newWorkspaceId: workspace.newWorkspaceId,
+		});
 		const result = await pool.query<LegacyItemRow>(
 			`
 				SELECT
@@ -363,9 +430,14 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 			`,
 			[workspace.legacyWorkspaceId],
 		);
+		logInfo("Loaded workspace items", {
+			legacyWorkspaceId: workspace.legacyWorkspaceId,
+			total: result.rows.length,
+		});
 
 		const mapping = new Map<string, string>();
 		const importedLegacyItemIds = new Set<string>();
+		let processedItems = 0;
 
 		for (const row of result.rows) {
 			if (supportedItemTypes.has(row.type)) {
@@ -403,15 +475,21 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 				})
 				.then(() => {
 					importedLegacyItemIds.add(row.item_id);
+					processedItems += 1;
+					logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 				})
 				.catch((error) => {
 					skippedItems.push(createSkip(row, workspace.newWorkspaceId, getErrorMessage(error)));
+					processedItems += 1;
+					logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 				});
 		}
 
 		for (const row of result.rows.filter((entry) => entry.type !== "folder")) {
 			if (!supportedItemTypes.has(row.type)) {
 				skippedItems.push(createSkip(row, workspace.newWorkspaceId, "unsupported_item_type"));
+				processedItems += 1;
+				logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 				continue;
 			}
 
@@ -423,6 +501,8 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 					workspace.newWorkspaceId,
 				))
 			) {
+				processedItems += 1;
+				logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 				continue;
 			}
 
@@ -447,6 +527,8 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 					});
 					stats.documentsConverted += 1;
 					importedLegacyItemIds.add(row.item_id);
+					processedItems += 1;
+					logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 					continue;
 				}
 
@@ -456,12 +538,27 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 
 					if (!fileUrl) {
 						skippedItems.push(createSkip(row, workspace.newWorkspaceId, "missing_file_url"));
+						processedItems += 1;
+						logWorkspaceItemProgress(
+							workspace.legacyWorkspaceId,
+							processedItems,
+							result.rows.length,
+						);
 						continue;
 					}
 
 					stats.fileDownloadsAttempted += 1;
 					const download = await downloadLegacyFile(fileUrl);
 					stats.fileDownloadsSucceeded += 1;
+					if (
+						stats.fileDownloadsAttempted % fileProgressLogEvery === 0 ||
+						stats.fileDownloadsAttempted === stats.fileDownloadsSucceeded
+					) {
+						logInfo("File download progress", {
+							attempted: stats.fileDownloadsAttempted,
+							succeeded: stats.fileDownloadsSucceeded,
+						});
+					}
 					const originalName = resolveLegacyOriginalName(row, assetData, download.contentType);
 					await targetApi.importFile(
 						{
@@ -486,11 +583,20 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 						originalName,
 					);
 					importedLegacyItemIds.add(row.item_id);
+					processedItems += 1;
+					logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 				}
 			} catch (error) {
 				skippedItems.push(createSkip(row, workspace.newWorkspaceId, getErrorMessage(error)));
+				processedItems += 1;
+				logWorkspaceItemProgress(workspace.legacyWorkspaceId, processedItems, result.rows.length);
 			}
 		}
+		logInfo("Finished workspace items", {
+			legacyWorkspaceId: workspace.legacyWorkspaceId,
+			processedItems,
+			total: result.rows.length,
+		});
 	});
 
 	return skippedItems;
@@ -771,6 +877,32 @@ function createDryRunTargetClient() {
 			return { ok: true };
 		},
 	};
+}
+
+function logWorkspaceItemProgress(
+	legacyWorkspaceId: string,
+	processedItems: number,
+	totalItems: number,
+) {
+	if (processedItems % itemProgressLogEvery === 0 || processedItems === totalItems) {
+		logInfo("Workspace item import progress", {
+			legacyWorkspaceId,
+			processedItems,
+			totalItems,
+		});
+	}
+}
+
+function logInfo(message: string, details?: Record<string, unknown>) {
+	const timestamp = new Date().toISOString();
+	console.log(
+		JSON.stringify({
+			details: details ?? {},
+			level: "info",
+			message,
+			timestamp,
+		}),
+	);
 }
 
 void main().catch((error) => {
