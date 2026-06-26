@@ -54,7 +54,7 @@ export default function LandingPage() {
 						>
 							Sign in
 						</Button>
-						<Button nativeButton={false} render={<Link to="/signup" />} size="default">
+						<Button nativeButton={false} render={<Link to="/login" />} size="default">
 							Get started
 						</Button>
 					</nav>

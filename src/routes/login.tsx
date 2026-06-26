@@ -21,11 +21,11 @@ export const Route = createFileRoute("/login")({
 	head: () => ({
 		meta: [
 			{
-				title: "Thinkex | Sign in",
+				title: "ThinkEx | Continue",
 			},
 			{
 				name: "description",
-				content: "Sign in to ThinkEx with Google.",
+				content: "Continue to ThinkEx with Google. No account? We'll create one.",
 			},
 		],
 	}),
@@ -36,5 +36,5 @@ function LoginPage() {
 	const { redirect: redirectTarget } = Route.useSearch();
 	const callbackURL = redirectTarget || "/home";
 
-	return <AuthScreen callbackURL={callbackURL} mode="signin" />;
+	return <AuthScreen callbackURL={callbackURL} />;
 }

@@ -10,11 +10,8 @@ import { signOutCurrentUser } from "#/lib/auth-sign-out";
 import { getErrorMessage } from "#/lib/error-message";
 import { getAuthSessionQueryOptions, refreshAuthSession } from "#/lib/session-query";
 
-type AuthMode = "signin" | "signup";
-
 interface AuthPanelProps {
 	callbackURL: string;
-	mode: AuthMode;
 }
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -35,14 +32,11 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 	);
 }
 
-export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
+export default function AuthPanel({ callbackURL }: AuthPanelProps) {
 	const navigate = useNavigate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { data: session } = useQuery(getAuthSessionQueryOptions());
-	const alternateHref = mode === "signin" ? "/signup" : "/login";
-	const alternateAccountCta =
-		mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in";
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -120,22 +114,9 @@ export default function AuthPanel({ callbackURL, mode }: AuthPanelProps) {
 				{errorMessage ? (
 					<p className="text-center text-xs text-destructive">{errorMessage}</p>
 				) : null}
-				<Button
-					nativeButton={false}
-					render={
-						<Link
-							to={alternateHref}
-							search={{
-								redirect: callbackURL === "/home" ? undefined : callbackURL,
-							}}
-						/>
-					}
-					variant="ghost"
-					size="default"
-					className="w-full text-muted-foreground hover:text-foreground"
-				>
-					{alternateAccountCta}
-				</Button>
+				<p className="text-center text-xs text-muted-foreground">
+					No account? We&apos;ll create one.
+				</p>
 			</div>
 		</div>
 	);

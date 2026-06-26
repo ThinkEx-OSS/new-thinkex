@@ -80,7 +80,7 @@ function InviteLandingPage() {
 				</p>
 			</div>
 			<div className="w-full">
-				<AuthPanel callbackURL={callbackURL} mode="signin" />
+				<AuthPanel callbackURL={callbackURL} />
 			</div>
 		</InviteScreen>
 	);
@@ -96,7 +96,7 @@ function InviteUnavailablePage() {
 				</p>
 			</div>
 			<div className="w-full">
-				<AuthPanel callbackURL="/home" mode="signin" />
+				<AuthPanel callbackURL="/home" />
 			</div>
 		</InviteScreen>
 	);
