@@ -57,8 +57,8 @@ function ActivitySummary({
 
 	if (isRunning) {
 		return (
-			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-xs">
-				<Shimmer as="span" className="text-xs text-muted-foreground" duration={1.4}>
+			<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-sm">
+				<Shimmer as="span" className="text-sm text-muted-foreground" duration={1.4}>
 					{activity.summary}
 				</Shimmer>
 				{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
@@ -67,15 +67,8 @@ function ActivitySummary({
 	}
 
 	return (
-		<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-xs">
-			<span
-				className={cn(
-					"truncate",
-					activity.status === "failed" ? "text-muted-foreground" : "text-foreground/80",
-				)}
-			>
-				{activity.summary}
-			</span>
+		<div className="flex max-w-full items-center gap-2 py-1 text-muted-foreground text-sm">
+			<span className="truncate text-muted-foreground">{activity.summary}</span>
 			{canExpand ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}
 		</div>
 	);
