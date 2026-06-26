@@ -8,7 +8,7 @@ import {
 	getFileAttachmentData,
 	getSourceDocumentAttachmentData,
 } from "#/features/workspaces/components/ai-chat/AiChatAttachmentItem";
-import AiChatToolCard from "#/features/workspaces/components/ai-chat/AiChatToolCard";
+import { AiChatToolActivityRow } from "#/features/workspaces/components/ai-chat/AiChatToolActivityRow";
 import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat/types";
 
 export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
@@ -17,7 +17,7 @@ export function AiChatMessagePartView({ part }: { part: AiChatMessagePart }) {
 	}
 
 	if (isToolUIPart(part)) {
-		return <AiChatToolCard part={part} />;
+		return <AiChatToolActivityRow part={part} />;
 	}
 
 	if (part.type === "file") {

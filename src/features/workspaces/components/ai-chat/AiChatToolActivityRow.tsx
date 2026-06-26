@@ -3,14 +3,21 @@ import { ChevronDown } from "lucide-react";
 import { Badge } from "#/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
 import { ThinkExThinkingMark } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
-import type { AiChatToolActivity } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import {
+	getToolActivityForPart,
+	type AiChatToolActivity,
+} from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
+import type { AiChatToolPart } from "#/features/workspaces/components/ai-chat/types";
 import { cn } from "#/lib/utils";
 
-export function AiChatToolActivityRow({ activity }: { activity: AiChatToolActivity }) {
-	const hasDetails =
-		activity.children.length > 0 ||
-		activity.detail.input !== undefined ||
-		activity.detail.output !== undefined;
+export function AiChatToolActivityRow({ part }: { part: AiChatToolPart }) {
+	const activity = getToolActivityForPart(part);
+
+	if (!activity) {
+		return null;
+	}
+
+	const hasDetails = activity.detail.input !== undefined || activity.detail.output !== undefined;
 	const isRunning = activity.status === "running";
 
 	if (!hasDetails) {
@@ -23,21 +30,6 @@ export function AiChatToolActivityRow({ activity }: { activity: AiChatToolActivi
 				<ActivitySummary activity={activity} canExpand />
 			</CollapsibleTrigger>
 			<CollapsibleContent className="mt-2 space-y-2 pl-7">
-				{activity.children.length > 0 ? (
-					<div className="space-y-1">
-						<div className="text-[11px] uppercase tracking-wide text-muted-foreground">Inside</div>
-						<div className="space-y-1">
-							{activity.children.map((child) => (
-								<div
-									key={`${child.toolName}:${child.summary}`}
-									className="text-xs text-muted-foreground"
-								>
-									{child.summary}
-								</div>
-							))}
-						</div>
-					</div>
-				) : null}
 				{activity.detail.output !== undefined ? (
 					<DetailBlock
 						label={isRunning ? "Current result" : "Result"}

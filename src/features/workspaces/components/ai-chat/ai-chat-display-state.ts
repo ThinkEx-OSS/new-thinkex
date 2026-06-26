@@ -10,17 +10,11 @@ import type {
 export type AssistantPendingKind = "thinking" | "recovering";
 
 export type AssistantRowDisplay =
-	| { kind: "content"; activity: AiChatToolActivity | null; parts: AiChatMessagePart[] }
+	| { kind: "content"; parts: AiChatMessagePart[] }
 	| { kind: "empty-terminal"; canRegenerate: boolean }
 	| { kind: "hidden" };
 
 export interface AiChatToolActivity {
-	children: Array<{
-		status: "completed" | "failed" | "running";
-		summary: string;
-		title: string;
-		toolName: string;
-	}>;
 	detail: AiChatToolPart;
 	status: "completed" | "failed" | "running";
 	summary: string;
@@ -62,9 +56,7 @@ export function deriveAiChatPresentation(
 	const awaitingFirstToken = status === "submitted" && !isToolContinuation;
 	const hasAssistantTail = lastMessage?.role === "assistant";
 	const assistantTailIsEmpty =
-		lastMessage?.role === "assistant" &&
-		getDisplayableParts(lastMessage).length === 0 &&
-		getToolActivity(lastMessage) === null;
+		lastMessage?.role === "assistant" && getDisplayableParts(lastMessage).length === 0;
 	const tailPending = isRecovering
 		? hasAssistantTail && !assistantTailIsEmpty
 			? null
@@ -92,21 +84,15 @@ export function getAssistantRowDisplay(
 		return null;
 	}
 
-	const activity = getToolActivity(message);
 	const displayableParts = getDisplayableParts(message);
 	const isLastAssistant = message.id === presentation.lastAssistantMessageId;
 
-	if (
-		presentation.status === "error" &&
-		isLastAssistant &&
-		displayableParts.length === 0 &&
-		!activity
-	) {
+	if (presentation.status === "error" && isLastAssistant && displayableParts.length === 0) {
 		return { kind: "hidden" };
 	}
 
-	if (displayableParts.length > 0 || activity) {
-		return { kind: "content", activity, parts: displayableParts };
+	if (displayableParts.length > 0) {
+		return { kind: "content", parts: displayableParts };
 	}
 
 	if (isLastAssistant && presentation.status === "ready" && !presentation.isBusy) {
@@ -140,7 +126,7 @@ export function isDisplayableMessagePart(part: AiChatMessagePart): boolean {
 	}
 
 	if (isToolUIPart(part)) {
-		return false;
+		return isVisibleToolPart(part);
 	}
 
 	if (
@@ -155,37 +141,16 @@ export function isDisplayableMessagePart(part: AiChatMessagePart): boolean {
 	return false;
 }
 
-function getToolActivity(message: AiChatMessage): AiChatToolActivity | null {
-	const visibleParts = message.parts.filter(
-		(part): part is AiChatToolPart => isToolUIPart(part) && isVisibleTool(part),
-	);
-
-	if (visibleParts.length === 0) {
-		return null;
-	}
-
-	const children = visibleParts.slice(0, -1).map((part) => {
-		const toolName = getToolPartName(part);
-		const title = getToolActivityTitle(part, toolName);
-		const status = getToolActivityStatus(part);
-		return {
-			status,
-			summary: getToolActivitySummary(part, toolName, title, status),
-			title,
-			toolName,
-		};
-	});
-	const part = visibleParts.at(-1);
-
-	if (!part) {
+export function getToolActivityForPart(part: AiChatToolPart): AiChatToolActivity | null {
+	if (!isVisibleToolPart(part)) {
 		return null;
 	}
 
 	const toolName = getToolPartName(part);
 	const title = getToolActivityTitle(part, toolName);
 	const status = getToolActivityStatus(part);
+
 	return {
-		children,
 		detail: part,
 		status,
 		summary: getToolActivitySummary(part, toolName, title, status),
@@ -194,9 +159,8 @@ function getToolActivity(message: AiChatMessage): AiChatToolActivity | null {
 	};
 }
 
-function isVisibleTool(part: AiChatToolPart) {
+export function isVisibleToolPart(part: AiChatToolPart) {
 	const toolName = getToolPartName(part);
-
 	return toolName !== "sandbox_bash" && !toolName.startsWith("time_");
 }
 

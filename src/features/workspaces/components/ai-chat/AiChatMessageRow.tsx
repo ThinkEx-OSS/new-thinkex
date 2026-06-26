@@ -11,7 +11,6 @@ import {
 import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
-import { AiChatToolActivityRow } from "#/features/workspaces/components/ai-chat/AiChatToolActivityRow";
 import {
 	type AssistantRowDisplay,
 	getDisplayableParts,
@@ -125,14 +124,9 @@ function AssistantMessageBody({
 	onRegenerate?: () => void;
 }) {
 	if (display.kind === "content") {
-		return (
-			<>
-				{display.activity ? <AiChatToolActivityRow activity={display.activity} /> : null}
-				{display.parts.map((part, index) => (
-					<AiChatMessagePartView key={getMessagePartKey(message.id, part, index)} part={part} />
-				))}
-			</>
-		);
+		return display.parts.map((part, index) => (
+			<AiChatMessagePartView key={getMessagePartKey(message.id, part, index)} part={part} />
+		));
 	}
 
 	if (display.kind === "empty-terminal") {
