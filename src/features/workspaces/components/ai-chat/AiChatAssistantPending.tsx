@@ -36,11 +36,11 @@ function AiChatThinkingLoader() {
 	);
 }
 
-function ThinkExThinkingMark() {
+export function ThinkExThinkingMark({ className }: { className?: string }) {
 	return (
 		<svg
 			viewBox="0 0 512 512"
-			className="thinkex-thinking-mark size-5 shrink-0 self-center text-foreground"
+			className={className ?? "thinkex-thinking-mark size-5 shrink-0 self-center text-foreground"}
 			aria-hidden="true"
 		>
 			<g className="thinkex-thinking-block" style={{ animationDelay: "0ms" }}>

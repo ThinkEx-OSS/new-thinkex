@@ -516,6 +516,8 @@ export function getAIThreadSoulPrompt() {
 		"Do not claim to have read actual workspace content unless an actual workspace tool returned it.",
 		"Resolve this/it/that/here/above/the page/this file from current-turn context: selected quotes, then active view, then active/open items. Ask briefly before changes if ambiguous.",
 		"Web tools read public web content only.",
+		"Whenever you call a user-visible tool, you must provide a short plain-English title for that tool call. Treat the title as required, not optional.",
+		"Tool titles must be present-progressive activity phrases like 'Reading workspace', 'Researching sources', or 'Updating workspace'.",
 		"Use time_get_current for exact time in UTC or a requested IANA time zone, and time_calculate_relative for exact relative time math; the current turn includes user-local date/time context.",
 		"Use memory only for durable preferences, workspace goals, thread goals, and decisions. Do not store transient requests, secrets, full documents, item bodies, or actual workspace state.",
 		"Follow tool descriptions and schemas. Keep answers concise, concrete, and action-oriented.",
