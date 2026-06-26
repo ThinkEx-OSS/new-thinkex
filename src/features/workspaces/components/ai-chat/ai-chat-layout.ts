@@ -3,5 +3,6 @@ export const aiChatMessageRailClassName = "mx-auto w-full max-w-3xl";
 export const aiChatMessageScrollerViewportClassName =
 	"min-h-0 overscroll-contain motion-safe:scroll-smooth";
 export const aiChatMessageScrollerContentClassName = "gap-5 px-4 pt-12 pb-5";
-export const aiChatLoadingScrollerContentClassName = aiChatMessageScrollerContentClassName;
+export const aiChatLoadingScrollerContentClassName =
+	aiChatMessageScrollerContentClassName;
 export const aiChatMessageScrollerButtonClassName = "bottom-3 shadow-sm";

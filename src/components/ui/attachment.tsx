@@ -79,7 +79,10 @@ function AttachmentMedia({
 	);
 }
 
-function AttachmentContent({ className, ...props }: React.ComponentProps<"div">) {
+function AttachmentContent({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="attachment-content"
@@ -92,7 +95,10 @@ function AttachmentContent({ className, ...props }: React.ComponentProps<"div">)
 	);
 }
 
-function AttachmentTitle({ className, ...props }: React.ComponentProps<"span">) {
+function AttachmentTitle({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
 	return (
 		<span
 			data-slot="attachment-title"
@@ -105,7 +111,10 @@ function AttachmentTitle({ className, ...props }: React.ComponentProps<"span">) 
 	);
 }
 
-function AttachmentDescription({ className, ...props }: React.ComponentProps<"span">) {
+function AttachmentDescription({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
 	return (
 		<span
 			data-slot="attachment-description"
@@ -119,7 +128,10 @@ function AttachmentDescription({ className, ...props }: React.ComponentProps<"sp
 	);
 }
 
-function AttachmentActions({ className, ...props }: React.ComponentProps<"div">) {
+function AttachmentActions({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="attachment-actions"
