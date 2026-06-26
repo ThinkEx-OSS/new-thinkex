@@ -76,31 +76,15 @@ export default function LandingPage() {
 							</div>
 
 							<div className="mt-16 overflow-hidden rounded-md border border-border bg-card shadow-2xl">
-								<div className="aspect-[16/10] bg-background p-6 sm:p-8">
-									<div className="flex h-full flex-col justify-between">
-										<div className="flex items-center justify-end">
-											<p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
-												Screenshot placeholder
-											</p>
-										</div>
-
-										<div className="space-y-4">
-											<p className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
-												Coming soon
-											</p>
-											<p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-												A full product capture will live here once the first marketing-ready
-												workspace screenshot is available.
-											</p>
-										</div>
-
-										<div className="grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)_260px]">
-											<div className="h-44 border border-border" />
-											<div className="h-44 border border-border" />
-											<div className="h-44 border border-border" />
-										</div>
-									</div>
-								</div>
+								<img
+									src="/landing-workspace-screenshot.png"
+									alt="ThinkEx workspace with documents, folders, and AI assistant"
+									className="aspect-[16/10] w-full object-cover object-top"
+									width={2936}
+									height={1664}
+									loading="eager"
+									decoding="async"
+								/>
 							</div>
 						</div>
 					</section>
