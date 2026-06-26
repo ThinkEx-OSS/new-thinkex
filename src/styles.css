@@ -96,6 +96,7 @@
 	.scroll-fade,
 	.scroll-fade-y {
 		--scroll-fade-size: min(8%, 24px);
+
 		-webkit-mask-image: linear-gradient(
 			to bottom,
 			transparent,
@@ -114,6 +115,7 @@
 
 	.scroll-fade-b {
 		--scroll-fade-size: min(8%, 24px);
+
 		-webkit-mask-image: linear-gradient(
 			to bottom,
 			black calc(100% - var(--scroll-fade-size)),
@@ -124,6 +126,7 @@
 
 	.scroll-fade-x {
 		--scroll-fade-size: min(8%, 24px);
+
 		-webkit-mask-image: linear-gradient(
 			to right,
 			transparent,
@@ -143,9 +146,9 @@
 	.shimmer {
 		background: linear-gradient(
 			110deg,
-			currentColor 0%,
-			color-mix(in oklch, currentColor 35%, transparent) 38%,
-			currentColor 76%
+			currentcolor 0%,
+			color-mix(in oklch, currentcolor 35%, transparent) 38%,
+			currentcolor 76%
 		);
 		background-size: 200% 100%;
 		-webkit-background-clip: text;

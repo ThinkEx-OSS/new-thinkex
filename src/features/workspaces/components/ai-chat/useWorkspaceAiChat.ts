@@ -10,6 +10,7 @@ import {
 import { deriveAiChatPresentation } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type {
 	AiChatMessage,
+	AiChatMessagePart,
 	AiChatModelId,
 	AiChatSendMessage,
 	AiChatSendMessageOptions,
@@ -144,8 +145,25 @@ function hasAcceptedUserMessage(
 ) {
 	return messages.some(
 		(message) =>
-			message.role === "user" && !optimisticUserMessage.previousMessageIds.has(message.id),
+			message.role === "user" &&
+			!optimisticUserMessage.previousMessageIds.has(message.id) &&
+			isSameMessageContent(message.parts, optimisticUserMessage.message.parts),
 	);
+}
+
+function isSameMessageContent(
+	partsA: AiChatMessagePart[],
+	partsB: AiChatMessagePart[],
+): boolean {
+	if (partsA.length !== partsB.length) return false;
+	return partsA.every((partA, i) => {
+		const partB = partsB[i];
+		if (partA.type !== partB.type) return false;
+		if (partA.type === "text" && partB.type === "text") {
+			return partA.text === partB.text;
+		}
+		return true;
+	});
 }
 
 function isSubmittedOrStreaming(status: AiChatStatus) {
