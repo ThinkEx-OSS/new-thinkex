@@ -87,7 +87,6 @@ function MessageScrollerButton({
 	return (
 		<MessageScrollerPrimitive.Button
 			data-slot="message-scroller-button"
-			data-direction={direction}
 			data-variant={variant}
 			data-size={size}
 			direction={direction}

@@ -4,7 +4,7 @@ import { type ChangeEvent, createContext, type ReactNode, use, useCallback, useR
 import { applyWorkspaceEventToCache } from "#/features/workspaces/cache";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import { runWorkspaceFileUploadBatch } from "#/features/workspaces/files/workspace-file-upload";
-import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
+import { workspaceUploadAccept } from "#/features/workspaces/upload/workspace-upload-intake";
 
 interface WorkspaceFileUploadContextValue {
 	requestFileSelection: (onSelectFiles: (files: File[]) => void) => void;
@@ -77,7 +77,7 @@ export function WorkspaceFileUploadProvider({
 				ref={inputRef}
 				type="file"
 				multiple
-				accept={workspaceFileUploadAccept}
+				accept={workspaceUploadAccept}
 				aria-label="Upload files"
 				className="hidden"
 				tabIndex={-1}

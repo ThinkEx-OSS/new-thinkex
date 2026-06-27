@@ -1,18 +1,20 @@
 import { FileText, Image, type LucideIcon } from "lucide-react";
 
 import { normalizeWorkspaceItemName } from "#/features/workspaces/defaults";
-import { workspaceFileUploadLimits } from "#/features/workspaces/model/workspace-file/limits";
 import type {
 	WorkspaceFileAiReadStrategy,
 	WorkspaceFileAssetKind,
 	WorkspaceFileExtractionRoute,
 	WorkspaceFilePreviewGeneratorId,
 } from "#/features/workspaces/model/workspace-file/types";
+import {
+	getDeniedWorkspaceUploadMessage,
+	normalizeUploadContentType,
+	normalizeUploadFileName,
+	type WorkspaceUploadHint,
+} from "#/features/workspaces/upload/matching";
 
-export interface WorkspaceFileUploadHint {
-	fileName: string;
-	contentType?: string | null;
-}
+export type WorkspaceFileUploadHint = WorkspaceUploadHint;
 
 export interface WorkspaceUploadFormat {
 	ext: string;
@@ -38,17 +40,12 @@ export interface WorkspaceFileTypeDescriptor extends WorkspaceUploadFamily {
 	extensions: readonly { ext: string; mime: string }[];
 }
 
-export interface WorkspaceUploadDeniedFormat {
-	ext: string;
-	mime: string;
-	message: string;
-}
-
 export type WorkspaceFileUploadValidationErrorCode =
+	| "INVALID_UPLOAD"
 	| "UNSUPPORTED_FILE_TYPE"
 	| "UPLOAD_TOO_LARGE"
 	| "TOO_MANY_FILES"
-	| "BATCH_TOO_LARGE";
+	| "SELECTION_TOO_LARGE";
 
 export interface WorkspaceFileUploadValidationError {
 	code: WorkspaceFileUploadValidationErrorCode;
@@ -72,7 +69,7 @@ export class WorkspaceFileUploadError extends Error {
  * Explicit upload allowlist. Add or remove formats here; everything else is rejected.
  * Do not use broad MIME wildcards (e.g. image/*) — they bypass this list.
  */
-const WORKSPACE_UPLOAD_FORMATS = [
+export const workspaceFileUploadFormats = [
 	{ ext: "pdf", mime: "application/pdf", assetKind: "pdf" },
 	{
 		ext: "docx",
@@ -97,17 +94,6 @@ const WORKSPACE_UPLOAD_FORMATS = [
 	},
 	{ ext: "webp", mime: "image/webp", assetKind: "image" },
 ] as const satisfies readonly WorkspaceUploadFormat[];
-
-/**
- * Known formats we reject with a specific message (optional UX layer on top of allowlist).
- */
-const WORKSPACE_UPLOAD_DENIED_FORMATS = [
-	{
-		ext: "svg",
-		mime: "image/svg+xml",
-		message: "SVG files are not supported.",
-	},
-] as const satisfies readonly WorkspaceUploadDeniedFormat[];
 
 const WORKSPACE_UPLOAD_FAMILIES = [
 	{
@@ -145,130 +131,17 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 const workspaceUploadFamilyByKind: Record<WorkspaceFileAssetKind, WorkspaceFileTypeDescriptor> = {
 	pdf: {
 		...WORKSPACE_UPLOAD_FAMILIES[0],
-		extensions: WORKSPACE_UPLOAD_FORMATS.filter((format) => format.assetKind === "pdf").map(
-			({ ext, mime }) => ({ ext, mime }),
-		),
+		extensions: workspaceFileUploadFormats
+			.filter((format) => format.assetKind === "pdf")
+			.map(({ ext, mime }) => ({ ext, mime })),
 	},
 	image: {
 		...WORKSPACE_UPLOAD_FAMILIES[1],
-		extensions: WORKSPACE_UPLOAD_FORMATS.filter((format) => format.assetKind === "image").map(
-			({ ext, mime }) => ({ ext, mime }),
-		),
+		extensions: workspaceFileUploadFormats
+			.filter((format) => format.assetKind === "image")
+			.map(({ ext, mime }) => ({ ext, mime })),
 	},
 };
-
-export const workspaceFileUploadAccept = [
-	...new Set(WORKSPACE_UPLOAD_FORMATS.flatMap((format) => [format.mime, `.${format.ext}`])),
-].join(",");
-
-export const workspaceFileUploadTypeLabel =
-	"PDFs, Word documents, PowerPoint presentations, or images";
-
-const unsupportedFileMessage = `Only ${workspaceFileUploadTypeLabel} are supported right now.`;
-
-export function getWorkspaceFileUploadValidationError(input: {
-	fileName: string;
-	sizeBytes: number;
-	contentType?: string | null;
-}): WorkspaceFileUploadValidationError | null {
-	const deniedMessage = getWorkspaceUploadDeniedMessage(input);
-
-	if (deniedMessage) {
-		return {
-			code: "UNSUPPORTED_FILE_TYPE",
-			message: deniedMessage,
-			status: 400,
-		};
-	}
-
-	if (!resolveWorkspaceUploadFormat(input)) {
-		return {
-			code: "UNSUPPORTED_FILE_TYPE",
-			message: unsupportedFileMessage,
-			status: 400,
-		};
-	}
-
-	if (
-		!Number.isInteger(input.sizeBytes) ||
-		input.sizeBytes <= 0 ||
-		input.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile
-	) {
-		return {
-			code: "UPLOAD_TOO_LARGE",
-			message: "File upload size is outside the supported limit.",
-			status: 413,
-		};
-	}
-
-	return null;
-}
-
-export function getWorkspaceFileUploadBatchValidationError(input: {
-	file: File;
-	acceptedCount: number;
-	batchBytes: number;
-}): WorkspaceFileUploadValidationError | null {
-	if (input.acceptedCount >= workspaceFileUploadLimits.maxFilesPerBatch) {
-		return {
-			code: "TOO_MANY_FILES",
-			message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
-			status: 400,
-		};
-	}
-
-	const validationError = getWorkspaceFileUploadValidationError({
-		fileName: input.file.name,
-		sizeBytes: input.file.size,
-		contentType: input.file.type,
-	});
-
-	if (validationError) {
-		return validationError;
-	}
-
-	if (input.batchBytes + input.file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
-		return {
-			code: "BATCH_TOO_LARGE",
-			message: "This file would exceed the batch upload size limit.",
-			status: 413,
-		};
-	}
-
-	return null;
-}
-
-export function partitionWorkspaceUploadBatch(files: readonly File[]) {
-	const accepted: File[] = [];
-	const rejected: Array<{ file: File; message: string }> = [];
-	let batchBytes = 0;
-
-	for (const file of files) {
-		const validationError = getWorkspaceFileUploadBatchValidationError({
-			file,
-			acceptedCount: accepted.length,
-			batchBytes,
-		});
-
-		if (validationError) {
-			rejected.push({ file, message: validationError.message });
-			continue;
-		}
-
-		if (batchBytes + file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
-			rejected.push({
-				file,
-				message: "This file would exceed the batch upload size limit.",
-			});
-			continue;
-		}
-
-		batchBytes += file.size;
-		accepted.push(file);
-	}
-
-	return { accepted, rejected };
-}
 
 export function requireWorkspaceFileTypeFromHint(
 	input: WorkspaceFileUploadHint,
@@ -278,7 +151,7 @@ export function requireWorkspaceFileTypeFromHint(
 	if (!descriptor) {
 		throw new WorkspaceFileUploadError({
 			code: "UNSUPPORTED_FILE_TYPE",
-			message: getWorkspaceUploadDeniedMessage(input) ?? unsupportedFileMessage,
+			message: getDeniedWorkspaceUploadMessage(input) ?? "This file type is not supported.",
 			status: 400,
 		});
 	}
@@ -292,7 +165,7 @@ export function resolveWorkspaceUploadFormat(
 	const contentType = normalizeUploadContentType(input.contentType);
 
 	if (contentType) {
-		const formatByMime = WORKSPACE_UPLOAD_FORMATS.find((format) => format.mime === contentType);
+		const formatByMime = workspaceFileUploadFormats.find((format) => format.mime === contentType);
 
 		if (formatByMime) {
 			return formatByMime;
@@ -301,7 +174,7 @@ export function resolveWorkspaceUploadFormat(
 
 	const fileName = normalizeUploadFileName(input.fileName);
 
-	return WORKSPACE_UPLOAD_FORMATS.find((format) => fileName.endsWith(`.${format.ext}`)) ?? null;
+	return workspaceFileUploadFormats.find((format) => fileName.endsWith(`.${format.ext}`)) ?? null;
 }
 
 export function resolveWorkspaceFileTypeFromHint(
@@ -327,7 +200,9 @@ export function resolveWorkspaceFileAiReadStrategy(input: {
 }
 
 export function requiresWorkspaceFilePdfConversion(input: WorkspaceFileUploadHint) {
-	return resolveWorkspaceUploadFormat(input)?.conversion === "office_to_pdf";
+	const format = resolveWorkspaceUploadFormat(input);
+
+	return format?.conversion === "office_to_pdf";
 }
 
 export function getWorkspaceConvertedPdfFileName(fileName: string) {
@@ -403,34 +278,6 @@ export function resolveWorkspaceFileContentType(input: {
 		input.descriptor.extensions[0]?.mime ??
 		"application/octet-stream"
 	);
-}
-
-function matchesUploadHint(
-	format: Pick<WorkspaceUploadFormat, "ext" | "mime">,
-	input: WorkspaceFileUploadHint,
-) {
-	const fileName = normalizeUploadFileName(input.fileName);
-	const contentType = normalizeUploadContentType(input.contentType);
-
-	return (
-		fileName.endsWith(`.${format.ext}`) || (contentType !== null && contentType === format.mime)
-	);
-}
-
-function getWorkspaceUploadDeniedMessage(input: WorkspaceFileUploadHint) {
-	const denied = WORKSPACE_UPLOAD_DENIED_FORMATS.find((format) => matchesUploadHint(format, input));
-
-	return denied?.message ?? null;
-}
-
-function normalizeUploadFileName(fileName: string) {
-	return fileName.trim().toLowerCase();
-}
-
-function normalizeUploadContentType(contentType?: string | null) {
-	const normalized = contentType?.trim().toLowerCase() ?? null;
-
-	return normalized || null;
 }
 
 function stripFileExtension(fileName: string) {

@@ -44,7 +44,7 @@ import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
 import { getWorkspaceChildren, splitWorkspaceChildren } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceBrowseParentId, isWorkspaceItemView } from "#/features/workspaces/model/view";
-import { workspaceFileUploadTypeLabel } from "#/features/workspaces/model/workspace-file";
+import { workspaceUploadTypeLabel } from "#/features/workspaces/upload/workspace-upload-intake";
 import { eventTargetsPreventTypeToFocus } from "#/lib/keyboard-event-target";
 import { useNativeFileDropTarget } from "#/lib/use-native-file-drop-target";
 import { cn } from "#/lib/utils";
@@ -257,8 +257,8 @@ function WorkspaceBrowseContent({
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
 				{isNativeFileDropTarget ? (
 					<WorkspaceFileDropOverlay
-						description="Files will be added here."
-						title={`Drop ${workspaceFileUploadTypeLabel} to upload`}
+						description="Uploads will be added here."
+						title={`Drop ${workspaceUploadTypeLabel} to upload`}
 					/>
 				) : null}
 			</div>
