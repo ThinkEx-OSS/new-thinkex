@@ -1,5 +1,5 @@
 import type { ChatStatus, FileUIPart } from "ai";
-import { CornerDownLeftIcon, ImageIcon, PlusIcon, SquareIcon, XIcon } from "lucide-react";
+import { CornerDownLeftIcon, SquareIcon, XIcon } from "lucide-react";
 import type {
 	ChangeEventHandler,
 	ClipboardEventHandler,
@@ -17,25 +17,11 @@ import {
 	toSendableFileParts,
 } from "#/features/workspaces/components/ai-chat/ai-chat-attachments";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu.tsx";
-import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupButton,
 	InputGroupTextarea,
 } from "#/components/ui/input-group.tsx";
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "#/components/ui/select.tsx";
 import { Spinner } from "#/components/ui/spinner.tsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip.tsx";
 import { hasNativeFiles } from "#/lib/native-file-drag";
@@ -74,29 +60,6 @@ export const usePromptInputAttachments = () => {
 		throw new Error("usePromptInputAttachments must be used within a PromptInput");
 	}
 	return context;
-};
-
-export type PromptInputActionAddAttachmentsProps = ComponentProps<typeof DropdownMenuItem> & {
-	label?: string;
-};
-
-export const PromptInputActionAddAttachments = ({
-	label = "Add photos or files",
-	...props
-}: PromptInputActionAddAttachmentsProps) => {
-	const attachments = usePromptInputAttachments();
-
-	return (
-		<DropdownMenuItem
-			{...props}
-			onClick={(event) => {
-				event.preventDefault();
-				attachments.openFileDialog();
-			}}
-		>
-			<ImageIcon className="mr-2 size-4" /> {label}
-		</DropdownMenuItem>
-	);
 };
 
 export interface PromptInputMessage {
@@ -403,37 +366,6 @@ export const PromptInputButton = ({
 	);
 };
 
-export type PromptInputActionMenuProps = ComponentProps<typeof DropdownMenu>;
-export const PromptInputActionMenu = (props: PromptInputActionMenuProps) => (
-	<DropdownMenu {...props} />
-);
-
-export type PromptInputActionMenuTriggerProps = PromptInputButtonProps;
-
-export const PromptInputActionMenuTrigger = ({
-	className,
-	children,
-	...props
-}: PromptInputActionMenuTriggerProps) => (
-	<DropdownMenuTrigger render={<PromptInputButton className={className} {...props} />}>
-		{children ?? <PlusIcon className="size-4" />}
-	</DropdownMenuTrigger>
-);
-
-export type PromptInputActionMenuContentProps = ComponentProps<typeof DropdownMenuContent>;
-export const PromptInputActionMenuContent = ({
-	className,
-	...props
-}: PromptInputActionMenuContentProps) => (
-	<DropdownMenuContent align="start" className={cn(className)} {...props} />
-);
-
-export type PromptInputActionMenuItemProps = ComponentProps<typeof DropdownMenuItem>;
-export const PromptInputActionMenuItem = ({
-	className,
-	...props
-}: PromptInputActionMenuItemProps) => <DropdownMenuItem className={cn(className)} {...props} />;
-
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
 	status?: ChatStatus;
 	onStop?: () => void;
@@ -484,48 +416,3 @@ export const PromptInputSubmit = ({
 		</InputGroupButton>
 	);
 };
-
-export type PromptInputSelectProps = ComponentProps<typeof Select>;
-
-export const PromptInputSelect = (props: PromptInputSelectProps) => <Select {...props} />;
-
-export type PromptInputSelectTriggerProps = ComponentProps<typeof SelectTrigger>;
-
-export const PromptInputSelectTrigger = ({
-	className,
-	...props
-}: PromptInputSelectTriggerProps) => (
-	<SelectTrigger
-		className={cn(
-			"border-none bg-transparent font-medium text-muted-foreground shadow-none transition-colors",
-			"hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
-			className,
-		)}
-		{...props}
-	/>
-);
-
-export type PromptInputSelectContentProps = ComponentProps<typeof SelectContent>;
-
-export const PromptInputSelectContent = ({
-	className,
-	...props
-}: PromptInputSelectContentProps) => <SelectContent className={cn(className)} {...props} />;
-
-export type PromptInputSelectGroupProps = ComponentProps<typeof SelectGroup>;
-
-export const PromptInputSelectGroup = ({ className, ...props }: PromptInputSelectGroupProps) => (
-	<SelectGroup className={cn(className)} {...props} />
-);
-
-export type PromptInputSelectItemProps = ComponentProps<typeof SelectItem>;
-
-export const PromptInputSelectItem = ({ className, ...props }: PromptInputSelectItemProps) => (
-	<SelectItem className={cn(className)} {...props} />
-);
-
-export type PromptInputSelectValueProps = ComponentProps<typeof SelectValue>;
-
-export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelectValueProps) => (
-	<SelectValue className={cn(className)} {...props} />
-);

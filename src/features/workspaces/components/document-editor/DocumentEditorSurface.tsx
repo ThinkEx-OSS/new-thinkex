@@ -30,8 +30,8 @@ export function DocumentEditorSurface({
 	toolbarSlotId?: string;
 	workspaceId: string;
 }) {
-	const sessionQuery = useQuery(getAuthSessionQueryOptions());
-	const sessionUser = sessionQuery.data?.user;
+	const { data: session } = useQuery(getAuthSessionQueryOptions());
+	const sessionUser = session?.user;
 	const collaborationSession = useDocumentCollaborationSession({
 		workspaceId,
 		itemId: item.id,
