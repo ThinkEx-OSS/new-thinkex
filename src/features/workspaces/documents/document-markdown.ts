@@ -16,10 +16,6 @@ export function serializeTiptapDocumentToMarkdown(document: TiptapDocumentJson) 
 		.trimEnd();
 }
 
-export function parseMarkdownToTiptapDocument(markdown: string): TiptapDocumentJson {
-	return parseMarkdownToTiptapDocumentProjection(markdown).document;
-}
-
 export function parseMarkdownToTiptapDocumentProjection(
 	markdown: string,
 ): TiptapDocumentProjection {
