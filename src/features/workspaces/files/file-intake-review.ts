@@ -1,5 +1,5 @@
 import { WORKSPACE_AI_CHAT_ATTACHMENT_POLICY } from "#/features/workspaces/components/ai-chat/constants";
-import { getWorkspaceFileUploadBatchValidationError } from "#/features/workspaces/model/workspace-file";
+import { getWorkspaceUploadBatchValidationError } from "#/features/workspaces/upload/workspace-upload-intake";
 import { fileMatchesAccept } from "#/lib/file-accept";
 
 export type ReviewedIncomingFileReasonCode =
@@ -146,7 +146,7 @@ function reviewWorkspaceCandidate(
 		};
 	}
 
-	const validationError = getWorkspaceFileUploadBatchValidationError({
+	const validationError = getWorkspaceUploadBatchValidationError({
 		file,
 		acceptedCount: input.acceptedCount,
 		batchBytes: input.batchBytes,

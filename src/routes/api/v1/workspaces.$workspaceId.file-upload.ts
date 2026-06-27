@@ -7,10 +7,12 @@ import {
 	OfficePdfConversionError,
 } from "#/features/workspaces/conversion/office-pdf-converter";
 import { requestWorkspaceFileExtraction } from "#/features/workspaces/extraction/request-workspace-file-extraction";
-import { createWorkspaceFileFromUpload } from "#/features/workspaces/kernel/workspace-kernel-access";
+import {
+	createWorkspaceFileFromUpload,
+	getWorkspaceKernel,
+} from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
 	getWorkspaceConvertedPdfFileName,
-	getWorkspaceFileUploadValidationError,
 	requireWorkspaceFileTypeFromHint,
 	requiresWorkspaceFilePdfConversion,
 	resolveWorkspaceFileAiReadStrategy,
@@ -22,6 +24,11 @@ import {
 	assertCanMutateWorkspace,
 	WorkspaceForbiddenError,
 } from "#/features/workspaces/server/permissions";
+import {
+	createDocumentContentFromWorkspaceUpload,
+	validateWorkspaceUpload,
+	type WorkspaceUploadPlan,
+} from "#/features/workspaces/upload/workspace-upload-intake";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
@@ -63,27 +70,40 @@ async function handleWorkspaceFileUpload(request: Request, workspaceId: string) 
 			return apiError(requestId, 400, "INVALID_UPLOAD", "File upload is missing a file.");
 		}
 
-		const validationError = getWorkspaceFileUploadValidationError({
+		const uploadValidation = validateWorkspaceUpload({
 			fileName: file.name,
 			sizeBytes: file.size,
 			contentType: file.type,
 		});
 
-		if (validationError) {
+		if (!uploadValidation.ok) {
 			return apiError(
 				requestId,
-				validationError.status,
-				validationError.code,
-				validationError.message,
+				uploadValidation.error.status,
+				uploadValidation.error.code,
+				uploadValidation.error.message,
 			);
 		}
 
-		const descriptor = requireWorkspaceFileTypeFromHint({
-			fileName: file.name,
-			contentType: file.type,
-		});
+		const parentId = getNullableString(formData.get(parentIdFormKey));
+		const clientMutationId = getNullableString(formData.get(clientMutationIdFormKey));
+		const uploadPlan = uploadValidation.plan;
+
+		if (uploadPlan.kind === "document") {
+			const command = await createWorkspaceDocumentFromUpload({
+				clientMutationId,
+				file,
+				parentId,
+				plan: uploadPlan,
+				userId: session.user.id,
+				workspaceId,
+			});
+
+			return apiJson(command, requestId);
+		}
+
 		const upload = await prepareWorkspaceFileUpload({
-			descriptor,
+			descriptor: uploadPlan.descriptor,
 			env,
 			file,
 		});
@@ -98,13 +118,13 @@ async function handleWorkspaceFileUpload(request: Request, workspaceId: string) 
 		const command = await createWorkspaceFileFromUpload({
 			workspaceId,
 			userId: session.user.id,
-			parentId: getNullableString(formData.get(parentIdFormKey)),
+			parentId,
 			fileName: upload.fileName,
 			fileSize: upload.fileSize,
 			objectKey,
 			contentType: upload.contentType,
 			assetKind: upload.descriptor.assetKind,
-			clientMutationId: getNullableString(formData.get(clientMutationIdFormKey)),
+			clientMutationId,
 		});
 
 		objectKey = null;
@@ -179,6 +199,31 @@ export const Route = createFileRoute("/api/v1/workspaces/$workspaceId/file-uploa
 
 function getWorkspaceFileUploadObjectKey(workspaceId: string) {
 	return `uploads/workspaces/${workspaceId}/${crypto.randomUUID()}/source`;
+}
+
+async function createWorkspaceDocumentFromUpload(input: {
+	clientMutationId: string | null;
+	file: File;
+	parentId: string | null;
+	plan: Extract<WorkspaceUploadPlan, { kind: "document" }>;
+	userId: string;
+	workspaceId: string;
+}) {
+	const documentContent = await createDocumentContentFromWorkspaceUpload({
+		file: input.file,
+		plan: input.plan,
+	});
+	const kernel = await getWorkspaceKernel(input.workspaceId);
+
+	return kernel.createItem({
+		parentId: input.parentId,
+		type: "document",
+		name: documentContent.name,
+		metadataJson: documentContent.metadataJson,
+		initialContent: documentContent.initialContent,
+		actorUserId: input.userId,
+		clientMutationId: input.clientMutationId,
+	});
 }
 
 async function prepareWorkspaceFileUpload(input: {

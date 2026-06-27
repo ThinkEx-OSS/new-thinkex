@@ -3,11 +3,14 @@ import { toast } from "sonner";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
-	partitionWorkspaceUploadBatch,
 	requiresWorkspaceFilePdfConversion,
 	workspaceFileUploadLimits,
 } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
+import {
+	partitionWorkspaceUploadBatch,
+	uploadPlanCreatesDocument,
+} from "#/features/workspaces/upload/workspace-upload-intake";
 import { prepareWorkspaceClientMutationInput } from "#/features/workspaces/use-workspace-client-mutation-echo";
 import { apiErrorSchema } from "#/lib/api/contracts";
 import { getErrorMessage } from "#/lib/error-message";
@@ -163,6 +166,21 @@ async function getWorkspaceFileUploadErrorMessage(response: Response) {
 }
 
 function getUploadBatchLoadingMessage(files: readonly File[]) {
+	if (
+		files.some((file) =>
+			uploadPlanCreatesDocument({
+				fileName: file.name,
+				contentType: file.type,
+			}),
+		)
+	) {
+		if (files.length === 1) {
+			return `Converting ${files[0]?.name ?? "file"} to a document...`;
+		}
+
+		return `Converting and uploading ${files.length} files...`;
+	}
+
 	if (
 		files.some((file) =>
 			requiresWorkspaceFilePdfConversion({
