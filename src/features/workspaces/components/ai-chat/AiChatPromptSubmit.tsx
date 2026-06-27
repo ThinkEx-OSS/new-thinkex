@@ -3,7 +3,7 @@ import { ArrowUp, Square } from "lucide-react";
 import {
 	PromptInputSubmit,
 	usePromptInputAttachments,
-} from "#/components/ai-elements/prompt-input";
+} from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
 import { Spinner } from "#/components/ui/spinner";
 import { isAiChatStreamActive } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 import type { AiChatStatus } from "#/features/workspaces/components/ai-chat/types";

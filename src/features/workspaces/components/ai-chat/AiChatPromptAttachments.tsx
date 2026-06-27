@@ -1,5 +1,5 @@
-import { Attachments } from "#/components/ai-elements/attachments";
-import { usePromptInputAttachments } from "#/components/ai-elements/prompt-input";
+import { usePromptInputAttachments } from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
+import { AttachmentGroup } from "#/components/ui/attachment";
 import { AiChatAttachmentItem } from "#/features/workspaces/components/ai-chat/AiChatAttachmentItem";
 
 export default function AiChatPromptAttachments() {
@@ -10,7 +10,7 @@ export default function AiChatPromptAttachments() {
 	}
 
 	return (
-		<Attachments className="ml-0 w-full min-w-0" variant="grid">
+		<AttachmentGroup className="ml-0 w-full min-w-0">
 			{attachments.files.map((file) => (
 				<AiChatAttachmentItem
 					key={file.id}
@@ -18,6 +18,6 @@ export default function AiChatPromptAttachments() {
 					onRemove={() => attachments.remove(file.id)}
 				/>
 			))}
-		</Attachments>
+		</AttachmentGroup>
 	);
 }

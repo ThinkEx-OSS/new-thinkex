@@ -17,7 +17,7 @@ import {
 } from "#/components/ui/collapsible.tsx";
 import { cn } from "#/lib/utils.ts";
 
-import { CodeBlock } from "./code-block";
+import { CodeBlock } from "./ai-chat-code-block";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 

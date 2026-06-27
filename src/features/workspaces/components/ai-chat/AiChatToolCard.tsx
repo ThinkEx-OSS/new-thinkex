@@ -4,7 +4,7 @@ import {
 	ToolHeader,
 	ToolInput,
 	ToolOutput,
-} from "#/components/ai-elements/tool";
+} from "#/features/workspaces/components/ai-chat/ai-chat-tool";
 import type { AiChatToolPart } from "#/features/workspaces/components/ai-chat/types";
 
 interface AiChatToolCardProps {

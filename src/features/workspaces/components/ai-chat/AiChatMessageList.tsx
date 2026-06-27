@@ -1,11 +1,24 @@
 import type { ChatErrorClassification, ChatErrorContext } from "@cloudflare/think";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Message, MessageContent } from "#/components/ai-elements/message";
+import { useEffect, useRef, useState } from "react";
 import ThinkExLogo from "#/components/ThinkExLogo";
 import { Button } from "#/components/ui/button";
+import { Bubble, BubbleContent } from "#/components/ui/bubble";
+import {
+	MessageScroller,
+	MessageScrollerButton,
+	MessageScrollerContent,
+	MessageScrollerItem,
+	MessageScrollerProvider,
+	MessageScrollerViewport,
+} from "#/components/ui/message-scroller";
+import { Message, MessageContent } from "#/components/ui/message";
 import { AiChatAssistantPending } from "#/features/workspaces/components/ai-chat/AiChatAssistantPending";
+import {
+	aiChatMessageScrollerButtonClassName,
+	aiChatMessageScrollerContentClassName,
+	aiChatMessageScrollerViewportClassName,
+} from "#/features/workspaces/components/ai-chat/ai-chat-layout";
 import AiChatMessageRow from "#/features/workspaces/components/ai-chat/AiChatMessageRow";
 import AiChatTranscriptRail from "#/features/workspaces/components/ai-chat/AiChatTranscriptRail";
 import {
@@ -23,8 +36,6 @@ import {
 	type SelectionRect,
 } from "#/features/workspaces/model/workspace-selection-geometry";
 
-const INITIAL_TAIL_SCROLL_SETTLE_FRAMES = 2;
-
 type SelectedText = {
 	rect: SelectionRect;
 	text: string;
@@ -40,6 +51,7 @@ type AiChatListRow =
 			display: AssistantRowDisplay | null;
 			key: string;
 			message: AiChatMessage;
+			tailPending?: NonNullable<AiChatPresentation["tailPending"]>;
 			type: "message";
 	  }
 	| {
@@ -68,71 +80,13 @@ export default function AiChatMessageList({
 	presentation,
 	workspaceId,
 }: AiChatMessageListProps) {
-	const { lastAssistantMessageId, status, tailPending } = presentation;
-	const scrollRef = useRef<HTMLDivElement>(null);
-	const didInitialTailScrollRef = useRef(false);
+	const { lastAssistantMessageId, status } = presentation;
 	const rows = getAiChatListRows(messages, presentation, assistantError);
 	const hasAssistantContent = hasLatestAssistantContent(rows);
+	const isStreamActive = isAiChatStreamActive(status);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
-	const virtualizer = useVirtualizer({
-		count: rows.length,
-		estimateSize: (index) => estimateAiChatRowSize(rows[index]),
-		getItemKey: (index) => rows[index]?.key ?? index,
-		getScrollElement: () => scrollRef.current,
-		overscan: 6,
-	});
-	const virtualRows = virtualizer.getVirtualItems();
-	const totalSize = virtualizer.getTotalSize();
-	const tailKey = rows.at(-1)?.key;
-
-	useLayoutEffect(() => {
-		const scrollElement = scrollRef.current;
-
-		if (!tailKey || didInitialTailScrollRef.current || !scrollElement) {
-			return;
-		}
-
-		let frame: number | null = null;
-		let remainingFrames = INITIAL_TAIL_SCROLL_SETTLE_FRAMES;
-
-		const scrollToTailWhenReady = () => {
-			if (
-				didInitialTailScrollRef.current ||
-				scrollElement.clientHeight === 0 ||
-				scrollElement.clientWidth === 0
-			) {
-				return;
-			}
-
-			if (frame !== null) {
-				cancelAnimationFrame(frame);
-			}
-
-			virtualizer.scrollToEnd({ behavior: "auto" });
-
-			if (remainingFrames === 0) {
-				didInitialTailScrollRef.current = true;
-				return;
-			}
-
-			remainingFrames -= 1;
-			frame = requestAnimationFrame(scrollToTailWhenReady);
-		};
-
-		const resizeObserver =
-			typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scrollToTailWhenReady);
-
-		resizeObserver?.observe(scrollElement);
-		frame = requestAnimationFrame(scrollToTailWhenReady);
-
-		return () => {
-			if (frame !== null) {
-				cancelAnimationFrame(frame);
-			}
-			resizeObserver?.disconnect();
-		};
-	}, [tailKey, totalSize, virtualizer]);
+	const showEmptyState = rows.length === 0 && !assistantError;
 
 	useEffect(() => {
 		const updateSelection = () => {
@@ -146,68 +100,44 @@ export default function AiChatMessageList({
 		};
 	}, []);
 
-	if (messages.length === 0 && !assistantError) {
-		if (tailPending) {
-			return (
-				<AiChatMessageListFallback>
-					<AiChatAssistantPending pending={tailPending} />
-				</AiChatMessageListFallback>
-			);
-		}
-
-		return (
-			<AiChatMessageListFallback>
-				<div className="flex min-h-[min(32rem,calc(100vh-12rem))] flex-col items-center justify-center gap-3 p-6">
-					<ThinkExLogo size={32} />
-					<p className="text-sm text-muted-foreground">Start a new chat</p>
-				</div>
-			</AiChatMessageListFallback>
-		);
-	}
-
 	return (
-		<div ref={listRef} className="contents">
-			<div
-				ref={scrollRef}
-				className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-5 pb-5"
-			>
-				<div
-					className="relative w-full"
-					style={{
-						height: totalSize,
-					}}
-				>
-					{virtualRows.map((virtualRow) => {
-						const row = rows[virtualRow.index];
-
-						if (!row) {
-							return null;
-						}
-
-						return (
-							<div
-								key={virtualRow.key}
-								ref={virtualizer.measureElement}
-								data-index={virtualRow.index}
-								className="absolute top-0 left-0 w-full"
-								style={{
-									transform: `translateY(${virtualRow.start}px)`,
-								}}
-							>
-								<AiChatListRowView
-									canRetry={Boolean(onRegenerateLastResponse)}
-									hasAssistantContent={hasAssistantContent}
-									isFirst={virtualRow.index === 0}
-									lastAssistantMessageId={lastAssistantMessageId}
-									row={row}
-									status={status}
-									onRegenerateLastResponse={onRegenerateLastResponse}
-								/>
+		<div ref={listRef} className="min-h-0 flex-1">
+			<MessageScrollerProvider defaultScrollPosition="last-anchor" scrollPreviousItemPeek={40}>
+				<MessageScroller>
+					{showEmptyState ? (
+						<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6">
+							<div className="flex flex-col items-center justify-center gap-3">
+								<ThinkExLogo size={32} />
+								<p className="text-sm text-muted-foreground">Start a new chat</p>
 							</div>
-						);
-					})}
-				</div>
-			</div>
+						</div>
+					) : null}
+					<MessageScrollerViewport className={aiChatMessageScrollerViewportClassName}>
+						<MessageScrollerContent
+							aria-busy={isStreamActive}
+							className={aiChatMessageScrollerContentClassName}
+						>
+							{rows.map((row) => (
+								<MessageScrollerItem
+									key={row.key}
+									messageId={getAiChatRowMessageId(row)}
+									scrollAnchor={isAiChatRowScrollAnchor(row)}
+								>
+									<AiChatListRowView
+										canRetry={Boolean(onRegenerateLastResponse)}
+										hasAssistantContent={hasAssistantContent}
+										lastAssistantMessageId={lastAssistantMessageId}
+										row={row}
+										status={status}
+										onRegenerateLastResponse={onRegenerateLastResponse}
+									/>
+								</MessageScrollerItem>
+							))}
+						</MessageScrollerContent>
+					</MessageScrollerViewport>
+					<MessageScrollerButton className={aiChatMessageScrollerButtonClassName} />
+				</MessageScroller>
+			</MessageScrollerProvider>
 			{selectedText ? (
 				<WorkspaceFloatingAskSelectionMenu
 					rect={selectedText.rect}
@@ -231,7 +161,6 @@ export default function AiChatMessageList({
 function AiChatListRowView({
 	canRetry,
 	hasAssistantContent,
-	isFirst,
 	lastAssistantMessageId,
 	onRegenerateLastResponse,
 	row,
@@ -239,7 +168,6 @@ function AiChatListRowView({
 }: {
 	canRetry: boolean;
 	hasAssistantContent: boolean;
-	isFirst: boolean;
 	lastAssistantMessageId: string | undefined;
 	onRegenerateLastResponse?: () => void;
 	row: AiChatListRow;
@@ -247,7 +175,7 @@ function AiChatListRowView({
 }) {
 	if (row.type === "pending") {
 		return (
-			<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
+			<AiChatTranscriptRail>
 				<AiChatAssistantPending pending={row.pending} />
 			</AiChatTranscriptRail>
 		);
@@ -255,7 +183,7 @@ function AiChatListRowView({
 
 	if (row.type === "error") {
 		return (
-			<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
+			<AiChatTranscriptRail>
 				<AiChatAssistantError
 					canRetry={canRetry}
 					errorState={row.errorState}
@@ -268,23 +196,23 @@ function AiChatListRowView({
 
 	const { display, message } = row;
 	return (
-		<AiChatTranscriptRail className="pb-5" withTopInset={isFirst}>
-			<AiChatMessageRow
-				display={display}
-				isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
-				isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
-				message={message}
-				onRegenerate={onRegenerateLastResponse}
-			/>
-		</AiChatTranscriptRail>
-	);
-}
-
-function AiChatMessageListFallback({ children }: { children: ReactNode }) {
-	return (
-		<div className="min-h-0 flex-1 px-4 pt-5 pb-5">
-			<AiChatTranscriptRail withTopInset>{children}</AiChatTranscriptRail>
-		</div>
+		<>
+			<AiChatTranscriptRail>
+				<AiChatMessageRow
+					display={display}
+					isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
+					isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+					isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
+					message={message}
+					onRegenerate={onRegenerateLastResponse}
+				/>
+			</AiChatTranscriptRail>
+			{row.tailPending ? (
+				<AiChatTranscriptRail>
+					<AiChatAssistantPending pending={row.tailPending} />
+				</AiChatTranscriptRail>
+			) : null}
+		</>
 	);
 }
 
@@ -300,25 +228,33 @@ function AiChatAssistantError({
 	onRetry?: () => void;
 }) {
 	return (
-		<Message from="assistant" className="max-w-full">
+		<Message>
 			<MessageContent>
-				<div className="flex flex-col items-start gap-3 rounded-md border border-destructive/25 bg-destructive/8 p-4">
-					<div className="flex items-start gap-2">
-						<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
-						<p className="text-sm text-foreground">
-							{getChatErrorMessage({
-								errorState,
-								hasAssistantContent,
-							})}
-						</p>
-					</div>
-					{canRetry ? (
-						<Button type="button" variant="outline" size="xs" className="gap-1.5" onClick={onRetry}>
-							<RotateCcw className="size-3" />
-							Try again
-						</Button>
-					) : null}
-				</div>
+				<Bubble variant="destructive">
+					<BubbleContent className="flex flex-col items-start gap-3">
+						<div className="flex items-start gap-2">
+							<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+							<p className="text-sm">
+								{getChatErrorMessage({
+									errorState,
+									hasAssistantContent,
+								})}
+							</p>
+						</div>
+						{canRetry ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="xs"
+								className="gap-1.5"
+								onClick={onRetry}
+							>
+								<RotateCcw className="size-3" />
+								Try again
+							</Button>
+						) : null}
+					</BubbleContent>
+				</Bubble>
 			</MessageContent>
 		</Message>
 	);
@@ -346,9 +282,13 @@ function getAiChatListRows(
 		});
 	}
 
-	if (presentation.tailPending) {
+	const lastRow = rows.at(-1);
+
+	if (presentation.tailPending && lastRow?.type === "message") {
+		lastRow.tailPending = presentation.tailPending;
+	} else if (presentation.tailPending) {
 		rows.push({
-			key: "assistant-pending",
+			key: "assistant-pending:tail",
 			pending: presentation.tailPending,
 			type: "pending",
 		});
@@ -365,18 +305,6 @@ function getAiChatListRows(
 	return rows;
 }
 
-function estimateAiChatRowSize(row: AiChatListRow | undefined) {
-	if (!row) {
-		return 160;
-	}
-
-	if (row.type === "pending" || row.type === "error") {
-		return 96;
-	}
-
-	return row.message.role === "user" ? 112 : 220;
-}
-
 function hasLatestAssistantContent(rows: AiChatListRow[]) {
 	for (let i = rows.length - 1; i >= 0; i -= 1) {
 		const row = rows[i];
@@ -389,6 +317,18 @@ function hasLatestAssistantContent(rows: AiChatListRow[]) {
 	}
 
 	return false;
+}
+
+function getAiChatRowMessageId(row: AiChatListRow) {
+	if (row.type === "message") {
+		return row.message.id;
+	}
+
+	return row.key;
+}
+
+function isAiChatRowScrollAnchor(row: AiChatListRow) {
+	return row.type === "message" && row.message.role === "user";
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {

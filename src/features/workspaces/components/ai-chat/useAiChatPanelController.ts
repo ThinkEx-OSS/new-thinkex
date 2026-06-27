@@ -23,7 +23,7 @@ type AiChatThreadForDialog = {
 export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControllerInput) {
 	const chatSurfaceMode = useWorkspaceAiChatSurfaceMode(workspaceId);
 	const explicitActiveThreadId = useWorkspaceActiveAiChatThreadId(workspaceId);
-	const modelId = useWorkspaceAiChatModelId(workspaceId);
+	const modelId = useWorkspaceAiChatModelId();
 	const setChatSurfaceMode = useWorkspaceUiStore((state) => state.setChatSurfaceMode);
 	const setActiveAiChatThread = useWorkspaceUiStore((state) => state.setActiveAiChatThread);
 	const setAiChatModel = useWorkspaceUiStore((state) => state.setAiChatModel);
@@ -128,7 +128,7 @@ export function useAiChatPanelController({ workspaceId }: UseAiChatPanelControll
 			setIsDeleteThreadDialogOpen(true);
 		},
 		onMaximize: () => setChatSurfaceMode(workspaceId, "fullscreen"),
-		onModelChange: (nextModelId: AiChatModelId) => setAiChatModel(workspaceId, nextModelId),
+		onModelChange: (nextModelId: AiChatModelId) => setAiChatModel(nextModelId),
 		onNewChat: () => void handleNewChat(),
 		onRestore: () => setChatSurfaceMode(workspaceId, "docked"),
 		onSelectThread: (threadId: string) => selectThread(threadId),

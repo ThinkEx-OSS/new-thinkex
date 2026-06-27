@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { useMemo } from "react";
 import { create } from "zustand";
-import type { FileAttachmentData } from "#/components/ai-elements/attachments";
+import type { FileAttachmentData } from "#/features/workspaces/components/ai-chat/ai-chat-attachments";
 import {
 	normalizeWorkspaceSelectedQuote,
 	type WorkspaceSelectedQuote,

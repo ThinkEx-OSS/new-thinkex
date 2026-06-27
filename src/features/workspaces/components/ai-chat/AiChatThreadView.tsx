@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
-import { Conversation, ConversationContent } from "#/components/ai-elements/conversation";
-import type { PromptInputMessage } from "#/components/ai-elements/prompt-input";
+import type { PromptInputMessage } from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
 import type { AIInspectorSnapshot } from "#/features/workspaces/ai/ai-inspector";
 import type { AIThreadSummary } from "#/features/workspaces/ai/user-ai-agents";
 import AiChatMessageList, {
@@ -89,19 +88,15 @@ export default function AiChatThreadView({
 
 	return (
 		<div className="relative flex min-h-0 flex-1 flex-col">
-			<Conversation className="min-h-0">
-				<ConversationContent scrollClassName="min-h-0 overflow-hidden" className="p-0">
-					<AiChatMessageList
-						assistantError={assistantError}
-						messages={messages}
-						presentation={presentation}
-						workspaceId={context.workspaceId}
-						onRegenerateLastResponse={regenerate}
-					/>
-				</ConversationContent>
-			</Conversation>
+			<AiChatMessageList
+				assistantError={assistantError}
+				messages={messages}
+				presentation={presentation}
+				workspaceId={context.workspaceId}
+				onRegenerateLastResponse={regenerate}
+			/>
 
-			<div className="p-3">
+			<div className="px-3 pb-3">
 				<div className={aiChatComposerRailClassName}>
 					<AiChatPromptInput
 						activeThreadId={threadId}

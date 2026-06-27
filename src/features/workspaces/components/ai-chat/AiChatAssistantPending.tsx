@@ -1,14 +1,19 @@
 import { RefreshCw } from "lucide-react";
 
-import { Message, MessageContent } from "#/components/ai-elements/message";
-import { Shimmer } from "#/components/ai-elements/shimmer";
+import { Bubble, BubbleContent } from "#/components/ui/bubble";
+import { Marker, MarkerContent, MarkerIcon } from "#/components/ui/marker";
+import { Message, MessageContent } from "#/components/ui/message";
 import type { AssistantPendingKind } from "#/features/workspaces/components/ai-chat/ai-chat-display-state";
 
 export function AiChatAssistantPending({ pending }: { pending: AssistantPendingKind }) {
 	return (
-		<Message from="assistant" className="max-w-full">
+		<Message>
 			<MessageContent>
-				<AiChatAssistantPendingBody pending={pending} />
+				<Bubble variant="ghost">
+					<BubbleContent>
+						<AiChatAssistantPendingBody pending={pending} />
+					</BubbleContent>
+				</Bubble>
 			</MessageContent>
 		</Message>
 	);
@@ -17,10 +22,12 @@ export function AiChatAssistantPending({ pending }: { pending: AssistantPendingK
 function AiChatAssistantPendingBody({ pending }: { pending: AssistantPendingKind }) {
 	if (pending === "recovering") {
 		return (
-			<div className="flex items-center gap-2 text-muted-foreground">
-				<RefreshCw className="size-3.5 animate-spin" aria-hidden="true" />
-				<Shimmer duration={1.4}>{"Recovering response\u2026"}</Shimmer>
-			</div>
+			<Marker role="status" aria-live="polite">
+				<MarkerIcon>
+					<RefreshCw className="size-3.5 animate-spin" />
+				</MarkerIcon>
+				<MarkerContent className="shimmer">{"Recovering response..."}</MarkerContent>
+			</Marker>
 		);
 	}
 
@@ -29,10 +36,12 @@ function AiChatAssistantPendingBody({ pending }: { pending: AssistantPendingKind
 
 function AiChatThinkingLoader() {
 	return (
-		<div className="flex items-center gap-3 py-2">
-			<ThinkExThinkingMark />
-			<span className="text-base text-muted-foreground">Thinking...</span>
-		</div>
+		<Marker role="status" aria-live="polite" className="gap-2.5 py-2">
+			<MarkerIcon className="size-[18px]">
+				<ThinkExThinkingMark />
+			</MarkerIcon>
+			<MarkerContent className="shimmer">Thinking...</MarkerContent>
+		</Marker>
 	);
 }
 

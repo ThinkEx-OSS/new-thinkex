@@ -1,7 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "streamdown/styles.css";
 @import "./design-tokens.css";
+
+@source "../node_modules/streamdown/dist/*.js";
+@source "../node_modules/@streamdown/cjk/dist/*.js";
+@source "../node_modules/@streamdown/math/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -86,6 +91,72 @@
 }
 
 @layer components {
+	/* Local fallback for shadcn utility classes that are documented but not present
+	   in the currently installed `shadcn/tailwind.css` package build. */
+	.scroll-fade,
+	.scroll-fade-y {
+		--scroll-fade-size: min(8%, 24px);
+
+		-webkit-mask-image: linear-gradient(
+			to bottom,
+			transparent,
+			black var(--scroll-fade-size),
+			black calc(100% - var(--scroll-fade-size)),
+			transparent
+		);
+		mask-image: linear-gradient(
+			to bottom,
+			transparent,
+			black var(--scroll-fade-size),
+			black calc(100% - var(--scroll-fade-size)),
+			transparent
+		);
+	}
+
+	.scroll-fade-b {
+		--scroll-fade-size: min(8%, 24px);
+
+		-webkit-mask-image: linear-gradient(
+			to bottom,
+			black calc(100% - var(--scroll-fade-size)),
+			transparent
+		);
+		mask-image: linear-gradient(to bottom, black calc(100% - var(--scroll-fade-size)), transparent);
+	}
+
+	.scroll-fade-x {
+		--scroll-fade-size: min(8%, 24px);
+
+		-webkit-mask-image: linear-gradient(
+			to right,
+			transparent,
+			black var(--scroll-fade-size),
+			black calc(100% - var(--scroll-fade-size)),
+			transparent
+		);
+		mask-image: linear-gradient(
+			to right,
+			transparent,
+			black var(--scroll-fade-size),
+			black calc(100% - var(--scroll-fade-size)),
+			transparent
+		);
+	}
+
+	.shimmer {
+		background: linear-gradient(
+			110deg,
+			var(--color-muted-foreground) 0%,
+			color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) 38%,
+			var(--color-muted-foreground) 76%
+		);
+		background-size: 200% 100%;
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		animation: shimmer 1.8s linear infinite;
+	}
+
 	.workspace-tab-active {
 		position: relative;
 		z-index: 1;
@@ -179,6 +250,16 @@
 
 		100% {
 			opacity: 0;
+		}
+	}
+
+	@keyframes shimmer {
+		from {
+			background-position: 200% 0;
+		}
+
+		to {
+			background-position: -200% 0;
 		}
 	}
 

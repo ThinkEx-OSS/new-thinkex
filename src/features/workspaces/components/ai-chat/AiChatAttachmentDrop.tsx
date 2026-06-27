@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, type RefObject, use, useRef, useState } from "react";
 
-import { usePromptInputAttachments } from "#/components/ai-elements/prompt-input";
+import { usePromptInputAttachments } from "#/features/workspaces/components/ai-chat/ai-chat-prompt-input";
 import {
 	isPromptInputLocalDropTarget,
 	useNativeFileDropTarget,
