@@ -45,7 +45,7 @@ export type WorkspaceFileUploadValidationErrorCode =
 	| "UNSUPPORTED_FILE_TYPE"
 	| "UPLOAD_TOO_LARGE"
 	| "TOO_MANY_FILES"
-	| "BATCH_TOO_LARGE";
+	| "SELECTION_TOO_LARGE";
 
 export interface WorkspaceFileUploadValidationError {
 	code: WorkspaceFileUploadValidationErrorCode;

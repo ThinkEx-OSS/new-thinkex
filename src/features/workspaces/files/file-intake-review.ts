@@ -1,5 +1,5 @@
 import { WORKSPACE_AI_CHAT_ATTACHMENT_POLICY } from "#/features/workspaces/components/ai-chat/constants";
-import { getWorkspaceUploadBatchValidationError } from "#/features/workspaces/upload/workspace-upload-intake";
+import { getWorkspaceUploadSelectionValidationError } from "#/features/workspaces/upload/workspace-upload-intake";
 import { fileMatchesAccept } from "#/lib/file-accept";
 
 export type ReviewedIncomingFileReasonCode =
@@ -30,7 +30,7 @@ export function classifyIncomingChatFiles(
 	const rejected: ReviewedIncomingFile[] = [];
 	let nextChatFileCount = input.currentChatFileCount;
 	let nextWorkspaceFileCount = 0;
-	let nextWorkspaceBatchBytes = 0;
+	let nextWorkspaceSelectionBytes = 0;
 
 	for (const file of files) {
 		const chatRejection = getChatFileRejection(file, { currentChatFileCount: nextChatFileCount });
@@ -43,7 +43,7 @@ export function classifyIncomingChatFiles(
 
 		const workspaceReview = reviewWorkspaceCandidate(file, {
 			acceptedCount: nextWorkspaceFileCount,
-			batchBytes: nextWorkspaceBatchBytes,
+			selectionBytes: nextWorkspaceSelectionBytes,
 			canUploadToWorkspace: input.canUploadToWorkspace,
 		});
 
@@ -55,7 +55,7 @@ export function classifyIncomingChatFiles(
 				message: chatRejection.message,
 			});
 			nextWorkspaceFileCount += 1;
-			nextWorkspaceBatchBytes += file.size;
+			nextWorkspaceSelectionBytes += file.size;
 			continue;
 		}
 
@@ -74,12 +74,12 @@ export function classifyIncomingWorkspaceFiles(
 	const accepted: File[] = [];
 	const rejected: ReviewedIncomingFile[] = [];
 	let nextWorkspaceFileCount = 0;
-	let nextWorkspaceBatchBytes = 0;
+	let nextWorkspaceSelectionBytes = 0;
 
 	for (const file of files) {
 		const review = reviewWorkspaceCandidate(file, {
 			acceptedCount: nextWorkspaceFileCount,
-			batchBytes: nextWorkspaceBatchBytes,
+			selectionBytes: nextWorkspaceSelectionBytes,
 			canUploadToWorkspace: input.canUploadToWorkspace,
 		});
 
@@ -90,7 +90,7 @@ export function classifyIncomingWorkspaceFiles(
 
 		accepted.push(file);
 		nextWorkspaceFileCount += 1;
-		nextWorkspaceBatchBytes += file.size;
+		nextWorkspaceSelectionBytes += file.size;
 	}
 
 	return { accepted, rejected };
@@ -130,7 +130,7 @@ function reviewWorkspaceCandidate(
 	file: File,
 	input: {
 		acceptedCount: number;
-		batchBytes: number;
+		selectionBytes: number;
 		canUploadToWorkspace: boolean;
 	},
 ): { accepted: true } | { accepted: false; reviewedFile: ReviewedIncomingFile } {
@@ -146,10 +146,10 @@ function reviewWorkspaceCandidate(
 		};
 	}
 
-	const validationError = getWorkspaceUploadBatchValidationError({
+	const validationError = getWorkspaceUploadSelectionValidationError({
 		file,
 		acceptedCount: input.acceptedCount,
-		batchBytes: input.batchBytes,
+		selectionBytes: input.selectionBytes,
 	});
 
 	if (validationError) {
@@ -177,14 +177,14 @@ function mapWorkspaceValidationErrorCode(
 		| "UNSUPPORTED_FILE_TYPE"
 		| "UPLOAD_TOO_LARGE"
 		| "TOO_MANY_FILES"
-		| "BATCH_TOO_LARGE",
+		| "SELECTION_TOO_LARGE",
 ): ReviewedIncomingFileReasonCode {
 	switch (code) {
 		case "INVALID_UPLOAD":
 		case "UNSUPPORTED_FILE_TYPE":
 			return "workspace_unsupported";
 		case "UPLOAD_TOO_LARGE":
-		case "BATCH_TOO_LARGE":
+		case "SELECTION_TOO_LARGE":
 			return "workspace_too_large";
 		case "TOO_MANY_FILES":
 			return "workspace_too_many";

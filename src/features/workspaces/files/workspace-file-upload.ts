@@ -8,7 +8,7 @@ import {
 } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
 import {
-	partitionWorkspaceUploadBatch,
+	partitionWorkspaceUploadSelection,
 	uploadPlanCreatesDocument,
 } from "#/features/workspaces/upload/workspace-upload-intake";
 import { prepareWorkspaceClientMutationInput } from "#/features/workspaces/use-workspace-client-mutation-echo";
@@ -38,7 +38,7 @@ interface WorkspaceFileUploadBatchResult {
 export async function runWorkspaceFileUploadBatch(
 	input: WorkspaceFileUploadBatchInput,
 ): Promise<WorkspaceFileUploadBatchResult> {
-	const { accepted, rejected } = partitionWorkspaceUploadBatch(input.files);
+	const { accepted, rejected } = partitionWorkspaceUploadSelection(input.files);
 
 	for (const rejection of rejected) {
 		toast.error(`${rejection.file.name}: ${rejection.message}`);

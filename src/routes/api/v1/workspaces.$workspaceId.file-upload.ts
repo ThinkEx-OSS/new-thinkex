@@ -257,10 +257,10 @@ async function prepareWorkspaceFileUpload(input: {
 		fileName: input.file.name,
 	});
 
-	if (conversion.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile) {
+	if (conversion.sizeBytes > workspaceFileUploadLimits.maxBytesPerSelection) {
 		throw new WorkspaceFileUploadError({
-			code: "UPLOAD_TOO_LARGE",
-			message: "Converted PDF size is outside the supported limit.",
+			code: "SELECTION_TOO_LARGE",
+			message: "Converted PDF is outside the supported upload limit.",
 			status: 413,
 		});
 	}

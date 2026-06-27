@@ -124,11 +124,11 @@ export function validateWorkspaceUpload(input: {
 		};
 	}
 
-	if (input.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile) {
+	if (input.sizeBytes > workspaceFileUploadLimits.maxBytesPerSelection) {
 		return {
 			error: {
-				code: "UPLOAD_TOO_LARGE",
-				message: "File upload size is outside the supported limit.",
+				code: "SELECTION_TOO_LARGE",
+				message: "Upload up to 200 MB at once.",
 				status: 413,
 			},
 			ok: false,
@@ -138,15 +138,15 @@ export function validateWorkspaceUpload(input: {
 	return { ok: true, plan };
 }
 
-export function getWorkspaceUploadBatchValidationError(input: {
+export function getWorkspaceUploadSelectionValidationError(input: {
 	file: File;
 	acceptedCount: number;
-	batchBytes: number;
+	selectionBytes: number;
 }): WorkspaceFileUploadValidationError | null {
-	if (input.acceptedCount >= workspaceFileUploadLimits.maxFilesPerBatch) {
+	if (input.acceptedCount >= workspaceFileUploadLimits.maxFilesPerSelection) {
 		return {
 			code: "TOO_MANY_FILES",
-			message: `Upload batches are limited to ${workspaceFileUploadLimits.maxFilesPerBatch} files.`,
+			message: `Upload up to ${workspaceFileUploadLimits.maxFilesPerSelection} files at once.`,
 			status: 400,
 		};
 	}
@@ -161,10 +161,10 @@ export function getWorkspaceUploadBatchValidationError(input: {
 		return validationError;
 	}
 
-	if (input.batchBytes + input.file.size > workspaceFileUploadLimits.maxBytesPerBatch) {
+	if (input.selectionBytes + input.file.size > workspaceFileUploadLimits.maxBytesPerSelection) {
 		return {
-			code: "BATCH_TOO_LARGE",
-			message: "This file would exceed the batch upload size limit.",
+			code: "SELECTION_TOO_LARGE",
+			message: "Upload up to 200 MB at once.",
 			status: 413,
 		};
 	}
@@ -172,16 +172,16 @@ export function getWorkspaceUploadBatchValidationError(input: {
 	return null;
 }
 
-export function partitionWorkspaceUploadBatch(files: readonly File[]) {
+export function partitionWorkspaceUploadSelection(files: readonly File[]) {
 	const accepted: File[] = [];
 	const rejected: Array<{ file: File; message: string }> = [];
-	let batchBytes = 0;
+	let selectionBytes = 0;
 
 	for (const file of files) {
-		const validationError = getWorkspaceUploadBatchValidationError({
+		const validationError = getWorkspaceUploadSelectionValidationError({
 			file,
 			acceptedCount: accepted.length,
-			batchBytes,
+			selectionBytes,
 		});
 
 		if (validationError) {
@@ -189,7 +189,7 @@ export function partitionWorkspaceUploadBatch(files: readonly File[]) {
 			continue;
 		}
 
-		batchBytes += file.size;
+		selectionBytes += file.size;
 		accepted.push(file);
 	}
 
