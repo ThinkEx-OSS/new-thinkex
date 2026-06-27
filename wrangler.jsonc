@@ -22,6 +22,7 @@
 	],
 	"browser": {
 		"binding": "BROWSER",
+		"remote": true,
 	},
 	"vars": {
 		"FIRECRAWL_API_URL": "https://api.firecrawl.dev",
@@ -130,6 +131,7 @@
 			],
 			"browser": {
 				"binding": "BROWSER",
+				"remote": true,
 			},
 			"send_email": [
 				{
@@ -208,6 +210,7 @@
 			],
 			"browser": {
 				"binding": "BROWSER",
+				"remote": true,
 			},
 			"send_email": [
 				{
