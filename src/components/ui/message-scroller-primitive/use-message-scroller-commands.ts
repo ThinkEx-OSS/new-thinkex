@@ -151,7 +151,7 @@ function useMessageScrollerCommands({
 			streamingTurnRef.current = null;
 			modeRef.current = autoScrollRef.current ? "following-bottom" : "free-scrolling";
 			scrollToPosition(getMaxScrollTop(viewport), {
-				autoscrolling: true,
+				autoscrolling: behavior === "smooth",
 				behavior,
 			});
 

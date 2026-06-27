@@ -320,7 +320,9 @@ function useMessageScrollerController({
 			if (didPrepend) {
 				// Prepended rows are not new appends. Restore the prior scroll position.
 				// The restore is a no-op where native scroll anchoring already did it.
-				restorePrependedAnchor();
+				if (!restorePrependedAnchor()) {
+					commitScrollState();
+				}
 				return;
 			}
 
