@@ -2,6 +2,11 @@ import {
 	getWorkspaceKernelAiPageContext,
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
+import {
+	readWorkspaceAiPdfPages,
+	WorkspaceKernelAiPdfPageError,
+	type WorkspaceKernelAiPdfPages,
+} from "#/features/workspaces/ai/workspace-kernel-ai-pdf-pages";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
@@ -17,6 +22,7 @@ interface WorkspaceKernelAiContentPage {
 export interface ReadWorkspaceKernelAiItemsInput {
 	contentLimit?: number;
 	contentOffset?: number;
+	pages?: string;
 	paths: string[];
 	userId: string;
 	workspaceId: string;
@@ -25,6 +31,7 @@ export interface ReadWorkspaceKernelAiItemsInput {
 export interface WorkspaceKernelAiReadItem {
 	content?: string;
 	page?: WorkspaceKernelAiContentPage;
+	pdfPages?: WorkspaceKernelAiPdfPages;
 	path: string;
 	status: "failed" | "pending" | "ready" | "unsupported";
 	type: "document" | "file" | "flashcard" | "quiz";
@@ -42,6 +49,7 @@ const TRUNCATED_LINE_SUFFIX = `... (line truncated to ${MAX_AI_READ_LINE_LENGTH}
 
 type WorkspaceKernelAiReadFailureCode =
 	| "content_offset_out_of_range"
+	| "page_range_out_of_range"
 	| "path_is_folder"
 	| "path_not_absolute"
 	| "path_not_found";
@@ -114,10 +122,20 @@ export async function readWorkspaceKernelAiItems(
 					contentOffset: input.contentOffset,
 					item: resolution.item,
 					kernel: context.kernel,
+					pages: input.pages,
 					path: resolution.path,
 				}),
 			);
 		} catch (error) {
+			if (error instanceof WorkspaceKernelAiPdfPageError) {
+				result.failed.push({
+					code: error.code,
+					index,
+					path: resolution.path,
+				});
+				continue;
+			}
+
 			if (error instanceof WorkspaceAiContentPageError) {
 				result.failed.push({
 					code: error.code,
@@ -139,6 +157,7 @@ async function readWorkspaceKernelAiItem(input: {
 	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
+	pages?: string;
 	path: string;
 }): Promise<WorkspaceKernelAiReadItem> {
 	const { item } = input;
@@ -180,6 +199,7 @@ async function readWorkspaceKernelAiFileItem(input: {
 	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
+	pages?: string;
 	path: string;
 }): Promise<WorkspaceKernelAiReadItem> {
 	const { item } = input;
@@ -212,6 +232,20 @@ async function readWorkspaceKernelAiFileItem(input: {
 
 	if (projection.status !== "ready" || projection.content === null) {
 		return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+	}
+
+	if (fileType.assetKind === "pdf") {
+		const pageRead = readWorkspaceAiPdfPages(projection.content, {
+			pages: input.pages,
+		});
+
+		return {
+			content: pageRead.content,
+			pdfPages: pageRead.pdfPages,
+			path: input.path,
+			status: "ready",
+			type: "file",
+		};
 	}
 
 	const page = pageWorkspaceAiMarkdown(projection.content, {
