@@ -10,54 +10,19 @@ import {
 } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
-export type SupportedCodeLanguage =
-	| "astro"
-	| "bash"
-	| "c"
-	| "css"
-	| "cpp"
-	| "csharp"
-	| "diff"
-	| "docker"
-	| "dotenv"
-	| "dart"
-	| "go"
-	| "graphql"
-	| "hcl"
-	| "html"
-	| "ini"
-	| "java"
-	| "javascript"
-	| "json"
-	| "jsonc"
-	| "jsx"
-	| "kotlin"
-	| "lua"
-	| "make"
-	| "markdown"
-	| "mdx"
-	| "php"
-	| "powershell"
-	| "python"
-	| "r"
-	| "ruby"
-	| "rust"
-	| "shellscript"
-	| "sql"
-	| "svelte"
-	| "swift"
-	| "terraform"
-	| "toml"
-	| "tsx"
-	| "typescript"
-	| "vue"
-	| "xml"
-	| "yaml";
+export {
+	codeLanguageOptions,
+	getCodeLanguageLabel,
+	normalizeCodeLanguage,
+	type CodeLanguageOption,
+	type SupportedCodeLanguage,
+} from "#/features/workspaces/documents/code-block-shiki/code-languages";
+import {
+	normalizeCodeLanguage,
+	type SupportedCodeLanguage,
+} from "#/features/workspaces/documents/code-block-shiki/code-languages";
+
 export type SupportedCodeTheme = "github-dark" | "github-light";
-export type CodeLanguageOption = {
-	label: string;
-	value: SupportedCodeLanguage;
-};
 export type CodeTokenizationResult = {
 	bg: string;
 	fg: string;
@@ -73,73 +38,6 @@ type HighlighterOptions = {
 	themes: SupportedCodeTheme[];
 };
 
-const languageAliases: Partial<Record<string, SupportedCodeLanguage>> = {
-	".env": "dotenv",
-	"c++": "cpp",
-	csharp: "csharp",
-	cs: "csharp",
-	dockerfile: "docker",
-	env: "dotenv",
-	gql: "graphql",
-	js: "javascript",
-	kt: "kotlin",
-	kts: "kotlin",
-	makefile: "make",
-	md: "markdown",
-	ps: "powershell",
-	ps1: "powershell",
-	py: "python",
-	shell: "shellscript",
-	sh: "shellscript",
-	tf: "terraform",
-	tfvars: "terraform",
-	ts: "typescript",
-	yml: "yaml",
-};
-export const codeLanguageOptions: CodeLanguageOption[] = [
-	{ label: "JavaScript", value: "javascript" },
-	{ label: "TypeScript", value: "typescript" },
-	{ label: "TSX", value: "tsx" },
-	{ label: "JSX", value: "jsx" },
-	{ label: "JSON", value: "json" },
-	{ label: "JSONC", value: "jsonc" },
-	{ label: "HTML", value: "html" },
-	{ label: "CSS", value: "css" },
-	{ label: "Markdown", value: "markdown" },
-	{ label: "MDX", value: "mdx" },
-	{ label: "Shell", value: "shellscript" },
-	{ label: "Bash", value: "bash" },
-	{ label: "PowerShell", value: "powershell" },
-	{ label: "Python", value: "python" },
-	{ label: "SQL", value: "sql" },
-	{ label: "GraphQL", value: "graphql" },
-	{ label: "YAML", value: "yaml" },
-	{ label: "TOML", value: "toml" },
-	{ label: ".env", value: "dotenv" },
-	{ label: "INI", value: "ini" },
-	{ label: "Dockerfile", value: "docker" },
-	{ label: "Terraform", value: "terraform" },
-	{ label: "HCL", value: "hcl" },
-	{ label: "XML", value: "xml" },
-	{ label: "Go", value: "go" },
-	{ label: "Rust", value: "rust" },
-	{ label: "Java", value: "java" },
-	{ label: "C", value: "c" },
-	{ label: "C++", value: "cpp" },
-	{ label: "C#", value: "csharp" },
-	{ label: "Kotlin", value: "kotlin" },
-	{ label: "Swift", value: "swift" },
-	{ label: "Dart", value: "dart" },
-	{ label: "PHP", value: "php" },
-	{ label: "Ruby", value: "ruby" },
-	{ label: "Lua", value: "lua" },
-	{ label: "R", value: "r" },
-	{ label: "Vue", value: "vue" },
-	{ label: "Svelte", value: "svelte" },
-	{ label: "Astro", value: "astro" },
-	{ label: "Makefile", value: "make" },
-	{ label: "Diff", value: "diff" },
-];
 const languageLoaders: Record<SupportedCodeLanguage, () => Promise<LanguageModule>> = {
 	astro: () => import("shiki/langs/astro.mjs"),
 	bash: () => import("shiki/langs/bash.mjs"),
@@ -197,29 +95,6 @@ const customThemeRegistry = new Map<string, ThemeRegistration>();
 
 export function getShiki() {
 	return highlighter;
-}
-
-export function normalizeCodeLanguage(
-	language: string | null | undefined,
-): SupportedCodeLanguage | null {
-	if (!language) {
-		return null;
-	}
-
-	const normalized = language.trim().toLowerCase();
-
-	if (normalized in languageLoaders) {
-		return normalized as SupportedCodeLanguage;
-	}
-
-	return languageAliases[normalized] ?? null;
-}
-
-export function getCodeLanguageLabel(language: string | null | undefined) {
-	const normalizedLanguage = normalizeCodeLanguage(language);
-	const option = codeLanguageOptions.find((candidate) => candidate.value === normalizedLanguage);
-
-	return option?.label ?? "Code";
 }
 
 function registerCustomThemes(customThemes?: ThemeRegistration[]) {
