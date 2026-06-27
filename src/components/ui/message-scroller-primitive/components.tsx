@@ -48,11 +48,18 @@ function MessageScrollerProvider({
 	);
 }
 
-function MessageScroller({ children, ...props }: MessageScrollerProps) {
+function MessageScroller({ children, ref, ...props }: MessageScrollerProps) {
 	const { setRootElement } = useMessageScrollerContext();
+	const setRootRef = React.useCallback(
+		(element: HTMLDivElement | null) => {
+			setRootElement(element);
+			composeRefs(ref)?.(element);
+		},
+		[ref, setRootElement],
+	);
 
 	return (
-		<div ref={setRootElement} {...props}>
+		<div {...props} ref={setRootRef}>
 			{children}
 		</div>
 	);
@@ -62,6 +69,7 @@ function MessageScrollerViewport({
 	"aria-label": ariaLabel,
 	children,
 	onKeyDown,
+	onPointerDown,
 	onScroll,
 	onTouchMove,
 	onWheel,
@@ -79,6 +87,7 @@ function MessageScrollerViewport({
 		userScrollIntent,
 		viewportRef,
 	} = useMessageScrollerContext();
+	const pointerScrollIntentRef = React.useRef(false);
 
 	React.useLayoutEffect(() => {
 		preserveScrollOnPrependRef.current = preserveScrollOnPrepend;
@@ -93,8 +102,22 @@ function MessageScrollerViewport({
 	);
 
 	function handleScroll(event: React.UIEvent<HTMLDivElement>) {
-		syncAfterScroll();
+		syncAfterScroll({ userIntent: pointerScrollIntentRef.current });
 		onScroll?.(event);
+	}
+
+	function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+		pointerScrollIntentRef.current = true;
+
+		function clearPointerScrollIntent() {
+			pointerScrollIntentRef.current = false;
+			window.removeEventListener("pointerup", clearPointerScrollIntent);
+			window.removeEventListener("pointercancel", clearPointerScrollIntent);
+		}
+
+		window.addEventListener("pointerup", clearPointerScrollIntent);
+		window.addEventListener("pointercancel", clearPointerScrollIntent);
+		onPointerDown?.(event);
 	}
 
 	function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
@@ -136,6 +159,7 @@ function MessageScrollerViewport({
 			aria-label={ariaLabel ?? "Messages"}
 			tabIndex={tabIndex ?? 0}
 			onKeyDown={handleKeyDown}
+			onPointerDown={handlePointerDown}
 			onScroll={handleScroll}
 			onTouchMove={handleTouchMove}
 			onWheel={handleWheel}
@@ -230,10 +254,10 @@ function MessageScrollerItem({
 }: MessageScrollerItemProps) {
 	return (
 		<div
+			{...props}
 			ref={ref}
 			data-message-id={messageId}
 			data-scroll-anchor={scrollAnchor ? "true" : "false"}
-			{...props}
 		/>
 	);
 }

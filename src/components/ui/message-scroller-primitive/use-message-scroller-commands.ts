@@ -200,9 +200,7 @@ function useMessageScrollerCommands({
 
 			setTailSpacerHeight(nextSpacerHeight);
 			// Seed the prepend anchor with the jump target so a prepend that lands
-			// before this scroll settles still preserves the jumped-to row; once it
-			// settles, syncAfterScroll's capturePrependAnchor re-captures it from the
-			// first visible row.
+			// during a programmatic jump still preserves the jumped-to row.
 			prependRestoreRef.current = {
 				element,
 				viewportTop: getElementViewportTop(element, viewport),

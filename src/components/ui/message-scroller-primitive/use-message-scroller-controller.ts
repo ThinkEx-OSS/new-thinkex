@@ -432,10 +432,22 @@ function useMessageScrollerController({
 		[spacerGapRef, spacerRef],
 	);
 
-	const syncAfterScroll = React.useCallback(() => {
-		commitScrollState();
-		capturePrependAnchor();
-	}, [capturePrependAnchor, commitScrollState]);
+	const syncAfterScroll = React.useCallback(
+		({ userIntent = false }: { userIntent?: boolean } = {}) => {
+			if (userIntent) {
+				userScrollIntent();
+			}
+
+			commitScrollState();
+
+			if (modeRef.current === "anchored-to-message" || modeRef.current === "settling-jump") {
+				return;
+			}
+
+			capturePrependAnchor();
+		},
+		[capturePrependAnchor, commitScrollState, modeRef, userScrollIntent],
+	);
 
 	const context = React.useMemo<MessageScrollerContextValue>(
 		() => ({

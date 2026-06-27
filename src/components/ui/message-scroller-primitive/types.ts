@@ -134,7 +134,7 @@ type MessageScrollerContextValue = {
 	setSpacerElement: (element: HTMLDivElement | null) => void;
 	setViewportElement: (element: HTMLDivElement | null) => void;
 	stateStore: MessageScrollerStore<MessageScrollerScrollable>;
-	syncAfterScroll: () => void;
+	syncAfterScroll: (options?: { userIntent?: boolean }) => void;
 	userScrollIntent: () => void;
 	viewportRef: React.RefObject<HTMLDivElement | null>;
 };
