@@ -129,7 +129,7 @@ async function pollLlamaParseJob(env: Env, jobId: string) {
 	while (Date.now() - startedAt < llamaParseMaxPollMs) {
 		const responseJson = await llamaCloudJsonRequest({
 			env,
-			path: `/api/v2/parse/${jobId}?expand=markdown,metadata`,
+			path: `/api/v2/parse/${jobId}?expand=markdown,metadata,job_metadata`,
 			operation: "LlamaParse job result",
 		});
 		const job = getRecordValue(responseJson, "job") ?? responseJson;
@@ -139,8 +139,8 @@ async function pollLlamaParseJob(env: Env, jobId: string) {
 			return responseJson;
 		}
 
-		if (status === "FAILED") {
-			throw new Error("LlamaParse job failed.");
+		if (status === "FAILED" || status === "CANCELLED") {
+			throw new Error(`LlamaParse job ${status.toLowerCase()}.`);
 		}
 
 		await wait(llamaParsePollIntervalMs);

@@ -36,7 +36,7 @@ export class OfficePdfConversionError extends Error {
 }
 
 export async function convertOfficeFileToPdf(
-	env: Env,
+	env: Cloudflare.Env,
 	input: ConvertOfficeFileToPdfInput,
 ): Promise<ConvertOfficeFileToPdfResult> {
 	const converter = await getRandom(env.OFFICE_PDF_CONVERTER, converterPoolSize);

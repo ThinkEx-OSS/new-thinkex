@@ -3,11 +3,11 @@ export interface MarkdownProjectionPage {
 	markdown: string;
 }
 
-const markdownPageMarkerPattern = /^<!-- page (\d+) -->\s*$/gm;
+const markdownPageMarkerPattern = /^<!--\s*(?:thinkex:pdf-page|page)\s+(\d+)\s*-->\s*$/gm;
 
 export function serializeMarkdownPageProjection(pages: MarkdownProjectionPage[]) {
 	return pages
-		.map((page) => `<!-- page ${page.pageNumber} -->\n\n${page.markdown.trim()}`)
+		.map((page) => `<!-- thinkex:pdf-page ${page.pageNumber} -->\n\n${page.markdown}`)
 		.join("\n\n");
 }
 
@@ -15,7 +15,7 @@ export function parseMarkdownPageProjection(content: string) {
 	const matches = Array.from(content.matchAll(markdownPageMarkerPattern));
 
 	if (matches.length === 0) {
-		return [{ pageNumber: 1, markdown: content.trim() }];
+		return [{ pageNumber: 1, markdown: content }];
 	}
 
 	return matches.map((match, index) => {
@@ -25,7 +25,7 @@ export function parseMarkdownPageProjection(content: string) {
 
 		return {
 			pageNumber: Number(match[1]),
-			markdown: content.slice(markdownStart, markdownEnd).trim(),
+			markdown: content.slice(markdownStart, markdownEnd).replace(/^\n+|\n+$/g, ""),
 		};
 	});
 }

@@ -289,7 +289,19 @@ export function requireWorkspaceFileTypeFromHint(
 export function resolveWorkspaceUploadFormat(
 	input: WorkspaceFileUploadHint,
 ): WorkspaceUploadFormat | null {
-	return WORKSPACE_UPLOAD_FORMATS.find((format) => matchesUploadHint(format, input)) ?? null;
+	const contentType = normalizeUploadContentType(input.contentType);
+
+	if (contentType) {
+		const formatByMime = WORKSPACE_UPLOAD_FORMATS.find((format) => format.mime === contentType);
+
+		if (formatByMime) {
+			return formatByMime;
+		}
+	}
+
+	const fileName = normalizeUploadFileName(input.fileName);
+
+	return WORKSPACE_UPLOAD_FORMATS.find((format) => fileName.endsWith(`.${format.ext}`)) ?? null;
 }
 
 export function resolveWorkspaceFileTypeFromHint(

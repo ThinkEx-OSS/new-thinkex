@@ -14,6 +14,7 @@ import {
 	requireWorkspaceFileTypeFromHint,
 	requiresWorkspaceFilePdfConversion,
 	resolveWorkspaceFileAiReadStrategy,
+	workspaceFileUploadLimits,
 	WorkspaceFileUploadError,
 	type WorkspaceFileTypeDescriptor,
 } from "#/features/workspaces/model/workspace-file";
@@ -182,7 +183,7 @@ function getWorkspaceFileUploadObjectKey(workspaceId: string) {
 
 async function prepareWorkspaceFileUpload(input: {
 	descriptor: WorkspaceFileTypeDescriptor;
-	env: Env;
+	env: Cloudflare.Env;
 	file: File;
 }): Promise<{
 	body: ArrayBuffer | File;
@@ -210,6 +211,15 @@ async function prepareWorkspaceFileUpload(input: {
 		file: input.file,
 		fileName: input.file.name,
 	});
+
+	if (conversion.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile) {
+		throw new WorkspaceFileUploadError({
+			code: "UPLOAD_TOO_LARGE",
+			message: "Converted PDF size is outside the supported limit.",
+			status: 413,
+		});
+	}
+
 	const pdfFileName = getWorkspaceConvertedPdfFileName(input.file.name);
 	const pdfDescriptor = requireWorkspaceFileTypeFromHint({
 		fileName: pdfFileName,
