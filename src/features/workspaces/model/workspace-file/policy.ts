@@ -7,11 +7,14 @@ import type {
 	WorkspaceFileExtractionRoute,
 	WorkspaceFilePreviewGeneratorId,
 } from "#/features/workspaces/model/workspace-file/types";
+import {
+	getDeniedWorkspaceUploadMessage,
+	normalizeUploadContentType,
+	normalizeUploadFileName,
+	type WorkspaceUploadHint,
+} from "#/features/workspaces/upload/matching";
 
-export interface WorkspaceFileUploadHint {
-	fileName: string;
-	contentType?: string | null;
-}
+export type WorkspaceFileUploadHint = WorkspaceUploadHint;
 
 export interface WorkspaceUploadFormat {
 	ext: string;
@@ -37,13 +40,8 @@ export interface WorkspaceFileTypeDescriptor extends WorkspaceUploadFamily {
 	extensions: readonly { ext: string; mime: string }[];
 }
 
-export interface WorkspaceUploadDeniedFormat {
-	ext: string;
-	mime: string;
-	message: string;
-}
-
 export type WorkspaceFileUploadValidationErrorCode =
+	| "INVALID_UPLOAD"
 	| "UNSUPPORTED_FILE_TYPE"
 	| "UPLOAD_TOO_LARGE"
 	| "TOO_MANY_FILES"
@@ -96,17 +94,6 @@ export const workspaceFileUploadFormats = [
 	},
 	{ ext: "webp", mime: "image/webp", assetKind: "image" },
 ] as const satisfies readonly WorkspaceUploadFormat[];
-
-/**
- * Known formats we reject with a specific message (optional UX layer on top of allowlist).
- */
-const WORKSPACE_UPLOAD_DENIED_FORMATS = [
-	{
-		ext: "svg",
-		mime: "image/svg+xml",
-		message: "SVG files are not supported.",
-	},
-] as const satisfies readonly WorkspaceUploadDeniedFormat[];
 
 const WORKSPACE_UPLOAD_FAMILIES = [
 	{
@@ -164,7 +151,7 @@ export function requireWorkspaceFileTypeFromHint(
 	if (!descriptor) {
 		throw new WorkspaceFileUploadError({
 			code: "UNSUPPORTED_FILE_TYPE",
-			message: getWorkspaceUploadDeniedMessage(input) ?? "This file type is not supported.",
+			message: getDeniedWorkspaceUploadMessage(input) ?? "This file type is not supported.",
 			status: 400,
 		});
 	}
@@ -291,34 +278,6 @@ export function resolveWorkspaceFileContentType(input: {
 		input.descriptor.extensions[0]?.mime ??
 		"application/octet-stream"
 	);
-}
-
-function matchesUploadHint(
-	format: Pick<WorkspaceUploadFormat, "ext" | "mime">,
-	input: WorkspaceFileUploadHint,
-) {
-	const fileName = normalizeUploadFileName(input.fileName);
-	const contentType = normalizeUploadContentType(input.contentType);
-
-	return (
-		fileName.endsWith(`.${format.ext}`) || (contentType !== null && contentType === format.mime)
-	);
-}
-
-function getWorkspaceUploadDeniedMessage(input: WorkspaceFileUploadHint) {
-	const denied = WORKSPACE_UPLOAD_DENIED_FORMATS.find((format) => matchesUploadHint(format, input));
-
-	return denied?.message ?? null;
-}
-
-function normalizeUploadFileName(fileName: string) {
-	return fileName.trim().toLowerCase();
-}
-
-function normalizeUploadContentType(contentType?: string | null) {
-	const normalized = contentType?.trim().toLowerCase() ?? null;
-
-	return normalized || null;
 }
 
 function stripFileExtension(fileName: string) {

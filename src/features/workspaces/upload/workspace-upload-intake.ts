@@ -11,6 +11,11 @@ import {
 	type WorkspaceFileUploadHint,
 	type WorkspaceFileUploadValidationError,
 } from "#/features/workspaces/model/workspace-file";
+import {
+	getDeniedWorkspaceUploadMessage,
+	normalizeUploadContentType,
+	normalizeUploadFileName,
+} from "#/features/workspaces/upload/matching";
 
 export type WorkspaceUploadPlan =
 	| {
@@ -37,14 +42,6 @@ export type WorkspaceUploadValidationResult =
 			error: WorkspaceFileUploadValidationError;
 			ok: false;
 	  };
-
-const deniedUploadFormats = [
-	{
-		ext: "svg",
-		mime: "image/svg+xml",
-		message: "SVG files are not supported.",
-	},
-] as const;
 
 export const workspaceUploadAccept = [
 	...new Set([
@@ -90,7 +87,7 @@ export function validateWorkspaceUpload(input: {
 	sizeBytes: number;
 	contentType?: string | null;
 }): WorkspaceUploadValidationResult {
-	const deniedMessage = getDeniedUploadMessage(input);
+	const deniedMessage = getDeniedWorkspaceUploadMessage(input);
 
 	if (deniedMessage) {
 		return {
@@ -116,11 +113,18 @@ export function validateWorkspaceUpload(input: {
 		};
 	}
 
-	if (
-		!Number.isInteger(input.sizeBytes) ||
-		input.sizeBytes <= 0 ||
-		input.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile
-	) {
+	if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0) {
+		return {
+			error: {
+				code: "INVALID_UPLOAD",
+				message: "File upload is empty.",
+				status: 400,
+			},
+			ok: false,
+		};
+	}
+
+	if (input.sizeBytes > workspaceFileUploadLimits.maxBytesPerFile) {
 		return {
 			error: {
 				code: "UPLOAD_TOO_LARGE",
@@ -215,8 +219,10 @@ function resolveWorkspaceDocumentImporter(
 		return formatByExtension;
 	}
 
-	const formatByFileName = workspaceDocumentImportFormats.find((format) =>
-		format.matchesFileName?.(fileName),
+	const formatByFileName = workspaceDocumentImportFormats.find(
+		(format) =>
+			format.fileNames.some((candidate) => candidate === fileName) ||
+			format.matchesFileName?.(fileName),
 	);
 
 	if (formatByFileName) {
@@ -236,29 +242,4 @@ function resolveWorkspaceDocumentImporter(
 	}
 
 	return null;
-}
-
-function getDeniedUploadMessage(input: WorkspaceFileUploadHint) {
-	const denied = deniedUploadFormats.find((format) => matchesUploadHint(format, input));
-
-	return denied?.message ?? null;
-}
-
-function matchesUploadHint(format: { ext: string; mime: string }, input: WorkspaceFileUploadHint) {
-	const fileName = normalizeUploadFileName(input.fileName);
-	const contentType = normalizeUploadContentType(input.contentType);
-
-	return (
-		fileName.endsWith(`.${format.ext}`) || (contentType !== null && contentType === format.mime)
-	);
-}
-
-function normalizeUploadFileName(fileName: string) {
-	return fileName.trim().toLowerCase();
-}
-
-function normalizeUploadContentType(contentType?: string | null) {
-	const normalized = contentType?.trim().toLowerCase() ?? null;
-
-	return normalized || null;
 }

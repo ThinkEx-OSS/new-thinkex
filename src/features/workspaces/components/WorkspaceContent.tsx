@@ -257,7 +257,7 @@ function WorkspaceBrowseContent({
 				<WorkspaceMarqueeOverlay rect={marqueeRect} />
 				{isNativeFileDropTarget ? (
 					<WorkspaceFileDropOverlay
-						description="Files will be added here."
+						description="Uploads will be added here."
 						title={`Drop ${workspaceUploadTypeLabel} to upload`}
 					/>
 				) : null}

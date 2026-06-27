@@ -172,9 +172,15 @@ function getReviewedFileName(file: File) {
 }
 
 function mapWorkspaceValidationErrorCode(
-	code: "UNSUPPORTED_FILE_TYPE" | "UPLOAD_TOO_LARGE" | "TOO_MANY_FILES" | "BATCH_TOO_LARGE",
+	code:
+		| "INVALID_UPLOAD"
+		| "UNSUPPORTED_FILE_TYPE"
+		| "UPLOAD_TOO_LARGE"
+		| "TOO_MANY_FILES"
+		| "BATCH_TOO_LARGE",
 ): ReviewedIncomingFileReasonCode {
 	switch (code) {
+		case "INVALID_UPLOAD":
 		case "UNSUPPORTED_FILE_TYPE":
 			return "workspace_unsupported";
 		case "UPLOAD_TOO_LARGE":

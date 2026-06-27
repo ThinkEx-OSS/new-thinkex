@@ -122,6 +122,10 @@ export const supportedCodeFileExtensions = [
 	...new Set(codeLanguageDefinitionList.flatMap((definition) => definition.extensions ?? [])),
 ].sort((left, right) => left.localeCompare(right));
 
+export const supportedCodeFileNames = [
+	...new Set(codeLanguageDefinitionList.flatMap((definition) => definition.fileNames ?? [])),
+].sort((left, right) => left.localeCompare(right));
+
 const supportedCodeLanguageSet = new Set<string>(supportedCodeLanguages);
 const codeLanguageAliases = new Map<string, SupportedCodeLanguage>(
 	codeLanguageDefinitionList.flatMap((definition) =>

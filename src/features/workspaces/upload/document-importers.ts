@@ -4,6 +4,7 @@ import type { JsonValue } from "#/features/workspaces/contracts";
 import {
 	resolveCodeLanguageFromFileName,
 	supportedCodeFileExtensions,
+	supportedCodeFileNames,
 	type SupportedCodeLanguage,
 } from "#/features/workspaces/documents/code-block-shiki/code-languages";
 import { parseMarkdownToTiptapDocumentProjection } from "#/features/workspaces/documents/document-markdown";
@@ -22,6 +23,7 @@ export interface WorkspaceDocumentImportFormat {
 	id: "csv" | "tsv" | "markdown" | "plain_text" | "code";
 	label: string;
 	extensions: readonly string[];
+	fileNames: readonly string[];
 	mimes: readonly string[];
 	importFile(file: File): Promise<WorkspaceDocumentCreateContent>;
 	matchesFileName?(fileName: string): boolean;
@@ -45,6 +47,7 @@ export const workspaceDocumentImportFormats: readonly WorkspaceDocumentImportFor
 		id: "markdown",
 		label: "Markdown",
 		extensions: ["md", "markdown"],
+		fileNames: [],
 		mimes: ["text/markdown", "text/x-markdown"],
 		importFile: importMarkdownFile,
 	},
@@ -52,6 +55,7 @@ export const workspaceDocumentImportFormats: readonly WorkspaceDocumentImportFor
 		id: "code",
 		label: "code",
 		extensions: supportedCodeFileExtensions,
+		fileNames: supportedCodeFileNames,
 		mimes: [],
 		importFile: importCodeFile,
 		matchesFileName: (fileName) => resolveCodeLanguageFromFileName(fileName) !== null,
@@ -60,6 +64,7 @@ export const workspaceDocumentImportFormats: readonly WorkspaceDocumentImportFor
 		id: "plain_text",
 		label: "text",
 		extensions: ["txt"],
+		fileNames: [],
 		mimes: ["text/plain"],
 		importFile: importPlainTextFile,
 	},
@@ -76,6 +81,7 @@ function createDelimitedTableImporter(input: {
 		id: input.id,
 		label: input.label,
 		extensions: input.extensions,
+		fileNames: [],
 		mimes: input.mimes,
 		async importFile(file) {
 			const bytes = new Uint8Array(await file.arrayBuffer());
@@ -247,6 +253,11 @@ function escapeMarkdownTableCell(value: string) {
 
 function getImportedDocumentName(fileName: string) {
 	const name = fileName.trim().split(/[\\/]/).at(-1) || "Imported document";
+
+	if (name.startsWith(".")) {
+		return name;
+	}
+
 	const lastDot = name.lastIndexOf(".");
 
 	if (lastDot <= 0) {
