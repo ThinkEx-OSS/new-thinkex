@@ -5,6 +5,7 @@ import type {
 
 const implementedMarkdownExtractionProviders = [
 	"firecrawl",
+	"llama_parse",
 	"workers_ai_to_markdown",
 ] as const satisfies readonly MarkdownExtractionProviderId[];
 

@@ -107,8 +107,8 @@ const WORKSPACE_UPLOAD_FAMILIES = [
 		requiresHeavyViewerRuntime: true,
 		previewGenerator: "pdf_webp",
 		extractionRoute: {
-			provider: "firecrawl",
-			mode: "auto",
+			provider: "llama_parse",
+			mode: "agentic",
 			reason: "default_pdf_upload_route",
 		},
 	},

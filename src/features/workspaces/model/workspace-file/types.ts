@@ -11,7 +11,15 @@ export const workspaceFileExtractionProviders = [
 
 export type WorkspaceFileExtractionProviderId = (typeof workspaceFileExtractionProviders)[number];
 
-export type WorkspaceFileExtractionMode = "fast" | "auto" | "ocr" | "default" | "stub";
+export type WorkspaceFileExtractionMode =
+	| "fast"
+	| "auto"
+	| "ocr"
+	| "default"
+	| "stub"
+	| "cost_effective"
+	| "agentic"
+	| "agentic_plus";
 
 export interface WorkspaceFileExtractionRoute {
 	provider: WorkspaceFileExtractionProviderId;

@@ -12,6 +12,7 @@ export type MarkdownExtractionProviderMode = WorkspaceFileExtractionMode;
 export { workspaceFileExtractionProviders as markdownExtractionProviders };
 
 export type FirecrawlPdfMode = "fast" | "auto" | "ocr";
+export type LlamaParseTier = "cost_effective" | "agentic" | "agentic_plus";
 
 export interface WorkspaceFileExtractionWorkflowParams {
 	workspaceId: string;
