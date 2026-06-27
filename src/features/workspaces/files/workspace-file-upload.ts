@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
 	partitionWorkspaceUploadBatch,
+	requiresWorkspaceFilePdfConversion,
 	workspaceFileUploadLimits,
 } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
@@ -162,6 +163,21 @@ async function getWorkspaceFileUploadErrorMessage(response: Response) {
 }
 
 function getUploadBatchLoadingMessage(files: readonly File[]) {
+	if (
+		files.some((file) =>
+			requiresWorkspaceFilePdfConversion({
+				fileName: file.name,
+				contentType: file.type,
+			}),
+		)
+	) {
+		if (files.length === 1) {
+			return `Converting ${files[0]?.name ?? "file"} to PDF...`;
+		}
+
+		return `Converting and uploading ${files.length} files...`;
+	}
+
 	if (files.length === 1) {
 		return `Uploading ${files[0]?.name ?? "file"}...`;
 	}

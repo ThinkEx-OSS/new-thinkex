@@ -44,7 +44,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					},
 					timeout: "10 minutes",
 				},
-				async () => {
+				async (): Promise<StagedMarkdownExtractionResult> => {
 					const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 					const source = await kernel.readFileContent({
 						itemId: params.itemId,
@@ -74,7 +74,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						metadata: extraction.metadata,
 						routeReason: route.reason,
 						sourceHash,
-					} satisfies StagedMarkdownExtractionResult;
+					};
 				},
 			);
 

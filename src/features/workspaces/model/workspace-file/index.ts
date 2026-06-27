@@ -4,6 +4,7 @@ export {
 	getMetadataString,
 } from "#/features/workspaces/model/workspace-file/metadata";
 export {
+	getWorkspaceConvertedPdfFileName,
 	getWorkspaceFileShellExtension,
 	getWorkspaceFileUploadBatchValidationError,
 	getWorkspaceFileUploadValidationError,
@@ -11,6 +12,7 @@ export {
 	normalizeWorkspaceUploadFileName,
 	partitionWorkspaceUploadBatch,
 	requireWorkspaceFileTypeFromHint,
+	requiresWorkspaceFilePdfConversion,
 	resolveMatchedUploadFormat,
 	resolveWorkspaceFileAiReadStrategy,
 	resolveWorkspaceFileContentType,
