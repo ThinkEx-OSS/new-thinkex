@@ -8,10 +8,6 @@ overrides:
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vitest: 4.1.9
 
-patchedDependencies:
-  '@shadcn/react@0.1.0':
-    hash: f320e02e646c6bfeddf496ae502aae99efacbbbf5840179173d018fbf8001a00
-    path: patches/@shadcn__react@0.1.0.patch
 
 importers:
 
@@ -112,7 +108,7 @@ importers:
         version: 1.4.7(rollup@4.62.2)
       '@shadcn/react':
         specifier: ^0.1.0
-        version: 0.1.0(patch_hash=f320e02e646c6bfeddf496ae502aae99efacbbbf5840179173d018fbf8001a00)(@types/react@19.2.17)(react@19.2.7)
+        version: 0.1.0(@types/react@19.2.17)(react@19.2.7)
       '@streamdown/cjk':
         specifier: ^1.0.3
         version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.7)(unified@11.0.5)
@@ -10932,7 +10928,7 @@ snapshots:
     dependencies:
       '@sentry/core': 10.58.0
 
-  '@shadcn/react@0.1.0(patch_hash=f320e02e646c6bfeddf496ae502aae99efacbbbf5840179173d018fbf8001a00)(@types/react@19.2.17)(react@19.2.7)':
+  '@shadcn/react@0.1.0(@types/react@19.2.17)(react@19.2.7)':
     optionalDependencies:
       '@types/react': 19.2.17
       react: 19.2.7

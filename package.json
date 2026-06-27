@@ -163,9 +163,6 @@
 		"onlyBuiltDependencies": [
 			"esbuild",
 			"lightningcss"
-		],
-		"patchedDependencies": {
-			"@shadcn/react@0.1.0": "patches/@shadcn__react@0.1.0.patch"
-		}
+		]
 	}
 }

@@ -51,7 +51,6 @@ type AiChatListRow =
 			display: AssistantRowDisplay | null;
 			key: string;
 			message: AiChatMessage;
-			tailPending?: NonNullable<AiChatPresentation["tailPending"]>;
 			type: "message";
 	  }
 	| {
@@ -200,23 +199,16 @@ function AiChatListRowView({
 
 	const { display, message } = row;
 	return (
-		<>
-			<AiChatTranscriptRail>
-				<AiChatMessageRow
-					display={display}
-					isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
-					isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
-					isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
-					message={message}
-					onRegenerate={onRegenerateLastResponse}
-				/>
-			</AiChatTranscriptRail>
-			{row.tailPending ? (
-				<AiChatTranscriptRail>
-					<AiChatAssistantPending pending={row.tailPending} />
-				</AiChatTranscriptRail>
-			) : null}
-		</>
+		<AiChatTranscriptRail>
+			<AiChatMessageRow
+				display={display}
+				isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
+				isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+				isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
+				message={message}
+				onRegenerate={onRegenerateLastResponse}
+			/>
+		</AiChatTranscriptRail>
 	);
 }
 
@@ -286,11 +278,7 @@ function getAiChatListRows(
 		});
 	}
 
-	const lastRow = rows.at(-1);
-
-	if (presentation.tailPending && lastRow?.type === "message") {
-		lastRow.tailPending = presentation.tailPending;
-	} else if (presentation.tailPending) {
+	if (presentation.tailPending) {
 		rows.push({
 			key: "assistant-pending:tail",
 			pending: presentation.tailPending,
