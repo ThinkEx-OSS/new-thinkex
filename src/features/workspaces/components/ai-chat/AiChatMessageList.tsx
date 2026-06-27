@@ -82,7 +82,6 @@ export default function AiChatMessageList({
 	const { lastAssistantMessageId, status } = presentation;
 	const rows = getAiChatListRows(messages, presentation, assistantError);
 	const hasAssistantContent = hasLatestAssistantContent(rows);
-	const latestUserMessageId = getLatestUserMessageId(rows);
 	const isStreamActive = isAiChatStreamActive(status);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
@@ -125,7 +124,7 @@ export default function AiChatMessageList({
 								<MessageScrollerItem
 									key={row.key}
 									messageId={getAiChatRowMessageId(row)}
-									scrollAnchor={isAiChatRowScrollAnchor(row, latestUserMessageId)}
+									scrollAnchor={isAiChatRowScrollAnchor(row)}
 								>
 									<AiChatListRowView
 										canRetry={Boolean(onRegenerateLastResponse)}
@@ -320,20 +319,8 @@ function getAiChatRowMessageId(row: AiChatListRow) {
 	return row.key;
 }
 
-function isAiChatRowScrollAnchor(row: AiChatListRow, latestUserMessageId: string | null) {
-	return row.type === "message" && row.message.id === latestUserMessageId;
-}
-
-function getLatestUserMessageId(rows: AiChatListRow[]) {
-	for (let i = rows.length - 1; i >= 0; i -= 1) {
-		const row = rows[i];
-
-		if (row.type === "message" && row.message.role === "user") {
-			return row.message.id;
-		}
-	}
-
-	return null;
+function isAiChatRowScrollAnchor(row: AiChatListRow) {
+	return row.type === "message" && row.message.role === "user";
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {
