@@ -51,7 +51,6 @@ type AiChatListRow =
 			display: AssistantRowDisplay | null;
 			key: string;
 			message: AiChatMessage;
-			tailPending?: NonNullable<AiChatPresentation["tailPending"]>;
 			type: "message";
 	  }
 	| {
@@ -83,6 +82,7 @@ export default function AiChatMessageList({
 	const { lastAssistantMessageId, status } = presentation;
 	const rows = getAiChatListRows(messages, presentation, assistantError);
 	const hasAssistantContent = hasLatestAssistantContent(rows);
+	const latestUserMessageId = getLatestUserMessageId(rows);
 	const isStreamActive = isAiChatStreamActive(status);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [selectedText, setSelectedText] = useState<SelectedText | null>(null);
@@ -125,7 +125,7 @@ export default function AiChatMessageList({
 								<MessageScrollerItem
 									key={row.key}
 									messageId={getAiChatRowMessageId(row)}
-									scrollAnchor={isAiChatRowScrollAnchor(row)}
+									scrollAnchor={isAiChatRowScrollAnchor(row, latestUserMessageId)}
 								>
 									<AiChatListRowView
 										canRetry={Boolean(onRegenerateLastResponse)}
@@ -200,23 +200,16 @@ function AiChatListRowView({
 
 	const { display, message } = row;
 	return (
-		<>
-			<AiChatTranscriptRail>
-				<AiChatMessageRow
-					display={display}
-					isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
-					isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
-					isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
-					message={message}
-					onRegenerate={onRegenerateLastResponse}
-				/>
-			</AiChatTranscriptRail>
-			{row.tailPending ? (
-				<AiChatTranscriptRail>
-					<AiChatAssistantPending pending={row.tailPending} />
-				</AiChatTranscriptRail>
-			) : null}
-		</>
+		<AiChatTranscriptRail>
+			<AiChatMessageRow
+				display={display}
+				isLatestAssistant={message.role === "assistant" && message.id === lastAssistantMessageId}
+				isRegenerable={message.id === lastAssistantMessageId && status === "ready"}
+				isStreaming={message.id === lastAssistantMessageId && isAiChatStreamActive(status)}
+				message={message}
+				onRegenerate={onRegenerateLastResponse}
+			/>
+		</AiChatTranscriptRail>
 	);
 }
 
@@ -286,11 +279,7 @@ function getAiChatListRows(
 		});
 	}
 
-	const lastRow = rows.at(-1);
-
-	if (presentation.tailPending && lastRow?.type === "message") {
-		lastRow.tailPending = presentation.tailPending;
-	} else if (presentation.tailPending) {
+	if (presentation.tailPending) {
 		rows.push({
 			key: "assistant-pending:tail",
 			pending: presentation.tailPending,
@@ -331,8 +320,20 @@ function getAiChatRowMessageId(row: AiChatListRow) {
 	return row.key;
 }
 
-function isAiChatRowScrollAnchor(row: AiChatListRow) {
-	return row.type === "message" && row.message.role === "user";
+function isAiChatRowScrollAnchor(row: AiChatListRow, latestUserMessageId: string | null) {
+	return row.type === "message" && row.message.id === latestUserMessageId;
+}
+
+function getLatestUserMessageId(rows: AiChatListRow[]) {
+	for (let i = rows.length - 1; i >= 0; i -= 1) {
+		const row = rows[i];
+
+		if (row.type === "message" && row.message.role === "user") {
+			return row.message.id;
+		}
+	}
+
+	return null;
 }
 
 function getSelectedText(root: HTMLElement | null): SelectedText | null {
