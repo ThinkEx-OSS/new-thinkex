@@ -1,7 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { isValidElement, useEffect, useState } from "react";
-import type { BundledLanguage, BundledTheme, HighlighterGeneric, ThemedToken } from "shiki";
-import { bundledLanguagesInfo, createHighlighter } from "shiki";
+import type { ThemedToken } from "shiki/core";
 import {
 	CodeBlockActions,
 	CodeBlockCopyButton,
@@ -10,6 +9,12 @@ import {
 	CodeBlockLabel,
 	CodeBlockTitle,
 } from "#/components/code-block/code-block-chrome";
+import {
+	getCodeLanguageLabel,
+	highlightCodeTokens,
+	normalizeCodeLanguage,
+	type SupportedCodeLanguage,
+} from "#/features/workspaces/documents/code-block-shiki/highlighter";
 import { cn } from "#/lib/utils.ts";
 
 export {
@@ -35,33 +40,10 @@ const isUnderline = (fontStyle: number | undefined) =>
 	// oxlint-disable-next-line eslint(no-bitwise)
 	fontStyle && fontStyle & 4;
 
-const languageIds = new Set(bundledLanguagesInfo.map((language) => language.id));
-const languageAliases = new Map(
-	bundledLanguagesInfo.flatMap((language) =>
-		(language.aliases ?? []).map((alias) => [alias, language.id] as const),
-	),
-);
-type CodeBlockLanguage = BundledLanguage | "text";
+type CodeBlockLanguage = SupportedCodeLanguage | "text";
 
-const normalizeLanguage = (language: string | null | undefined) => {
-	const normalized = language?.trim().toLowerCase();
-
-	if (!normalized) {
-		return "text";
-	}
-
-	const alias = languageAliases.get(normalized);
-
-	if (alias) {
-		return alias as CodeBlockLanguage;
-	}
-
-	if (languageIds.has(normalized)) {
-		return normalized as CodeBlockLanguage;
-	}
-
-	return "text";
-};
+const normalizeChatCodeLanguage = (language: string | null | undefined): CodeBlockLanguage =>
+	normalizeCodeLanguage(language) ?? "text";
 
 const getLanguageFromClassName = (className: unknown) => {
 	const classes = Array.isArray(className)
@@ -169,12 +151,6 @@ interface TokenizedCode {
 	bg: string;
 }
 
-// Highlighter cache (singleton per language)
-const highlighterCache = new Map<
-	string,
-	Promise<HighlighterGeneric<BundledLanguage, BundledTheme>>
->();
-
 // Token cache
 const tokensCache = new Map<string, TokenizedCode>();
 const pendingTokenKeys = new Set<string>();
@@ -182,24 +158,7 @@ const pendingTokenKeys = new Set<string>();
 // Subscribers for async token updates
 const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
 
-const getTokensCacheKey = (code: string, language: BundledLanguage) => `${language}\0${code}`;
-
-const getHighlighter = (
-	language: BundledLanguage,
-): Promise<HighlighterGeneric<BundledLanguage, BundledTheme>> => {
-	const cached = highlighterCache.get(language);
-	if (cached) {
-		return cached;
-	}
-
-	const highlighterPromise = createHighlighter({
-		langs: [language],
-		themes: ["github-light", "github-dark"],
-	});
-
-	highlighterCache.set(language, highlighterPromise);
-	return highlighterPromise;
-};
+const getTokensCacheKey = (code: string, language: SupportedCodeLanguage) => `${language}\0${code}`;
 
 // Create raw tokens for immediate display while highlighting loads
 const createRawTokens = (code: string): TokenizedCode => ({
@@ -251,25 +210,13 @@ const highlightCode = (
 	pendingTokenKeys.add(tokensCacheKey);
 
 	// Start highlighting in background - fire-and-forget async pattern
-	getHighlighter(language)
+	highlightCodeTokens({ code, language })
 		// oxlint-disable-next-line eslint-plugin-promise(prefer-await-to-then)
-		.then((highlighter) => {
-			const availableLangs = highlighter.getLoadedLanguages();
-			const langToUse = availableLangs.includes(language) ? language : "text";
-
-			const result = highlighter.codeToTokens(code, {
-				lang: langToUse,
-				themes: {
-					dark: "github-dark",
-					light: "github-light",
-				},
-			});
-
-			const tokenized: TokenizedCode = {
-				bg: result.bg ?? "transparent",
-				fg: result.fg ?? "inherit",
-				tokens: result.tokens,
-			};
+		.then((tokenized) => {
+			if (!tokenized) {
+				pendingTokenKeys.delete(tokensCacheKey);
+				return;
+			}
 
 			// Cache the result
 			tokensCache.set(tokensCacheKey, tokenized);
@@ -439,8 +386,8 @@ export const MarkdownCodeBlock = ({
 
 	const rawLanguage =
 		getLanguageFromClassName(className) ?? getLanguageFromClassName(node?.properties?.className);
-	const language = normalizeLanguage(rawLanguage);
-	const label = rawLanguage || "text";
+	const language = normalizeChatCodeLanguage(rawLanguage);
+	const label = language === "text" ? (rawLanguage ?? "text") : getCodeLanguageLabel(language);
 	const code = getTextContent(children).replace(/\n$/, "");
 
 	return (

@@ -6,6 +6,7 @@ import {
 	type LanguageInput,
 	type ThemeInput,
 	type ThemeRegistration,
+	type ThemedToken,
 } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
@@ -56,6 +57,11 @@ export type SupportedCodeTheme = "github-dark" | "github-light";
 export type CodeLanguageOption = {
 	label: string;
 	value: SupportedCodeLanguage;
+};
+export type CodeTokenizationResult = {
+	bg: string;
+	fg: string;
+	tokens: ThemedToken[][];
 };
 
 type WorkspaceDocumentHighlighter = HighlighterGeneric<SupportedCodeLanguage, SupportedCodeTheme>;
@@ -185,8 +191,8 @@ const themeLoaders: Record<SupportedCodeTheme, () => Promise<ThemeModule>> = {
 
 let highlighter: WorkspaceDocumentHighlighter | undefined;
 let highlighterPromise: Promise<void> | undefined;
-const loadingLanguages = new Set<SupportedCodeLanguage>();
-const loadingThemes = new Set<SupportedCodeTheme>();
+const loadingLanguages = new Map<SupportedCodeLanguage, Promise<boolean>>();
+const loadingThemes = new Map<SupportedCodeTheme, Promise<boolean>>();
 const customThemeRegistry = new Map<string, ThemeRegistration>();
 
 export function getShiki() {
@@ -233,18 +239,21 @@ async function loadConfiguredTheme(theme: SupportedCodeTheme) {
 		return false;
 	}
 
-	if (loadingThemes.has(theme)) {
-		return false;
+	const pendingTheme = loadingThemes.get(theme);
+	if (pendingTheme) {
+		return pendingTheme;
 	}
 
-	loadingThemes.add(theme);
-	try {
+	const themePromise = (async () => {
 		const themeModule = await themeLoaders[theme]();
 		await highlighter.loadTheme(themeModule.default);
 		return true;
-	} finally {
+	})().finally(() => {
 		loadingThemes.delete(theme);
-	}
+	});
+
+	loadingThemes.set(theme, themePromise);
+	return themePromise;
 }
 
 async function createWorkspaceDocumentHighlighter(opts: HighlighterOptions) {
@@ -292,21 +301,67 @@ export async function loadLanguage(language: string | null | undefined) {
 		return false;
 	}
 
-	if (
-		highlighter.getLoadedLanguages().includes(supportedLanguage) ||
-		loadingLanguages.has(supportedLanguage)
-	) {
+	if (highlighter.getLoadedLanguages().includes(supportedLanguage)) {
 		return false;
 	}
 
-	loadingLanguages.add(supportedLanguage);
-	try {
+	const pendingLanguage = loadingLanguages.get(supportedLanguage);
+	if (pendingLanguage) {
+		return pendingLanguage;
+	}
+
+	const languagePromise = (async () => {
 		const languageModule = await languageLoaders[supportedLanguage]();
 		await highlighter.loadLanguage(languageModule.default);
 		return true;
-	} finally {
+	})().finally(() => {
 		loadingLanguages.delete(supportedLanguage);
+	});
+
+	loadingLanguages.set(supportedLanguage, languagePromise);
+	return languagePromise;
+}
+
+export async function highlightCodeTokens({
+	code,
+	language,
+	themes = {
+		dark: "github-dark",
+		light: "github-light",
+	},
+}: {
+	code: string;
+	language: string | null | undefined;
+	themes?: {
+		dark: SupportedCodeTheme;
+		light: SupportedCodeTheme;
+	};
+}): Promise<CodeTokenizationResult | null> {
+	const normalizedLanguage = normalizeCodeLanguage(language);
+
+	if (!normalizedLanguage) {
+		return null;
 	}
+
+	await loadHighlighter({
+		languages: [normalizedLanguage],
+		themes: [themes.light, themes.dark],
+	});
+
+	if (!highlighter) {
+		return null;
+	}
+
+	const result = highlighter.codeToTokens(code, {
+		lang: normalizedLanguage,
+		themes,
+	});
+
+	return {
+		bg: result.bg ?? "transparent",
+		fg: result.fg ?? "inherit",
+		tokens: result.tokens,
+	};
 }
 
 export async function initHighlighter({
