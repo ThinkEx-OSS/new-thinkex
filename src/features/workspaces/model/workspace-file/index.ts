@@ -6,11 +6,8 @@ export {
 export {
 	getWorkspaceConvertedPdfFileName,
 	getWorkspaceFileShellExtension,
-	getWorkspaceFileUploadBatchValidationError,
-	getWorkspaceFileUploadValidationError,
 	getWorkspaceUploadFamily,
 	normalizeWorkspaceUploadFileName,
-	partitionWorkspaceUploadBatch,
 	requireWorkspaceFileTypeFromHint,
 	requiresWorkspaceFilePdfConversion,
 	resolveMatchedUploadFormat,
@@ -24,8 +21,7 @@ export {
 	type WorkspaceFileUploadValidationError,
 	type WorkspaceUploadFamily,
 	type WorkspaceUploadFormat,
-	workspaceFileUploadAccept,
-	workspaceFileUploadTypeLabel,
+	workspaceFileUploadFormats,
 } from "#/features/workspaces/model/workspace-file/policy";
 export {
 	resolveWorkspaceFileTypeFromItem,

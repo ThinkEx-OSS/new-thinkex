@@ -34,7 +34,7 @@ import {
 import { workspaceToolbarIconButtonClass } from "#/features/workspaces/components/workspace-toolbar-styles";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { WorkspaceAiContextScope } from "#/features/workspaces/model/workspace-ai-context";
-import { workspaceFileUploadAccept } from "#/features/workspaces/model/workspace-file";
+import { workspaceUploadAccept } from "#/features/workspaces/upload/workspace-upload-intake";
 import {
 	useWorkspaceAiComposerDraftFiles,
 	useWorkspaceAiComposerDraftStore,
@@ -49,7 +49,7 @@ const PROMPT_INPUT_INLINE_PADDING = "px-3.5";
 const PROMPT_INPUT_HEADER_PADDING = "px-3.5 pt-3 pb-1";
 const PROMPT_INPUT_FOOTER_PADDING = "pl-2 pr-3.5 pt-1 pb-2";
 const CHAT_ATTACHMENT_PICKER_ACCEPT = [
-	...new Set([WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept, ...workspaceFileUploadAccept.split(",")]),
+	...new Set([WORKSPACE_AI_CHAT_ATTACHMENT_POLICY.accept, ...workspaceUploadAccept.split(",")]),
 ].join(",");
 const AiChatInspectorDialog = import.meta.env.DEV
 	? lazy(async () => {
