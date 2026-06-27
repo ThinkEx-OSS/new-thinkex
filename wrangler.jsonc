@@ -58,6 +58,14 @@
 			"class_name": "WorkspaceFileExtractionWorkflow",
 		},
 	],
+	"containers": [
+		{
+			"class_name": "OfficePdfConverter",
+			"image": "./containers/gotenberg/Dockerfile",
+			"instance_type": "standard-1",
+			"max_instances": 1,
+		},
+	],
 	"upload_source_maps": true,
 	"durable_objects": {
 		"bindings": [
@@ -73,6 +81,10 @@
 				"name": "DocumentSession",
 				"class_name": "DocumentSession",
 			},
+			{
+				"name": "OFFICE_PDF_CONVERTER",
+				"class_name": "OfficePdfConverter",
+			},
 		],
 	},
 	"migrations": [
@@ -87,6 +99,10 @@
 		{
 			"tag": "v4_document_session",
 			"new_sqlite_classes": ["DocumentSession"],
+		},
+		{
+			"tag": "v5_office_pdf_converter",
+			"new_sqlite_classes": ["OfficePdfConverter"],
 		},
 	],
 	"d1_databases": [
@@ -154,6 +170,14 @@
 					"class_name": "WorkspaceFileExtractionWorkflow",
 				},
 			],
+			"containers": [
+				{
+					"class_name": "OfficePdfConverter",
+					"image": "./containers/gotenberg/Dockerfile",
+					"instance_type": "standard-1",
+					"max_instances": 1,
+				},
+			],
 			"durable_objects": {
 				"bindings": [
 					{
@@ -167,6 +191,10 @@
 					{
 						"name": "DocumentSession",
 						"class_name": "DocumentSession",
+					},
+					{
+						"name": "OFFICE_PDF_CONVERTER",
+						"class_name": "OfficePdfConverter",
 					},
 				],
 			},
@@ -234,6 +262,14 @@
 					"class_name": "WorkspaceFileExtractionWorkflow",
 				},
 			],
+			"containers": [
+				{
+					"class_name": "OfficePdfConverter",
+					"image": "./containers/gotenberg/Dockerfile",
+					"instance_type": "standard-1",
+					"max_instances": 1,
+				},
+			],
 			"durable_objects": {
 				"bindings": [
 					{
@@ -247,6 +283,10 @@
 					{
 						"name": "DocumentSession",
 						"class_name": "DocumentSession",
+					},
+					{
+						"name": "OFFICE_PDF_CONVERTER",
+						"class_name": "OfficePdfConverter",
 					},
 				],
 			},

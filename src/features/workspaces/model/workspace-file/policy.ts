@@ -19,6 +19,7 @@ export interface WorkspaceUploadFormat {
 	mime: string;
 	assetKind: WorkspaceFileAssetKind;
 	aiReadStrategy?: WorkspaceFileAiReadStrategy;
+	conversion?: "office_to_pdf";
 }
 
 export interface WorkspaceUploadFamily {
@@ -73,6 +74,18 @@ export class WorkspaceFileUploadError extends Error {
  */
 const WORKSPACE_UPLOAD_FORMATS = [
 	{ ext: "pdf", mime: "application/pdf", assetKind: "pdf" },
+	{
+		ext: "docx",
+		mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		assetKind: "pdf",
+		conversion: "office_to_pdf",
+	},
+	{
+		ext: "pptx",
+		mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		assetKind: "pdf",
+		conversion: "office_to_pdf",
+	},
 	{ ext: "png", mime: "image/png", assetKind: "image" },
 	{ ext: "jpg", mime: "image/jpeg", assetKind: "image" },
 	{ ext: "jpeg", mime: "image/jpeg", assetKind: "image" },
@@ -148,9 +161,8 @@ export const workspaceFileUploadAccept = [
 	...new Set(WORKSPACE_UPLOAD_FORMATS.flatMap((format) => [format.mime, `.${format.ext}`])),
 ].join(",");
 
-export const workspaceFileUploadTypeLabel = formatUploadTypeLabel(
-	Object.values(workspaceUploadFamilyByKind),
-);
+export const workspaceFileUploadTypeLabel =
+	"PDFs, Word documents, PowerPoint presentations, or images";
 
 const unsupportedFileMessage = `Only ${workspaceFileUploadTypeLabel} are supported right now.`;
 
@@ -302,6 +314,17 @@ export function resolveWorkspaceFileAiReadStrategy(input: {
 	return format?.aiReadStrategy ?? input.descriptor.aiReadStrategy;
 }
 
+export function requiresWorkspaceFilePdfConversion(input: WorkspaceFileUploadHint) {
+	return resolveWorkspaceUploadFormat(input)?.conversion === "office_to_pdf";
+}
+
+export function getWorkspaceConvertedPdfFileName(fileName: string) {
+	const name = normalizeWorkspaceItemName(fileName.split(/[\\/]/).at(-1), "Uploaded file");
+	const baseName = stripFileExtension(name);
+
+	return `${baseName}.pdf`;
+}
+
 export function getWorkspaceUploadFamily(
 	assetKind: WorkspaceFileAssetKind,
 ): WorkspaceFileTypeDescriptor {
@@ -406,18 +429,4 @@ function stripFileExtension(fileName: string) {
 	}
 
 	return fileName.slice(0, lastDot);
-}
-
-function formatUploadTypeLabel(descriptors: readonly WorkspaceFileTypeDescriptor[]) {
-	const labels = descriptors.map((descriptor) => descriptor.pluralLabel);
-
-	if (labels.length <= 1) {
-		return labels[0] ?? "files";
-	}
-
-	if (labels.length === 2) {
-		return `${labels[0]} or ${labels[1]}`;
-	}
-
-	return `${labels.slice(0, -1).join(", ")}, or ${labels.at(-1)}`;
 }
