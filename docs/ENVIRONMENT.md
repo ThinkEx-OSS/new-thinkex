@@ -28,10 +28,11 @@ Auth uses `BETTER_AUTH_URL` as the canonical production origin. Development and 
 The product login UI currently sends users through Google. Hosted agents that need a session can use the Better Auth anonymous endpoint directly against a dev server:
 
 ```bash
-curl -i -X POST "$APP_ORIGIN/api/auth/sign-in/anonymous"
+curl -i -c .auth.cookies -b .auth.cookies -X POST \
+  "$APP_ORIGIN/api/auth/sign-in/anonymous"
 ```
 
-Keep the returned cookies in the browser or HTTP client used for follow-up requests. Anonymous auth is installed for automation and future onboarding work; it is not a visible end-user sign-in option.
+Reuse the same cookie jar for follow-up requests that need the anonymous session. Anonymous auth is installed for automation and future onboarding work; it is not a visible end-user sign-in option.
 
 Core runtime names:
 

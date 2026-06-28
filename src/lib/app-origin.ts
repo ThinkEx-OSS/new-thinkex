@@ -85,7 +85,8 @@ export function getAuthBaseURL(): AuthBaseURL {
 }
 
 export function getTrustedAppOrigins(appOrigin?: string) {
-	return Array.from(new Set([...(appOrigin ? [appOrigin] : []), ...LOCAL_TRUSTED_ORIGINS]));
+	const localOrigins = isProduction ? [] : LOCAL_TRUSTED_ORIGINS;
+	return Array.from(new Set([...(appOrigin ? [appOrigin] : []), ...localOrigins]));
 }
 
 export function buildInviteUrl(token: string, appOrigin = getAppOrigin()) {

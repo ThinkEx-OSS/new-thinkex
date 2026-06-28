@@ -50,44 +50,104 @@ async function transferAnonymousUserData(
 		return;
 	}
 
-	await database.run(sql`
-		update ${schema.workspaceMembers}
-		set role = 'owner', updated_at = unixepoch() * 1000
-		where user_id = ${input.newUserId}
-			and workspace_id in (
-				select id from ${schema.workspaces}
-				where owner_id = ${input.anonymousUserId}
-			)
-	`);
-
-	await database.run(sql`
-		delete from ${schema.workspaceMembers}
-		where user_id = ${input.anonymousUserId}
-			and exists (
-				select 1
-				from ${schema.workspaceMembers} existing_member
-				where existing_member.workspace_id = ${schema.workspaceMembers.workspaceId}
-					and existing_member.user_id = ${input.newUserId}
-			)
-	`);
-
-	await database.run(sql`
-		update ${schema.workspaceMembers}
-		set user_id = ${input.newUserId}, updated_at = unixepoch() * 1000
-		where user_id = ${input.anonymousUserId}
-	`);
-
-	await database.run(sql`
-		update ${schema.workspaces}
-		set owner_id = ${input.newUserId}, updated_at = unixepoch() * 1000
-		where owner_id = ${input.anonymousUserId}
-	`);
-
-	await database.run(sql`
-		update ${schema.workspaceInvites}
-		set created_by_user_id = ${input.newUserId}, updated_at = unixepoch() * 1000
-		where created_by_user_id = ${input.anonymousUserId}
-	`);
+	await database.batch([
+		database.run(sql`
+			update ${schema.workspaceMembers}
+			set role = 'owner', updated_at = unixepoch()
+			where user_id = ${input.newUserId}
+				and workspace_id in (
+					select id from ${schema.workspaces}
+					where owner_id = ${input.anonymousUserId}
+				)
+		`),
+		database.run(sql`
+			update workspace_members as linked_member
+			set
+				role = case
+					when linked_member.role = 'owner'
+						or (
+							select anonymous_member.role
+							from workspace_members anonymous_member
+							where anonymous_member.workspace_id = linked_member.workspace_id
+								and anonymous_member.user_id = ${input.anonymousUserId}
+						) = 'owner' then 'owner'
+					when linked_member.role = 'admin'
+						or (
+							select anonymous_member.role
+							from workspace_members anonymous_member
+							where anonymous_member.workspace_id = linked_member.workspace_id
+								and anonymous_member.user_id = ${input.anonymousUserId}
+						) = 'admin' then 'admin'
+					when linked_member.role = 'editor'
+						or (
+							select anonymous_member.role
+							from workspace_members anonymous_member
+							where anonymous_member.workspace_id = linked_member.workspace_id
+								and anonymous_member.user_id = ${input.anonymousUserId}
+						) = 'editor' then 'editor'
+					else 'viewer'
+				end,
+				last_opened_at = case
+					when linked_member.last_opened_at is null then (
+						select anonymous_member.last_opened_at
+						from workspace_members anonymous_member
+						where anonymous_member.workspace_id = linked_member.workspace_id
+							and anonymous_member.user_id = ${input.anonymousUserId}
+					)
+					when (
+						select anonymous_member.last_opened_at
+						from workspace_members anonymous_member
+						where anonymous_member.workspace_id = linked_member.workspace_id
+							and anonymous_member.user_id = ${input.anonymousUserId}
+					) is null then linked_member.last_opened_at
+					when linked_member.last_opened_at >= (
+						select anonymous_member.last_opened_at
+						from workspace_members anonymous_member
+						where anonymous_member.workspace_id = linked_member.workspace_id
+							and anonymous_member.user_id = ${input.anonymousUserId}
+					) then linked_member.last_opened_at
+					else (
+						select anonymous_member.last_opened_at
+						from workspace_members anonymous_member
+						where anonymous_member.workspace_id = linked_member.workspace_id
+							and anonymous_member.user_id = ${input.anonymousUserId}
+					)
+				end,
+				updated_at = unixepoch()
+			where linked_member.user_id = ${input.newUserId}
+				and exists (
+					select 1
+					from workspace_members anonymous_member
+					where anonymous_member.workspace_id = linked_member.workspace_id
+						and anonymous_member.user_id = ${input.anonymousUserId}
+				)
+		`),
+		database.run(sql`
+			delete from ${schema.workspaceMembers}
+			where user_id = ${input.anonymousUserId}
+				and exists (
+					select 1
+					from ${schema.workspaceMembers} existing_member
+					where existing_member.workspace_id = ${schema.workspaceMembers.workspaceId}
+						and existing_member.user_id = ${input.newUserId}
+				)
+		`),
+		database.run(sql`
+			update ${schema.workspaceMembers}
+			set user_id = ${input.newUserId}, updated_at = unixepoch()
+			where user_id = ${input.anonymousUserId}
+		`),
+		database.run(sql`
+			update ${schema.workspaces}
+			set owner_id = ${input.newUserId}, updated_at = unixepoch()
+			where owner_id = ${input.anonymousUserId}
+		`),
+		database.run(sql`
+			update ${schema.workspaceInvites}
+			set created_by_user_id = ${input.newUserId}, updated_at = unixepoch()
+			where created_by_user_id = ${input.anonymousUserId}
+		`),
+	]);
 }
 
 function createAuth(database: Db, env: AuthRuntimeEnv) {
