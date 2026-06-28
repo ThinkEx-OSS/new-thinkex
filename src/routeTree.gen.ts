@@ -19,6 +19,7 @@ import { Route as ProtectedSettingsRouteImport } from './routes/_protected/setti
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAdminMigrationImportRouteImport } from './routes/api/admin/migration-import'
 import { Route as ProtectedWorkspacesWorkspaceIdRouteImport } from './routes/_protected/workspaces.$workspaceId'
 import { Route as ApiV1WorkspacesWorkspaceIdFileUploadRouteImport } from './routes/api/v1/workspaces.$workspaceId.file-upload'
 import { Route as ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport } from './routes/api/v1/workspaces.$workspaceId.files.$itemId.preview'
@@ -73,6 +74,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminMigrationImportRoute = ApiAdminMigrationImportRouteImport.update({
+  id: '/api/admin/migration-import',
+  path: '/api/admin/migration-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedWorkspacesWorkspaceIdRoute =
   ProtectedWorkspacesWorkspaceIdRouteImport.update({
     id: '/workspaces/$workspaceId',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
+  '/api/admin/migration-import': typeof ApiAdminMigrationImportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
+  '/api/admin/migration-import': typeof ApiAdminMigrationImportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_protected/settings': typeof ProtectedSettingsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
+  '/api/admin/migration-import': typeof ApiAdminMigrationImportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/invite/$token'
     | '/workspaces/$workspaceId'
+    | '/api/admin/migration-import'
     | '/api/auth/$'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/invite/$token'
     | '/workspaces/$workspaceId'
+    | '/api/admin/migration-import'
     | '/api/auth/$'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_protected/settings'
     | '/invite/$token'
     | '/_protected/workspaces/$workspaceId'
+    | '/api/admin/migration-import'
     | '/api/auth/$'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiAdminMigrationImportRoute: typeof ApiAdminMigrationImportRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRouteWithChildren
 }
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/migration-import': {
+      id: '/api/admin/migration-import'
+      path: '/api/admin/migration-import'
+      fullPath: '/api/admin/migration-import'
+      preLoaderRoute: typeof ApiAdminMigrationImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected/workspaces/$workspaceId': {
       id: '/_protected/workspaces/$workspaceId'
       path: '/workspaces/$workspaceId'
@@ -350,18 +370,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiAdminMigrationImportRoute: ApiAdminMigrationImportRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
