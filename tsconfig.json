@@ -1,19 +1,10 @@
 {
-	"include": ["**/*.ts", "**/*.tsx"],
-	"exclude": [
-		".agents",
-		".claude",
-		".cursor",
-		".firecrawl",
-		".tanstack",
-		".vite-hooks",
-		".wrangler",
-		"dist",
-		"docs",
-		"drizzle/meta",
-		"node_modules",
-		"references",
-		"worker-configuration.d.ts"
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"drizzle.config.ts",
+		"vite.config.ts",
+		"vitest.config.ts"
 	],
 	"compilerOptions": {
 		"target": "ES2022",
