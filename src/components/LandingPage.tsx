@@ -76,15 +76,20 @@ export default function LandingPage() {
 							</div>
 
 							<div className="mt-16 overflow-hidden rounded-md border border-border bg-card shadow-2xl">
-								<img
-									src="/landing-workspace-screenshot.png"
-									alt="ThinkEx workspace with documents, folders, and AI assistant"
-									className="block h-auto w-full"
-									width={2936}
-									height={1664}
-									loading="eager"
-									decoding="async"
-								/>
+								<picture>
+									<source srcSet="/landing-workspace-screenshot.avif" type="image/avif" />
+									<source srcSet="/landing-workspace-screenshot.webp" type="image/webp" />
+									<img
+										src="/landing-workspace-screenshot.png"
+										alt="ThinkEx workspace with documents, folders, and AI assistant"
+										className="block h-auto w-full"
+										width={2936}
+										height={1664}
+										loading="eager"
+										decoding="async"
+										fetchPriority="high"
+									/>
+								</picture>
 							</div>
 						</div>
 					</section>
