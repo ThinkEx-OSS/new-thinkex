@@ -211,7 +211,7 @@
 			"name": "thinkex",
 			"routes": [
 				{
-					"pattern": "beta.thinkex.app",
+					"pattern": "thinkex.app",
 					"custom_domain": true,
 				},
 			],
