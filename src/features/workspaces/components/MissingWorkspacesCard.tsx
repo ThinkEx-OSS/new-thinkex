@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArchiveRestore, Loader2 } from "lucide-react";
+import { CircleQuestionMark, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -50,15 +50,17 @@ export default function MissingWorkspacesCard({ className }: MissingWorkspacesCa
 					onClick={() => setOpen(true)}
 				>
 					<div className="flex aspect-[5/2] items-center justify-center">
-						<ArchiveRestore
-							className="size-11 text-muted-foreground transition-colors group-hover/card:text-foreground"
+						<CircleQuestionMark
+							className="size-10 text-muted-foreground/80 transition-colors group-hover/card:text-foreground"
 							strokeWidth={1.75}
 						/>
 					</div>
 
 					<CardHeader className="gap-2 px-4 py-3">
 						<CardTitle>Missing workspaces?</CardTitle>
-						<CardDescription className="text-xs">Ask us to import your old data</CardDescription>
+						<CardDescription className="text-xs">
+							We can migrate your old ThinkEx data
+						</CardDescription>
 					</CardHeader>
 				</button>
 			</Card>
@@ -68,8 +70,8 @@ export default function MissingWorkspacesCard({ className }: MissingWorkspacesCa
 					<DialogHeader>
 						<DialogTitle>Request workspace import</DialogTitle>
 						<DialogDescription>
-							We will send your signed-in account details to hello@thinkx.app so the ThinkEx team
-							can check whether old workspaces need to be migrated.
+							We will send your signed-in account details to hello@thinkex.app so the team can
+							import your old workspaces to this new version of ThinkEx.
 						</DialogDescription>
 					</DialogHeader>
 

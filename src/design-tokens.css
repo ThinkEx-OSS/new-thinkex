@@ -1,5 +1,5 @@
 /**
- * Thinkex design tokens
+ * ThinkEx design tokens
  *
  * 1. Primitives — raw palette. Override --tx-neutral-* in .dark for dark mode.
  * 2. Semantics — map meaning → primitives. Components use these via Tailwind.

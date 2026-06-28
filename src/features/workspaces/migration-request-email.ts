@@ -5,7 +5,7 @@ import {
 	TRANSACTIONAL_FROM_NAME,
 } from "#/lib/transactional-email";
 
-const MIGRATION_REQUEST_INBOX = "hello@thinkx.app";
+const MIGRATION_REQUEST_INBOX = "hello@thinkex.app";
 
 export type WorkspaceMigrationRequestEmailFailureReason = "missing_binding" | "send_failed";
 
