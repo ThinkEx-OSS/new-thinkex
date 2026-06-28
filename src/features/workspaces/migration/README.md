@@ -2,31 +2,40 @@
 
 Developer-run, single-user migration tool that imports one legacy ThinkEx user's data into new ThinkEx. **Not intended for automated or production use.**
 
-## Workflow
+## Why the importer must be deployed
 
-1. Set env vars locally (`.dev.vars` or shell exports — see below)
-2. Run `wrangler dev --remote` so the Worker binds to production D1/R2/DO resources
-3. In a separate terminal, run `pnpm tsx scripts/migrate-user.ts --user <email>`
+The new app keeps workspace **items** (documents, files, OCR, folders) inside the `WorkspaceKernel` Durable Object. A Durable Object namespace is owned by the deployed Worker, and `wrangler dev --remote` runs Durable Objects locally / in a throwaway preview namespace — so it **cannot** write into the production DO that the live app reads. D1 and R2 writes would land in prod, but the actual item contents would not.
 
-The CLI hits `http://localhost:8787` (the local `wrangler dev --remote` proxy). Because this is remote-dev mode, the `/api/admin/migration-import` route is never exposed publicly on production — it's only reachable through the developer's local tunnel. The route can stay in the codebase without being a live public surface.
+The only way to write into the production WorkspaceKernel DO is to run inside the **deployed production Worker**. So the import is a short **deploy → migrate → strip** flow.
+
+## Workflow (deploy → migrate → strip)
+
+1. Set `MIGRATION_IMPORT_SECRET` as a production Worker secret:
+   `wrangler secret put MIGRATION_IMPORT_SECRET --env production`
+2. Deploy the Worker with this branch's importer route: `pnpm deploy`
+3. Set the CLI env vars locally (see below), including `MIGRATION_IMPORT_URL` pointing at the deployed Worker origin (e.g. `https://thinkex.<account>.workers.dev` or the custom domain).
+4. Run the migration for each user: `pnpm tsx scripts/migrate-user.ts --user <email>`
+5. When done, remove the route (revert this PR or delete `src/routes/api/admin/migration-import.ts`) and redeploy so the endpoint no longer exists on prod.
+
+While deployed, `/api/admin/migration-import` is publicly reachable, so it is gated by `MIGRATION_IMPORT_SECRET` (rejects unset or mismatched secret). Keep the secret strong and strip the route promptly after migrating.
 
 ## Required env vars
 
-### On the Worker (set in `.dev.vars` or wrangler secrets for remote-dev)
+### On the deployed Worker (set via `wrangler secret put ... --env production`)
 
-| Variable                  | Description                                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `MIGRATION_IMPORT_SECRET` | Shared secret gating the import endpoint. Must be set by a human in the env settings — not checked in. |
+| Variable                  | Description                                                                                                |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `MIGRATION_IMPORT_SECRET` | Shared secret gating the import endpoint. Must be set by a human as a prod Worker secret — not checked in. |
 
 ### For the CLI (shell env or `.env` — not committed)
 
-| Variable                      | Description                                                   |
-| ----------------------------- | ------------------------------------------------------------- |
-| `LEGACY_DATABASE_URL`         | Postgres connection string for the old ThinkEx database       |
-| `LEGACY_SUPABASE_URL`         | e.g. `https://uxcoymwbfcbvkgwbhttq.supabase.co`               |
-| `LEGACY_SUPABASE_SERVICE_KEY` | Supabase service-role key for downloading file bytes          |
-| `MIGRATION_IMPORT_SECRET`     | Must match the value set on the Worker                        |
-| `MIGRATION_IMPORT_URL`        | Defaults to `http://localhost:8787`. Override only if needed. |
+| Variable                      | Description                                                                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `LEGACY_DATABASE_URL`         | Postgres connection string for the old ThinkEx database                                                                                  |
+| `LEGACY_SUPABASE_URL`         | e.g. `https://uxcoymwbfcbvkgwbhttq.supabase.co`                                                                                          |
+| `LEGACY_SUPABASE_SERVICE_KEY` | Supabase service-role key for downloading file bytes                                                                                     |
+| `MIGRATION_IMPORT_SECRET`     | Must match the value set on the Worker                                                                                                   |
+| `MIGRATION_IMPORT_URL`        | Origin of the deployed Worker, e.g. `https://thinkex.<account>.workers.dev`. Defaults to `http://localhost:8787` for local testing only. |
 
 ## Migration policy (fixed)
 
@@ -63,17 +72,20 @@ The CLI hits `http://localhost:8787` (the local `wrangler dev --remote` proxy). 
 ## Running for one user
 
 ```bash
-# Terminal 1: start remote-dev Worker
-export MIGRATION_IMPORT_SECRET="some-secure-random-string"
-wrangler dev --remote
+# One-time: set the secret on the prod Worker and deploy this branch
+wrangler secret put MIGRATION_IMPORT_SECRET --env production
+pnpm deploy
 
-# Terminal 2: run the CLI
+# Per user: run the CLI locally against the deployed Worker
 export LEGACY_DATABASE_URL="postgres://..."
 export LEGACY_SUPABASE_URL="https://uxcoymwbfcbvkgwbhttq.supabase.co"
 export LEGACY_SUPABASE_SERVICE_KEY="eyJ..."
-export MIGRATION_IMPORT_SECRET="some-secure-random-string"
+export MIGRATION_IMPORT_SECRET="same-value-set-on-the-worker"
+export MIGRATION_IMPORT_URL="https://thinkex.<account>.workers.dev"
 
 pnpm tsx scripts/migrate-user.ts --user user@example.com
+
+# When finished migrating everyone: remove the route and redeploy
 ```
 
 The CLI logs every dropped item type, renamed collision, reparented broken-folder ref, and color/icon fallback.

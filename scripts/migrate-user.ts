@@ -11,8 +11,14 @@
  *   LEGACY_DATABASE_URL        — Postgres connection string for the old ThinkEx DB
  *   LEGACY_SUPABASE_URL        — e.g. https://uxcoymwbfcbvkgwbhttq.supabase.co
  *   LEGACY_SUPABASE_SERVICE_KEY — Supabase service-role key for file downloads
- *   MIGRATION_IMPORT_SECRET    — must match the secret set on the Worker
- *   MIGRATION_IMPORT_URL       — defaults to http://localhost:8787
+ *   MIGRATION_IMPORT_SECRET    — must match the secret set on the deployed Worker
+ *   MIGRATION_IMPORT_URL       — origin of the DEPLOYED Worker (e.g.
+ *                                https://thinkex.<account>.workers.dev). The
+ *                                production WorkspaceKernel Durable Object can
+ *                                only be written from the deployed Worker, so the
+ *                                importer route must be deployed (deploy → migrate
+ *                                → strip). Defaults to http://localhost:8787 for
+ *                                local testing only.
  */
 
 import postgres from "postgres";
