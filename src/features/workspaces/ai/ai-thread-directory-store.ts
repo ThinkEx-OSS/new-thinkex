@@ -22,6 +22,13 @@ interface InsertThreadMetaInput {
 	now: number;
 }
 
+interface LinkedThreadImportInput {
+	now: number;
+	sourceThreadId: string;
+	sourceUserId: string;
+	targetThreadId: string;
+}
+
 interface FinishThreadRunInput {
 	threadId: string;
 	result: AIThreadRunResult;
@@ -60,9 +67,40 @@ export function ensureChatMetaStore(store: ChatMetaStore) {
 	ensureChatMetaColumns(store);
 	store.sql`CREATE INDEX IF NOT EXISTS chat_meta_workspace_activity_idx
 		ON chat_meta (workspace_id, archived_at, last_activity_at)`;
+	store.sql`CREATE TABLE IF NOT EXISTS linked_thread_imports (
+		source_user_id TEXT NOT NULL,
+		source_thread_id TEXT NOT NULL,
+		target_thread_id TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		PRIMARY KEY (source_user_id, source_thread_id)
+	)`;
 }
 
 export function insertThreadMeta(store: ChatMetaStore, input: InsertThreadMetaInput) {
+	insertThreadMetaRow(store, {
+		archived_at: null,
+		created_at: input.now,
+		id: input.id,
+		last_activity_at: input.now,
+		last_assistant_message_at: null,
+		last_error_classification: null,
+		last_error_message: null,
+		last_error_stage: null,
+		last_run_finished_at: null,
+		last_run_result: null,
+		last_run_started_at: null,
+		last_user_message_at: null,
+		last_viewed_at: input.now,
+		last_visible_update_at: null,
+		status: "idle",
+		title: input.title,
+		title_generated_at: null,
+		updated_at: input.now,
+		workspace_id: input.workspaceId,
+	});
+}
+
+export function insertThreadMetaRow(store: ChatMetaStore, input: AIThreadMetaRow) {
 	store.sql`
 		INSERT INTO chat_meta (
 			id,
@@ -87,25 +125,67 @@ export function insertThreadMeta(store: ChatMetaStore, input: InsertThreadMetaIn
 		)
 		VALUES (
 			${input.id},
-			${input.workspaceId},
+			${input.workspace_id},
 			${input.title},
-			'idle',
-			NULL,
-			${input.now},
-			NULL,
-			NULL,
-			NULL,
-			${input.now},
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			${input.now},
-			${input.now},
-			NULL
+			${input.status},
+			${input.last_run_result},
+			${input.last_activity_at},
+			${input.last_user_message_at},
+			${input.last_assistant_message_at},
+			${input.last_visible_update_at},
+			${input.last_viewed_at},
+			${input.last_run_started_at},
+			${input.last_run_finished_at},
+			${input.last_error_message},
+			${input.last_error_classification},
+			${input.last_error_stage},
+			${input.title_generated_at},
+			${input.created_at},
+			${input.updated_at},
+			${input.archived_at}
 		)
+	`;
+}
+
+export function getLinkedThreadImport(
+	store: ChatMetaStore,
+	input: { sourceThreadId: string; sourceUserId: string },
+) {
+	const [row] = store.sql<{ target_thread_id: string }>`
+		SELECT target_thread_id
+		FROM linked_thread_imports
+		WHERE source_user_id = ${input.sourceUserId}
+			AND source_thread_id = ${input.sourceThreadId}
+	`;
+
+	return row ?? null;
+}
+
+export function insertLinkedThreadImport(store: ChatMetaStore, input: LinkedThreadImportInput) {
+	store.sql`
+		INSERT INTO linked_thread_imports (
+			source_user_id,
+			source_thread_id,
+			target_thread_id,
+			created_at
+		)
+		VALUES (
+			${input.sourceUserId},
+			${input.sourceThreadId},
+			${input.targetThreadId},
+			${input.now}
+		)
+	`;
+}
+
+export function deleteLinkedThreadImport(
+	store: ChatMetaStore,
+	input: { sourceThreadId: string; sourceUserId: string },
+) {
+	store.sql`
+		DELETE FROM linked_thread_imports
+		WHERE source_user_id = ${input.sourceUserId}
+			AND source_thread_id = ${input.sourceThreadId}
 	`;
 }
 

@@ -6,7 +6,10 @@ import { anonymous } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { sql } from "drizzle-orm";
 
-import { purgeUserAccountResources } from "#/features/workspaces/durable-object-lifecycle";
+import {
+	purgeUserAccountResources,
+	transferLinkedAccountResources,
+} from "#/features/workspaces/durable-object-lifecycle";
 import { sendDeleteAccountVerificationEmail } from "#/features/account/account-deletion-email";
 import * as schema from "#/db/schema";
 import { createDbContext } from "#/db/server";
@@ -190,10 +193,13 @@ function createAuth(database: Db, env: AuthRuntimeEnv) {
 				emailDomainName: "anonymous.thinkex.app",
 				generateName: () => "Guest",
 				onLinkAccount: async ({ anonymousUser, newUser }) => {
-					await transferAnonymousUserData(database, {
+					const transferInput = {
 						anonymousUserId: anonymousUser.user.id,
 						newUserId: newUser.user.id,
-					});
+					};
+
+					await transferAnonymousUserData(database, transferInput);
+					await transferLinkedAccountResources(transferInput);
 				},
 			}),
 			tanstackStartCookies(),
