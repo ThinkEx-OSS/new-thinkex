@@ -3,6 +3,7 @@ import type {
 	MarkdownExtractionProvider,
 	MarkdownExtractionResult,
 } from "#/features/workspaces/extraction/types";
+import { createSingleMarkdownProjectionPage } from "#/features/workspaces/extraction/page-markdown-projection";
 
 export function createWorkersAiToMarkdownProvider(env: Env): MarkdownExtractionProvider {
 	return {
@@ -35,7 +36,7 @@ export function createWorkersAiToMarkdownProvider(env: Env): MarkdownExtractionP
 			}
 
 			return {
-				markdown,
+				pages: createSingleMarkdownProjectionPage(markdown),
 				provider: "workers_ai_to_markdown",
 				providerMode: "default",
 				metadata: getWorkersAiToMarkdownMetadata(result),

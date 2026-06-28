@@ -1,43 +1,42 @@
 import {
-	parseMarkdownPageProjection,
-	serializeMarkdownPageProjection,
-} from "#/features/workspaces/extraction/markdown-page-projection";
+	joinMarkdownProjectionPages,
+	type MarkdownProjectionPage,
+} from "#/features/workspaces/extraction/page-markdown-projection";
 
-export interface WorkspaceKernelAiPdfPages {
+export interface WorkspaceKernelAiReadPages {
 	requested: string;
 	returned: number[];
 	total: number;
 }
 
-export class WorkspaceKernelAiPdfPageError extends Error {
+export class WorkspaceKernelAiPageError extends Error {
 	constructor(readonly code: "page_range_out_of_range") {
 		super(code);
 	}
 }
 
-export function readWorkspaceAiPdfPages(
-	content: string,
+export function readWorkspaceAiProjectionPages(
+	pages: readonly MarkdownProjectionPage[],
 	input: {
 		pages?: string;
 	},
-): { content: string; pdfPages: WorkspaceKernelAiPdfPages } {
-	const pdfPages = parseMarkdownPageProjection(content);
-	const maxPageNumber = pdfPages.reduce((max, page) => Math.max(max, page.pageNumber), 0);
+): { content: string; pages: WorkspaceKernelAiReadPages } {
+	const maxPageNumber = pages.reduce((max, page) => Math.max(max, page.pageNumber), 0);
 	const requested = input.pages?.trim() || "1";
 	const selectedPageNumbers = parseWorkspaceAiPdfPageRange(requested, maxPageNumber);
 	const selectedPages = selectedPageNumbers.map((pageNumber) => {
-		const page = pdfPages.find((candidate) => candidate.pageNumber === pageNumber);
+		const page = pages.find((candidate) => candidate.pageNumber === pageNumber);
 
 		if (!page) {
-			throw new WorkspaceKernelAiPdfPageError("page_range_out_of_range");
+			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
 		}
 
 		return page;
 	});
 
 	return {
-		content: serializeMarkdownPageProjection(selectedPages),
-		pdfPages: {
+		content: joinMarkdownProjectionPages(selectedPages),
+		pages: {
 			requested,
 			returned: selectedPages.map((page) => page.pageNumber),
 			total: maxPageNumber,
@@ -59,14 +58,14 @@ function parseWorkspaceAiPdfPageRange(value: string, totalPages: number) {
 		const rangeMatch = /^(\d+)(?:\s*-\s*(\d+))?$/.exec(part);
 
 		if (!rangeMatch) {
-			throw new WorkspaceKernelAiPdfPageError("page_range_out_of_range");
+			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
 		}
 
 		const start = Number(rangeMatch[1]);
 		const end = Number(rangeMatch[2] ?? rangeMatch[1]);
 
 		if (start < 1 || end < start || end > totalPages) {
-			throw new WorkspaceKernelAiPdfPageError("page_range_out_of_range");
+			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
 		}
 
 		for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
@@ -75,7 +74,7 @@ function parseWorkspaceAiPdfPageRange(value: string, totalPages: number) {
 	}
 
 	if (selected.size === 0) {
-		throw new WorkspaceKernelAiPdfPageError("page_range_out_of_range");
+		throw new WorkspaceKernelAiPageError("page_range_out_of_range");
 	}
 
 	return Array.from(selected).sort((left, right) => left - right);

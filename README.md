@@ -43,6 +43,7 @@ ThinkEx is aimed at research, synthesis, and knowledge work where context matter
 - Cloudflare R2
 - Cloudflare Durable Objects
 - Cloudflare Workflows
+- Cloudflare Containers
 - Cloudflare Email
 
 ## Local Development
@@ -65,7 +66,7 @@ Common commands:
 
 ## Deployment Model
 
-The repository currently targets local development, staging, and production. Deployment is handled through GitHub Actions and Wrangler. Database changes flow through Drizzle-generated SQL plus Wrangler D1 migrations.
+The repository currently targets local development, staging, and production. Deployment is handled through GitHub Actions and Wrangler. Database changes flow through Drizzle-generated SQL plus Wrangler D1 migrations. Cloudflare Containers run the Gotenberg-based `OfficePdfConverter` used for office-to-PDF conversion.
 
 ## Repository
 

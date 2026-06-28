@@ -86,12 +86,6 @@ export const workspaceFileUploadFormats = [
 	{ ext: "png", mime: "image/png", assetKind: "image" },
 	{ ext: "jpg", mime: "image/jpeg", assetKind: "image" },
 	{ ext: "jpeg", mime: "image/jpeg", assetKind: "image" },
-	{
-		ext: "gif",
-		mime: "image/gif",
-		assetKind: "image",
-		aiReadStrategy: "metadata_only",
-	},
 	{ ext: "webp", mime: "image/webp", assetKind: "image" },
 ] as const satisfies readonly WorkspaceUploadFormat[];
 

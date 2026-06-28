@@ -1,6 +1,11 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
 
 import { sha256Base64Url } from "#/features/workspaces/extraction/binary";
+import {
+	joinMarkdownProjectionPages,
+	parseMarkdownPagesProjection,
+	serializeMarkdownPagesProjection,
+} from "#/features/workspaces/extraction/page-markdown-projection";
 import { createMarkdownExtractionProvider } from "#/features/workspaces/extraction/providers/index";
 import type {
 	MarkdownExtractionProviderId,
@@ -25,7 +30,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 			const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 			await kernel.upsertFileProjection({
 				itemId: params.itemId,
-				format: "markdown",
+				format: "pages",
 				status: "processing",
 				actorUserId: params.actorUserId,
 			});
@@ -35,7 +40,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 
 		try {
 			const extraction = await step.do(
-				"extract markdown with provider",
+				"extract page markdown with provider",
 				{
 					retries: {
 						limit: 2,
@@ -44,7 +49,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					},
 					timeout: "10 minutes",
 				},
-				async (): Promise<StagedMarkdownExtractionResult> => {
+				async (): Promise<StagedPageExtractionResult> => {
 					const kernel = await getWorkspaceKernelFromEnv(this.env, params.workspaceId);
 					const source = await kernel.readFileContent({
 						itemId: params.itemId,
@@ -63,8 +68,10 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						mode: route.mode,
 					});
 
-					await this.env.WORKSPACE_KERNEL_FILES.put(artifactKey, extraction.markdown, {
-						httpMetadata: { contentType: "text/markdown" },
+					const pagesJson = serializeMarkdownPagesProjection(extraction.pages);
+
+					await this.env.WORKSPACE_KERNEL_FILES.put(artifactKey, pagesJson, {
+						httpMetadata: { contentType: "application/json" },
 					});
 
 					return {
@@ -72,6 +79,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						provider: extraction.provider,
 						providerMode: extraction.providerMode,
 						metadata: extraction.metadata,
+						pageCount: extraction.pages.length,
 						routeReason: route.reason,
 						sourceHash,
 					};
@@ -93,21 +101,23 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 					const artifact = await this.env.WORKSPACE_KERNEL_FILES.get(extraction.artifactKey);
 
 					if (!artifact) {
-						throw new Error("Staged markdown extraction artifact was not found.");
+						throw new Error("Staged page extraction artifact was not found.");
 					}
 
-					const markdown = await artifact.text();
+					const pagesJson = await artifact.text();
+					const pages = parseMarkdownPagesProjection(pagesJson);
 					const metadataJson = {
 						...extraction.metadata,
 						routeReason: extraction.routeReason,
-						markdownLength: markdown.trim().length,
+						pageCount: extraction.pageCount,
+						markdownLength: joinMarkdownProjectionPages(pages).length,
 					};
 
 					await kernel.upsertFileProjection({
 						itemId: params.itemId,
-						format: "markdown",
+						format: "pages",
 						status: "ready",
-						content: markdown,
+						content: pagesJson,
 						provider: extraction.provider,
 						providerMode: extraction.providerMode,
 						sourceHash: extraction.sourceHash,
@@ -119,7 +129,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 						status: "ready",
 						provider: extraction.provider,
 						providerMode: extraction.providerMode,
-						markdownLength: markdown.trim().length,
+						pageCount: extraction.pageCount,
 					};
 				},
 			);
@@ -137,7 +147,7 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 				const errorMessage = getErrorMessage(error);
 				await kernel.upsertFileProjection({
 					itemId: params.itemId,
-					format: "markdown",
+					format: "pages",
 					status: "failed",
 					errorMessage,
 					actorUserId: params.actorUserId,
@@ -151,11 +161,12 @@ export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
 	}
 }
 
-interface StagedMarkdownExtractionResult {
+interface StagedPageExtractionResult {
 	artifactKey: string;
 	provider: MarkdownExtractionProviderId;
 	providerMode: MarkdownExtractionProviderMode;
 	metadata: Record<string, string | number | boolean | null>;
+	pageCount: number;
 	routeReason: string;
 	sourceHash: string;
 }
@@ -176,7 +187,7 @@ function assertWorkflowParams(
 }
 
 function getExtractionArtifactKey(instanceId: string) {
-	return `workflow-artifacts/markdown-extraction/${instanceId}/projection.md`;
+	return `workflow-artifacts/page-extraction/${instanceId}/projection.json`;
 }
 
 function getErrorMessage(error: unknown) {

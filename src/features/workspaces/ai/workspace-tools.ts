@@ -40,25 +40,19 @@ const workspacePathItemSchema = z.object({
 	type: workspaceItemTypeSchema,
 });
 
-const workspacePagedContentSchema = z.object({
-	lineTruncated: z.boolean().optional(),
-	next: z.number().int().min(1).optional(),
-	truncated: z.boolean(),
+const workspaceReadPagesSchema = z.object({
+	requested: z.string().describe("Requested page range."),
+	returned: z.array(z.number().int().min(1)).describe("Page numbers included in content."),
+	total: z.number().int().min(1).describe("Total pages available."),
 });
 
-const workspacePdfPagesSchema = z.object({
-	requested: z.string().describe("The PDF page range requested by the model."),
-	returned: z.array(z.number().int().min(1)).describe("The PDF page numbers included in content."),
-	total: z.number().int().min(1).describe("Total detected pages in the PDF."),
-});
-
-const workspacePdfPageRangeSchema = z
+const workspacePageRangeSchema = z
 	.string()
 	.trim()
 	.min(1)
 	.regex(/^\d+(?:\s*-\s*\d+)?(?:\s*,\s*\d+(?:\s*-\s*\d+)?)*$/)
 	.describe(
-		"PDF page range to read. Use 1-based page numbers like 1, 3, 5-7, or 1,4-6. Applies to PDF files only. Defaults to page 1 for PDFs.",
+		"1-based pages to read, like 1, 3, 5-7, or 1,4-6. For PDFs, pages are PDF pages. For Markdown-backed items, each page is 1000 Markdown lines. Defaults to 1.",
 	);
 
 const workspaceListItemsInputSchema = z.object({
@@ -81,24 +75,7 @@ const workspaceListItemsInputSchema = z.object({
 });
 
 const workspaceReadItemsInputSchema = z.object({
-	contentLimit: z
-		.number()
-		.int()
-		.min(1)
-		.max(2000)
-		.optional()
-		.describe(
-			"Maximum Markdown lines to return for non-PDF documents/files. Defaults to 2000. Ignored for PDFs; use pages instead.",
-		),
-	contentOffset: z
-		.number()
-		.int()
-		.min(1)
-		.optional()
-		.describe(
-			"1-based Markdown line offset for documents. Use the returned page.next value to continue. Ignored for PDFs; use pages instead.",
-		),
-	pages: workspacePdfPageRangeSchema.optional(),
+	pages: workspacePageRangeSchema.optional(),
 	paths: z
 		.array(z.string().min(1))
 		.min(1)
@@ -191,7 +168,7 @@ const workspaceReadItemsInputExamples = createInputExamples<
 >(
 	{
 		paths: ["/Demo Folder/Demo Document"],
-		contentLimit: 200,
+		pages: "1",
 	},
 	{
 		paths: ["/Demo Folder/Demo PDF.pdf"],
@@ -269,13 +246,11 @@ const workspaceReadItemsOutputSchema = z.object({
 			type: z.enum(["document", "file", "flashcard", "quiz"]),
 			status: z.enum(["failed", "pending", "ready", "unsupported"]),
 			content: z.string().optional(),
-			page: workspacePagedContentSchema.optional(),
-			pdfPages: workspacePdfPagesSchema.optional(),
+			pages: workspaceReadPagesSchema.optional(),
 		}),
 	),
 	failed: z.array(
 		createFailureSchema([
-			"content_offset_out_of_range",
 			"page_range_out_of_range",
 			"path_is_folder",
 			"path_not_absolute",
@@ -436,14 +411,12 @@ export function createAIThreadWorkspaceTools(input: {
 		}),
 		workspace_read_items: createThreadTool({
 			description:
-				"Read actual ThinkEx documents and files by absolute path. For PDFs, request exact 1-based pages or page ranges with pages; default PDF reads return page 1 only and include pdfPages.total so you can request more pages. For non-PDF documents/files, use contentOffset to continue when page.next is present.",
+				"Read ThinkEx documents and files by absolute path. Use pages for continuation: PDF pages for PDFs, 1000-line Markdown pages for documents and extracted files. Defaults to page 1. Check pages.total before reading more.",
 			inputSchema: workspaceReadItemsInputSchema,
 			inputExamples: workspaceReadItemsInputExamples,
 			outputSchema: workspaceReadItemsOutputSchema,
-			execute: async ({ contentLimit, contentOffset, pages, paths }, thread) => {
+			execute: async ({ pages, paths }, thread) => {
 				return await readWorkspaceKernelAiItems({
-					contentLimit,
-					contentOffset,
 					pages,
 					workspaceId: thread.workspaceId,
 					userId: thread.userId,

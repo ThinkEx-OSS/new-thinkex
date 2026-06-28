@@ -49,10 +49,6 @@ export function getWorkspaceRecencyLabel(workspace: WorkspaceSummary) {
 }
 
 export function getWorkspaceCardRoleLabel(workspace: WorkspaceSummary) {
-	if (workspace.membershipRole === "owner") {
-		return null;
-	}
-
 	return workspaceRoleLabels[workspace.membershipRole];
 }
 

@@ -4,6 +4,7 @@ import type {
 	WorkspaceFileExtractionProviderId,
 } from "#/features/workspaces/model/workspace-file/types";
 import { workspaceFileExtractionProviders } from "#/features/workspaces/model/workspace-file/types";
+import type { MarkdownProjectionPage } from "#/features/workspaces/extraction/page-markdown-projection";
 
 export type MarkdownExtractionProviderId = WorkspaceFileExtractionProviderId;
 
@@ -33,7 +34,7 @@ export interface MarkdownExtractionInput {
 }
 
 export interface MarkdownExtractionResult {
-	markdown: string;
+	pages: MarkdownProjectionPage[];
 	provider: MarkdownExtractionProviderId;
 	providerMode: MarkdownExtractionProviderMode;
 	metadata: Record<string, string | number | boolean | null>;

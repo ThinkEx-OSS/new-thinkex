@@ -29,4 +29,4 @@ export interface WorkspaceFileExtractionRoute {
 
 export type WorkspaceFilePreviewGeneratorId = "pdf_webp" | "image_webp";
 
-export type WorkspaceFileAiReadStrategy = "markdown_extraction" | "metadata_only";
+export type WorkspaceFileAiReadStrategy = "markdown_extraction";
