@@ -1,5 +1,20 @@
 {
 	"include": ["**/*.ts", "**/*.tsx"],
+	"exclude": [
+		".agents",
+		".claude",
+		".cursor",
+		".firecrawl",
+		".tanstack",
+		".vite-hooks",
+		".wrangler",
+		"dist",
+		"docs",
+		"drizzle/meta",
+		"node_modules",
+		"references",
+		"worker-configuration.d.ts"
+	],
 	"compilerOptions": {
 		"target": "ES2022",
 		"jsx": "react-jsx",

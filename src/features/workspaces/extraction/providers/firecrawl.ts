@@ -16,7 +16,9 @@ import {
 
 const firecrawlParseTimeoutMs = 300_000;
 
-export function createFirecrawlPdfExtractionProvider(env: Env): MarkdownExtractionProvider {
+export function createFirecrawlPdfExtractionProvider(
+	env: Cloudflare.Env,
+): MarkdownExtractionProvider {
 	return {
 		id: "firecrawl",
 		async extract(input) {

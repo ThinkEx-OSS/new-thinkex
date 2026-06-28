@@ -16,7 +16,7 @@ import { getWorkspaceKernelFromEnv } from "#/features/workspaces/kernel/workspac
 import { getWorkspaceUploadFamily } from "#/features/workspaces/model/workspace-file";
 
 export class WorkspaceFileExtractionWorkflow extends WorkflowEntrypoint<
-	Env,
+	Cloudflare.Env,
 	WorkspaceFileExtractionWorkflowParams
 > {
 	async run(

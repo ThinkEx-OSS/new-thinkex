@@ -1,6 +1,7 @@
 import { type AnyExtension, getSchema } from "@tiptap/core";
 import CodeBlock from "@tiptap/extension-code-block";
 import Highlight from "@tiptap/extension-highlight";
+import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Link from "@tiptap/extension-link";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Mathematics } from "@tiptap/extension-mathematics";
@@ -29,11 +30,13 @@ export function getTiptapDocumentSchemaExtensions({
 				levels: [1, 2, 3],
 			},
 			codeBlock: false,
+			horizontalRule: false,
 			link: false,
 			underline: false,
 			undoRedo: false,
 		}),
 		codeBlock,
+		HorizontalRule,
 		UnderlineExtension,
 		Highlight,
 		Link.configure({

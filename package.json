@@ -84,6 +84,7 @@
 		"@tiptap/extension-collaboration": "^3.27.1",
 		"@tiptap/extension-collaboration-caret": "^3.27.1",
 		"@tiptap/extension-highlight": "^3.27.1",
+		"@tiptap/extension-horizontal-rule": "^3.27.1",
 		"@tiptap/extension-link": "^3.27.1",
 		"@tiptap/extension-list": "^3.27.1",
 		"@tiptap/extension-mathematics": "^3.27.1",
@@ -154,5 +155,5 @@
 		"vitest": "^4.1.9",
 		"wrangler": "^4.102.0"
 	},
-	"packageManager": "pnpm@10.14.0"
+	"packageManager": "pnpm@11.7.0"
 }
