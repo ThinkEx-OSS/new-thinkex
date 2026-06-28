@@ -59,7 +59,6 @@ declare namespace Cloudflare {
 		LOADER: WorkerLoader;
 		BROWSER: BrowserRun;
 		AI: Ai;
-		BETTER_AUTH_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*";
 		FIRECRAWL_API_URL: "https://api.firecrawl.dev";
 		WORKSPACE_INVITE_FROM_EMAIL: "invites@thinkex.app";
 		BETTER_AUTH_URL: string;
