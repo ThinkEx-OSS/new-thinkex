@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { workspaces } from "#/db/schema";
 import { createDbContext } from "#/db/server";
 import { userAIAgentName } from "#/features/workspaces/agent-routes";
+import { transferUserAIThreadsOnAccountLink } from "#/features/workspaces/ai/user-ai-agents";
 import { getWorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel-access";
 
 async function listOwnedWorkspaceIds(userId: string) {
@@ -32,6 +33,19 @@ async function purgeUserAIStore(userId: string) {
 	} catch (error) {
 		console.warn("[DurableObjectLifecycle] UserAIStore purge failed", { userId, error });
 	}
+}
+
+export async function transferLinkedAccountResources(input: {
+	anonymousUserId: string;
+	newUserId: string;
+}) {
+	if (input.anonymousUserId === input.newUserId) {
+		return;
+	}
+
+	const { env } = await import("cloudflare:workers");
+
+	await transferUserAIThreadsOnAccountLink({ ...input, env });
 }
 
 export async function purgeWorkspaceResources(workspaceId: string) {

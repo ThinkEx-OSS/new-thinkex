@@ -1,8 +1,9 @@
 import type { ChatResponseResult } from "@cloudflare/think";
-import { Agent, callable } from "agents";
+import { Agent, callable, getAgentByName } from "agents";
+import type { UIMessage } from "ai";
 import { nanoid } from "nanoid";
 
-import { aiThreadAgentName } from "#/features/workspaces/agent-routes";
+import { aiThreadAgentName, userAIAgentName } from "#/features/workspaces/agent-routes";
 import {
 	type AIInspectorSnapshot,
 	isAIInspectorEnabled,
@@ -10,9 +11,13 @@ import {
 import { createAIThreadClass } from "#/features/workspaces/ai/ai-thread";
 import {
 	deleteThreadMeta,
+	deleteLinkedThreadImport,
 	ensureChatMetaStore,
 	getActiveThreadMetaRows,
+	getLinkedThreadImport,
+	insertLinkedThreadImport,
 	insertThreadMeta,
+	insertThreadMetaRow,
 	markGeneratedThreadTitle,
 	markThreadMetaViewed,
 	markThreadRunFailed,
@@ -50,7 +55,28 @@ class AIThreadForbiddenError extends Error {
 	}
 }
 
+interface LinkedAIThreadSnapshot {
+	messages: UIMessage[];
+	meta: AIThreadMetaRow;
+}
+
+interface LinkedUserAIStore {
+	exportForAccountLinking(): Promise<LinkedAIThreadSnapshot[]>;
+	purgeForDeletion(): Promise<void>;
+}
+
 export const AIThread = createAIThreadClass(() => UserAIStore);
+
+export function transferUserAIThreadsOnAccountLink(input: {
+	anonymousUserId: string;
+	env: Cloudflare.Env;
+	newUserId: string;
+}) {
+	const store = getAgentByName(input.env[userAIAgentName], input.newUserId) as unknown as {
+		mergeLinkedAnonymousUser(input: { anonymousUserId: string }): Promise<void>;
+	};
+	return store.mergeLinkedAnonymousUser({ anonymousUserId: input.anonymousUserId });
+}
 
 export class UserAIStore extends Agent<Cloudflare.Env, UserAIStoreState> {
 	static options = { sendIdentityOnConnect: false };
@@ -247,6 +273,45 @@ export class UserAIStore extends Agent<Cloudflare.Env, UserAIStoreState> {
 		await this.ctx.storage.deleteAll();
 	}
 
+	async mergeLinkedAnonymousUser(input: { anonymousUserId: string }): Promise<void> {
+		if (input.anonymousUserId === this.name) {
+			return;
+		}
+
+		const anonymousStore = getAgentByName(
+			this.env[userAIAgentName],
+			input.anonymousUserId,
+		) as unknown as LinkedUserAIStore;
+		const snapshots = await anonymousStore.exportForAccountLinking();
+
+		for (const snapshot of snapshots) {
+			await this._importLinkedThread({
+				snapshot,
+				sourceUserId: input.anonymousUserId,
+			});
+		}
+
+		await anonymousStore.purgeForDeletion();
+	}
+
+	async exportForAccountLinking(): Promise<LinkedAIThreadSnapshot[]> {
+		const snapshots: LinkedAIThreadSnapshot[] = [];
+
+		for (const meta of this._getActiveThreadMetaRows()) {
+			if (!this.hasSubAgent(AIThread, meta.id)) {
+				continue;
+			}
+
+			const thread = await this.subAgent(AIThread, meta.id);
+			snapshots.push({
+				messages: await thread.getMessages(),
+				meta: this._normalizeLinkedThreadMeta(meta),
+			});
+		}
+
+		return snapshots;
+	}
+
 	@callable()
 	async getThreadInspectorSnapshot(threadId: string): Promise<AIInspectorSnapshot> {
 		if (!isAIInspectorEnabled()) {
@@ -387,6 +452,100 @@ export class UserAIStore extends Agent<Cloudflare.Env, UserAIStoreState> {
 		threads.sort(compareThreadRecentFirst);
 
 		this.setState({ ...this.state, isLoaded: true, threads });
+	}
+
+	private async _importLinkedThread(input: {
+		snapshot: LinkedAIThreadSnapshot;
+		sourceUserId: string;
+	}) {
+		const { snapshot } = input;
+		const existingImport = getLinkedThreadImport(this, {
+			sourceThreadId: snapshot.meta.id,
+			sourceUserId: input.sourceUserId,
+		});
+
+		if (
+			existingImport &&
+			this.hasSubAgent(AIThread, existingImport.target_thread_id) &&
+			this._getThreadMeta(existingImport.target_thread_id)
+		) {
+			return;
+		}
+
+		if (existingImport) {
+			deleteLinkedThreadImport(this, {
+				sourceThreadId: snapshot.meta.id,
+				sourceUserId: input.sourceUserId,
+			});
+		}
+
+		const threadId = this._getAvailableImportedThreadId(snapshot.meta.id);
+		await this.subAgent(AIThread, threadId);
+		const now = Date.now();
+
+		try {
+			insertThreadMetaRow(this, {
+				...snapshot.meta,
+				archived_at: null,
+				id: threadId,
+				updated_at: now,
+			});
+
+			if (snapshot.messages.length > 0) {
+				const thread = await this.subAgent(AIThread, threadId);
+				await thread.addMessages(snapshot.messages, {
+					broadcast: false,
+					mode: "upsert",
+				});
+			}
+
+			insertLinkedThreadImport(this, {
+				now,
+				sourceThreadId: snapshot.meta.id,
+				sourceUserId: input.sourceUserId,
+				targetThreadId: threadId,
+			});
+		} catch (error) {
+			await this.deleteSubAgent(AIThread, threadId);
+			deleteThreadMeta(this, threadId);
+			throw error;
+		}
+
+		this._refreshState();
+	}
+
+	private _getAvailableImportedThreadId(preferredId: string) {
+		if (!this.hasSubAgent(AIThread, preferredId) && !this._getThreadMeta(preferredId)) {
+			return preferredId;
+		}
+
+		let id = nanoid(12);
+		while (this.hasSubAgent(AIThread, id) || this._getThreadMeta(id)) {
+			id = nanoid(12);
+		}
+
+		return id;
+	}
+
+	private _normalizeLinkedThreadMeta(meta: AIThreadMetaRow): AIThreadMetaRow {
+		if (meta.status !== "running") {
+			return meta;
+		}
+
+		const now = Date.now();
+
+		return {
+			...meta,
+			last_error_classification: null,
+			last_error_message: "This chat was interrupted during account linking.",
+			last_error_stage: null,
+			last_run_finished_at: now,
+			last_run_result: "aborted",
+			last_run_started_at: null,
+			last_visible_update_at: now,
+			status: "idle",
+			updated_at: now,
+		};
 	}
 
 	private _getThreadMeta(threadId: string) {
