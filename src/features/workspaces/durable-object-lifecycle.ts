@@ -35,12 +35,6 @@ async function purgeUserAIStore(userId: string) {
 	}
 }
 
-async function transferUserAIStore(input: { anonymousUserId: string; newUserId: string }) {
-	const { env } = await import("cloudflare:workers");
-
-	await transferUserAIThreadsOnAccountLink({ ...input, env });
-}
-
 export async function transferLinkedAccountResources(input: {
 	anonymousUserId: string;
 	newUserId: string;
@@ -49,7 +43,9 @@ export async function transferLinkedAccountResources(input: {
 		return;
 	}
 
-	await transferUserAIStore(input);
+	const { env } = await import("cloudflare:workers");
+
+	await transferUserAIThreadsOnAccountLink({ ...input, env });
 }
 
 export async function purgeWorkspaceResources(workspaceId: string) {

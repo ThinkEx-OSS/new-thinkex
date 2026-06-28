@@ -1,6 +1,6 @@
 # Environment
 
-ThinkEx reads runtime configuration from Cloudflare Worker bindings, environment variables, and local `.dev.vars` files. Infisical is the source of truth for shared secrets.
+ThinkEx reads runtime config from Cloudflare bindings, environment variables, and local `.dev.vars` files. Infisical is the shared secret source.
 
 ## Local Development
 
@@ -15,13 +15,13 @@ Use `pnpm serve:dev` when the environment is already present, such as after a cl
 | `dev:/app` | Normal local developer secrets |
 | `dev:/agents` | Sandbox secrets for hosted agent/dev-server environments |
 
-Cloud agents should not use production credentials, deploy tokens, migration tokens, or legacy database credentials unless a task explicitly requires them.
+Cloud agents should not receive production credentials, deploy tokens, migration tokens, or legacy database credentials unless a task explicitly requires them.
 
 ## Runtime Sync
 
-Cloudflare Worker secrets are synced from Infisical for deployed environments. Local and hosted-agent dev servers should use Infisical-injected environment variables or a generated, gitignored `.dev.vars` file.
+Cloudflare Worker secrets are synced from Infisical for deployed environments. Local and hosted-agent dev servers should use Infisical-injected variables or a generated, gitignored `.dev.vars` file.
 
-Auth uses `BETTER_AUTH_URL` as the canonical production origin. Development and preview hosts can be allowed with `BETTER_AUTH_ALLOWED_HOSTS`, for example `localhost:*,127.0.0.1:*`.
+Auth uses `BETTER_AUTH_URL` as the canonical app origin. Cloud-agent or preview dev servers with changing hosts can set `BETTER_AUTH_ALLOWED_HOSTS`, for example `localhost:*,127.0.0.1:*`.
 
 ## Agent Authentication
 
@@ -33,18 +33,3 @@ curl -i -c .auth.cookies -b .auth.cookies -X POST \
 ```
 
 Reuse the same cookie jar for follow-up requests that need the anonymous session. Anonymous auth is installed for automation and future onboarding work; it is not a visible end-user sign-in option.
-
-Core runtime names:
-
-- `BETTER_AUTH_URL` - canonical app origin for production and outbound links
-- `BETTER_AUTH_ALLOWED_HOSTS` - development/preview host allowlist
-- `BETTER_AUTH_SECRET`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `FIRECRAWL_API_KEY`
-- `LLAMA_CLOUD_API_KEY`
-- `AI_GATEWAY_API_KEY`
-- `VITE_POSTHOG_HOST`
-- `VITE_POSTHOG_PROJECT_TOKEN`
-- `POSTHOG_API_KEY`
-- `POSTHOG_PROJECT_ID`

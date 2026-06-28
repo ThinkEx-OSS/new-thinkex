@@ -5,7 +5,6 @@ import { buildInvitePath } from "#/lib/client-url";
 const LOCAL_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
 
 const isProduction = import.meta.env.PROD;
-const dynamicAuthBaseUrlProtocol = isProduction ? "https" : "auto";
 
 type AuthBaseURL =
 	| string
@@ -76,7 +75,7 @@ export function getAuthBaseURL(): AuthBaseURL {
 	if (allowedHosts.length > 0) {
 		return {
 			allowedHosts,
-			protocol: dynamicAuthBaseUrlProtocol,
+			protocol: "auto",
 			fallback: configuredUrl ? normalizeAppOrigin(configuredUrl, "BETTER_AUTH_URL") : undefined,
 		};
 	}
