@@ -25,6 +25,10 @@ const migrationToken = requireEnv("THINKEX_MIGRATION_ADMIN_TOKEN");
 const concurrency = Number.parseInt(process.env.THINKEX_BACKFILL_CONCURRENCY ?? "3", 10);
 const pageSize = Number.parseInt(process.env.THINKEX_BACKFILL_PAGE_SIZE ?? "1000", 10);
 const maxAttempts = Number.parseInt(process.env.THINKEX_BACKFILL_MAX_ATTEMPTS ?? "4", 10);
+const startOffset = Number.parseInt(process.env.THINKEX_BACKFILL_START_OFFSET ?? "0", 10);
+const workspaceLimit = process.env.THINKEX_BACKFILL_WORKSPACE_LIMIT
+	? Number.parseInt(process.env.THINKEX_BACKFILL_WORKSPACE_LIMIT, 10)
+	: null;
 
 const totals = {
 	failedPreviews: 0,
@@ -44,6 +48,8 @@ console.info(
 		concurrency,
 		dryRun,
 		message: "Starting ThinkEx post-migration backfill",
+		startOffset,
+		workspaceLimit,
 	}),
 );
 
@@ -99,7 +105,12 @@ async function listWorkspaceIds() {
 		}
 	}
 
-	return workspaceIds;
+	const normalizedStartOffset = Math.max(0, startOffset);
+	const normalizedWorkspaceLimit = workspaceLimit === null ? null : Math.max(0, workspaceLimit);
+
+	return normalizedWorkspaceLimit === null
+		? workspaceIds.slice(normalizedStartOffset)
+		: workspaceIds.slice(normalizedStartOffset, normalizedStartOffset + normalizedWorkspaceLimit);
 }
 
 async function command<T>(commandPayload: Record<string, unknown>): Promise<T> {
