@@ -47,7 +47,7 @@ const browserPageInputExamples = [
 	},
 ];
 
-export function createAIThreadWebTools(env: Env): ToolSet {
+export function createAIThreadWebTools(env: Cloudflare.Env): ToolSet {
 	const browser = env.BROWSER as unknown as QuickActionBinding;
 
 	return {

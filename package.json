@@ -154,15 +154,5 @@
 		"vitest": "^4.1.9",
 		"wrangler": "^4.102.0"
 	},
-	"packageManager": "pnpm@10.14.0",
-	"pnpm": {
-		"overrides": {
-			"vite": "npm:@voidzero-dev/vite-plus-core@latest",
-			"vitest": "4.1.9"
-		},
-		"onlyBuiltDependencies": [
-			"esbuild",
-			"lightningcss"
-		]
-	}
+	"packageManager": "pnpm@10.14.0"
 }

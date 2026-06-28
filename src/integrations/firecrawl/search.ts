@@ -9,7 +9,7 @@ import {
 const MAX_WEB_SEARCH_SNIPPET_CHARS = 600;
 
 export async function searchPublicWeb(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	query: string;
 	limit: number;
 	includeDomains?: string[];

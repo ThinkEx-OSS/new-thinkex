@@ -54,7 +54,7 @@ const WORKSPACE_FS_METHOD_NAMES = [
 ] as const satisfies readonly (keyof WorkspaceFsLike)[];
 
 export function createAIThreadTools(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	timeZone?: string;
@@ -63,7 +63,7 @@ export function createAIThreadTools(input: {
 }
 
 export function createAIThreadTurnToolConfig(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	ctx: DurableObjectState;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
@@ -191,7 +191,7 @@ const AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 ];
 
 function createAIThreadToolCatalog(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	timeZone?: string;
@@ -331,13 +331,16 @@ function createAIThreadToolSet(entries: AIThreadToolEntry[]): ToolSet {
 
 export function getWorkspaceAiLanguageModel(
 	modelId: ReturnType<typeof resolveWorkspaceAiChatModelId>,
-	env: Env,
+	env: Cloudflare.Env,
 	_sessionAffinity: string,
 ): LanguageModel {
 	return getWorkspaceAiLanguageModelForGatewayModel(getWorkspaceAiChatModel(modelId), env);
 }
 
-function getWorkspaceAiLanguageModelForGatewayModel(gatewayModel: string, env: Env): LanguageModel {
+function getWorkspaceAiLanguageModelForGatewayModel(
+	gatewayModel: string,
+	env: Cloudflare.Env,
+): LanguageModel {
 	const gateway = createGateway({
 		apiKey: getVercelAiGatewayApiKey(env),
 	});
@@ -445,7 +448,7 @@ function getWorkspaceAiReasoningOptions(modelId: ReturnType<typeof resolveWorksp
 	}
 }
 
-function getVercelAiGatewayApiKey(env: Env) {
+function getVercelAiGatewayApiKey(env: Cloudflare.Env) {
 	const apiKey =
 		(env as { AI_GATEWAY_API_KEY?: string }).AI_GATEWAY_API_KEY ?? process.env.AI_GATEWAY_API_KEY;
 
@@ -456,7 +459,7 @@ function getVercelAiGatewayApiKey(env: Env) {
 	return apiKey;
 }
 
-export async function generateAIThreadTitle(input: { env: Env; messages: UIMessage[] }) {
+export async function generateAIThreadTitle(input: { env: Cloudflare.Env; messages: UIMessage[] }) {
 	const firstUserMessage = getFirstUserMessageText(input.messages);
 
 	if (!firstUserMessage) {

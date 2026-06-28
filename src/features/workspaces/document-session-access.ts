@@ -10,7 +10,7 @@ export interface DocumentSessionClient {
 }
 
 export function getDocumentSessionFromEnv(
-	env: Env,
+	env: Cloudflare.Env,
 	input: { itemId: string; workspaceId: string },
 ): DocumentSessionClient {
 	return env.DocumentSession.getByName(getDocumentSessionRoomName(input)) as DocumentSessionClient;

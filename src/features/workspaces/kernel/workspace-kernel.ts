@@ -45,7 +45,7 @@ const workspaceKernelInlineThresholdBytes = 1_500_000;
 
 export { setWorkspaceKernelUserHeaders };
 
-export class WorkspaceKernel extends Agent<Env> {
+export class WorkspaceKernel extends Agent<Cloudflare.Env> {
 	private readonly kernelSql: WorkspaceKernelSql = (strings, ...values) =>
 		this.sql(strings, ...values);
 	private readonly workspace = new ShellWorkspace({

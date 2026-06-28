@@ -354,7 +354,7 @@ export async function getWorkspaceKernel(workspaceId: string) {
 }
 
 export async function getWorkspaceKernelFromEnv(
-	env: Env,
+	env: Cloudflare.Env,
 	workspaceId: string,
 ): Promise<WorkspaceKernelClient> {
 	return getAgentByName(

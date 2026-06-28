@@ -1,0 +1,17 @@
+packages:
+  - "."
+
+overrides:
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vitest: 4.1.9
+
+allowBuilds:
+  "@mongodb-js/zstd": true
+  "@posthog/cli": true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+  msw: true
+  node-liblzma: true
+  sharp: true
+  workerd: true

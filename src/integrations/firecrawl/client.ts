@@ -1,7 +1,7 @@
 const defaultFirecrawlApiUrl = "https://api.firecrawl.dev";
 
 export async function firecrawlJsonRequest(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	path: string;
 	operation: string;
 	method?: string;
@@ -31,11 +31,11 @@ export async function firecrawlJsonRequest(input: {
 	return responseJson;
 }
 
-export function getFirecrawlApiUrl(env: Env) {
+export function getFirecrawlApiUrl(env: Cloudflare.Env) {
 	return (env.FIRECRAWL_API_URL || defaultFirecrawlApiUrl).replace(/\/$/, "");
 }
 
-export function getFirecrawlUrl(env: Env, path: string) {
+export function getFirecrawlUrl(env: Cloudflare.Env, path: string) {
 	const baseUrl = `${getFirecrawlApiUrl(env)}/`;
 	return new URL(path.replace(/^\/+/, ""), baseUrl);
 }

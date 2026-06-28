@@ -11,7 +11,7 @@ import {
 const MAX_RESEARCH_TEXT_CHARS = 4_000;
 
 export async function discoverResearch(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	query: string;
 	limit: number;
 	includeGithub: boolean;
@@ -28,7 +28,7 @@ export async function discoverResearch(input: {
 }
 
 export async function deepenResearchWithPassages(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	paperId: string;
 	question: string;
 	limit: number;
@@ -49,7 +49,7 @@ export async function deepenResearchWithPassages(input: {
 }
 
 export async function deepenResearchWithRelated(input: {
-	env: Env;
+	env: Cloudflare.Env;
 	paperId: string;
 	relation: "similar" | "citers" | "references";
 	intent: string;
@@ -85,7 +85,7 @@ export async function deepenResearchWithRelated(input: {
 	};
 }
 
-async function searchResearchPapers(input: { env: Env; query: string; limit: number }) {
+async function searchResearchPapers(input: { env: Cloudflare.Env; query: string; limit: number }) {
 	const response = await firecrawlJsonRequest({
 		env: input.env,
 		path: `/v2/search/research/papers?${new URLSearchParams({
@@ -100,7 +100,7 @@ async function searchResearchPapers(input: { env: Env; query: string; limit: num
 		.filter((item) => item.paper_id || item.title);
 }
 
-async function searchResearchGithub(input: { env: Env; query: string; limit: number }) {
+async function searchResearchGithub(input: { env: Cloudflare.Env; query: string; limit: number }) {
 	const response = await firecrawlJsonRequest({
 		env: input.env,
 		path: `/v2/search/research/github?${new URLSearchParams({

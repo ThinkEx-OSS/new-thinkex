@@ -52,7 +52,7 @@ class AIThreadForbiddenError extends Error {
 
 export const AIThread = createAIThreadClass(() => UserAIStore);
 
-export class UserAIStore extends Agent<Env, UserAIStoreState> {
+export class UserAIStore extends Agent<Cloudflare.Env, UserAIStoreState> {
 	static options = { sendIdentityOnConnect: false };
 
 	initialState: UserAIStoreState = { isLoaded: false, threads: [] };

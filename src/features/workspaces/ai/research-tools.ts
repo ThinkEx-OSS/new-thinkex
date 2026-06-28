@@ -49,7 +49,7 @@ const researchDiscoverInputExamples = [
 	},
 ];
 
-export function createAIThreadResearchTools(env: Env): ToolSet {
+export function createAIThreadResearchTools(env: Cloudflare.Env): ToolSet {
 	return {
 		research_discover: tool({
 			description:
