@@ -1,8 +1,8 @@
 import { toArrayBuffer } from "#/features/workspaces/extraction/binary";
 import {
-	serializeMarkdownPageProjection,
+	createSingleMarkdownProjectionPage,
 	type MarkdownProjectionPage,
-} from "#/features/workspaces/extraction/markdown-page-projection";
+} from "#/features/workspaces/extraction/page-markdown-projection";
 import type {
 	LlamaParseTier,
 	MarkdownExtractionInput,
@@ -30,18 +30,25 @@ export function createLlamaParseExtractionProvider(env: Env): MarkdownExtraction
 			const jobId = await startLlamaParseJob(env, { fileId, tier });
 			const result = await pollLlamaParseJob(env, jobId);
 			const pages = getLlamaParseMarkdownPages(result);
-			const markdown =
-				pages.length > 0 ? serializeMarkdownPageProjection(pages) : getLlamaParseMarkdown(result);
+			const projectionPages =
+				pages.length > 0
+					? pages
+					: createSingleMarkdownProjectionPage(getLlamaParseMarkdown(result) ?? "");
 
-			if (!markdown) {
+			if (projectionPages.length === 0) {
 				throw new Error("LlamaParse completed without markdown output.");
 			}
 
 			return {
-				markdown,
+				pages: projectionPages,
 				provider: "llama_parse",
 				providerMode: tier,
-				metadata: getLlamaParseMetadata(result, { fileId, jobId, pageCount: pages.length, tier }),
+				metadata: getLlamaParseMetadata(result, {
+					fileId,
+					jobId,
+					pageCount: projectionPages.length,
+					tier,
+				}),
 			} satisfies MarkdownExtractionResult;
 		},
 	};

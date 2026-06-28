@@ -1,7 +1,7 @@
 import {
-	parseMarkdownPageProjection,
-	serializeMarkdownPageProjection,
-} from "#/features/workspaces/extraction/markdown-page-projection";
+	joinMarkdownProjectionPages,
+	type MarkdownProjectionPage,
+} from "#/features/workspaces/extraction/page-markdown-projection";
 
 export interface WorkspaceKernelAiReadPages {
 	requested: string;
@@ -15,18 +15,17 @@ export class WorkspaceKernelAiPageError extends Error {
 	}
 }
 
-export function readWorkspaceAiPdfPages(
-	content: string,
+export function readWorkspaceAiProjectionPages(
+	pages: readonly MarkdownProjectionPage[],
 	input: {
 		pages?: string;
 	},
 ): { content: string; pages: WorkspaceKernelAiReadPages } {
-	const pdfPages = parseMarkdownPageProjection(content);
-	const maxPageNumber = pdfPages.reduce((max, page) => Math.max(max, page.pageNumber), 0);
+	const maxPageNumber = pages.reduce((max, page) => Math.max(max, page.pageNumber), 0);
 	const requested = input.pages?.trim() || "1";
 	const selectedPageNumbers = parseWorkspaceAiPdfPageRange(requested, maxPageNumber);
 	const selectedPages = selectedPageNumbers.map((pageNumber) => {
-		const page = pdfPages.find((candidate) => candidate.pageNumber === pageNumber);
+		const page = pages.find((candidate) => candidate.pageNumber === pageNumber);
 
 		if (!page) {
 			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
@@ -36,7 +35,7 @@ export function readWorkspaceAiPdfPages(
 	});
 
 	return {
-		content: serializeMarkdownPageProjection(selectedPages),
+		content: joinMarkdownProjectionPages(selectedPages),
 		pages: {
 			requested,
 			returned: selectedPages.map((page) => page.pageNumber),

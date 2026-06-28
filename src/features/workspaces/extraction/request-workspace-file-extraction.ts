@@ -22,7 +22,7 @@ export async function requestWorkspaceFileExtraction(input: {
 
 	await kernel.upsertFileProjection({
 		itemId: input.itemId,
-		format: "markdown",
+		format: "pages",
 		status: "queued",
 		actorUserId: input.actorUserId,
 	});
@@ -40,7 +40,7 @@ export async function requestWorkspaceFileExtraction(input: {
 		const errorMessage = error instanceof Error ? error.message : "Failed to queue extraction.";
 		await kernel.upsertFileProjection({
 			itemId: input.itemId,
-			format: "markdown",
+			format: "pages",
 			status: "failed",
 			errorMessage,
 			actorUserId: input.actorUserId,

@@ -81,7 +81,7 @@ export interface ReadWorkspaceKernelFileContentResult {
 	sizeBytes: number;
 }
 
-export type WorkspaceKernelFileProjectionFormat = "markdown" | "ocr_pages" | "preview";
+export type WorkspaceKernelFileProjectionFormat = "pages" | "preview";
 
 export type WorkspaceKernelFileProjectionStatus =
 	| "not_started"

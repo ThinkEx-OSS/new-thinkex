@@ -5,6 +5,7 @@ import type {
 	MarkdownExtractionProvider,
 	MarkdownExtractionResult,
 } from "#/features/workspaces/extraction/types";
+import { createSingleMarkdownProjectionPage } from "#/features/workspaces/extraction/page-markdown-projection";
 import {
 	firecrawlJsonRequest,
 	getFirstArrayRecord,
@@ -51,7 +52,7 @@ export function createFirecrawlPdfExtractionProvider(env: Env): MarkdownExtracti
 			}
 
 			return {
-				markdown,
+				pages: createSingleMarkdownProjectionPage(markdown),
 				provider: "firecrawl",
 				providerMode: mode,
 				metadata: getFirecrawlMetadata(responseJson),

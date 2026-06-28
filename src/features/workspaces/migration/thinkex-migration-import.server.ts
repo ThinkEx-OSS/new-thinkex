@@ -1,9 +1,10 @@
 import { createDbContext } from "#/db/server";
 import { account, user, workspaceMembers, workspaces } from "#/db/schema";
 import {
-	flattenLegacyOcrPagesToMarkdown,
+	convertLegacyOcrPagesToMarkdownPages,
 	parseLegacyOcrPagesProjectionContent,
 } from "#/features/workspaces/extraction/legacy-ocr-pages";
+import { serializeMarkdownPagesProjection } from "#/features/workspaces/extraction/page-markdown-projection";
 import { getWorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { mapWorkspaceRow } from "#/features/workspaces/server/mappers";
 import type {
@@ -180,17 +181,17 @@ export async function importThinkexFileItem(
 	}
 
 	const ocrPages = parseLegacyOcrPagesProjectionContent(input.ocrPages);
-	const markdown = flattenLegacyOcrPagesToMarkdown(ocrPages);
+	const pages = convertLegacyOcrPagesToMarkdownPages(ocrPages);
 	const metadataJson: ThinkexMigrationImportedFileProjectionMetadata = {
 		legacyFormat: "thinkex_ocr_pages_v1",
-		pageCount: ocrPages.length,
+		pageCount: pages.length,
 	};
 
 	await kernel.importFileProjection({
 		itemId: input.itemId,
-		format: "ocr_pages",
+		format: "pages",
 		status: "ready",
-		content: input.ocrPages,
+		content: serializeMarkdownPagesProjection(pages),
 		sourceHash: input.ocrSourceHash ?? null,
 		provider: legacyProjectionProvider,
 		providerMode: legacyProjectionProviderMode,
@@ -198,21 +199,6 @@ export async function importThinkexFileItem(
 		createdAt,
 		updatedAt,
 	});
-
-	if (markdown) {
-		await kernel.importFileProjection({
-			itemId: input.itemId,
-			format: "markdown",
-			status: "ready",
-			content: markdown,
-			sourceHash: input.ocrSourceHash ?? null,
-			provider: legacyProjectionProvider,
-			providerMode: legacyProjectionProviderMode,
-			metadataJson,
-			createdAt,
-			updatedAt,
-		});
-	}
 
 	return item;
 }

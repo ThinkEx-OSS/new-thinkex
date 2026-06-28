@@ -536,15 +536,11 @@ function getWorkspaceKernelProjectionShellPath(input: {
 		return getWorkspaceKernelFilePreviewShellPath(input.itemId);
 	}
 
-	if (input.format === "ocr_pages") {
-		return `/items/${input.itemId}/projections/${input.format}.json`;
-	}
-
-	return `/items/${input.itemId}/projections/${input.format}.md`;
+	return `/items/${input.itemId}/projections/${input.format}.json`;
 }
 
 function getProjectionContentType(format: WorkspaceKernelFileProjectionFormat) {
-	return format === "ocr_pages" ? "application/json" : "text/markdown";
+	return format === "pages" ? "application/json" : "text/markdown";
 }
 
 function getErrorMessage(error: unknown) {

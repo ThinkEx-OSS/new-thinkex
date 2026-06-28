@@ -3,16 +3,13 @@ import {
 	resolveWorkspaceKernelAiPath,
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
 import {
-	readWorkspaceAiPdfPages,
+	readWorkspaceAiProjectionPages,
 	WorkspaceKernelAiPageError,
 	type WorkspaceKernelAiReadPages,
 } from "#/features/workspaces/ai/workspace-kernel-ai-pdf-pages";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
-import {
-	flattenLegacyOcrPagesToMarkdown,
-	parseLegacyOcrPagesProjectionContent,
-} from "#/features/workspaces/extraction/legacy-ocr-pages";
+import { parseMarkdownPagesProjection } from "#/features/workspaces/extraction/page-markdown-projection";
 import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document";
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
@@ -188,80 +185,37 @@ async function readWorkspaceKernelAiFileItem(input: {
 		return createWorkspaceKernelAiFileStatusItem(input.path, "unsupported");
 	}
 
-	const projection = await input.kernel.readFileProjection({
+	const pagesProjection = await input.kernel.readFileProjection({
 		itemId: item.id,
-		format: "markdown",
+		format: "pages",
 	});
-	const ocrProjection = await input.kernel.readFileProjection({
-		itemId: item.id,
-		format: "ocr_pages",
-	});
-
-	if (!projection && ocrProjection?.status === "ready" && ocrProjection.content !== null) {
-		const page = readWorkspaceAiMarkdownPages(
-			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
-			{ pages: input.pages },
-		);
-
-		return {
-			content: page.content,
-			pages: page.pages,
-			path: input.path,
-			status: "ready",
-			type: "file",
-		};
-	}
-
-	if (!projection) {
-		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
-	}
 
 	if (
-		projection.status === "not_started" ||
-		projection.status === "queued" ||
-		projection.status === "processing"
+		pagesProjection?.status === "queued" ||
+		pagesProjection?.status === "processing" ||
+		pagesProjection?.status === "not_started"
 	) {
 		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
 	}
 
-	if (projection.status !== "ready" || projection.content === null) {
-		if (ocrProjection?.status !== "ready" || ocrProjection.content === null) {
-			return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
-		}
-
-		const page = readWorkspaceAiMarkdownPages(
-			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
-			{ pages: input.pages },
-		);
-
-		return {
-			content: page.content,
-			pages: page.pages,
-			path: input.path,
-			status: "ready",
-			type: "file",
-		};
+	if (!pagesProjection) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "pending");
 	}
 
-	if (fileType.assetKind === "pdf") {
-		const pageRead = readWorkspaceAiPdfPages(projection.content, {
+	if (pagesProjection.status !== "ready" || pagesProjection.content === null) {
+		return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
+	}
+
+	const pageRead = readWorkspaceAiProjectionPages(
+		parseMarkdownPagesProjection(pagesProjection.content),
+		{
 			pages: input.pages,
-		});
-
-		return {
-			content: pageRead.content,
-			pages: pageRead.pages,
-			path: input.path,
-			status: "ready",
-			type: "file",
-		};
-	}
-
-	const page = readWorkspaceAiMarkdownPages(projection.content, { pages: input.pages });
+		},
+	);
 
 	return {
-		content: page.content,
-		pages: page.pages,
+		content: pageRead.content,
+		pages: pageRead.pages,
 		path: input.path,
 		status: "ready",
 		type: "file",

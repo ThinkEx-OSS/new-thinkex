@@ -7,6 +7,30 @@ export interface LegacyOcrPage {
 	tables?: unknown[];
 }
 
+export function convertLegacyOcrPagesToMarkdownPages(pages: readonly LegacyOcrPage[]) {
+	return pages
+		.map((page, pageIndex) => {
+			const markdown = [
+				typeof page.header === "string" && page.header.trim() ? page.header.trim() : null,
+				typeof page.markdown === "string" && page.markdown.trim() ? page.markdown.trim() : null,
+				typeof page.footer === "string" && page.footer.trim() ? page.footer.trim() : null,
+			]
+				.filter((line): line is string => line !== null)
+				.join("\n\n")
+				.trim();
+
+			if (!markdown) {
+				return null;
+			}
+
+			return {
+				pageNumber: (typeof page.index === "number" ? page.index : pageIndex) + 1,
+				markdown,
+			};
+		})
+		.filter((page): page is { pageNumber: number; markdown: string } => page !== null);
+}
+
 export function parseLegacyOcrPagesProjectionContent(content: string | null) {
 	if (!content?.trim()) {
 		return [];
@@ -23,22 +47,6 @@ export function parseLegacyOcrPagesProjectionContent(content: string | null) {
 	} catch {
 		return [];
 	}
-}
-
-export function flattenLegacyOcrPagesToMarkdown(pages: readonly LegacyOcrPage[]) {
-	const sections = pages.flatMap((page, pageIndex) => {
-		const lines = [
-			`## Page ${(typeof page.index === "number" ? page.index : pageIndex) + 1}`,
-			"",
-			typeof page.header === "string" && page.header.trim() ? page.header.trim() : null,
-			typeof page.markdown === "string" && page.markdown.trim() ? page.markdown.trim() : null,
-			typeof page.footer === "string" && page.footer.trim() ? page.footer.trim() : null,
-		].filter((line): line is string => line !== null);
-
-		return lines.length > 2 ? [lines.join("\n")] : [];
-	});
-
-	return sections.join("\n\n").trim();
 }
 
 function isLegacyOcrPage(value: unknown): value is LegacyOcrPage {
