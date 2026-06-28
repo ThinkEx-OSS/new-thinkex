@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { createDbContext } from "#/db/server";
 import * as schema from "#/db/schema";
@@ -43,44 +43,11 @@ async function handleMigrationImport(request: Request) {
 		try {
 			const db = dbContext.db;
 
-			const existingUser = await db
-				.select({ id: schema.user.id })
-				.from(schema.user)
-				.where(eq(schema.user.id, payload.user.id))
-				.get();
-
-			if (!existingUser) {
-				await db.insert(schema.user).values({
-					id: payload.user.id,
-					name: payload.user.name,
-					email: payload.user.email,
-					emailVerified: payload.user.emailVerified,
-					image: payload.user.image,
-					createdAt: new Date(payload.user.createdAt),
-					updatedAt: new Date(payload.user.updatedAt),
-				});
-			}
-
-			const existingAccount = await db
-				.select({ id: schema.account.id })
-				.from(schema.account)
-				.where(eq(schema.account.id, payload.account.id))
-				.get();
-
-			if (!existingAccount) {
-				await db.insert(schema.account).values({
-					id: payload.account.id,
-					accountId: payload.account.accountId,
-					providerId: payload.account.providerId,
-					userId: payload.account.userId,
-					accessToken: payload.account.accessToken,
-					refreshToken: payload.account.refreshToken,
-					idToken: payload.account.idToken,
-					scope: payload.account.scope,
-					createdAt: new Date(payload.account.createdAt),
-					updatedAt: new Date(payload.account.updatedAt),
-				});
-			}
+			// Resolve which new-app user the legacy data should attach to. If the
+			// user already exists in the new app (signed up directly with Google),
+			// migrated workspaces attach to that existing account instead of
+			// inserting a duplicate user (which would collide on the unique email).
+			const { userId: targetUserId, matchedBy } = await resolveTargetUser(db, payload);
 
 			const results: Array<{
 				workspaceId: string;
@@ -90,11 +57,11 @@ async function handleMigrationImport(request: Request) {
 			}> = [];
 
 			for (const workspace of payload.workspaces) {
-				const wsResult = await importWorkspace(workspace, payload.user.id);
+				const wsResult = await importWorkspace(workspace, targetUserId);
 				results.push(wsResult);
 			}
 
-			return apiJson({ ok: true, results }, requestId);
+			return apiJson({ ok: true, userId: targetUserId, matchedBy, results }, requestId);
 		} finally {
 			await dbContext.dispose();
 		}
@@ -107,6 +74,97 @@ async function handleMigrationImport(request: Request) {
 			error instanceof Error ? { message: error.message } : undefined,
 		);
 	}
+}
+
+type MigrationDb = Awaited<ReturnType<typeof createDbContext>>["db"];
+
+/**
+ * Decide which new-app user the legacy data attaches to.
+ *
+ * 1. If a Google account with the same provider `sub` already exists, reuse its
+ *    user (the person already signed up directly with Google).
+ * 2. Otherwise, if a user with the same email exists, attach to them and link
+ *    the Google account if it is missing.
+ * 3. Otherwise create a fresh user + Google account, preserving the legacy ids.
+ */
+async function resolveTargetUser(
+	db: MigrationDb,
+	payload: MigrationPayload,
+): Promise<{ userId: string; matchedBy: "google-account" | "email" | "created" }> {
+	const googleSub = payload.account.accountId;
+
+	const existingGoogleAccount = await db
+		.select({ userId: schema.account.userId })
+		.from(schema.account)
+		.where(and(eq(schema.account.providerId, "google"), eq(schema.account.accountId, googleSub)))
+		.get();
+
+	if (existingGoogleAccount) {
+		return { userId: existingGoogleAccount.userId, matchedBy: "google-account" };
+	}
+
+	const existingByEmail = await db
+		.select({ id: schema.user.id })
+		.from(schema.user)
+		.where(eq(schema.user.email, payload.user.email))
+		.get();
+
+	if (existingByEmail) {
+		await ensureGoogleAccount(db, payload, existingByEmail.id);
+		return { userId: existingByEmail.id, matchedBy: "email" };
+	}
+
+	const existingById = await db
+		.select({ id: schema.user.id })
+		.from(schema.user)
+		.where(eq(schema.user.id, payload.user.id))
+		.get();
+
+	if (!existingById) {
+		await db.insert(schema.user).values({
+			id: payload.user.id,
+			name: payload.user.name,
+			email: payload.user.email,
+			emailVerified: payload.user.emailVerified,
+			image: payload.user.image,
+			createdAt: new Date(payload.user.createdAt),
+			updatedAt: new Date(payload.user.updatedAt),
+		});
+	}
+
+	await ensureGoogleAccount(db, payload, payload.user.id);
+	return { userId: payload.user.id, matchedBy: "created" };
+}
+
+/** Insert the legacy Google account linked to `userId`, unless one already exists. */
+async function ensureGoogleAccount(db: MigrationDb, payload: MigrationPayload, userId: string) {
+	const existing = await db
+		.select({ id: schema.account.id })
+		.from(schema.account)
+		.where(
+			and(
+				eq(schema.account.providerId, "google"),
+				eq(schema.account.accountId, payload.account.accountId),
+			),
+		)
+		.get();
+
+	if (existing) {
+		return;
+	}
+
+	await db.insert(schema.account).values({
+		id: payload.account.id,
+		accountId: payload.account.accountId,
+		providerId: "google",
+		userId,
+		accessToken: payload.account.accessToken,
+		refreshToken: payload.account.refreshToken,
+		idToken: payload.account.idToken,
+		scope: payload.account.scope,
+		createdAt: new Date(payload.account.createdAt),
+		updatedAt: new Date(payload.account.updatedAt),
+	});
 }
 
 async function importWorkspace(

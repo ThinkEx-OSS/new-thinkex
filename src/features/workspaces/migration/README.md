@@ -41,6 +41,8 @@ While deployed, `/api/admin/migration-import` is publicly reachable, so it is ga
 
 **Users**: Only Google-authenticated users (legacy `account.provider_id = 'google'`). Anonymous/credential-only users are dropped.
 
+**Existing new-app users**: If the user already exists in the new app, their legacy workspaces attach to that existing account instead of creating a duplicate. The importer matches in this order: (1) an existing Google account with the same provider `sub`, (2) an existing user with the same email, otherwise (3) it creates a fresh user + Google account preserving the legacy ids. The response reports `matchedBy: "google-account" | "email" | "created"`.
+
 **Workspaces**: Only workspaces OWNED by the migrated user (`workspaces.user_id`). Shared workspaces owned by others are dropped.
 
 **Item types kept**:
