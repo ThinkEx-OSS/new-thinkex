@@ -5,7 +5,6 @@ import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import {
 	buildWorkspaceItemCreateBootstrap,
 	persistDocumentItemContentUpdate,
-	prepareDocumentItemMetadata,
 	touchWorkspaceItemUpdatedAt,
 } from "#/features/workspaces/documents/document-item-content";
 import type { WorkspaceKernelEventBus } from "#/features/workspaces/kernel/workspace-kernel-events";
@@ -21,11 +20,9 @@ import {
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
-	BackfillWorkspaceKernelMigrationVisualsResult,
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
 	DeleteWorkspaceKernelItemsResult,
-	ImportWorkspaceKernelItemArgs,
 	MoveWorkspaceKernelItemsArgs,
 	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelItemArgs,
@@ -33,7 +30,6 @@ import type {
 	UpdateWorkspaceKernelItemColorArgs,
 	WriteWorkspaceKernelItemArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
-import { normalizeThinkexLegacyWorkspaceColor } from "#/features/workspaces/migration/thinkex-legacy-visuals";
 import {
 	resolveWorkspaceItemColorForCreate,
 	workspaceItemSupportsCustomColor,
@@ -138,91 +134,6 @@ export class WorkspaceKernelItemCommands {
 		});
 
 		return { result: item, event };
-	}
-
-	async importItem(input: ImportWorkspaceKernelItemArgs): Promise<WorkspaceItemSummary> {
-		const type = workspaceItemTypeSchema.parse(input.type);
-		const id = input.id;
-		const parentId = input.parentId ?? null;
-		const shellPath = getWorkspaceKernelShellPath({ id, type });
-		const metadataJson =
-			type === "document"
-				? prepareDocumentItemMetadata(input.metadataJson ?? {}, input.content ?? "")
-				: (input.metadataJson ?? {});
-
-		if (this.store.getItemRowIncludingDeleted(id)) {
-			throw new Error("Workspace item id already exists.");
-		}
-
-		this.store.assertParentIsValid(parentId);
-		await this.createWorkspaceFile({
-			type,
-			name: input.name,
-			shellPath,
-			initialContent: input.content,
-		});
-
-		this.sql`
-			INSERT INTO kernel_items (
-				id,
-				parent_id,
-				type,
-				name,
-				color,
-				metadata_json,
-				sort_order,
-				shell_path,
-				created_at,
-				updated_at,
-				deleted_at
-			)
-			VALUES (
-				${id},
-				${parentId},
-				${type},
-				${input.name},
-				${input.color ?? null},
-				${JSON.stringify(metadataJson)},
-				${input.sortOrder},
-				${shellPath},
-				${input.createdAt},
-				${input.updatedAt},
-				NULL
-			)
-		`;
-
-		return this.store.requireItem(id);
-	}
-
-	async normalizeLegacyFolderColors(
-		input: { dryRun?: boolean } = {},
-	): Promise<Pick<BackfillWorkspaceKernelMigrationVisualsResult, "folderColorsUpdated">> {
-		const rows = this.sql<{ color: string | null; id: string }>`
-			SELECT id, color
-			FROM kernel_items
-			WHERE type = ${"folder"} AND deleted_at IS NULL AND color IS NOT NULL
-		`;
-		let folderColorsUpdated = 0;
-
-		for (const row of rows) {
-			const normalized = normalizeThinkexLegacyWorkspaceColor(row.color);
-
-			if (!normalized || normalized === row.color) {
-				continue;
-			}
-
-			folderColorsUpdated += 1;
-
-			if (!input.dryRun) {
-				this.sql`
-					UPDATE kernel_items
-					SET color = ${normalized}
-					WHERE id = ${row.id} AND deleted_at IS NULL
-				`;
-			}
-		}
-
-		return { folderColorsUpdated };
 	}
 
 	async renameItem(

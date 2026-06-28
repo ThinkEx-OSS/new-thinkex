@@ -24,7 +24,6 @@ coverage
 .cta.json
 .cursorrules
 .firecrawl/
-.migration-artifacts/
 references
 
 .dev.vars*

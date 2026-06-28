@@ -14,10 +14,7 @@ import {
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
-	BackfillWorkspaceKernelMigrationVisualsResult,
 	CreateWorkspaceKernelFileFromUploadArgs,
-	ImportWorkspaceKernelFileArgs,
-	ImportWorkspaceKernelFileProjectionArgs,
 	ReadWorkspaceKernelFileContentArgs,
 	ReadWorkspaceKernelFileContentResult,
 	ReadWorkspaceKernelFilePreviewResult,
@@ -164,186 +161,6 @@ export class WorkspaceKernelFileCommands {
 		}
 
 		return { result: item, event };
-	}
-
-	async importFile(input: ImportWorkspaceKernelFileArgs): Promise<WorkspaceItemSummary> {
-		const parentId = input.parentId ?? null;
-
-		this.store.assertParentIsValid(parentId);
-
-		if (this.store.getItemRowIncludingDeleted(input.id)) {
-			throw new Error("Workspace item id already exists.");
-		}
-
-		const descriptor = getWorkspaceUploadFamily(input.assetKind);
-		const requestedName = normalizeWorkspaceUploadFileName(input.originalName, descriptor);
-		const shellPath = getWorkspaceKernelFileShellPath({
-			itemId: input.id,
-			extension: getWorkspaceFileShellExtension({
-				contentType: input.contentType,
-				descriptor,
-				fileName: requestedName,
-			}),
-		});
-		const metadataJson = createFileMetadata({
-			contentType: input.contentType,
-			descriptor,
-			originalName: input.originalName,
-			sizeBytes: input.sizeBytes,
-		});
-
-		await this.workspace.writeFileBytes(shellPath, input.bytes, input.contentType);
-
-		this.sql`
-			INSERT INTO kernel_items (
-				id,
-				parent_id,
-				type,
-				name,
-				color,
-				metadata_json,
-				sort_order,
-				shell_path,
-				created_at,
-				updated_at,
-				deleted_at
-			)
-			VALUES (
-				${input.id},
-				${parentId},
-				${"file"},
-				${input.name},
-				NULL,
-				${JSON.stringify(metadataJson)},
-				${input.sortOrder},
-				${shellPath},
-				${input.createdAt},
-				${input.updatedAt},
-				NULL
-			)
-		`;
-
-		const item = this.store.requireItem(input.id);
-		const previewGenerator = resolveUploadPreviewGenerator(descriptor);
-
-		if (previewGenerator) {
-			await this.tryCreateUploadPreview({
-				bytes: input.bytes,
-				generate: previewGenerator,
-				itemId: input.id,
-				label: descriptor.assetKind,
-				now: input.updatedAt,
-			});
-		}
-
-		return item;
-	}
-
-	async backfillMissingPreviews(
-		input: { dryRun?: boolean } = {},
-	): Promise<
-		Pick<
-			BackfillWorkspaceKernelMigrationVisualsResult,
-			| "failedPreviews"
-			| "filesWithPreview"
-			| "previewBackfilled"
-			| "previewCandidates"
-			| "previewSkippedUnsupported"
-		>
-	> {
-		const rows = this.sql<KernelFilePreviewCandidateRow>`
-			SELECT kernel_items.id, kernel_items.shell_path
-			FROM kernel_items
-			LEFT JOIN kernel_item_projections
-				ON kernel_item_projections.item_id = kernel_items.id
-				AND kernel_item_projections.format = ${"preview"}
-			WHERE kernel_items.type = ${"file"}
-				AND kernel_items.deleted_at IS NULL
-				AND kernel_item_projections.item_id IS NULL
-		`;
-		const result = {
-			failedPreviews: 0,
-			filesWithPreview: 0,
-			previewBackfilled: 0,
-			previewCandidates: rows.length,
-			previewSkippedUnsupported: 0,
-		};
-
-		for (const row of rows) {
-			const item = this.store.requireItem(row.id);
-			const assetKind = getMetadataString(item.metadataJson, "assetKind");
-
-			if (assetKind !== "pdf" && assetKind !== "image") {
-				result.previewSkippedUnsupported += 1;
-				continue;
-			}
-
-			const descriptor = getWorkspaceUploadFamily(assetKind);
-			const previewGenerator = resolveUploadPreviewGenerator(descriptor);
-
-			if (!previewGenerator) {
-				result.previewSkippedUnsupported += 1;
-				continue;
-			}
-
-			result.filesWithPreview += 1;
-
-			if (input.dryRun) {
-				continue;
-			}
-
-			const bytes = await this.workspace.readFileBytes(row.shell_path);
-			if (!bytes) {
-				result.failedPreviews += 1;
-				await this.writeProjectionRow({
-					itemId: row.id,
-					now: Date.now(),
-					projection: {
-						itemId: row.id,
-						format: "preview",
-						status: "failed",
-						errorMessage: "Workspace file content was not found.",
-					},
-				});
-				continue;
-			}
-
-			await this.tryCreateUploadPreview({
-				bytes,
-				generate: previewGenerator,
-				itemId: row.id,
-				label: descriptor.assetKind,
-				now: Date.now(),
-			});
-
-			const projection = this.getProjectionRow({ itemId: row.id, format: "preview" });
-			if (projection?.status === "ready") {
-				result.previewBackfilled += 1;
-			} else if (projection?.status === "failed") {
-				result.failedPreviews += 1;
-			}
-		}
-
-		return result;
-	}
-
-	async importFileProjection(input: ImportWorkspaceKernelFileProjectionArgs): Promise<void> {
-		await this.writeProjectionRow({
-			itemId: input.itemId,
-			now: input.updatedAt,
-			createdAt: input.createdAt,
-			projection: {
-				itemId: input.itemId,
-				format: input.format,
-				status: input.status,
-				content: input.content ?? null,
-				provider: input.provider ?? null,
-				providerMode: input.providerMode ?? null,
-				errorMessage: input.errorMessage ?? null,
-				sourceHash: input.sourceHash ?? null,
-				metadataJson: input.metadataJson ?? {},
-			},
-		});
 	}
 
 	async readFileContent(
@@ -614,11 +431,6 @@ type KernelItemProjectionRow = {
 	metadata_json: string;
 	created_at: number;
 	updated_at: number;
-};
-
-type KernelFilePreviewCandidateRow = {
-	id: string;
-	shell_path: string;
 };
 
 function createFileMetadata(input: {

@@ -140,60 +140,6 @@ export interface WriteWorkspaceKernelItemArgs {
 	clientMutationId?: string | null;
 }
 
-export interface ImportWorkspaceKernelItemArgs {
-	color?: string | null;
-	content?: string;
-	createdAt: number;
-	id: string;
-	metadataJson?: Record<string, JsonValue>;
-	name: string;
-	parentId?: string | null;
-	sortOrder: number;
-	type: WorkspaceItemType;
-	updatedAt: number;
-}
-
-export interface ImportWorkspaceKernelFileArgs {
-	assetKind: WorkspaceFileAssetKind;
-	bytes: Uint8Array;
-	contentType: string;
-	createdAt: number;
-	id: string;
-	name: string;
-	originalName: string;
-	parentId?: string | null;
-	sizeBytes: number;
-	sortOrder: number;
-	updatedAt: number;
-}
-
-export interface ImportWorkspaceKernelFileProjectionArgs {
-	content?: string | null;
-	createdAt: number;
-	errorMessage?: string | null;
-	format: WorkspaceKernelFileProjectionFormat;
-	itemId: string;
-	metadataJson?: Record<string, JsonValue>;
-	provider?: string | null;
-	providerMode?: string | null;
-	sourceHash?: string | null;
-	status: WorkspaceKernelFileProjectionStatus;
-	updatedAt: number;
-}
-
-export interface BackfillWorkspaceKernelMigrationVisualsArgs {
-	dryRun?: boolean;
-}
-
-export interface BackfillWorkspaceKernelMigrationVisualsResult {
-	failedPreviews: number;
-	filesWithPreview: number;
-	folderColorsUpdated: number;
-	previewBackfilled: number;
-	previewCandidates: number;
-	previewSkippedUnsupported: number;
-}
-
 export interface CreateWorkspaceKernelFileFromUploadArgs {
 	parentId?: string | null;
 	fileName: string;

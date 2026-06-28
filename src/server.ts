@@ -3,7 +3,6 @@ import handler from "@tanstack/react-start/server-entry";
 import { routeUserAIRequest } from "#/features/workspaces/ai/auth";
 import { routeDocumentSessionRequest } from "#/features/workspaces/documents/document-session-auth";
 import { routeWorkspaceKernelRequest } from "#/features/workspaces/kernel/workspace-kernel-auth";
-import { routeThinkexMigrationRequest } from "#/features/workspaces/migration/thinkex-migration-route";
 import { posthogHost, posthogHostOrigin, posthogProjectToken } from "#/integrations/posthog/config";
 import { capturePostHogServerException } from "#/integrations/posthog/server";
 
@@ -119,12 +118,6 @@ export default {
 
 			if (documentSessionResponse) {
 				return documentSessionResponse;
-			}
-
-			const thinkexMigrationResponse = await routeThinkexMigrationRequest(request);
-
-			if (thinkexMigrationResponse) {
-				return thinkexMigrationResponse;
 			}
 
 			const workspaceKernelResponse = await routeWorkspaceKernelRequest(request, env);
