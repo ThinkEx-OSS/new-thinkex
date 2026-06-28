@@ -4,7 +4,7 @@ import { resolve, join } from "node:path";
 
 import { Pool } from "pg";
 
-import { parseMarkdownToTiptapDocument } from "../src/features/workspaces/documents/document-markdown";
+import { parseMarkdownToTiptapDocumentProjection } from "../src/features/workspaces/documents/document-markdown";
 import { stringifyTiptapDocumentJson } from "../src/features/workspaces/documents/tiptap-document";
 
 type LegacyJson = Record<string, unknown> | null;
@@ -142,11 +142,8 @@ const targetApi: MigrationTargetClient = isDryRun
 			token: requireEnv("THINKEX_MIGRATION_ADMIN_TOKEN"),
 		});
 
-const legacySupabaseUrl = requireAnyEnv("THINKEX_LEGACY_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
-const legacySupabaseServiceRoleKey = requireAnyEnv(
-	"THINKEX_LEGACY_SUPABASE_SERVICE_ROLE_KEY",
-	"SUPABASE_SERVICE_ROLE_KEY",
-);
+const legacySupabaseOrigin = getOptionalHttpOriginEnv("THINKEX_LEGACY_SUPABASE_URL");
+const legacySupabaseServiceRoleKey = getOptionalEnv("THINKEX_LEGACY_SUPABASE_SERVICE_ROLE_KEY");
 
 async function main() {
 	await mkdir(outputDir, { recursive: true });
@@ -509,7 +506,7 @@ async function importWorkspaceItems(pool: Pool, workspaceMap: Map<string, Import
 			try {
 				if (row.type === "document") {
 					const content = stringifyTiptapDocumentJson(
-						parseMarkdownToTiptapDocument(row.text_content ?? ""),
+						parseMarkdownToTiptapDocumentProjection(row.text_content ?? "").document,
 					);
 					await targetApi.command({
 						type: "import_document_item",
@@ -709,18 +706,33 @@ function resolveLegacyOriginalName(row: LegacyItemRow, assetData: LegacyJson, co
 }
 
 async function downloadLegacyFile(fileUrl: string) {
+	const directResponse = await fetch(fileUrl);
+	if (directResponse.ok) {
+		return {
+			bytes: new Uint8Array(await directResponse.arrayBuffer()),
+			contentType: directResponse.headers.get("content-type") || inferContentType(fileUrl),
+		};
+	}
+
 	const objectPath = extractSupabaseObjectPath(fileUrl);
-	const response = objectPath
-		? await fetch(`${legacySupabaseUrl}/storage/v1/object/file-upload/${objectPath}`, {
-				headers: {
+	if (!objectPath) {
+		throw new Error(`legacy_file_download_failed:${directResponse.status}`);
+	}
+
+	const authenticatedUrl = buildLegacySupabaseObjectUrl(fileUrl, objectPath);
+	const response = await fetch(authenticatedUrl, {
+		headers: legacySupabaseServiceRoleKey
+			? {
 					authorization: `Bearer ${legacySupabaseServiceRoleKey}`,
 					apikey: legacySupabaseServiceRoleKey,
-				},
-			})
-		: await fetch(fileUrl);
+				}
+			: undefined,
+	});
 
 	if (!response.ok) {
-		throw new Error(`legacy_file_download_failed:${response.status}`);
+		throw new Error(
+			`legacy_file_download_failed:${directResponse.status}:${response.status}:${authenticatedUrl}`,
+		);
 	}
 
 	return {
@@ -743,6 +755,11 @@ function extractSupabaseObjectPath(fileUrl: string) {
 	} catch {
 		return null;
 	}
+}
+
+function buildLegacySupabaseObjectUrl(fileUrl: string, objectPath: string) {
+	const origin = legacySupabaseOrigin ?? new URL(fileUrl).origin;
+	return `${origin}/storage/v1/object/file-upload/${objectPath}`;
 }
 
 function inferContentType(fileUrl: string) {
@@ -799,6 +816,33 @@ function requireAnyEnv(...names: string[]) {
 	}
 
 	throw new Error(`Missing required env var: ${names.join(" or ")}`);
+}
+
+function getOptionalEnv(name: string) {
+	const value = process.env[name]?.trim();
+	return value ? value : null;
+}
+
+function getOptionalHttpOriginEnv(name: string) {
+	const value = getOptionalEnv(name);
+	if (!value) {
+		return null;
+	}
+
+	try {
+		const url = new URL(value);
+		if (!/^https?:$/.test(url.protocol)) {
+			return null;
+		}
+
+		if (url.username || url.password) {
+			return null;
+		}
+
+		return url.origin;
+	} catch {
+		return null;
+	}
 }
 
 async function runWithConcurrency<T>(
