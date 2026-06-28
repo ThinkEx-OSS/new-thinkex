@@ -24,6 +24,7 @@ const baseUrl = requireEnv("NEW_THINKEX_BASE_URL").replace(/\/$/, "");
 const migrationToken = requireEnv("THINKEX_MIGRATION_ADMIN_TOKEN");
 const concurrency = Number.parseInt(process.env.THINKEX_BACKFILL_CONCURRENCY ?? "3", 10);
 const pageSize = Number.parseInt(process.env.THINKEX_BACKFILL_PAGE_SIZE ?? "1000", 10);
+const maxAttempts = Number.parseInt(process.env.THINKEX_BACKFILL_MAX_ATTEMPTS ?? "4", 10);
 
 const totals = {
 	failedPreviews: 0,
@@ -102,6 +103,34 @@ async function listWorkspaceIds() {
 }
 
 async function command<T>(commandPayload: Record<string, unknown>): Promise<T> {
+	let lastError: unknown;
+
+	for (let attempt = 1; attempt <= Math.max(1, maxAttempts); attempt += 1) {
+		try {
+			return await commandOnce<T>(commandPayload);
+		} catch (error) {
+			lastError = error;
+
+			if (attempt >= Math.max(1, maxAttempts)) {
+				break;
+			}
+
+			console.warn(
+				JSON.stringify({
+					attempt,
+					error: error instanceof Error ? error.message : String(error),
+					message: "Backfill command failed; retrying",
+					type: commandPayload.type,
+				}),
+			);
+			await sleep(500 * attempt * attempt);
+		}
+	}
+
+	throw lastError;
+}
+
+async function commandOnce<T>(commandPayload: Record<string, unknown>): Promise<T> {
 	const headers = new Headers({
 		"content-type": "application/json",
 	});
@@ -119,6 +148,10 @@ async function command<T>(commandPayload: Record<string, unknown>): Promise<T> {
 	}
 
 	return JSON.parse(text) as T;
+}
+
+function sleep(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function runWithConcurrency<T>(
