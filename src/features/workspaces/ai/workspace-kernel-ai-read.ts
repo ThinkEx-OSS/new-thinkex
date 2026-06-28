@@ -4,8 +4,8 @@ import {
 } from "#/features/workspaces/ai/workspace-kernel-ai-common";
 import {
 	readWorkspaceAiPdfPages,
-	WorkspaceKernelAiPdfPageError,
-	type WorkspaceKernelAiPdfPages,
+	WorkspaceKernelAiPageError,
+	type WorkspaceKernelAiReadPages,
 } from "#/features/workspaces/ai/workspace-kernel-ai-pdf-pages";
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { serializeTiptapDocumentToMarkdown } from "#/features/workspaces/documents/document-markdown";
@@ -17,15 +17,7 @@ import { parseTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-
 import type { WorkspaceKernelClient } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { resolveWorkspaceFileTypeFromItem } from "#/features/workspaces/model/workspace-file";
 
-interface WorkspaceKernelAiContentPage {
-	lineTruncated?: boolean;
-	next?: number;
-	truncated: boolean;
-}
-
 export interface ReadWorkspaceKernelAiItemsInput {
-	contentLimit?: number;
-	contentOffset?: number;
 	pages?: string;
 	paths: string[];
 	userId: string;
@@ -34,8 +26,7 @@ export interface ReadWorkspaceKernelAiItemsInput {
 
 export interface WorkspaceKernelAiReadItem {
 	content?: string;
-	page?: WorkspaceKernelAiContentPage;
-	pdfPages?: WorkspaceKernelAiPdfPages;
+	pages?: WorkspaceKernelAiReadPages;
 	path: string;
 	status: "failed" | "pending" | "ready" | "unsupported";
 	type: "document" | "file" | "flashcard" | "quiz";
@@ -46,13 +37,11 @@ export interface WorkspaceKernelAiReadItemsResult {
 	failed: WorkspaceKernelAiReadFailure[];
 }
 
-const DEFAULT_AI_READ_CONTENT_LIMIT = 2000;
-const MAX_AI_READ_CONTENT_LINES = 2000;
+const AI_READ_MARKDOWN_LINES_PER_PAGE = 1000;
 const MAX_AI_READ_LINE_LENGTH = 2000;
 const TRUNCATED_LINE_SUFFIX = `... (line truncated to ${MAX_AI_READ_LINE_LENGTH} chars)`;
 
 type WorkspaceKernelAiReadFailureCode =
-	| "content_offset_out_of_range"
 	| "page_range_out_of_range"
 	| "path_is_folder"
 	| "path_not_absolute"
@@ -122,8 +111,6 @@ export async function readWorkspaceKernelAiItems(
 		try {
 			result.items.push(
 				await readWorkspaceKernelAiItem({
-					contentLimit: input.contentLimit,
-					contentOffset: input.contentOffset,
 					item: resolution.item,
 					kernel: context.kernel,
 					pages: input.pages,
@@ -131,16 +118,7 @@ export async function readWorkspaceKernelAiItems(
 				}),
 			);
 		} catch (error) {
-			if (error instanceof WorkspaceKernelAiPdfPageError) {
-				result.failed.push({
-					code: error.code,
-					index,
-					path: resolution.path,
-				});
-				continue;
-			}
-
-			if (error instanceof WorkspaceAiContentPageError) {
+			if (error instanceof WorkspaceKernelAiPageError) {
 				result.failed.push({
 					code: error.code,
 					index,
@@ -157,8 +135,6 @@ export async function readWorkspaceKernelAiItems(
 }
 
 async function readWorkspaceKernelAiItem(input: {
-	contentLimit?: number;
-	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
 	pages?: string;
@@ -173,14 +149,11 @@ async function readWorkspaceKernelAiItem(input: {
 	if (item.type === "document") {
 		const { content } = await input.kernel.readItem({ itemId: item.id });
 		const markdown = serializeTiptapDocumentToMarkdown(parseTiptapDocumentJson(content));
-		const page = pageWorkspaceAiMarkdown(markdown, {
-			limit: input.contentLimit,
-			offset: input.contentOffset,
-		});
+		const page = readWorkspaceAiMarkdownPages(markdown, { pages: input.pages });
 
 		return {
 			content: page.content,
-			...(page.page ? { page: page.page } : {}),
+			pages: page.pages,
 			path: input.path,
 			status: "ready",
 			type: "document",
@@ -199,8 +172,6 @@ async function readWorkspaceKernelAiItem(input: {
 }
 
 async function readWorkspaceKernelAiFileItem(input: {
-	contentLimit?: number;
-	contentOffset?: number;
 	item: WorkspaceItemSummary;
 	kernel: WorkspaceKernelClient;
 	pages?: string;
@@ -227,17 +198,14 @@ async function readWorkspaceKernelAiFileItem(input: {
 	});
 
 	if (!projection && ocrProjection?.status === "ready" && ocrProjection.content !== null) {
-		const page = pageWorkspaceAiMarkdown(
+		const page = readWorkspaceAiMarkdownPages(
 			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
-			{
-				limit: input.contentLimit,
-				offset: input.contentOffset,
-			},
+			{ pages: input.pages },
 		);
 
 		return {
 			content: page.content,
-			...(page.page ? { page: page.page } : {}),
+			pages: page.pages,
 			path: input.path,
 			status: "ready",
 			type: "file",
@@ -261,17 +229,14 @@ async function readWorkspaceKernelAiFileItem(input: {
 			return createWorkspaceKernelAiFileStatusItem(input.path, "failed");
 		}
 
-		const page = pageWorkspaceAiMarkdown(
+		const page = readWorkspaceAiMarkdownPages(
 			flattenLegacyOcrPagesToMarkdown(parseLegacyOcrPagesProjectionContent(ocrProjection.content)),
-			{
-				limit: input.contentLimit,
-				offset: input.contentOffset,
-			},
+			{ pages: input.pages },
 		);
 
 		return {
 			content: page.content,
-			...(page.page ? { page: page.page } : {}),
+			pages: page.pages,
 			path: input.path,
 			status: "ready",
 			type: "file",
@@ -285,21 +250,18 @@ async function readWorkspaceKernelAiFileItem(input: {
 
 		return {
 			content: pageRead.content,
-			pdfPages: pageRead.pdfPages,
+			pages: pageRead.pages,
 			path: input.path,
 			status: "ready",
 			type: "file",
 		};
 	}
 
-	const page = pageWorkspaceAiMarkdown(projection.content, {
-		limit: input.contentLimit,
-		offset: input.contentOffset,
-	});
+	const page = readWorkspaceAiMarkdownPages(projection.content, { pages: input.pages });
 
 	return {
 		content: page.content,
-		...(page.page ? { page: page.page } : {}),
+		pages: page.pages,
 		path: input.path,
 		status: "ready",
 		type: "file",
@@ -317,48 +279,71 @@ function createWorkspaceKernelAiFileStatusItem(
 	};
 }
 
-function pageWorkspaceAiMarkdown(
+function readWorkspaceAiMarkdownPages(
 	content: string,
-	input: { limit?: number; offset?: number },
-): { content: string; page?: WorkspaceKernelAiContentPage } {
-	const offset = input.offset ?? 1;
-	const limit = Math.min(input.limit ?? DEFAULT_AI_READ_CONTENT_LIMIT, MAX_AI_READ_CONTENT_LINES);
+	input: { pages?: string },
+): { content: string; pages: WorkspaceKernelAiReadPages } {
 	const lines = content === "" ? [] : content.split(/\r?\n/);
+	const totalPages = Math.max(1, Math.ceil(lines.length / AI_READ_MARKDOWN_LINES_PER_PAGE));
+	const requested = input.pages?.trim() || "1";
+	const selectedPageNumbers = parseWorkspaceAiPageRange(requested, totalPages);
 
-	if (offset > Math.max(lines.length, 1)) {
-		throw new WorkspaceAiContentPageError("content_offset_out_of_range");
-	}
+	const selectedLines: string[] = [];
 
-	const selected: string[] = [];
-	let lineTruncated = false;
-	let truncated = false;
-	let next: number | undefined;
+	for (const pageNumber of selectedPageNumbers) {
+		const startIndex = (pageNumber - 1) * AI_READ_MARKDOWN_LINES_PER_PAGE;
+		const pageLines = lines.slice(startIndex, startIndex + AI_READ_MARKDOWN_LINES_PER_PAGE);
 
-	for (let index = offset - 1; index < lines.length; index += 1) {
-		if (selected.length >= limit) {
-			truncated = true;
-			next = index + 1;
-			break;
+		for (const rawLine of pageLines) {
+			const line = truncateWorkspaceAiMarkdownLine(rawLine);
+			selectedLines.push(line.value);
 		}
-
-		const line = truncateWorkspaceAiMarkdownLine(lines[index] ?? "");
-		lineTruncated = lineTruncated || line.truncated;
-		selected.push(line.value);
 	}
-
-	const page: WorkspaceKernelAiContentPage | undefined =
-		truncated || lineTruncated || offset !== 1
-			? {
-					...(lineTruncated ? { lineTruncated } : {}),
-					truncated: truncated || lineTruncated,
-					...(next === undefined ? {} : { next }),
-				}
-			: undefined;
 
 	return {
-		content: selected.join("\n"),
-		...(page ? { page } : {}),
+		content: selectedLines.join("\n"),
+		pages: {
+			requested,
+			returned: selectedPageNumbers,
+			total: totalPages,
+		},
 	};
+}
+
+function parseWorkspaceAiPageRange(value: string, totalPages: number) {
+	const selected = new Set<number>();
+	const parts = value.split(",");
+
+	for (const rawPart of parts) {
+		const part = rawPart.trim();
+
+		if (!part) {
+			continue;
+		}
+
+		const rangeMatch = /^(\d+)(?:\s*-\s*(\d+))?$/.exec(part);
+
+		if (!rangeMatch) {
+			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
+		}
+
+		const start = Number(rangeMatch[1]);
+		const end = Number(rangeMatch[2] ?? rangeMatch[1]);
+
+		if (start < 1 || end < start || end > totalPages) {
+			throw new WorkspaceKernelAiPageError("page_range_out_of_range");
+		}
+
+		for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+			selected.add(pageNumber);
+		}
+	}
+
+	if (selected.size === 0) {
+		throw new WorkspaceKernelAiPageError("page_range_out_of_range");
+	}
+
+	return Array.from(selected).sort((left, right) => left - right);
 }
 
 function truncateWorkspaceAiMarkdownLine(line: string) {
@@ -370,10 +355,4 @@ function truncateWorkspaceAiMarkdownLine(line: string) {
 		truncated: true,
 		value: line.slice(0, MAX_AI_READ_LINE_LENGTH) + TRUNCATED_LINE_SUFFIX,
 	};
-}
-
-class WorkspaceAiContentPageError extends Error {
-	constructor(readonly code: "content_offset_out_of_range") {
-		super(code);
-	}
 }
