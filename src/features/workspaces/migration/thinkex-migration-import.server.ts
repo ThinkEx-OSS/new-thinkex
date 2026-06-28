@@ -1,13 +1,20 @@
 import { createDbContext } from "#/db/server";
 import { account, user, workspaceMembers, workspaces } from "#/db/schema";
+import { eq } from "drizzle-orm";
 import {
 	convertLegacyOcrPagesToMarkdownPages,
 	parseLegacyOcrPagesProjectionContent,
 } from "#/features/workspaces/extraction/legacy-ocr-pages";
 import { serializeMarkdownPagesProjection } from "#/features/workspaces/extraction/page-markdown-projection";
 import { getWorkspaceKernel } from "#/features/workspaces/kernel/workspace-kernel-access";
+import {
+	normalizeThinkexLegacyWorkspaceColor,
+	normalizeThinkexLegacyWorkspaceIcon,
+} from "#/features/workspaces/migration/thinkex-legacy-visuals";
 import { mapWorkspaceRow } from "#/features/workspaces/server/mappers";
 import type {
+	ThinkexMigrationBackfillVisualsInput,
+	ThinkexMigrationBackfillVisualsResult,
 	ThinkexMigrationImportDocumentItemInput,
 	ThinkexMigrationImportFileItemInput,
 	ThinkexMigrationImportFolderItemInput,
@@ -16,6 +23,8 @@ import type {
 	ThinkexMigrationImportWorkspaceMemberInput,
 	ThinkexMigrationImportWorkspaceResult,
 	ThinkexMigrationImportedFileProjectionMetadata,
+	ThinkexMigrationListBackfillWorkspacesInput,
+	ThinkexMigrationListBackfillWorkspacesResult,
 } from "#/features/workspaces/migration/thinkex-migration-types";
 
 const legacyProjectionProvider = "thinkex_migration";
@@ -201,6 +210,82 @@ export async function importThinkexFileItem(
 	});
 
 	return item;
+}
+
+export async function listThinkexMigrationBackfillWorkspaces(
+	input: ThinkexMigrationListBackfillWorkspacesInput = {},
+): Promise<ThinkexMigrationListBackfillWorkspacesResult> {
+	const dbContext = await createDbContext();
+	const limit = Math.min(Math.max(input.limit ?? 1000, 1), 1000);
+	const offset = Math.max(input.offset ?? 0, 0);
+
+	try {
+		const rows = await dbContext.db.select({ id: workspaces.id }).from(workspaces);
+
+		return {
+			total: rows.length,
+			workspaceIds: rows.slice(offset, offset + limit).map((row) => row.id),
+		};
+	} finally {
+		await dbContext.dispose();
+	}
+}
+
+export async function backfillThinkexMigrationVisuals(
+	input: ThinkexMigrationBackfillVisualsInput,
+): Promise<ThinkexMigrationBackfillVisualsResult> {
+	const dbContext = await createDbContext();
+
+	try {
+		const [workspace] = await dbContext.db
+			.select({
+				color: workspaces.color,
+				icon: workspaces.icon,
+				id: workspaces.id,
+			})
+			.from(workspaces)
+			.where(eq(workspaces.id, input.workspaceId))
+			.limit(1);
+
+		if (!workspace) {
+			throw new Error(`Workspace not found: ${input.workspaceId}`);
+		}
+
+		const normalizedColor = normalizeThinkexLegacyWorkspaceColor(workspace.color);
+		const normalizedIcon = normalizeThinkexLegacyWorkspaceIcon(workspace.icon);
+		const shouldUpdateColor = Boolean(normalizedColor && normalizedColor !== workspace.color);
+		const shouldUpdateIcon = Boolean(normalizedIcon && normalizedIcon !== workspace.icon);
+
+		if (!input.dryRun && (shouldUpdateColor || shouldUpdateIcon)) {
+			await dbContext.db
+				.update(workspaces)
+				.set({
+					color: shouldUpdateColor ? normalizedColor : workspace.color,
+					icon: shouldUpdateIcon ? normalizedIcon : workspace.icon,
+				})
+				.where(eq(workspaces.id, input.workspaceId));
+		}
+
+		const kernel = await getWorkspaceKernel(input.workspaceId);
+		const kernelResult = await kernel.backfillMigrationVisuals({ dryRun: input.dryRun });
+
+		return {
+			...kernelResult,
+			workspaceColor: {
+				after: normalizedColor,
+				before: workspace.color,
+				updated: shouldUpdateColor,
+			},
+			workspaceIcon: {
+				after: normalizedIcon,
+				before: workspace.icon,
+				updated: shouldUpdateIcon,
+			},
+			workspaceId: input.workspaceId,
+		};
+	} finally {
+		await dbContext.dispose();
+	}
 }
 
 function parseTimestamp(value: string) {

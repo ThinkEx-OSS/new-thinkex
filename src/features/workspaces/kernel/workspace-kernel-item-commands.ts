@@ -21,6 +21,7 @@ import {
 import type { WorkspaceKernelSql } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import type { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
+	BackfillWorkspaceKernelMigrationVisualsResult,
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
 	DeleteWorkspaceKernelItemsResult,
@@ -32,6 +33,7 @@ import type {
 	UpdateWorkspaceKernelItemColorArgs,
 	WriteWorkspaceKernelItemArgs,
 } from "#/features/workspaces/kernel/workspace-kernel-types";
+import { normalizeThinkexLegacyWorkspaceColor } from "#/features/workspaces/migration/thinkex-legacy-visuals";
 import {
 	resolveWorkspaceItemColorForCreate,
 	workspaceItemSupportsCustomColor,
@@ -190,6 +192,37 @@ export class WorkspaceKernelItemCommands {
 		`;
 
 		return this.store.requireItem(id);
+	}
+
+	async normalizeLegacyFolderColors(
+		input: { dryRun?: boolean } = {},
+	): Promise<Pick<BackfillWorkspaceKernelMigrationVisualsResult, "folderColorsUpdated">> {
+		const rows = this.sql<{ color: string | null; id: string }>`
+			SELECT id, color
+			FROM kernel_items
+			WHERE type = ${"folder"} AND deleted_at IS NULL AND color IS NOT NULL
+		`;
+		let folderColorsUpdated = 0;
+
+		for (const row of rows) {
+			const normalized = normalizeThinkexLegacyWorkspaceColor(row.color);
+
+			if (!normalized || normalized === row.color) {
+				continue;
+			}
+
+			folderColorsUpdated += 1;
+
+			if (!input.dryRun) {
+				this.sql`
+					UPDATE kernel_items
+					SET color = ${normalized}
+					WHERE id = ${row.id} AND deleted_at IS NULL
+				`;
+			}
+		}
+
+		return { folderColorsUpdated };
 	}
 
 	async renameItem(

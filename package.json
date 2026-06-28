@@ -32,6 +32,7 @@
 		"db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
 		"db:check": "drizzle-kit check",
 		"migrate:thinkex": "tsx scripts/thinkex-bulk-migration.ts",
+		"migrate:thinkex:backfill": "tsx scripts/thinkex-post-migration-backfill.ts",
 		"cf-typegen": "wrangler types",
 		"wrangler": "wrangler"
 	},

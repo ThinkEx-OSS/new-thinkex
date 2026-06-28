@@ -17,6 +17,8 @@ import {
 	listWorkspaceKernelPageItems,
 } from "#/features/workspaces/kernel/workspace-kernel-list";
 import type {
+	BackfillWorkspaceKernelMigrationVisualsArgs,
+	BackfillWorkspaceKernelMigrationVisualsResult,
 	DeleteWorkspaceKernelItemsResult,
 	ImportWorkspaceKernelFileArgs,
 	ImportWorkspaceKernelFileProjectionArgs,
@@ -118,6 +120,9 @@ export interface WorkspaceKernelClient {
 	importItem(input: ImportWorkspaceKernelItemArgs): Promise<WorkspaceItemSummary>;
 	importFile(input: ImportWorkspaceKernelFileArgs): Promise<WorkspaceItemSummary>;
 	importFileProjection(input: ImportWorkspaceKernelFileProjectionArgs): Promise<void>;
+	backfillMigrationVisuals(
+		input?: BackfillWorkspaceKernelMigrationVisualsArgs,
+	): Promise<BackfillWorkspaceKernelMigrationVisualsResult>;
 	upsertFileProjection(input: UpsertWorkspaceKernelFileProjectionArgs): Promise<void>;
 	readFileProjection(
 		input: ReadWorkspaceKernelFileProjectionArgs,

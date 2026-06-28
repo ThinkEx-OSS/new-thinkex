@@ -181,6 +181,19 @@ export interface ImportWorkspaceKernelFileProjectionArgs {
 	updatedAt: number;
 }
 
+export interface BackfillWorkspaceKernelMigrationVisualsArgs {
+	dryRun?: boolean;
+}
+
+export interface BackfillWorkspaceKernelMigrationVisualsResult {
+	failedPreviews: number;
+	filesWithPreview: number;
+	folderColorsUpdated: number;
+	previewBackfilled: number;
+	previewCandidates: number;
+	previewSkippedUnsupported: number;
+}
+
 export interface CreateWorkspaceKernelFileFromUploadArgs {
 	parentId?: string | null;
 	fileName: string;

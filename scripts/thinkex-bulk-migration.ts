@@ -214,22 +214,41 @@ async function main() {
 
 async function importUsers(pool: Pool) {
 	const result = await pool.query<LegacyUserRow>(`
+		WITH legacy_google_users AS (
+			SELECT
+				u.id AS legacy_user_id,
+				u.name,
+				u.email,
+				u.email_verified,
+				u.image,
+				u.created_at AS user_created_at,
+				u.updated_at AS user_updated_at,
+				a.account_id,
+				a.created_at AS account_created_at,
+				a.updated_at AS account_updated_at,
+				ROW_NUMBER() OVER (
+					PARTITION BY u.id, a.account_id
+					ORDER BY a.created_at ASC, a.updated_at ASC
+				) AS duplicate_rank
+			FROM "user" u
+			INNER JOIN account a
+				ON a.user_id = u.id
+				AND a.provider_id = 'google'
+		)
 		SELECT
-			u.id AS legacy_user_id,
-			u.name,
-			u.email,
-			u.email_verified,
-			u.image,
-			u.created_at AS user_created_at,
-			u.updated_at AS user_updated_at,
-			a.account_id,
-			a.created_at AS account_created_at,
-			a.updated_at AS account_updated_at
-		FROM "user" u
-		INNER JOIN account a
-			ON a.user_id = u.id
-			AND a.provider_id = 'google'
-		ORDER BY u.created_at ASC, u.id ASC
+			legacy_user_id,
+			name,
+			email,
+			email_verified,
+			image,
+			user_created_at,
+			user_updated_at,
+			account_id,
+			account_created_at,
+			account_updated_at
+		FROM legacy_google_users
+		WHERE duplicate_rank = 1
+		ORDER BY user_created_at ASC, legacy_user_id ASC
 		`);
 	logInfo("Loaded legacy Google-linked users", { total: result.rows.length });
 
@@ -353,10 +372,13 @@ async function importWorkspaceMembers(
 
 	const result = await pool.query<LegacyCollaboratorRow>(
 		`
-			SELECT workspace_id, user_id, permission_level, created_at, last_opened_at
-			FROM workspace_collaborators
-			WHERE workspace_id = ANY($1::uuid[])
-			ORDER BY created_at ASC NULLS LAST, workspace_id ASC, user_id ASC
+			SELECT c.workspace_id, c.user_id, c.permission_level, c.created_at, c.last_opened_at
+			FROM workspace_collaborators c
+			INNER JOIN workspaces w
+				ON w.id = c.workspace_id
+			WHERE c.workspace_id = ANY($1::uuid[])
+				AND c.user_id <> w.user_id
+			ORDER BY c.created_at ASC NULLS LAST, c.workspace_id ASC, c.user_id ASC
 		`,
 		[workspaceIds],
 	);

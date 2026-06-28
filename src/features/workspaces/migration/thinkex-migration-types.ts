@@ -1,8 +1,11 @@
 import type {
 	JsonValue,
+	WorkspaceColor,
+	WorkspaceIcon,
 	WorkspaceMembershipRole,
 	WorkspaceSummary,
 } from "#/features/workspaces/contracts";
+import type { BackfillWorkspaceKernelMigrationVisualsResult } from "#/features/workspaces/kernel/workspace-kernel-types";
 import type { WorkspaceFileAssetKind } from "#/features/workspaces/model/workspace-file";
 
 export interface ThinkexMigrationImportUserInput {
@@ -88,6 +91,35 @@ export interface ThinkexMigrationImportWorkspaceResult {
 	workspace: WorkspaceSummary;
 }
 
+export interface ThinkexMigrationListBackfillWorkspacesInput {
+	limit?: number;
+	offset?: number;
+}
+
+export interface ThinkexMigrationListBackfillWorkspacesResult {
+	total: number;
+	workspaceIds: string[];
+}
+
+export interface ThinkexMigrationBackfillVisualsInput {
+	dryRun?: boolean;
+	workspaceId: string;
+}
+
+export interface ThinkexMigrationBackfillVisualsResult extends BackfillWorkspaceKernelMigrationVisualsResult {
+	workspaceColor: {
+		after: WorkspaceColor | null;
+		before: string | null;
+		updated: boolean;
+	};
+	workspaceIcon: {
+		after: WorkspaceIcon | null;
+		before: string | null;
+		updated: boolean;
+	};
+	workspaceId: string;
+}
+
 export interface ThinkexMigrationCommandEnvelope {
 	command:
 		| { type: "import_user"; input: ThinkexMigrationImportUserInput }
@@ -95,7 +127,12 @@ export interface ThinkexMigrationCommandEnvelope {
 		| { type: "import_workspace_member"; input: ThinkexMigrationImportWorkspaceMemberInput }
 		| { type: "import_folder_item"; input: ThinkexMigrationImportFolderItemInput }
 		| { type: "import_document_item"; input: ThinkexMigrationImportDocumentItemInput }
-		| { type: "import_file_item"; input: ThinkexMigrationImportFileItemInput };
+		| { type: "import_file_item"; input: ThinkexMigrationImportFileItemInput }
+		| {
+				type: "list_migration_backfill_workspaces";
+				input?: ThinkexMigrationListBackfillWorkspacesInput;
+		  }
+		| { type: "backfill_migration_visuals"; input: ThinkexMigrationBackfillVisualsInput };
 }
 
 export interface ThinkexMigrationImportedFileProjectionMetadata extends Record<string, JsonValue> {

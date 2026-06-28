@@ -17,6 +17,8 @@ import {
 } from "#/features/workspaces/kernel/workspace-kernel-schema";
 import { WorkspaceKernelStore } from "#/features/workspaces/kernel/workspace-kernel-store";
 import type {
+	BackfillWorkspaceKernelMigrationVisualsArgs,
+	BackfillWorkspaceKernelMigrationVisualsResult,
 	CreateWorkspaceKernelFileFromUploadArgs,
 	CreateWorkspaceKernelItemArgs,
 	DeleteWorkspaceKernelItemsArgs,
@@ -151,6 +153,18 @@ export class WorkspaceKernel extends Agent<Env> {
 
 	async importFileProjection(input: ImportWorkspaceKernelFileProjectionArgs) {
 		return await this.fileCommands.importFileProjection(input);
+	}
+
+	async backfillMigrationVisuals(
+		input: BackfillWorkspaceKernelMigrationVisualsArgs = {},
+	): Promise<BackfillWorkspaceKernelMigrationVisualsResult> {
+		const folderColorResult = await this.itemCommands.normalizeLegacyFolderColors(input);
+		const previewResult = await this.fileCommands.backfillMissingPreviews(input);
+
+		return {
+			...folderColorResult,
+			...previewResult,
+		};
 	}
 
 	async readFileProjection(input: ReadWorkspaceKernelFileProjectionArgs) {

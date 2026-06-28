@@ -1,10 +1,12 @@
 import {
+	backfillThinkexMigrationVisuals,
 	importThinkexDocumentItem,
 	importThinkexFileItem,
 	importThinkexFolderItem,
 	importThinkexUser,
 	importThinkexWorkspace,
 	importThinkexWorkspaceMember,
+	listThinkexMigrationBackfillWorkspaces,
 } from "#/features/workspaces/migration/thinkex-migration-import.server";
 import { isAuthorizedThinkexMigrationRequest } from "#/features/workspaces/migration/thinkex-migration-auth";
 import type {
@@ -66,6 +68,10 @@ async function handleThinkexMigrationCommand(request: Request) {
 					"INVALID_COMMAND",
 					"File imports must use the multipart migration file endpoint.",
 				);
+			case "list_migration_backfill_workspaces":
+				return apiJson(await listThinkexMigrationBackfillWorkspaces(body.command.input), requestId);
+			case "backfill_migration_visuals":
+				return apiJson(await backfillThinkexMigrationVisuals(body.command.input), requestId);
 		}
 	} catch (error) {
 		return apiError(
