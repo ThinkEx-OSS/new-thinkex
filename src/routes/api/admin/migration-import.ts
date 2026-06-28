@@ -6,6 +6,8 @@ import { createDbContext } from "#/db/server";
 import * as schema from "#/db/schema";
 import { getWorkspaceKernelFromEnv } from "#/features/workspaces/kernel/workspace-kernel-access";
 import { convertLegacyOcrPages } from "#/features/workspaces/migration/legacy-ocr-pages";
+import { parseMarkdownToTiptapDocumentProjection } from "#/features/workspaces/documents/document-markdown.ts";
+import { stringifyTiptapDocumentJson } from "#/features/workspaces/documents/tiptap-document.ts";
 import type {
 	MigrationPayload,
 	MigrationWorkspace,
@@ -258,13 +260,18 @@ async function importWorkspace(
 						continue;
 					}
 
+					// Legacy documents store raw markdown; the kernel expects Tiptap
+					// JSON, so convert before persisting.
+					const projection = parseMarkdownToTiptapDocumentProjection(item.content ?? "");
+					const documentJson = stringifyTiptapDocumentJson(projection.document);
+
 					await kernel.createItem({
 						id: item.id,
 						parentId: resolvedParentId,
 						type: "document",
 						name: item.name,
 						metadataJson: item.metadataJson,
-						initialContent: item.content,
+						initialContent: documentJson,
 						actorUserId: userId,
 					});
 					oldToNewId.set(item.id, item.id);
