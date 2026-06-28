@@ -2,19 +2,22 @@ import { env as workerEnv } from "cloudflare:workers";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
+import { anonymous } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { sql } from "drizzle-orm";
 
 import { purgeUserAccountResources } from "#/features/workspaces/durable-object-lifecycle";
 import { sendDeleteAccountVerificationEmail } from "#/features/account/account-deletion-email";
 import * as schema from "#/db/schema";
 import { createDbContext } from "#/db/server";
-import { getAppOrigin, getTrustedAppOrigins } from "#/lib/app-origin";
+import { getAuthBaseURL, getTrustedAppOrigins } from "#/lib/app-origin";
 
 const isProduction = import.meta.env.PROD;
 
 type AuthEnvKey = "BETTER_AUTH_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET";
 
 type AuthRuntimeEnv = Record<AuthEnvKey, string | undefined>;
+type Db = Awaited<ReturnType<typeof createDbContext>>["db"];
 
 function getEnvString(name: AuthEnvKey) {
 	const value = workerEnv[name];
@@ -39,11 +42,56 @@ function getAuthSecret(env: AuthRuntimeEnv) {
 	return secret;
 }
 
-function createAuth(
-	database: Awaited<ReturnType<typeof createDbContext>>["db"],
-	env: AuthRuntimeEnv,
+async function transferAnonymousUserData(
+	database: Db,
+	input: { anonymousUserId: string; newUserId: string },
 ) {
-	const baseURL = getAppOrigin();
+	if (input.anonymousUserId === input.newUserId) {
+		return;
+	}
+
+	await database.run(sql`
+		update ${schema.workspaceMembers}
+		set role = 'owner', updated_at = unixepoch() * 1000
+		where user_id = ${input.newUserId}
+			and workspace_id in (
+				select id from ${schema.workspaces}
+				where owner_id = ${input.anonymousUserId}
+			)
+	`);
+
+	await database.run(sql`
+		delete from ${schema.workspaceMembers}
+		where user_id = ${input.anonymousUserId}
+			and exists (
+				select 1
+				from ${schema.workspaceMembers} existing_member
+				where existing_member.workspace_id = ${schema.workspaceMembers.workspaceId}
+					and existing_member.user_id = ${input.newUserId}
+			)
+	`);
+
+	await database.run(sql`
+		update ${schema.workspaceMembers}
+		set user_id = ${input.newUserId}, updated_at = unixepoch() * 1000
+		where user_id = ${input.anonymousUserId}
+	`);
+
+	await database.run(sql`
+		update ${schema.workspaces}
+		set owner_id = ${input.newUserId}, updated_at = unixepoch() * 1000
+		where owner_id = ${input.anonymousUserId}
+	`);
+
+	await database.run(sql`
+		update ${schema.workspaceInvites}
+		set created_by_user_id = ${input.newUserId}, updated_at = unixepoch() * 1000
+		where created_by_user_id = ${input.anonymousUserId}
+	`);
+}
+
+function createAuth(database: Db, env: AuthRuntimeEnv) {
+	const baseURL = getAuthBaseURL();
 
 	return betterAuth({
 		database: drizzleAdapter(database, {
@@ -52,7 +100,7 @@ function createAuth(
 		}),
 		secret: getAuthSecret(env),
 		baseURL,
-		trustedOrigins: getTrustedAppOrigins(baseURL),
+		trustedOrigins: getTrustedAppOrigins(typeof baseURL === "string" ? baseURL : baseURL.fallback),
 		session: {
 			expiresIn: 60 * 60 * 24 * 90,
 			updateAge: 60 * 60 * 24,
@@ -77,6 +125,19 @@ function createAuth(
 				prompt: "select_account",
 			},
 		},
+		plugins: [
+			anonymous({
+				emailDomainName: "anonymous.thinkex.app",
+				generateName: () => "Guest",
+				onLinkAccount: async ({ anonymousUser, newUser }) => {
+					await transferAnonymousUserData(database, {
+						anonymousUserId: anonymousUser.user.id,
+						newUserId: newUser.user.id,
+					});
+				},
+			}),
+			tanstackStartCookies(),
+		],
 		user: {
 			deleteUser: {
 				enabled: true,
@@ -102,7 +163,6 @@ function createAuth(
 				},
 			},
 		},
-		plugins: [tanstackStartCookies()],
 	});
 }
 

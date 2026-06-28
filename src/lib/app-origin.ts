@@ -5,6 +5,15 @@ import { buildInvitePath } from "#/lib/client-url";
 const LOCAL_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"] as const;
 
 const isProduction = import.meta.env.PROD;
+const dynamicAuthBaseUrlProtocol = isProduction ? "https" : "auto";
+
+type AuthBaseURL =
+	| string
+	| {
+			allowedHosts: string[];
+			protocol: "http" | "https" | "auto";
+			fallback?: string;
+	  };
 
 export function normalizeAppOrigin(value: string, envName: string) {
 	try {
@@ -42,8 +51,41 @@ export function getAppOrigin() {
 	throw new Error("BETTER_AUTH_URL is not configured.");
 }
 
-export function getTrustedAppOrigins(appOrigin: string) {
-	return Array.from(new Set([appOrigin, ...(isProduction ? [] : LOCAL_TRUSTED_ORIGINS)]));
+function getOptionalEnvString(name: string) {
+	const env = workerEnv as unknown as Record<string, string | undefined>;
+	return env[name]?.trim() || undefined;
+}
+
+function parseCommaList(value: string | undefined) {
+	return (
+		value
+			?.split(",")
+			.map((item) => item.trim())
+			.filter(Boolean) ?? []
+	);
+}
+
+export function getAuthBaseURL(): AuthBaseURL {
+	const configuredUrl = workerEnv.BETTER_AUTH_URL?.trim();
+	const allowedHosts = parseCommaList(getOptionalEnvString("BETTER_AUTH_ALLOWED_HOSTS"));
+
+	if (isProduction) {
+		return getAppOrigin();
+	}
+
+	if (allowedHosts.length > 0) {
+		return {
+			allowedHosts,
+			protocol: dynamicAuthBaseUrlProtocol,
+			fallback: configuredUrl ? normalizeAppOrigin(configuredUrl, "BETTER_AUTH_URL") : undefined,
+		};
+	}
+
+	return getAppOrigin();
+}
+
+export function getTrustedAppOrigins(appOrigin?: string) {
+	return Array.from(new Set([...(appOrigin ? [appOrigin] : []), ...LOCAL_TRUSTED_ORIGINS]));
 }
 
 export function buildInviteUrl(token: string, appOrigin = getAppOrigin()) {

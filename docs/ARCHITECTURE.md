@@ -8,13 +8,14 @@
 
 | Data | Source of truth |
 | --- | --- |
-| Auth, users, workspace directory, membership, invites | Postgres |
-| Workspace items, shell files, events, revisions | `WorkspaceKernel` (Durable Object) |
+| Auth, users, workspace directory, membership, invites | D1 (`DB`) through Drizzle |
+| Workspace items, shell files, events, revisions, presence | `WorkspaceKernel` (Durable Object) |
 | Large file bytes | R2 (`WORKSPACE_KERNEL_FILES`) |
-| User AI thread directory | `UserAIStore` |
-| AI conversation runtime | `AIThread` |
+| User AI thread directory | `UserAIStore` (Durable Object) |
+| AI conversation runtime | `AIThread` (Agent / Durable Object) |
+| Collaborative document sessions | `DocumentSession` (Durable Object) |
 
-`WorkspaceKernel` uses `@cloudflare/shell` for the virtual filesystem. UI and AI mutate the workspace through kernel commands, not direct Postgres item tables.
+`WorkspaceKernel` uses `@cloudflare/shell` for the virtual filesystem. UI and AI mutate workspace content through kernel commands, not D1 workspace item tables. D1 owns the directory and access-control records that decide which users can reach a workspace.
 
 ## Code map
 

@@ -39,14 +39,22 @@ export default function AuthPanel({ callbackURL }: AuthPanelProps) {
 	const { data: session } = useQuery(getAuthSessionQueryOptions());
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const isAnonymousUser =
+		session?.user && "isAnonymous" in session.user && Boolean(session.user.isAnonymous);
 
 	if (session?.user) {
 		return (
 			<div className="flex flex-col gap-6" data-slot="auth-panel">
 				<div className="space-y-4 text-center">
 					<p className="text-sm leading-6 text-muted-foreground">
-						You&apos;re signed in as{" "}
-						<span className="font-medium text-foreground">{session.user.email}</span>.
+						{isAnonymousUser ? (
+							<span>You&apos;re continuing as a guest.</span>
+						) : (
+							<>
+								You&apos;re signed in as{" "}
+								<span className="font-medium text-foreground">{session.user.email}</span>.
+							</>
+						)}
 					</p>
 					<div className="flex flex-wrap justify-center gap-3">
 						<Button nativeButton={false} render={<Link to={callbackURL} />}>
