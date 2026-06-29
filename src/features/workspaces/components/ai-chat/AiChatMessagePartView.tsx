@@ -15,12 +15,21 @@ import type { AiChatMessagePart } from "#/features/workspaces/components/ai-chat
 export function AiChatMessagePartView({
 	isStreaming = false,
 	part,
+	preserveWhitespace = false,
 }: {
 	isStreaming?: boolean;
 	part: AiChatMessagePart | AiChatToolGroupPart;
+	preserveWhitespace?: boolean;
 }) {
 	if (part.type === "text") {
-		return <AiChatMessageResponse isStreaming={isStreaming}>{part.text}</AiChatMessageResponse>;
+		return (
+			<AiChatMessageResponse
+				className={preserveWhitespace ? "whitespace-pre-wrap" : undefined}
+				isStreaming={isStreaming}
+			>
+				{part.text}
+			</AiChatMessageResponse>
+		);
 	}
 
 	if (isAiChatToolGroupPart(part)) {

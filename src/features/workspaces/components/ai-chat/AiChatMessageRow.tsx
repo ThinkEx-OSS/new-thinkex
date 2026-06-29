@@ -1,9 +1,11 @@
 import { isToolUIPart } from "ai";
 import { Check, Copy, RotateCcw } from "lucide-react";
+import { useState } from "react";
 
 import { AnimatedIconSwap } from "#/components/ui/animated-icon-swap";
 import { Button } from "#/components/ui/button";
 import { Bubble, BubbleContent } from "#/components/ui/bubble";
+import { Collapsible, CollapsibleTrigger } from "#/components/ui/collapsible";
 import { Message, MessageContent, MessageFooter } from "#/components/ui/message";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { AiChatMessagePartView } from "#/features/workspaces/components/ai-chat/AiChatMessagePartView";
@@ -18,6 +20,10 @@ import { cn } from "#/lib/utils";
 
 const messageToolbarActionClass =
 	"flex size-8 items-center justify-center rounded-lg text-muted-foreground/70 transition-[color,scale] duration-150 ease-out outline-none hover:bg-transparent hover:text-foreground hover:scale-105 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-100";
+const COLLAPSIBLE_USER_MESSAGE_MAX_CHARACTERS = 700;
+const COLLAPSIBLE_USER_MESSAGE_MAX_LINES = 8;
+const collapsedUserMessageClassName =
+	"max-h-56 overflow-hidden [mask-image:linear-gradient(to_bottom,black_72%,transparent)]";
 
 export default function AiChatMessageRow({
 	display,
@@ -67,12 +73,7 @@ export default function AiChatMessageRow({
 									onRegenerate={onRegenerate}
 								/>
 							) : (
-								userBodyParts.map((part, index) => (
-									<AiChatMessagePartView
-										key={getMessagePartKey(message.id, part, index)}
-										part={part}
-									/>
-								))
+								<UserMessageBody message={message} parts={userBodyParts} />
 							)}
 						</BubbleContent>
 					</Bubble>
@@ -98,6 +99,76 @@ export default function AiChatMessageRow({
 				) : null}
 			</MessageContent>
 		</Message>
+	);
+}
+
+function UserMessageBody({
+	message,
+	parts,
+}: {
+	message: AiChatMessage;
+	parts: AiChatRenderablePart[];
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+	const shouldCollapse = shouldCollapseUserMessage(parts);
+
+	if (!shouldCollapse) {
+		return <UserMessageParts message={message} parts={parts} />;
+	}
+
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<div className={cn("overflow-hidden", !isOpen && collapsedUserMessageClassName)}>
+				<UserMessageParts message={message} parts={parts} />
+			</div>
+			<CollapsibleTrigger
+				render={
+					<Button
+						type="button"
+						variant="ghost"
+						size="xs"
+						className="-ml-2 mt-1 h-6 px-2 text-secondary-foreground/70 hover:bg-transparent hover:text-secondary-foreground"
+					/>
+				}
+			>
+				{isOpen ? "Show less" : "Show more"}
+			</CollapsibleTrigger>
+		</Collapsible>
+	);
+}
+
+function UserMessageParts({
+	message,
+	parts,
+}: {
+	message: AiChatMessage;
+	parts: AiChatRenderablePart[];
+}) {
+	return parts.map((part, index) => (
+		<AiChatMessagePartView
+			key={getMessagePartKey(message.id, part, index)}
+			part={part}
+			preserveWhitespace={true}
+		/>
+	));
+}
+
+function shouldCollapseUserMessage(parts: AiChatRenderablePart[]) {
+	let characterCount = 0;
+	let lineCount = 0;
+
+	for (const part of parts) {
+		if (part.type !== "text") {
+			continue;
+		}
+
+		characterCount += part.text.length;
+		lineCount += part.text.split("\n").length;
+	}
+
+	return (
+		characterCount > COLLAPSIBLE_USER_MESSAGE_MAX_CHARACTERS ||
+		lineCount > COLLAPSIBLE_USER_MESSAGE_MAX_LINES
 	);
 }
 
