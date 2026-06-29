@@ -23,6 +23,8 @@ export const workspaceItemCardUnselectedHoverClass =
 export const workspaceItemCardSelectedClass =
 	"data-[selected=true]:ring-2 data-[selected=true]:ring-info";
 
+export const workspaceItemGridClass = "grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4";
+
 export const workspaceItemPreviewStageClass =
 	"pointer-events-none relative z-10 min-h-20 flex-1 overflow-hidden bg-muted";
 

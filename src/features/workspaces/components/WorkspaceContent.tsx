@@ -1,4 +1,4 @@
-import { Eye, FileText, FolderOpen, Image } from "lucide-react";
+import { Eye, FolderOpen } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "#/components/ui/context-menu";
@@ -30,11 +30,12 @@ import { WorkspaceItemActionsContextMenuContent } from "#/features/workspaces/co
 import WorkspaceItemCard from "#/features/workspaces/components/WorkspaceItemCard";
 import { MoveWorkspaceItemsDialog } from "#/features/workspaces/components/WorkspaceMoveItemsDialog";
 import { useWorkspacePaneHotkey } from "#/features/workspaces/components/WorkspacePaneRuntime";
+import { WorkspaceRootEmptyPreview } from "#/features/workspaces/components/WorkspaceRootEmptyPreview";
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
+import { workspaceItemGridClass } from "#/features/workspaces/components/workspace-item-card-chrome";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
 import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
-import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
 import { getWorkspaceChildren, splitWorkspaceChildren } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
 import { getWorkspaceBrowseParentId, isWorkspaceItemView } from "#/features/workspaces/model/view";
@@ -118,6 +119,7 @@ function WorkspaceBrowseContent({
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
 	const isWorkspaceRoot = parentId === null;
+	const isEmpty = children.length === 0;
 	const handleNativeFileDrop = (files: FileList) => {
 		if (!capabilities.canMutateContent) {
 			return;
@@ -228,11 +230,12 @@ function WorkspaceBrowseContent({
 								onItemElementChange={registerItemElement}
 							/>
 						) : null}
-						{children.length === 0 ? (
-							<WorkspaceBrowseEmptyState
-								canMutateContent={capabilities.canMutateContent}
-								isWorkspaceRoot={isWorkspaceRoot}
-							/>
+						{isEmpty ? (
+							isWorkspaceRoot && capabilities.canMutateContent ? (
+								<WorkspaceRootEmptyPreview />
+							) : (
+								<WorkspaceBrowseEmptyState isWorkspaceRoot={isWorkspaceRoot} />
+							)
 						) : null}
 					</ContextMenuTrigger>
 					<ContextMenuContent className="w-56">
@@ -282,13 +285,7 @@ function WorkspaceBrowseContent({
 	);
 }
 
-function WorkspaceBrowseEmptyState({
-	canMutateContent,
-	isWorkspaceRoot,
-}: {
-	canMutateContent: boolean;
-	isWorkspaceRoot: boolean;
-}) {
+function WorkspaceBrowseEmptyState({ isWorkspaceRoot }: { isWorkspaceRoot: boolean }) {
 	if (!isWorkspaceRoot) {
 		return (
 			<Empty className="border border-dashed bg-muted/20">
@@ -303,65 +300,18 @@ function WorkspaceBrowseEmptyState({
 		);
 	}
 
-	if (!canMutateContent) {
-		return (
-			<Empty className="border border-dashed bg-muted/20">
-				<EmptyHeader>
-					<EmptyMedia variant="icon">
-						<Eye />
-					</EmptyMedia>
-					<EmptyTitle>This workspace is empty</EmptyTitle>
-					<EmptyDescription>
-						An editor needs to add the first items before anything appears here.
-					</EmptyDescription>
-				</EmptyHeader>
-			</Empty>
-		);
-	}
-
 	return (
 		<Empty className="border border-dashed bg-muted/20">
 			<EmptyHeader>
-				<EmptyMedia>
-					<WorkspaceRootEmptyMedia />
+				<EmptyMedia variant="icon">
+					<Eye />
 				</EmptyMedia>
-				<EmptyTitle>Drop your files here</EmptyTitle>
-				<EmptyDescription>Or click New to get started</EmptyDescription>
+				<EmptyTitle>This workspace is empty</EmptyTitle>
+				<EmptyDescription>
+					An editor needs to add the first items before anything appears here.
+				</EmptyDescription>
 			</EmptyHeader>
 		</Empty>
-	);
-}
-
-const workspaceRootEmptyMediaIcons = [
-	{
-		Icon: FolderOpen,
-		iconClassName: workspaceColors.amber.iconClassName,
-		className: "translate-x-7 translate-y-4 rotate-[10deg]",
-	},
-	{
-		Icon: FileText,
-		iconClassName: workspaceColors.sky.iconClassName,
-		className: "-translate-y-2",
-	},
-	{
-		Icon: Image,
-		iconClassName: workspaceColors.emerald.iconClassName,
-		className: "-translate-x-7 translate-y-4 -rotate-[10deg]",
-	},
-] as const;
-
-function WorkspaceRootEmptyMedia() {
-	return (
-		<div className="relative flex h-18 w-24 items-center justify-center">
-			{workspaceRootEmptyMediaIcons.map(({ Icon, className, iconClassName }) => (
-				<div
-					key={`${Icon.displayName ?? Icon.name}-${className}`}
-					className={cn("absolute flex items-center justify-center", className)}
-				>
-					<Icon className={cn("size-8", iconClassName)} strokeWidth={1.9} aria-hidden="true" />
-				</div>
-			))}
-		</div>
 	);
 }
 
@@ -387,7 +337,7 @@ function WorkspaceItemGrid({
 	onItemElementChange: (itemId: string, element: HTMLElement | null) => void;
 }) {
 	return (
-		<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
+		<section className={workspaceItemGridClass}>
 			{items.map((item, index) => (
 				<WorkspaceItemCard
 					key={item.id}
