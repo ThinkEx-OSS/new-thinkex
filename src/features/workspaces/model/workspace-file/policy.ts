@@ -261,12 +261,6 @@ export function resolveWorkspaceFileContentType(input: {
 	descriptor: WorkspaceFileTypeDescriptor;
 	fileName: string;
 }) {
-	const normalizedContentType = input.contentType?.trim();
-
-	if (normalizedContentType) {
-		return normalizedContentType;
-	}
-
 	return (
 		resolveMatchedUploadFormat(input, input.descriptor)?.mime ??
 		input.descriptor.extensions[0]?.mime ??
