@@ -11,6 +11,7 @@ export default function WorkspaceStandardTabPanes({
 	scopedItems,
 	tabs,
 	workspace,
+	onCloseItemView,
 	onCreateItem,
 	onOpenItem,
 }: {
@@ -19,6 +20,7 @@ export default function WorkspaceStandardTabPanes({
 	scopedItems: WorkspaceItem[];
 	tabs: WorkspaceTab[];
 	workspace: WorkspaceSummary;
+	onCloseItemView?: () => void;
 	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
 	onOpenItem: (item: WorkspaceItem, options?: { background?: boolean }) => void;
 }) {
@@ -26,6 +28,7 @@ export default function WorkspaceStandardTabPanes({
 		<div className="relative h-full min-h-0 overflow-hidden">
 			{tabs.map((tab) => {
 				const isActive = tab.id === activeTabId;
+				const canCloseItemView = Boolean(tab.viewItemId);
 
 				return (
 					<div
@@ -37,7 +40,10 @@ export default function WorkspaceStandardTabPanes({
 						)}
 						inert={isActive ? undefined : true}
 					>
-						<WorkspacePaneRuntimeProvider isActive={isActive}>
+						<WorkspacePaneRuntimeProvider
+							isActive={isActive}
+							onCloseItemView={canCloseItemView ? onCloseItemView : undefined}
+						>
 							<WorkspaceContent
 								instanceId={tab.id}
 								items={scopedItems}

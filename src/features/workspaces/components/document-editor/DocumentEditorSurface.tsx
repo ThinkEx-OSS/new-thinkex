@@ -8,6 +8,7 @@ import { Skeleton } from "#/components/ui/skeleton";
 import { DocumentAskSelectionMenu } from "#/features/workspaces/components/document-editor/DocumentAskSelectionMenu";
 import { DocumentWordCount } from "#/features/workspaces/components/document-editor/DocumentWordCount";
 import { useDocumentEditorToolbar } from "#/features/workspaces/components/WorkspaceItemToolbarSlot";
+import { useWorkspacePaneRuntime } from "#/features/workspaces/components/WorkspacePaneRuntime";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import {
 	getTiptapDocumentBaseExtensions,
@@ -66,6 +67,7 @@ function DocumentEditorInstance({
 	workspaceId: string;
 }) {
 	const { capabilities } = useWorkspaceMutationAccess();
+	const paneRuntime = useWorkspacePaneRuntime();
 	const [scrollTarget, setScrollTarget] = useState<HTMLDivElement | null>(null);
 	const editor = useEditor({
 		immediatelyRender: false,
@@ -82,6 +84,16 @@ function DocumentEditorInstance({
 					? `${item.name} editor`
 					: `${item.name} document`,
 				class: "workspace-document-prose min-h-full p-4 outline-none",
+			},
+			handleKeyDown: (_view, event) => {
+				if (event.key !== "Escape" || !paneRuntime?.onCloseItemView) {
+					return false;
+				}
+
+				event.preventDefault();
+				event.stopPropagation();
+				paneRuntime.onCloseItemView();
+				return true;
 			},
 		},
 	});

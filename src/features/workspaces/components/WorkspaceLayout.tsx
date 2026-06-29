@@ -4,6 +4,7 @@ import { applyWorkspaceEventToCache, workspacePageQueryKey } from "#/features/wo
 import AiChatPanel from "#/features/workspaces/components/AiChatPanel";
 import WorkspaceChatLayout from "#/features/workspaces/components/WorkspaceChatLayout";
 import WorkspaceContextBar from "#/features/workspaces/components/WorkspaceContextBar";
+import { hasActiveWorkspaceCapture } from "#/features/workspaces/components/WorkspaceCaptureChrome";
 import WorkspaceDragProvider from "#/features/workspaces/components/WorkspaceDragProvider";
 import { WorkspaceFileIntakeProvider } from "#/features/workspaces/components/WorkspaceFileIntakeProvider";
 import { WorkspaceFileUploadProvider } from "#/features/workspaces/components/WorkspaceFileUploadProvider";
@@ -37,6 +38,7 @@ import {
 } from "#/features/workspaces/use-workspace-kernel-items";
 import { getWorkspaceMemberCapabilities } from "#/features/workspaces/workspace-member-capabilities";
 import { useAppHotkey } from "#/lib/hotkeys-core";
+import { isOpenPopupInteractionTarget } from "#/lib/keyboard-event-target";
 
 export type { WorkspaceItem } from "#/features/workspaces/model/types";
 
@@ -133,6 +135,28 @@ export function WorkspaceShell({
 	useAppHotkey("workspace.aiChat.toggle", () => {
 		toggleChatPanel(workspace.id);
 	});
+	useAppHotkey(
+		"workspace.item.closeCurrent",
+		(event) => {
+			if (
+				!isWorkspaceItemView(activeItem) ||
+				isOpenPopupInteractionTarget(event.target) ||
+				hasActiveWorkspaceCapture()
+			) {
+				return;
+			}
+
+			event.preventDefault();
+			event.stopPropagation();
+			closeItemView();
+		},
+		{
+			conflictBehavior: "allow",
+			enabled: isWorkspaceItemView(activeItem),
+			preventDefault: false,
+			stopPropagation: false,
+		},
+	);
 
 	if (!persistedStoresHydrated || !session || !activeTab) {
 		return <WorkspaceShellSkeleton chatSurfaceMode={chatSurfaceMode} />;
@@ -214,6 +238,7 @@ export function WorkspaceShell({
 								scopedItems={scopedItems}
 								tabs={session.tabs}
 								workspace={workspace}
+								onCloseItemView={closeItemView}
 								onCreateItem={createWorkspaceItem}
 								onOpenItem={openItem}
 							/>

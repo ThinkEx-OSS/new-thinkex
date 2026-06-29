@@ -7,7 +7,10 @@ import {
 	useHotkey,
 } from "@tanstack/react-hotkeys";
 
-type AppHotkeyAction = "workspace.aiChat.toggle" | "workspace.search.open";
+type AppHotkeyAction =
+	| "workspace.aiChat.toggle"
+	| "workspace.item.closeCurrent"
+	| "workspace.search.open";
 
 type AppHotkeyDefinition = {
 	hotkey: Hotkey;
@@ -19,6 +22,11 @@ const APP_HOTKEYS = {
 	"workspace.aiChat.toggle": {
 		hotkey: "Mod+J",
 		description: "Toggle AI chat",
+		scope: "workspace",
+	},
+	"workspace.item.closeCurrent": {
+		hotkey: "Escape",
+		description: "Close current workspace item",
 		scope: "workspace",
 	},
 	"workspace.search.open": {

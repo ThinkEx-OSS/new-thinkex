@@ -2,13 +2,20 @@ import { useWorkspacePaneHotkey } from "#/features/workspaces/components/Workspa
 
 const captureViewerFrameClassName =
 	"pointer-events-none absolute inset-0 z-30 ring-[3px] ring-inset ring-blue-600";
+const activeWorkspaceCaptureSelector = "[data-workspace-capture-active]";
 
 export function WorkspaceCaptureViewerFrame({ active }: { active: boolean }) {
 	if (!active) {
 		return null;
 	}
 
-	return <div aria-hidden className={captureViewerFrameClassName} />;
+	return (
+		<div aria-hidden className={captureViewerFrameClassName} data-workspace-capture-active="" />
+	);
+}
+
+export function hasActiveWorkspaceCapture() {
+	return Boolean(document.querySelector(activeWorkspaceCaptureSelector));
 }
 
 export function WorkspaceCaptureShortcuts({
@@ -40,6 +47,7 @@ export function WorkspaceCaptureShortcuts({
 			onExit();
 		},
 		{
+			conflictBehavior: "allow",
 			enabled: isActive,
 			ignoreInputs: true,
 			preventDefault: false,

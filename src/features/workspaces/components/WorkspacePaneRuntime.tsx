@@ -8,6 +8,7 @@ import { createContext, type ReactNode, use } from "react";
 
 type WorkspacePaneRuntimeValue = {
 	isActive: boolean;
+	onCloseItemView?: () => void;
 };
 
 const WorkspacePaneRuntimeContext = createContext<WorkspacePaneRuntimeValue | null>(null);
@@ -15,11 +16,17 @@ const WorkspacePaneRuntimeContext = createContext<WorkspacePaneRuntimeValue | nu
 function WorkspacePaneRuntimeProvider({
 	children,
 	isActive,
+	onCloseItemView,
 }: {
 	children: ReactNode;
 	isActive: boolean;
+	onCloseItemView?: () => void;
 }) {
-	return <WorkspacePaneRuntimeContext value={{ isActive }}>{children}</WorkspacePaneRuntimeContext>;
+	return (
+		<WorkspacePaneRuntimeContext value={{ isActive, onCloseItemView }}>
+			{children}
+		</WorkspacePaneRuntimeContext>
+	);
 }
 
 function useWorkspacePaneRuntime() {
