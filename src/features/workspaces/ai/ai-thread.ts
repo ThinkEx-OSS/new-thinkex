@@ -56,7 +56,6 @@ type AIThreadRunSettlement =
 
 export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 	return class AIThread extends Think<Cloudflare.Env> {
-		override maxSteps = 5;
 		override chatRecovery = {
 			noProgressTimeoutMs: AI_THREAD_CHAT_RECOVERY_NO_PROGRESS_TIMEOUT_MS,
 			terminalMessage: AI_THREAD_CHAT_RECOVERY_TERMINAL_MESSAGE,

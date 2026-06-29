@@ -9,10 +9,10 @@ import { z } from "zod";
 import { searchPublicWeb } from "#/integrations/firecrawl/search";
 import { assertPublicHttpUrl } from "#/features/workspaces/ai/web-access-policy";
 
-const MAX_BROWSER_RESULT_CHARS = 50_000;
+const MAX_BROWSER_RESULT_CHARS = 100_000;
 const webSearchInputSchema = z.object({
 	query: z.string().trim().min(1).describe("Topic or question to search for."),
-	limit: z.number().int().min(1).max(10).optional().describe("Maximum results to return."),
+	limit: z.number().int().min(1).max(25).optional().describe("Maximum results to return."),
 	include_domains: z
 		.array(z.string().trim().min(1))
 		.max(20)
@@ -60,7 +60,7 @@ export function createAIThreadWebTools(env: Cloudflare.Env): ToolSet {
 				searchPublicWeb({
 					env,
 					query,
-					limit: limit ?? 5,
+					limit: limit ?? 8,
 					includeDomains: include_domains,
 				}),
 		}),

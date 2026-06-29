@@ -9,7 +9,7 @@ import {
 
 const researchDiscoverInputSchema = z.object({
 	query: z.string().trim().min(1).describe("Research topic or question."),
-	limit: z.number().int().min(1).max(10).optional().describe("Maximum results to return."),
+	limit: z.number().int().min(1).max(25).optional().describe("Maximum results to return."),
 	include_github: z
 		.boolean()
 		.optional()
@@ -21,7 +21,7 @@ const researchDeepenInputSchema = z.discriminatedUnion("mode", [
 		mode: z.literal("passages"),
 		paper_id: z.string().trim().min(1).describe("Paper identifier."),
 		question: z.string().trim().min(1).describe("Question to answer from the paper."),
-		limit: z.number().int().min(1).max(20).optional().describe("Maximum passages to return."),
+		limit: z.number().int().min(1).max(40).optional().describe("Maximum passages to return."),
 	}),
 	z.object({
 		mode: z.literal("related"),
@@ -30,7 +30,7 @@ const researchDeepenInputSchema = z.discriminatedUnion("mode", [
 			.enum(["similar", "citers", "references"])
 			.describe("Which related papers to return."),
 		intent: z.string().trim().min(1).describe("What kind of related work to prioritize."),
-		limit: z.number().int().min(1).max(20).optional().describe("Maximum papers to return."),
+		limit: z.number().int().min(1).max(50).optional().describe("Maximum papers to return."),
 	}),
 ]);
 
@@ -61,7 +61,7 @@ export function createAIThreadResearchTools(env: Cloudflare.Env): ToolSet {
 				discoverResearch({
 					env,
 					query,
-					limit: limit ?? 5,
+					limit: limit ?? 8,
 					includeGithub: include_github ?? false,
 				}),
 		}),
@@ -75,7 +75,7 @@ export function createAIThreadResearchTools(env: Cloudflare.Env): ToolSet {
 						env,
 						paperId: input.paper_id,
 						question: input.question,
-						limit: input.limit ?? 4,
+						limit: input.limit ?? 6,
 					});
 				}
 
@@ -84,7 +84,7 @@ export function createAIThreadResearchTools(env: Cloudflare.Env): ToolSet {
 					paperId: input.paper_id,
 					relation: input.relation,
 					intent: input.intent,
-					limit: input.limit ?? 5,
+					limit: input.limit ?? 10,
 				});
 			},
 		}),
