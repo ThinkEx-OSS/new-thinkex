@@ -197,7 +197,7 @@ function WorkspaceBrowseContent({
 							<section
 								data-scroll-root
 								ref={browseSurfaceRef}
-								className="flex h-full flex-col gap-5 overflow-y-auto px-4 py-3 outline-none"
+								className="flex h-full flex-col gap-6 overflow-y-auto px-4 py-3 outline-none"
 								aria-label="Workspace content"
 								tabIndex={-1}
 								{...marqueeSurfaceProps}
