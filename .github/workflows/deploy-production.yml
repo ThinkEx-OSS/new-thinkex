@@ -1,9 +1,13 @@
-name: Deploy Staging
+name: Deploy Production
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
-      - staging
+      - main
   workflow_dispatch:
 
 permissions:
@@ -11,13 +15,16 @@ permissions:
 
 jobs:
   deploy:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 45
     environment:
-      name: staging
-      url: https://staging.thinkex.app
+      name: production
+      url: https://thinkex.app
     concurrency:
-      group: deploy-staging
+      group: deploy-production
       cancel-in-progress: true
 
     env:
@@ -28,14 +35,16 @@ jobs:
       POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
       VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
       VITE_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
-      DEPLOY_SHA: ${{ github.sha }}
-      DEPLOY_REF: ${{ github.ref_name }}
-      DEPLOY_ENVIRONMENT: staging
-      DEPLOY_URL: https://staging.thinkex.app
-      DEPLOY_WORKER: thinkex-staging
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DEPLOY_REF: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+      DEPLOY_ENVIRONMENT: production
+      DEPLOY_URL: https://thinkex.app
+      DEPLOY_WORKER: thinkex
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
 
       - uses: voidzero-dev/setup-vp@v1
         with:
@@ -48,19 +57,19 @@ jobs:
       - name: Verify branch quality gates
         run: vp run check && vp run test
 
-      - name: Build staging bundle
-        run: vp run build:staging
+      - name: Build production bundle
+        run: vp run build:production
 
-      - name: Apply staging migrations
-        run: vp run db:migrate:staging
+      - name: Apply production migrations
+        run: vp run db:migrate
 
-      - name: Deploy staging Worker
-        run: vp run deploy:worker:staging
+      - name: Deploy production Worker
+        run: vp run deploy:worker
 
       - name: Write deployment summary
         run: |
           {
-            echo "## Staging deployment"
+            echo "## Production deployment"
             echo
             echo "| Field | Value |"
             echo "| --- | --- |"
