@@ -3,6 +3,10 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
 import { Marker, MarkerContent } from "#/components/ui/marker";
 import {
+	AiChatComputeDetails,
+	AiChatComputeImages,
+} from "#/features/workspaces/components/ai-chat/AiChatComputeResult";
+import {
 	getToolActivityForPart,
 	type AiChatToolChildActivity,
 	type AiChatToolActivity,
@@ -22,33 +26,59 @@ export function AiChatToolActivityRow({
 		return null;
 	}
 
-	const hasDetails = nestedChildren.length > 0;
+	const details = getActivityDetails(activity);
+	const inlineContent = getInlineActivityContent(activity);
+	const hasDetails = nestedChildren.length > 0 || details !== null;
 
-	if (!hasDetails) {
+	if (!hasDetails && !inlineContent) {
 		return <ActivitySummary activity={activity} />;
 	}
 
 	return (
-		<Collapsible className="w-fit max-w-full">
-			<CollapsibleTrigger className="w-fit max-w-full text-left">
-				<ActivitySummary activity={activity} canExpand />
-			</CollapsibleTrigger>
-			<CollapsibleContent className="mt-2 space-y-2 pl-7">
-				{nestedChildren.length > 0 ? (
-					<div className="space-y-1">
-						{nestedChildren.map((child) => (
-							<div
-								key={`${child.toolName}:${child.summary}`}
-								className="text-muted-foreground/80 text-sm"
-							>
-								{child.summary}
+		<div className="max-w-full space-y-2">
+			{hasDetails ? (
+				<Collapsible className="w-fit max-w-full">
+					<CollapsibleTrigger className="w-fit max-w-full text-left">
+						<ActivitySummary activity={activity} canExpand />
+					</CollapsibleTrigger>
+					<CollapsibleContent className="mt-2 space-y-2 pl-7">
+						{details}
+						{nestedChildren.length > 0 ? (
+							<div className="space-y-1">
+								{nestedChildren.map((child) => (
+									<div
+										key={`${child.toolName}:${child.summary}`}
+										className="text-muted-foreground/80 text-sm"
+									>
+										{child.summary}
+									</div>
+								))}
 							</div>
-						))}
-					</div>
-				) : null}
-			</CollapsibleContent>
-		</Collapsible>
+						) : null}
+					</CollapsibleContent>
+				</Collapsible>
+			) : (
+				<ActivitySummary activity={activity} />
+			)}
+			{inlineContent}
+		</div>
 	);
+}
+
+function getInlineActivityContent(activity: AiChatToolActivity) {
+	if (activity.toolName !== "compute" || activity.status === "running") {
+		return null;
+	}
+
+	return <AiChatComputeImages output={activity.detail.output} />;
+}
+
+function getActivityDetails(activity: AiChatToolActivity) {
+	if (activity.toolName !== "compute" || activity.status === "running") {
+		return null;
+	}
+
+	return <AiChatComputeDetails output={activity.detail.output} />;
 }
 
 function ActivitySummary({

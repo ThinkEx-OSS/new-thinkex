@@ -132,8 +132,7 @@ export function getAssistantRowDisplay(
 export function getDisplayableParts(message: AiChatMessage): AiChatRenderablePart[] {
 	const parts = message.parts.filter(isDisplayableMessagePart);
 	const codemodePart = parts.find(
-		(part): part is AiChatToolPart =>
-			isToolUIPart(part) && getToolPartName(part) === "codemode_execute",
+		(part): part is AiChatToolPart => isToolUIPart(part) && getToolPartName(part) === "orchestrate",
 	);
 
 	if (!codemodePart) {
@@ -240,8 +239,10 @@ function getToolActivityTitle(part: AiChatToolPart, toolName: string) {
 	}
 
 	switch (toolName) {
-		case "codemode_execute":
+		case "orchestrate":
 			return "Working";
+		case "compute":
+			return "Computing";
 		case "workspace_create_items":
 		case "workspace_delete_items":
 		case "workspace_edit_item":
@@ -315,6 +316,8 @@ function summarizeFailure(part: AiChatToolPart, toolName: string) {
 				: "Couldn’t update workspace";
 		case "workspace_edit_item":
 			return `Couldn’t update ${quoteName(getBaseName(getString(outputRecord.path) ?? getPathFromToolInput(part.input)))}`;
+		case "compute":
+			return "Couldn’t compute";
 		default:
 			return "Couldn’t complete";
 	}
@@ -347,8 +350,10 @@ function summarizeCompletedTool(part: AiChatToolPart, toolName: string) {
 			return summarizeResearchDiscover(output);
 		case "research_deepen":
 			return summarizeResearchDeepen(output);
-		case "codemode_execute":
+		case "orchestrate":
 			return summarizeCodemode(output);
+		case "compute":
+			return summarizeCompute(output);
 		default:
 			return summarizeUnknownResult(output);
 	}
@@ -475,6 +480,40 @@ function summarizeCodemode(output: unknown) {
 	}
 
 	return summarizeUnknownResult(output);
+}
+
+function summarizeCompute(output: unknown) {
+	const record = asRecord(output);
+
+	if (record.error) {
+		return "Couldn’t compute";
+	}
+
+	const results = getArray(record.results);
+	const imageCount = results.filter((result) => {
+		const item = asRecord(result);
+		return typeof item.png === "string" || typeof item.jpeg === "string";
+	}).length;
+
+	if (imageCount > 0) {
+		return `Generated ${formatCount(imageCount, "image")}`;
+	}
+
+	const valueCount = results.filter((result) => {
+		const item = asRecord(result);
+		return typeof item.text === "string" || item.json !== undefined || item.data !== undefined;
+	}).length;
+
+	if (valueCount > 0) {
+		return `Returned ${formatCount(valueCount, "value")}`;
+	}
+
+	const stdout = getArray(asRecord(record.logs).stdout);
+	if (stdout.length > 0) {
+		return `Wrote ${formatCount(stdout.length, "log line")}`;
+	}
+
+	return results.length > 0 ? `Returned ${formatCount(results.length, "result")}` : "Computed";
 }
 
 function summarizeUnknownResult(output: unknown) {
