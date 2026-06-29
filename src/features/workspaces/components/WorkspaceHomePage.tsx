@@ -51,7 +51,7 @@ export function WorkspaceHomePage() {
 			siteControls={<WorkspaceHomeCommunityMenu />}
 		>
 			<div className="space-y-4 pb-8">
-				<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+				<section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
 					<CreateWorkspaceCard
 						onCreate={() => createWorkspaceMutation.mutate()}
 						pending={createWorkspaceMutation.isPending}
