@@ -5,6 +5,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import type { WorkspaceMembershipRole } from "#/features/workspaces/contracts";
@@ -12,12 +13,16 @@ import { workspaceRoleLabels } from "#/features/workspaces/contracts";
 
 export function WorkspaceShareRoleMenu({
 	align = "end",
+	onRemove,
 	onValueChange,
+	removeLabel = "Remove",
 	roles,
 	value,
 }: {
 	align?: "end" | "start";
+	onRemove?: () => void;
 	onValueChange: (role: WorkspaceMembershipRole) => void;
+	removeLabel?: string;
 	roles: WorkspaceMembershipRole[];
 	value: WorkspaceMembershipRole;
 }) {
@@ -45,6 +50,14 @@ export function WorkspaceShareRoleMenu({
 						{workspaceRoleLabels[role]}
 					</DropdownMenuItem>
 				))}
+				{onRemove ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem variant="destructive" onClick={onRemove}>
+							{removeLabel}
+						</DropdownMenuItem>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

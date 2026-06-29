@@ -226,22 +226,13 @@ function WorkspaceShareMemberRow({
 				</p>
 			</div>
 			{canManage ? (
-				<>
-					<WorkspaceShareRoleMenu
-						onValueChange={onRoleChange}
-						roles={assignableRoles}
-						value={member.role}
-					/>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						aria-label={`Remove ${member.name}`}
-						onClick={onRemove}
-					>
-						<X />
-					</Button>
-				</>
+				<WorkspaceShareRoleMenu
+					onRemove={onRemove}
+					onValueChange={onRoleChange}
+					removeLabel={`Remove ${member.name}`}
+					roles={assignableRoles}
+					value={member.role}
+				/>
 			) : (
 				<span className="shrink-0 px-2 text-sm text-muted-foreground">
 					{workspaceRoleLabels[member.role]}
