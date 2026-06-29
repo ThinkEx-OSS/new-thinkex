@@ -9,6 +9,11 @@ const REQUIRED_POSTHOG_BUILD_ENV = [
 	"POSTHOG_PROJECT_ID",
 ] as const;
 
+const REQUIRED_PRODUCTION_POSTHOG_BUILD_ENV = [
+	...REQUIRED_POSTHOG_BUILD_ENV,
+	"VITE_POSTHOG_FEEDBACK_SURVEY_ID",
+] as const;
+
 export function assertRequiredPostHogBuildEnv(command: string) {
 	const cloudflareEnv = process.env.CLOUDFLARE_ENV?.trim();
 
@@ -16,7 +21,12 @@ export function assertRequiredPostHogBuildEnv(command: string) {
 		return;
 	}
 
-	const missing = REQUIRED_POSTHOG_BUILD_ENV.filter((name) => {
+	const requiredEnv =
+		cloudflareEnv === "production"
+			? REQUIRED_PRODUCTION_POSTHOG_BUILD_ENV
+			: REQUIRED_POSTHOG_BUILD_ENV;
+
+	const missing = requiredEnv.filter((name) => {
 		const value = process.env[name];
 		return typeof value !== "string" || value.trim().length === 0;
 	});
