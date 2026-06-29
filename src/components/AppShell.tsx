@@ -8,6 +8,7 @@ interface AppShellProps {
 	subtitle?: string;
 	headerContext?: React.ReactNode;
 	navbarControls?: React.ReactNode;
+	siteControls?: React.ReactNode;
 	children: React.ReactNode;
 }
 
@@ -16,6 +17,7 @@ export default function AppShell({
 	subtitle,
 	headerContext,
 	navbarControls,
+	siteControls,
 	children,
 }: AppShellProps) {
 	return (
@@ -47,7 +49,8 @@ export default function AppShell({
 						{navbarControls}
 					</div>
 
-					<nav className="flex shrink-0 items-center justify-end" aria-label="Site">
+					<nav className="flex shrink-0 items-center justify-end gap-1" aria-label="Site">
+						{siteControls}
 						<UserProfileDropdown />
 					</nav>
 				</div>
