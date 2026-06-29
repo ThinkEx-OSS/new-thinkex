@@ -23,10 +23,10 @@ export const WORKSPACE_AI_CHAT_MODELS = [
 	{
 		id: "auto",
 		name: "Auto",
-		// ThinkEx's own "let us pick for you" option. For now "Auto" is just Kimi
+		// ThinkEx's own "let us pick for you" option. For now "Auto" is GPT mini
 		// under the hood until we build or adopt a real router; the slug can
 		// change without affecting the user-facing choice.
-		gatewayModel: "moonshotai/kimi-k2.6",
+		gatewayModel: "openai/gpt-5.4-mini",
 		provider: "auto",
 		tagline: "Picks a good fit for you",
 		description:

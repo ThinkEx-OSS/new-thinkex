@@ -2,7 +2,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import AppShell from "#/components/AppShell";
 import CreateWorkspaceCard from "#/features/workspaces/components/CreateWorkspaceCard";
-import MissingWorkspacesCard from "#/features/workspaces/components/MissingWorkspacesCard";
 import WorkspaceCard from "#/features/workspaces/components/WorkspaceCard";
 import {
 	getWorkspaceRootTabSearch,
@@ -26,7 +25,6 @@ export function WorkspaceHomePage() {
 						onCreate={() => createWorkspaceMutation.mutate()}
 						pending={createWorkspaceMutation.isPending}
 					/>
-					{workspaces.length === 0 ? <MissingWorkspacesCard /> : null}
 					{workspaces.map((workspace) => (
 						<WorkspaceCard
 							key={workspace.id}

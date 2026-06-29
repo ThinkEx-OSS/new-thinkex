@@ -1,11 +1,9 @@
 import { Eye, FileText, FolderOpen, Image } from "lucide-react";
 import { useRef, useState } from "react";
 
-import { Button } from "#/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "#/components/ui/context-menu";
 import {
 	Empty,
-	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -35,11 +33,7 @@ import { useWorkspacePaneHotkey } from "#/features/workspaces/components/Workspa
 import WorkspaceSelectionActionBar from "#/features/workspaces/components/WorkspaceSelectionActionBar";
 import { useWorkspaceMutationAccess } from "#/features/workspaces/components/workspace-mutation-access";
 import type { WorkspaceItemType, WorkspaceSummary } from "#/features/workspaces/contracts";
-import {
-	getWorkspaceItemDisplay,
-	workspaceItemAcquisitionActions,
-	workspaceItemPrimaryCreateActions,
-} from "#/features/workspaces/model/item-display";
+import { getWorkspaceItemDisplay } from "#/features/workspaces/model/item-display";
 import { workspaceColors } from "#/features/workspaces/model/workspace-colors";
 import { getWorkspaceChildren, splitWorkspaceChildren } from "#/features/workspaces/model/tree";
 import type { WorkspaceItem } from "#/features/workspaces/model/types";
@@ -119,7 +113,7 @@ function WorkspaceBrowseContent({
 	const [moveSelectedDialogOpen, setMoveSelectedDialogOpen] = useState(false);
 	const [isNativeFileDropTarget, setIsNativeFileDropTarget] = useState(false);
 	const browseSurfaceRef = useRef<HTMLElement>(null);
-	const { requestFileUpload, uploadFiles } = useWorkspaceFileIntake();
+	const { uploadFiles } = useWorkspaceFileIntake();
 	const parentId = getWorkspaceBrowseParentId(activeItem);
 	const children = getWorkspaceChildren(items, parentId);
 	const { folders, items: nonFolderItems } = splitWorkspaceChildren(children);
@@ -238,9 +232,6 @@ function WorkspaceBrowseContent({
 							<WorkspaceBrowseEmptyState
 								canMutateContent={capabilities.canMutateContent}
 								isWorkspaceRoot={isWorkspaceRoot}
-								onCreateItem={onCreateItem}
-								parentId={parentId}
-								onUploadFiles={() => requestFileUpload(parentId)}
 							/>
 						) : null}
 					</ContextMenuTrigger>
@@ -294,15 +285,9 @@ function WorkspaceBrowseContent({
 function WorkspaceBrowseEmptyState({
 	canMutateContent,
 	isWorkspaceRoot,
-	onCreateItem,
-	parentId,
-	onUploadFiles,
 }: {
 	canMutateContent: boolean;
 	isWorkspaceRoot: boolean;
-	onCreateItem: (input: { type: WorkspaceItemType; parentId: string | null }) => void;
-	parentId: string | null;
-	onUploadFiles: () => void;
 }) {
 	if (!isWorkspaceRoot) {
 		return (
@@ -340,42 +325,9 @@ function WorkspaceBrowseEmptyState({
 				<EmptyMedia>
 					<WorkspaceRootEmptyMedia />
 				</EmptyMedia>
-				<EmptyTitle>Add your first files</EmptyTitle>
-				<EmptyDescription>
-					Drag files into the workspace or click New to get started.
-				</EmptyDescription>
+				<EmptyTitle>Drop your files here</EmptyTitle>
+				<EmptyDescription>Or click New to get started</EmptyDescription>
 			</EmptyHeader>
-			<EmptyContent>
-				<div className="grid w-full max-w-[15.5rem] grid-cols-3 gap-2">
-					{workspaceItemPrimaryCreateActions.map(({ type, label, Icon, iconClassName }) => (
-						<Button
-							key={type}
-							type="button"
-							variant="outline"
-							className="h-auto flex-col gap-1.5 px-3 py-2"
-							onClick={() => onCreateItem({ type, parentId })}
-						>
-							<Icon className={cn("size-5", iconClassName)} />
-							<span className="text-xs">{label}</span>
-						</Button>
-					))}
-					{workspaceItemAcquisitionActions
-						.filter((action) => action.id === "upload-file")
-						.map(({ id, label, Icon, iconClassName, disabled }) => (
-							<Button
-								key={id}
-								type="button"
-								variant="outline"
-								disabled={disabled}
-								className="h-auto flex-col gap-1.5 px-3 py-2"
-								onClick={id === "upload-file" ? onUploadFiles : undefined}
-							>
-								<Icon className={cn("size-5", iconClassName)} />
-								<span className="text-xs">{label}</span>
-							</Button>
-						))}
-				</div>
-			</EmptyContent>
 		</Empty>
 	);
 }
