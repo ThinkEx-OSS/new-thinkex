@@ -17,7 +17,6 @@ interface __BaseEnv_Env {
 	FIRECRAWL_API_KEY: string;
 	LLAMA_CLOUD_API_KEY: string;
 	AI_GATEWAY_API_KEY: string;
-	MIGRATION_IMPORT_SECRET: string;
 	UserAIStore: DurableObjectNamespace<import("./src/server").UserAIStore>;
 	WorkspaceKernel: DurableObjectNamespace<import("./src/server").WorkspaceKernel>;
 	DocumentSession: DurableObjectNamespace<import("./src/server").DocumentSession>;
@@ -45,7 +44,6 @@ declare namespace Cloudflare {
 		FIRECRAWL_API_KEY: string;
 		LLAMA_CLOUD_API_KEY: string;
 		AI_GATEWAY_API_KEY: string;
-		MIGRATION_IMPORT_SECRET: string;
 		UserAIStore: DurableObjectNamespace<import("./src/server").UserAIStore>;
 		WorkspaceKernel: DurableObjectNamespace<import("./src/server").WorkspaceKernel>;
 		DocumentSession: DurableObjectNamespace<import("./src/server").DocumentSession>;
@@ -68,7 +66,6 @@ declare namespace Cloudflare {
 		FIRECRAWL_API_KEY: string;
 		LLAMA_CLOUD_API_KEY: string;
 		AI_GATEWAY_API_KEY: string;
-		MIGRATION_IMPORT_SECRET: string;
 		UserAIStore: DurableObjectNamespace<import("./src/server").UserAIStore>;
 		WorkspaceKernel: DurableObjectNamespace<import("./src/server").WorkspaceKernel>;
 		DocumentSession: DurableObjectNamespace<import("./src/server").DocumentSession>;
