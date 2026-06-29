@@ -130,63 +130,77 @@ function FeedbackDialogForm({
 	);
 }
 
-export default function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+function FeedbackDialogContent({ onOpenChange }: Pick<FeedbackDialogProps, "onOpenChange">) {
 	const [survey, setSurvey] = useState<Survey | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 
-	const handleOpenChange = (nextOpen: boolean) => {
-		onOpenChange(nextOpen);
-
-		if (!nextOpen) {
-			return;
-		}
-
-		setIsLoading(true);
-		setLoadError(null);
-		setSurvey(null);
+	useEffect(() => {
+		let isCurrent = true;
 
 		void loadFeedbackSurvey()
 			.then((loadedSurvey) => {
+				if (!isCurrent) {
+					return;
+				}
+
 				setSurvey(loadedSurvey);
 			})
 			.catch((error: unknown) => {
+				if (!isCurrent) {
+					return;
+				}
+
 				const message = getErrorMessage(error, "Unable to load feedback form right now.");
 				setLoadError(message);
 				toast.error(message);
 			})
 			.finally(() => {
+				if (!isCurrent) {
+					return;
+				}
+
 				setIsLoading(false);
 			});
-	};
+
+		return () => {
+			isCurrent = false;
+		};
+	}, []);
 
 	const title = survey?.name ?? "Feedback";
 	const description =
 		survey?.description ?? "Tell us what you think. You can submit feedback as often as you like.";
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{description}</DialogDescription>
-				</DialogHeader>
+		<DialogContent className="sm:max-w-lg">
+			<DialogHeader>
+				<DialogTitle>{title}</DialogTitle>
+				<DialogDescription>{description}</DialogDescription>
+			</DialogHeader>
 
-				{isLoading ? (
-					<div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-						<Loader2 className="size-4 animate-spin" />
-						Loading feedback form...
-					</div>
-				) : null}
+			{isLoading ? (
+				<div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+					<Loader2 className="size-4 animate-spin" />
+					Loading feedback form...
+				</div>
+			) : null}
 
-				{!isLoading && loadError ? (
-					<p className="text-sm text-muted-foreground">{loadError}</p>
-				) : null}
+			{!isLoading && loadError ? (
+				<p className="text-sm text-muted-foreground">{loadError}</p>
+			) : null}
 
-				{!isLoading && !loadError && survey ? (
-					<FeedbackDialogForm key={survey.id} survey={survey} onOpenChange={onOpenChange} />
-				) : null}
-			</DialogContent>
+			{!isLoading && !loadError && survey ? (
+				<FeedbackDialogForm key={survey.id} survey={survey} onOpenChange={onOpenChange} />
+			) : null}
+		</DialogContent>
+	);
+}
+
+export default function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			{open ? <FeedbackDialogContent onOpenChange={onOpenChange} /> : null}
 		</Dialog>
 	);
 }
