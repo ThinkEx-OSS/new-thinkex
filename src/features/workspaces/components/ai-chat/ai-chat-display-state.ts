@@ -6,6 +6,7 @@ import type {
 	AiChatStatus,
 	AiChatToolPart,
 } from "#/features/workspaces/components/ai-chat/types";
+import { getFinishedToolReceipt } from "#/features/workspaces/components/ai-chat/ai-chat-tool-receipts";
 
 export type AssistantPendingKind = "thinking" | "recovering";
 export interface AiChatToolChildActivity {
@@ -210,13 +211,13 @@ export function getToolActivityForPart(part: AiChatToolPart): AiChatToolActivity
 
 	const toolName = getToolPartName(part);
 	const title = getToolActivityTitle(part, toolName);
-	const status = getToolActivityStatus(part);
+	const receipt = getToolActivityReceipt(part, toolName, title);
 
 	return {
 		children: [],
 		detail: part,
-		status,
-		summary: getToolActivitySummary(part, toolName, title, status),
+		status: receipt.status,
+		summary: receipt.summary,
 		title,
 		toolName,
 	};
@@ -247,7 +248,7 @@ function getToolActivityTitle(part: AiChatToolPart, toolName: string) {
 		case "workspace_delete_items":
 		case "workspace_edit_item":
 		case "workspace_move_items":
-		case "workspace_rename_items":
+		case "workspace_rename_item":
 			return "Updating workspace";
 		case "workspace_list_items":
 		case "workspace_read_items":
@@ -264,282 +265,33 @@ function getToolActivityTitle(part: AiChatToolPart, toolName: string) {
 	}
 }
 
-function getToolActivityStatus(part: AiChatToolPart): AiChatToolActivity["status"] {
-	switch (part.state) {
-		case "output-available":
-			return "completed";
-		case "output-denied":
-		case "output-error":
-			return "failed";
-		default:
-			return "running";
-	}
-}
-
-function getToolActivitySummary(
+function getToolActivityReceipt(
 	part: AiChatToolPart,
 	toolName: string,
 	title: string,
-	status: AiChatToolActivity["status"],
-) {
-	if (status === "running") {
-		return title;
-	}
-
-	if (status === "failed") {
-		return summarizeFailure(part, toolName);
-	}
-
-	return summarizeCompletedTool(part, toolName);
-}
-
-function summarizeFailure(part: AiChatToolPart, toolName: string) {
-	const outputRecord = asRecord(part.output);
-	const failedCount = getArray(outputRecord.failed).length;
-
-	switch (toolName) {
-		case "workspace_create_items":
-			return failedCount > 0
-				? `Couldn’t create ${formatCount(failedCount, "item")}`
-				: "Couldn’t update workspace";
-		case "workspace_delete_items":
-			return failedCount > 0
-				? `Couldn’t delete ${formatCount(failedCount, "item")}`
-				: "Couldn’t update workspace";
-		case "workspace_move_items":
-			return failedCount > 0
-				? `Couldn’t move ${formatCount(failedCount, "item")}`
-				: "Couldn’t update workspace";
-		case "workspace_rename_items":
-			return failedCount > 0
-				? `Couldn’t rename ${formatCount(failedCount, "item")}`
-				: "Couldn’t update workspace";
-		case "workspace_edit_item":
-			return `Couldn’t update ${quoteName(getBaseName(getString(outputRecord.path) ?? getPathFromToolInput(part.input)))}`;
-		case "compute":
-			return "Couldn’t compute";
+): { status: AiChatToolActivity["status"]; summary: string } {
+	switch (part.state) {
+		case "output-available":
+			return getFinishedToolReceipt({
+				baseStatus: "completed",
+				output: part.output,
+				toolInput: part.input,
+				toolName,
+			});
+		case "output-denied":
+		case "output-error":
+			return getFinishedToolReceipt({
+				baseStatus: "failed",
+				output: part.output,
+				toolInput: part.input,
+				toolName,
+			});
 		default:
-			return "Couldn’t complete";
+			return {
+				status: "running",
+				summary: title,
+			};
 	}
-}
-
-function summarizeCompletedTool(part: AiChatToolPart, toolName: string) {
-	const output = part.output;
-
-	switch (toolName) {
-		case "workspace_create_items":
-			return summarizeWorkspaceCreate(output);
-		case "workspace_delete_items":
-			return summarizeWorkspaceDelete(output);
-		case "workspace_move_items":
-			return summarizeWorkspaceMove(output);
-		case "workspace_rename_items":
-			return summarizeWorkspaceRename(output);
-		case "workspace_edit_item":
-			return summarizeWorkspaceEdit(output);
-		case "workspace_list_items":
-		case "workspace_read_items":
-			return summarizeWorkspaceRead(output);
-		case "web_search":
-			return summarizeWebSearch(output);
-		case "web_markdown":
-			return "Read 1 page";
-		case "web_links":
-			return summarizeWebLinks(output);
-		case "research_discover":
-			return summarizeResearchDiscover(output);
-		case "research_deepen":
-			return summarizeResearchDeepen(output);
-		case "orchestrate":
-			return summarizeCodemode(output);
-		case "compute":
-			return summarizeCompute(output);
-		default:
-			return summarizeUnknownResult(output);
-	}
-}
-
-function summarizeWorkspaceCreate(output: unknown) {
-	const items = getArray(asRecord(output).items);
-
-	if (items.length === 1) {
-		const item = asRecord(items[0]);
-		const type = getString(item.type) === "folder" ? "folder" : "document";
-		return `Created ${type} ${quoteName(getBaseName(getString(item.path)))}`;
-	}
-
-	if (items.length === 2) {
-		return `Created ${joinNames(items, "item")}`;
-	}
-
-	return `Created ${formatCount(items.length, "item")}`;
-}
-
-function summarizeWorkspaceDelete(output: unknown) {
-	const items = getArray(asRecord(output).items);
-
-	if (items.length === 1) {
-		return `Deleted ${quoteName(getBaseName(getString(asRecord(items[0]).path)))}`;
-	}
-
-	if (items.length === 2) {
-		return `Deleted ${joinNames(items, "item")}`;
-	}
-
-	return `Deleted ${formatCount(items.length, "item")}`;
-}
-
-function summarizeWorkspaceMove(output: unknown) {
-	const items = getArray(asRecord(output).items);
-
-	if (items.length === 1) {
-		return `Moved ${quoteName(getBaseName(getString(asRecord(items[0]).path)))}`;
-	}
-
-	if (items.length === 2) {
-		return `Moved ${joinNames(items, "item")}`;
-	}
-
-	return `Moved ${formatCount(items.length, "item")}`;
-}
-
-function summarizeWorkspaceRename(output: unknown) {
-	const items = getArray(asRecord(output).items);
-
-	if (items.length === 1) {
-		return `Renamed ${quoteName(getBaseName(getString(asRecord(items[0]).path)))}`;
-	}
-
-	if (items.length === 2) {
-		return `Renamed ${joinNames(items, "item")}`;
-	}
-
-	return `Renamed ${formatCount(items.length, "item")}`;
-}
-
-function summarizeWorkspaceEdit(output: unknown) {
-	const record = asRecord(output);
-	return `Updated ${quoteName(getBaseName(getString(record.path)))}`;
-}
-
-function summarizeWorkspaceRead(output: unknown) {
-	const items = getArray(asRecord(output).items);
-	const readyItems = items.filter((item) => getString(asRecord(item).status) !== "failed");
-
-	if (readyItems.length === 1) {
-		return `Read ${quoteName(getBaseName(getString(asRecord(readyItems[0]).path)))}`;
-	}
-
-	return `Read ${formatCount(readyItems.length, "item")}`;
-}
-
-function summarizeWebSearch(output: unknown) {
-	const results = getArray(asRecord(output).results);
-	return `Found ${formatCount(results.length, "source")}`;
-}
-
-function summarizeWebLinks(output: unknown) {
-	const items = getArray(asRecord(output).items);
-	return `Found ${formatCount(items.length, "link")}`;
-}
-
-function summarizeResearchDiscover(output: unknown) {
-	const record = asRecord(output);
-	const total = getArray(record.papers).length + getArray(record.github).length;
-	return `Found ${formatCount(total, "source")}`;
-}
-
-function summarizeResearchDeepen(output: unknown) {
-	const record = asRecord(output);
-
-	if (Array.isArray(record.passages)) {
-		return `Read ${formatCount(record.passages.length, "passage")}`;
-	}
-
-	if (Array.isArray(record.papers)) {
-		return `Found ${formatCount(record.papers.length, "paper")}`;
-	}
-
-	return summarizeUnknownResult(output);
-}
-
-function summarizeCodemode(output: unknown) {
-	const record = asRecord(output);
-	const status = getString(record.status);
-
-	if (status === "paused") {
-		return "Needs input";
-	}
-
-	if (status === "error") {
-		return "Couldn’t complete";
-	}
-
-	if (status === "completed") {
-		return summarizeUnknownResult(record.result);
-	}
-
-	return summarizeUnknownResult(output);
-}
-
-function summarizeCompute(output: unknown) {
-	const record = asRecord(output);
-
-	if (record.error) {
-		return "Couldn’t compute";
-	}
-
-	const results = getArray(record.results);
-	const imageCount = results.filter((result) => {
-		const item = asRecord(result);
-		return typeof item.png === "string" || typeof item.jpeg === "string";
-	}).length;
-
-	if (imageCount > 0) {
-		return `Generated ${formatCount(imageCount, "image")}`;
-	}
-
-	const valueCount = results.filter((result) => {
-		const item = asRecord(result);
-		return typeof item.text === "string" || item.json !== undefined || item.data !== undefined;
-	}).length;
-
-	if (valueCount > 0) {
-		return `Returned ${formatCount(valueCount, "value")}`;
-	}
-
-	const stdout = getArray(asRecord(record.logs).stdout);
-	if (stdout.length > 0) {
-		return `Wrote ${formatCount(stdout.length, "log line")}`;
-	}
-
-	return results.length > 0 ? `Returned ${formatCount(results.length, "result")}` : "Computed";
-}
-
-function summarizeUnknownResult(output: unknown) {
-	const record = asRecord(output);
-
-	if (Array.isArray(record.items)) {
-		return `Processed ${formatCount(record.items.length, "item")}`;
-	}
-
-	if (Array.isArray(record.results)) {
-		return `Found ${formatCount(record.results.length, "result")}`;
-	}
-
-	if (Array.isArray(record.papers)) {
-		return `Found ${formatCount(record.papers.length, "paper")}`;
-	}
-
-	if (Array.isArray(record.passages)) {
-		return `Read ${formatCount(record.passages.length, "passage")}`;
-	}
-
-	if (typeof record.content === "string") {
-		return "Read 1 page";
-	}
-
-	return "Done";
 }
 
 function humanizeToolName(value: string) {
@@ -550,55 +302,4 @@ function humanizeToolName(value: string) {
 			index === 0 ? segment.charAt(0).toUpperCase() + segment.slice(1) : segment,
 		)
 		.join(" ");
-}
-
-function quoteName(value: string | undefined) {
-	return value ? `“${value}”` : "item";
-}
-
-function joinNames(items: unknown[], fallbackNoun: string) {
-	const names = items
-		.slice(0, 2)
-		.map((item) => quoteName(getBaseName(getString(asRecord(item).path))))
-		.filter((name) => name !== "item");
-
-	if (names.length === 2) {
-		return `${names[0]} and ${names[1]}`;
-	}
-
-	if (names.length === 1) {
-		return names[0];
-	}
-
-	return formatCount(items.length, fallbackNoun);
-}
-
-function formatCount(count: number, noun: string) {
-	const safeCount = Number.isFinite(count) && count > 0 ? count : 0;
-	return `${safeCount} ${noun}${safeCount === 1 ? "" : "s"}`;
-}
-
-function getBaseName(path: string | undefined) {
-	if (!path) {
-		return undefined;
-	}
-
-	const segments = path.split("/").filter(Boolean);
-	return segments.at(-1) ?? path;
-}
-
-function getPathFromToolInput(input: unknown) {
-	return getString(asRecord(input).path);
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-	return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function getArray(value: unknown): unknown[] {
-	return Array.isArray(value) ? value : [];
-}
-
-function getString(value: unknown): string | undefined {
-	return typeof value === "string" ? value : undefined;
 }

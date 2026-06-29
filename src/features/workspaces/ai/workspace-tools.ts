@@ -8,7 +8,7 @@ import { deleteWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace
 import { editWorkspaceKernelAiItem } from "#/features/workspaces/ai/workspace-kernel-ai-edit";
 import { moveWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-move";
 import { readWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-read";
-import { renameWorkspaceKernelAiItems } from "#/features/workspaces/ai/workspace-kernel-ai-rename";
+import { renameWorkspaceKernelAiItem } from "#/features/workspaces/ai/workspace-kernel-ai-rename";
 import { workspaceItemTypeSchema } from "#/features/workspaces/contracts";
 import { documentMarkdownEditSchema } from "#/features/workspaces/documents/document-markdown-edits";
 import { listWorkspaceKernelItems } from "#/features/workspaces/kernel/workspace-kernel-access";
@@ -39,6 +39,20 @@ const workspacePathItemSchema = z.object({
 	path: workspacePathSchema,
 	type: workspaceItemTypeSchema,
 });
+
+const workspacePreviousPathItemSchema = workspacePathItemSchema.extend({
+	previousPath: workspacePathSchema,
+});
+
+function createWorkspaceItemsResultSchema<
+	TItemSchema extends z.ZodTypeAny,
+	TFailureSchema extends z.ZodTypeAny,
+>(input: { failureSchema: TFailureSchema; itemSchema: TItemSchema }) {
+	return z.object({
+		items: z.array(input.itemSchema),
+		failed: z.array(input.failureSchema),
+	});
+}
 
 const workspaceReadPagesSchema = z.object({
 	requested: z.string().describe("Requested page range."),
@@ -92,22 +106,9 @@ const workspaceEditItemInputSchema = z.object({
 		.describe("Ordered text edits to apply to the item projection."),
 });
 
-const workspaceRenameItemsInputSchema = z.object({
-	items: z
-		.array(
-			z.object({
-				name: z.string().trim().min(1).max(160).describe("New user-visible item name."),
-				path: z
-					.string()
-					.min(1)
-					.describe("Absolute path of one actual ThinkEx workspace item to rename."),
-			}),
-		)
-		.min(1)
-		.max(20)
-		.describe(
-			"One or more actual ThinkEx workspace items to rename. Use a single array entry for a one-off rename.",
-		),
+const workspaceRenameItemInputSchema = z.object({
+	name: z.string().trim().min(1).max(160).describe("New user-visible item name."),
+	path: z.string().min(1).describe("Absolute path of one actual ThinkEx workspace item to rename."),
 });
 
 const workspaceMoveItemsInputSchema = z.object({
@@ -176,15 +177,11 @@ const workspaceReadItemsInputExamples = createInputExamples<
 	},
 );
 
-const workspaceRenameItemsInputExamples = createInputExamples<
-	z.input<typeof workspaceRenameItemsInputSchema>
+const workspaceRenameItemInputExamples = createInputExamples<
+	z.input<typeof workspaceRenameItemInputSchema>
 >({
-	items: [
-		{
-			path: "/Demo Folder/Demo Document",
-			name: "Tool Demo",
-		},
-	],
+	path: "/Demo Folder/Demo Document",
+	name: "Tool Demo",
 });
 
 const workspaceMoveItemsInputExamples = createInputExamples<
@@ -239,96 +236,74 @@ const workspaceListItemsOutputSchema = z.object({
 	),
 });
 
-const workspaceReadItemsOutputSchema = z.object({
-	items: z.array(
-		z.object({
-			path: workspacePathSchema,
-			type: z.enum(["document", "file", "flashcard", "quiz"]),
-			status: z.enum(["failed", "pending", "ready", "unsupported"]),
-			content: z.string().optional(),
-			pages: workspaceReadPagesSchema.optional(),
-		}),
-	),
-	failed: z.array(
-		createFailureSchema([
-			"page_range_out_of_range",
-			"path_is_folder",
-			"path_not_absolute",
-			"path_not_found",
-		]),
-	),
+const workspaceReadItemsOutputSchema = createWorkspaceItemsResultSchema({
+	itemSchema: z.object({
+		path: workspacePathSchema,
+		type: z.enum(["document", "file", "flashcard", "quiz"]),
+		status: z.enum(["failed", "pending", "ready", "unsupported"]),
+		content: z.string().optional(),
+		pages: workspaceReadPagesSchema.optional(),
+	}),
+	failureSchema: createFailureSchema([
+		"page_range_out_of_range",
+		"path_is_folder",
+		"path_not_absolute",
+		"path_not_found",
+	]),
 });
 
-const workspaceCreateItemsOutputSchema = z.object({
-	items: z.array(
-		z.object({
-			path: workspacePathSchema,
-			type: z.enum(["document", "folder"]),
-			warnings: z
-				.array(z.string())
-				.optional()
-				.describe("Content projection warnings for created documents."),
-		}),
-	),
-	failed: z.array(
-		createFailureSchema([
-			"cannot_create_root",
-			"invalid_initial_content",
+const workspaceCreateItemsOutputSchema = createWorkspaceItemsResultSchema({
+	itemSchema: z.object({
+		path: workspacePathSchema,
+		type: z.enum(["document", "folder"]),
+		warnings: z
+			.array(z.string())
+			.optional()
+			.describe("Content projection warnings for created documents."),
+	}),
+	failureSchema: createFailureSchema([
+		"cannot_create_root",
+		"invalid_initial_content",
+		"path_already_exists",
+		"path_not_absolute",
+		"path_not_canonical",
+		"path_not_folder",
+		"path_not_found",
+	]),
+});
+
+const workspaceDeleteItemsOutputSchema = createWorkspaceItemsResultSchema({
+	itemSchema: workspacePathItemSchema,
+	failureSchema: createFailureSchema(["cannot_delete_root", "path_not_absolute", "path_not_found"]),
+});
+
+const workspaceMoveItemsOutputSchema = createWorkspaceItemsResultSchema({
+	itemSchema: workspacePreviousPathItemSchema,
+	failureSchema: createFailureSchema(
+		[
+			"already_in_destination",
+			"cannot_move_into_descendant",
+			"cannot_move_root",
+			"destination_path_not_absolute",
+			"destination_path_not_folder",
+			"destination_path_not_found",
 			"path_already_exists",
 			"path_not_absolute",
-			"path_not_canonical",
-			"path_not_folder",
 			"path_not_found",
-		]),
-	),
+		],
+		{ includeIndex: false },
+	).extend({
+		index: workspaceIndexSchema.optional(),
+	}),
 });
 
-const workspaceDeleteItemsOutputSchema = z.object({
-	items: z.array(workspacePathItemSchema),
-	failed: z.array(
-		createFailureSchema(["cannot_delete_root", "path_not_absolute", "path_not_found"]),
-	),
-});
-
-const workspaceMoveItemsOutputSchema = z.object({
-	items: z.array(
-		workspacePathItemSchema.extend({
-			previousPath: workspacePathSchema,
-		}),
-	),
+const workspaceRenameItemOutputSchema = z.object({
+	item: workspacePreviousPathItemSchema.optional(),
 	failed: z.array(
 		createFailureSchema(
-			[
-				"already_in_destination",
-				"cannot_move_into_descendant",
-				"cannot_move_root",
-				"destination_path_not_absolute",
-				"destination_path_not_folder",
-				"destination_path_not_found",
-				"path_already_exists",
-				"path_not_absolute",
-				"path_not_found",
-			],
+			["cannot_rename_root", "path_already_exists", "path_not_absolute", "path_not_found"],
 			{ includeIndex: false },
-		).extend({
-			index: workspaceIndexSchema.optional(),
-		}),
-	),
-});
-
-const workspaceRenameItemsOutputSchema = z.object({
-	items: z.array(
-		workspacePathItemSchema.extend({
-			previousPath: workspacePathSchema,
-		}),
-	),
-	failed: z.array(
-		createFailureSchema([
-			"cannot_rename_root",
-			"path_already_exists",
-			"path_not_absolute",
-			"path_not_found",
-		]),
+		),
 	),
 });
 
@@ -424,15 +399,16 @@ export function createAIThreadWorkspaceTools(input: {
 				});
 			},
 		}),
-		workspace_rename_items: createThreadTool({
+		workspace_rename_item: createThreadTool({
 			description:
-				"Rename one or more actual ThinkEx workspace items by absolute path. If the requested final path already exists, that rename fails instead of auto-renaming.",
-			inputSchema: workspaceRenameItemsInputSchema,
-			inputExamples: workspaceRenameItemsInputExamples,
-			outputSchema: workspaceRenameItemsOutputSchema,
-			execute: async ({ items }, thread) => {
-				return await renameWorkspaceKernelAiItems({
-					items,
+				"Rename one actual ThinkEx workspace item by absolute path. If the requested final path already exists, the rename fails instead of auto-renaming.",
+			inputSchema: workspaceRenameItemInputSchema,
+			inputExamples: workspaceRenameItemInputExamples,
+			outputSchema: workspaceRenameItemOutputSchema,
+			execute: async ({ name, path }, thread) => {
+				return await renameWorkspaceKernelAiItem({
+					name,
+					path,
 					workspaceId: thread.workspaceId,
 					userId: thread.userId,
 				});

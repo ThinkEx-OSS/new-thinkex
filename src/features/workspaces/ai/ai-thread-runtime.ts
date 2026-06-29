@@ -190,7 +190,7 @@ const AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 		mutating: true,
 	},
 	{
-		name: "workspace_rename_items",
+		name: "workspace_rename_item",
 		codemode: true,
 		mutating: true,
 	},
