@@ -79,7 +79,7 @@ export const communityLinks: CommunityLink[] = [
 		icon: GitHubIcon,
 	},
 	{
-		href: "https://discord.gg/p56ZZDYf",
+		href: "https://discord.gg/dtPnzkqCcG",
 		label: "Discord",
 		icon: DiscordIcon,
 	},
