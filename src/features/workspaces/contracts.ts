@@ -202,15 +202,26 @@ export const workspaceItemSummarySchema = z.object({
 	deletedAt: z.string().nullable(),
 });
 
-export const createWorkspaceItemInputSchema = z.object({
-	id: z.uuid().optional(),
-	workspaceId: z.string().min(1),
-	parentId: z.string().min(1).nullable().optional(),
-	type: workspaceItemTypeSchema,
-	name: z.string().trim().min(1).max(160).optional(),
-	color: workspaceColorSchema.optional(),
-	clientMutationId: z.uuid().optional(),
-});
+export const createWorkspaceItemInputSchema = z
+	.object({
+		id: z.uuid().optional(),
+		workspaceId: z.string().min(1),
+		parentId: z.string().min(1).nullable().optional(),
+		type: workspaceItemTypeSchema,
+		name: z.string().trim().min(1).max(160).optional(),
+		color: workspaceColorSchema.optional(),
+		initialContent: z.string().optional(),
+		clientMutationId: z.uuid().optional(),
+	})
+	.superRefine((input, context) => {
+		if (input.initialContent !== undefined && input.type !== "document") {
+			context.addIssue({
+				code: "custom",
+				message: "Initial content can only be provided for documents.",
+				path: ["initialContent"],
+			});
+		}
+	});
 
 export const renameWorkspaceItemInputSchema = z.object({
 	workspaceId: z.string().min(1),

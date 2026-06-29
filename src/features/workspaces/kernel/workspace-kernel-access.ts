@@ -215,6 +215,7 @@ export async function createWorkspaceKernelItem(
 			type: input.type,
 			name: input.name,
 			color: input.color,
+			initialContent: input.initialContent,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

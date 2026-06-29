@@ -51,4 +51,4 @@ function useWorkspacePaneHotkey(
 	);
 }
 
-export { useWorkspacePaneHotkey, WorkspacePaneRuntimeProvider };
+export { useWorkspacePaneHotkey, useWorkspacePaneRuntime, WorkspacePaneRuntimeProvider };

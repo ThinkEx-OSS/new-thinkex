@@ -10,6 +10,8 @@ import {
 	EmptyTitle,
 } from "#/components/ui/empty";
 import { DocumentEditorSurface } from "#/features/workspaces/components/document-editor/DocumentEditorSurface";
+import { WorkspaceClipboardIntakeDialog } from "#/features/workspaces/components/WorkspaceClipboardIntakeDialog";
+import { useWorkspaceClipboardIntake } from "#/features/workspaces/components/useWorkspaceClipboardIntake";
 import { useWorkspaceItemActionDialogState } from "#/features/workspaces/components/useWorkspaceItemActionDialogState";
 import {
 	useWorkspaceMarqueeSelection,
@@ -132,6 +134,11 @@ function WorkspaceBrowseContent({
 		onActiveChange: setIsNativeFileDropTarget,
 		onDrop: handleNativeFileDrop,
 		targetRef: browseSurfaceRef,
+	});
+	const clipboardIntake = useWorkspaceClipboardIntake({
+		enabled: capabilities.canMutateContent,
+		parentId,
+		workspaceId,
 	});
 	const { clearSelection, selectedItemIds, selectedItems, setItemSelected, setSelectedItemIds } =
 		useWorkspaceSelection({
@@ -260,6 +267,12 @@ function WorkspaceBrowseContent({
 				actionDialogs={actionDialogs}
 				workspace={workspace}
 				items={items}
+			/>
+			<WorkspaceClipboardIntakeDialog
+				intake={clipboardIntake.intake}
+				open={clipboardIntake.open}
+				onConfirm={clipboardIntake.confirm}
+				onOpenChange={clipboardIntake.setOpen}
 			/>
 			<MoveWorkspaceItemsDialog
 				open={moveSelectedDialogOpen}

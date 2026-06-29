@@ -8,6 +8,7 @@ import {
 	type SupportedCodeLanguage,
 } from "#/features/workspaces/documents/code-block-shiki/code-languages";
 import { parseMarkdownToTiptapDocumentProjection } from "#/features/workspaces/documents/document-markdown";
+import { plainTextToTiptapDocument } from "#/features/workspaces/documents/plain-text-document";
 import {
 	type TiptapDocumentJson,
 	stringifyTiptapDocumentJson,
@@ -224,27 +225,6 @@ function normalizeMarkdownRow(row: string[], columnCount: number) {
 	return Array.from({ length: columnCount }, (_, index) =>
 		escapeMarkdownTableCell(row[index]?.trim() ?? ""),
 	);
-}
-
-function plainTextToTiptapDocument(text: string): TiptapDocumentJson {
-	const lines = text.replace(/\r\n?/g, "\n").split("\n");
-	const content = lines.map(plainTextLineToTiptapParagraph);
-
-	return {
-		type: "doc",
-		content,
-	};
-}
-
-function plainTextLineToTiptapParagraph(line: string): JsonValue {
-	if (!line) {
-		return { type: "paragraph" };
-	}
-
-	return {
-		type: "paragraph",
-		content: [{ type: "text", text: line }],
-	};
 }
 
 function escapeMarkdownTableCell(value: string) {

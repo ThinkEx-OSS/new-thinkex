@@ -48,6 +48,7 @@ export function createWorkspaceItemInPage(
 	const { metadataJson } = buildWorkspaceItemCreateBootstrap({
 		type: input.type,
 		name,
+		initialContent: input.initialContent,
 	});
 
 	return upsertWorkspaceItemInPage(page, {
