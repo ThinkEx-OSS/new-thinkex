@@ -125,6 +125,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 		getTools(): ToolSet {
 			return createAIThreadTools({
 				env: this.env,
+				threadId: this.name,
 				workspace: this.workspace,
 				getThreadContext: () => this._getThreadContext(),
 			});
@@ -154,6 +155,7 @@ export function createAIThreadClass(getUserAIStore: () => typeof UserAIStore) {
 			const turnToolConfig = createAIThreadTurnToolConfig({
 				env: this.env,
 				ctx: this.ctx,
+				threadId: this.name,
 				workspace: this.workspace,
 				getThreadContext: () => this._getThreadContext(),
 				canMutate: thread.promptScope.canMutate,

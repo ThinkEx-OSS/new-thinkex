@@ -14,6 +14,7 @@ import {
 	getWorkspaceAiChatModel,
 	type resolveWorkspaceAiChatModelId,
 } from "#/features/workspaces/ai/models";
+import { createAIThreadCodeRunTools } from "#/features/workspaces/ai/code-run-tools";
 import { createAIThreadResearchTools } from "#/features/workspaces/ai/research-tools";
 import { createAIThreadTimeTools } from "#/features/workspaces/ai/time-tools";
 import { createAIThreadWebTools } from "#/features/workspaces/ai/web-tools";
@@ -30,7 +31,7 @@ type WorkspaceAiProviderOptions = NonNullable<
 >;
 
 const THINK_CAPABILITY_BLOCK_MARKER = "You are running inside a Think agent.";
-const AI_THREAD_CODEMODE_TOOL_NAME = "codemode_execute";
+const AI_THREAD_ORCHESTRATE_TOOL_NAME = "orchestrate";
 
 const AI_THREAD_VIEW_ONLY_WORKSPACE_LINE =
 	"- Workspace access: view-only. Do not create, rename, edit, move, or delete workspace items.";
@@ -55,6 +56,7 @@ const WORKSPACE_FS_METHOD_NAMES = [
 
 export function createAIThreadTools(input: {
 	env: Cloudflare.Env;
+	threadId: string;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	timeZone?: string;
@@ -65,6 +67,7 @@ export function createAIThreadTools(input: {
 export function createAIThreadTurnToolConfig(input: {
 	env: Cloudflare.Env;
 	ctx: DurableObjectState;
+	threadId: string;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	canMutate: boolean;
@@ -79,13 +82,13 @@ export function createAIThreadTurnToolConfig(input: {
 	return {
 		activeTools: activeToolNames,
 		tools: {
-			codemode_execute: createExecuteTool({
+			orchestrate: createExecuteTool({
 				ctx: input.ctx,
 				loader: input.env.LOADER,
 				state,
 				tools: toolCatalog.getCodemodeTools(input.canMutate),
-				name: AI_THREAD_CODEMODE_TOOL_NAME,
-				description: getAIThreadCodemodeDescription(hasState),
+				name: AI_THREAD_ORCHESTRATE_TOOL_NAME,
+				description: getAIThreadOrchestrateDescription(hasState),
 			}),
 		} satisfies ToolSet,
 	};
@@ -104,6 +107,14 @@ const AI_THREAD_SANDBOX_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 	{
 		name: "sandbox_bash",
 		codemode: false,
+		mutating: false,
+	},
+];
+
+const AI_THREAD_CODE_RUN_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
+	{
+		name: "compute",
+		codemode: true,
 		mutating: false,
 	},
 ];
@@ -192,11 +203,16 @@ const AI_THREAD_WORKSPACE_TOOL_DESCRIPTORS: AIThreadToolDescriptor[] = [
 
 function createAIThreadToolCatalog(input: {
 	env: Cloudflare.Env;
+	threadId: string;
 	workspace: WorkspaceLike;
 	getThreadContext: () => Promise<AIThreadContext | null>;
 	timeZone?: string;
 }) {
 	const sandboxTools = createSandboxTools(input.workspace);
+	const codeRunTools = createAIThreadCodeRunTools({
+		env: input.env,
+		sandboxId: getAIThreadComputeSandboxId(input.threadId),
+	});
 	const webTools = createAIThreadWebTools(input.env);
 	const researchTools = createAIThreadResearchTools(input.env);
 	const timeTools = createAIThreadTimeTools({
@@ -208,6 +224,7 @@ function createAIThreadToolCatalog(input: {
 	const entries: AIThreadToolEntry[] = [];
 
 	addAIThreadToolEntries(entries, sandboxTools, AI_THREAD_SANDBOX_TOOL_DESCRIPTORS);
+	addAIThreadToolEntries(entries, codeRunTools, AI_THREAD_CODE_RUN_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, webTools, AI_THREAD_WEB_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, researchTools, AI_THREAD_RESEARCH_TOOL_DESCRIPTORS);
 	addAIThreadToolEntries(entries, timeTools, AI_THREAD_TIME_TOOL_DESCRIPTORS);
@@ -223,10 +240,10 @@ function createAIThreadToolCatalog(input: {
 			return names.includes("sandbox_bash")
 				? [
 						"sandbox_bash",
-						AI_THREAD_CODEMODE_TOOL_NAME,
+						AI_THREAD_ORCHESTRATE_TOOL_NAME,
 						...names.filter((name) => name !== "sandbox_bash"),
 					]
-				: [AI_THREAD_CODEMODE_TOOL_NAME, ...names];
+				: [AI_THREAD_ORCHESTRATE_TOOL_NAME, ...names];
 		},
 		getCodemodeTools(canMutate: boolean) {
 			return createAIThreadToolSet(
@@ -234,6 +251,16 @@ function createAIThreadToolCatalog(input: {
 			);
 		},
 	};
+}
+
+function getAIThreadComputeSandboxId(threadId: string) {
+	const normalized = threadId
+		.toLowerCase()
+		.replaceAll(/[^a-z0-9-]/g, "-")
+		.replaceAll(/-+/g, "-")
+		.replaceAll(/^-|-$/g, "");
+
+	return `ai-${(normalized || "thread").slice(0, 60)}`;
 }
 
 function createSandboxTools(workspace: WorkspaceLike): ToolSet {
@@ -251,7 +278,7 @@ function createSandboxTools(workspace: WorkspaceLike): ToolSet {
 	return sandboxTools;
 }
 
-function getAIThreadCodemodeDescription(hasState: boolean) {
+function getAIThreadOrchestrateDescription(hasState: boolean) {
 	const stateLine = hasState
 		? "- `state.*` is the private assistant sandbox filesystem for scratch files and directories only. Nothing in `state.*` becomes a real ThinkEx workspace item unless you explicitly call a real workspace mutation tool through `tools.*`."
 		: "- `state.*` is unavailable in this runtime. Use `tools.*` for real workspace, web, and research operations.";
@@ -263,12 +290,13 @@ function getAIThreadCodemodeDescription(hasState: boolean) {
 		: "- The only globals are `tools` and `codemode` plus standard JavaScript. There is no `host`, `fs`, `require`, `process`, or Node.js API.";
 
 	return [
-		"Execute JavaScript in a private assistant sandbox with access to ThinkEx connector SDKs.",
+		"Orchestrate multi-step work by running JavaScript in a private assistant sandbox with access to ThinkEx connector SDKs.",
 		"",
 		"## Boundaries",
 		"",
 		stateLine,
 		"- `tools.*` exposes actual ThinkEx workspace, web, research, and time operations.",
+		"- `tools.compute` executes private Python, JavaScript, or TypeScript for calculations, data analysis, and charts.",
 		"",
 		"## Workflow",
 		"",
