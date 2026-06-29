@@ -82,6 +82,12 @@
 			"instance_type": "standard-1",
 			"max_instances": 1,
 		},
+		{
+			"class_name": "ImageFileConverter",
+			"image": "./containers/image-converter/Dockerfile",
+			"instance_type": "lite",
+			"max_instances": 1,
+		},
 	],
 	"upload_source_maps": true,
 	"durable_objects": {
@@ -106,6 +112,10 @@
 				"name": "OFFICE_PDF_CONVERTER",
 				"class_name": "OfficePdfConverter",
 			},
+			{
+				"name": "IMAGE_FILE_CONVERTER",
+				"class_name": "ImageFileConverter",
+			},
 		],
 	},
 	"migrations": [
@@ -128,6 +138,10 @@
 		{
 			"tag": "v6_code_sandbox",
 			"new_sqlite_classes": ["Sandbox"],
+		},
+		{
+			"tag": "v7_image_file_converter",
+			"new_sqlite_classes": ["ImageFileConverter"],
 		},
 	],
 	"d1_databases": [
@@ -208,6 +222,12 @@
 					"instance_type": "standard-1",
 					"max_instances": 1,
 				},
+				{
+					"class_name": "ImageFileConverter",
+					"image": "./containers/image-converter/Dockerfile",
+					"instance_type": "lite",
+					"max_instances": 1,
+				},
 			],
 			"durable_objects": {
 				"bindings": [
@@ -230,6 +250,10 @@
 					{
 						"name": "OFFICE_PDF_CONVERTER",
 						"class_name": "OfficePdfConverter",
+					},
+					{
+						"name": "IMAGE_FILE_CONVERTER",
+						"class_name": "ImageFileConverter",
 					},
 				],
 			},
@@ -310,6 +334,12 @@
 					"instance_type": "standard-1",
 					"max_instances": 1,
 				},
+				{
+					"class_name": "ImageFileConverter",
+					"image": "./containers/image-converter/Dockerfile",
+					"instance_type": "lite",
+					"max_instances": 1,
+				},
 			],
 			"durable_objects": {
 				"bindings": [
@@ -332,6 +362,10 @@
 					{
 						"name": "OFFICE_PDF_CONVERTER",
 						"class_name": "OfficePdfConverter",
+					},
+					{
+						"name": "IMAGE_FILE_CONVERTER",
+						"class_name": "ImageFileConverter",
 					},
 				],
 			},

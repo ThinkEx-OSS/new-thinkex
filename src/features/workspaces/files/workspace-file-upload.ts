@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import {
-	requiresWorkspaceFilePdfConversion,
+	resolveWorkspaceUploadConversion,
 	workspaceFileUploadLimits,
 } from "#/features/workspaces/model/workspace-file";
 import type { WorkspaceCommandResult } from "#/features/workspaces/realtime/messages";
@@ -181,16 +181,14 @@ function getUploadBatchLoadingMessage(files: readonly File[]) {
 		return `Converting and uploading ${files.length} files...`;
 	}
 
-	if (
-		files.some((file) =>
-			requiresWorkspaceFilePdfConversion({
-				fileName: file.name,
-				contentType: file.type,
-			}),
-		)
-	) {
+	const firstConvertedFile = files.find((file) => getWorkspaceUploadConversion(file) !== null);
+
+	if (firstConvertedFile) {
 		if (files.length === 1) {
-			return `Converting ${files[0]?.name ?? "file"} to PDF...`;
+			const conversion = getWorkspaceUploadConversion(firstConvertedFile);
+			return conversion === "office_to_pdf"
+				? `Converting ${firstConvertedFile.name} to PDF...`
+				: `Converting ${firstConvertedFile.name} to an image...`;
 		}
 
 		return `Converting and uploading ${files.length} files...`;
@@ -201,6 +199,13 @@ function getUploadBatchLoadingMessage(files: readonly File[]) {
 	}
 
 	return `Uploading ${files.length} files...`;
+}
+
+function getWorkspaceUploadConversion(file: File) {
+	return resolveWorkspaceUploadConversion({
+		fileName: file.name,
+		contentType: file.type,
+	});
 }
 
 function getUploadBatchSuccessMessage(

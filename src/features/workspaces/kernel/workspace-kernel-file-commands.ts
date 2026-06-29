@@ -106,6 +106,7 @@ export class WorkspaceKernelFileCommands {
 			descriptor,
 			originalName: requestedName,
 			sizeBytes: bytes.byteLength,
+			source: input.source,
 		});
 
 		await this.workspace.writeFileBytes(shellPath, bytes, contentType);
@@ -438,13 +439,25 @@ function createFileMetadata(input: {
 	descriptor: WorkspaceFileTypeDescriptor;
 	originalName: string;
 	sizeBytes: number;
+	source?: CreateWorkspaceKernelFileFromUploadArgs["source"];
 }): Record<string, JsonValue> {
-	return {
+	const metadata: Record<string, JsonValue> = {
 		assetKind: input.descriptor.assetKind,
 		mimeType: input.contentType,
 		originalName: input.originalName,
 		sizeBytes: input.sizeBytes,
 	};
+
+	if (input.source) {
+		metadata.source = {
+			conversion: input.source.conversion,
+			name: input.source.fileName,
+			mimeType: input.source.mimeType,
+			sizeBytes: input.source.sizeBytes,
+		};
+	}
+
+	return metadata;
 }
 
 function getWorkspaceKernelProjectionShellPath(input: {

@@ -17,6 +17,7 @@ import {
 	listWorkspaceKernelPageItems,
 } from "#/features/workspaces/kernel/workspace-kernel-list";
 import type {
+	CreateWorkspaceKernelFileFromUploadArgs,
 	DeleteWorkspaceKernelItemsResult,
 	MoveWorkspaceKernelItemsResult,
 	ReadWorkspaceKernelFilePreviewResult,
@@ -64,16 +65,9 @@ export interface WorkspaceKernelClient {
 		actorUserId?: string | null;
 		clientMutationId?: string | null;
 	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
-	createFileFromUpload(input: {
-		parentId?: string | null;
-		fileName: string;
-		fileSize: number;
-		objectKey: string;
-		contentType?: string | null;
-		assetKind: WorkspaceFileAssetKind;
-		actorUserId?: string | null;
-		clientMutationId?: string | null;
-	}): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
+	createFileFromUpload(
+		input: CreateWorkspaceKernelFileFromUploadArgs,
+	): Promise<WorkspaceCommandResult<WorkspaceItemSummary>>;
 	renameItem(input: {
 		itemId: string;
 		name: string;
@@ -238,6 +232,7 @@ export async function createWorkspaceFileFromUpload(input: {
 	objectKey: string;
 	contentType?: string | null;
 	assetKind: WorkspaceFileAssetKind;
+	source?: CreateWorkspaceKernelFileFromUploadArgs["source"];
 	clientMutationId?: string | null;
 }): Promise<WorkspaceCommandResult<WorkspaceItemSummary>> {
 	const dbContext = await createDbContext();
@@ -253,6 +248,7 @@ export async function createWorkspaceFileFromUpload(input: {
 			objectKey: input.objectKey,
 			contentType: input.contentType ?? null,
 			assetKind: input.assetKind,
+			source: input.source,
 			actorUserId: input.userId,
 			clientMutationId: input.clientMutationId ?? null,
 		});

@@ -21,8 +21,10 @@ export interface WorkspaceUploadFormat {
 	mime: string;
 	assetKind: WorkspaceFileAssetKind;
 	aiReadStrategy?: WorkspaceFileAiReadStrategy;
-	conversion?: "office_to_pdf";
+	conversion?: WorkspaceUploadConversion;
 }
+
+export type WorkspaceUploadConversion = "heic_to_jpeg" | "office_to_pdf";
 
 export interface WorkspaceUploadFamily {
 	assetKind: WorkspaceFileAssetKind;
@@ -87,6 +89,8 @@ export const workspaceFileUploadFormats = [
 	{ ext: "jpg", mime: "image/jpeg", assetKind: "image" },
 	{ ext: "jpeg", mime: "image/jpeg", assetKind: "image" },
 	{ ext: "webp", mime: "image/webp", assetKind: "image" },
+	{ ext: "heic", mime: "image/heic", assetKind: "image", conversion: "heic_to_jpeg" },
+	{ ext: "heif", mime: "image/heif", assetKind: "image", conversion: "heic_to_jpeg" },
 ] as const satisfies readonly WorkspaceUploadFormat[];
 
 const WORKSPACE_UPLOAD_FAMILIES = [
@@ -193,17 +197,26 @@ export function resolveWorkspaceFileAiReadStrategy(input: {
 	return format?.aiReadStrategy ?? input.descriptor.aiReadStrategy;
 }
 
-export function requiresWorkspaceFilePdfConversion(input: WorkspaceFileUploadHint) {
+export function resolveWorkspaceUploadConversion(
+	input: WorkspaceFileUploadHint,
+): WorkspaceUploadConversion | null {
 	const format = resolveWorkspaceUploadFormat(input);
 
-	return format?.conversion === "office_to_pdf";
+	return format?.conversion ?? null;
 }
 
-export function getWorkspaceConvertedPdfFileName(fileName: string) {
+export function getWorkspaceConvertedFileName(
+	fileName: string,
+	conversion: WorkspaceUploadConversion,
+) {
 	const name = normalizeWorkspaceItemName(fileName.split(/[\\/]/).at(-1), "Uploaded file");
 	const baseName = stripFileExtension(name);
+	const extensionByConversion = {
+		heic_to_jpeg: "jpg",
+		office_to_pdf: "pdf",
+	} satisfies Record<WorkspaceUploadConversion, string>;
 
-	return `${baseName}.pdf`;
+	return `${baseName}.${extensionByConversion[conversion]}`;
 }
 
 export function getWorkspaceUploadFamily(

@@ -2,23 +2,15 @@ import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { createDbContext } from "#/db/server";
-import {
-	convertOfficeFileToPdf,
-	OfficePdfConversionError,
-} from "#/features/workspaces/conversion/office-pdf-converter";
+import { WorkspaceFileConversionError } from "#/features/workspaces/conversion/errors";
 import { requestWorkspaceFileExtraction } from "#/features/workspaces/extraction/request-workspace-file-extraction";
 import {
 	createWorkspaceFileFromUpload,
 	getWorkspaceKernel,
 } from "#/features/workspaces/kernel/workspace-kernel-access";
 import {
-	getWorkspaceConvertedPdfFileName,
-	requireWorkspaceFileTypeFromHint,
-	requiresWorkspaceFilePdfConversion,
 	resolveWorkspaceFileAiReadStrategy,
-	workspaceFileUploadLimits,
 	WorkspaceFileUploadError,
-	type WorkspaceFileTypeDescriptor,
 } from "#/features/workspaces/model/workspace-file";
 import {
 	assertCanMutateWorkspace,
@@ -29,6 +21,7 @@ import {
 	validateWorkspaceUpload,
 	type WorkspaceUploadPlan,
 } from "#/features/workspaces/upload/workspace-upload-intake";
+import { prepareWorkspaceFileUpload } from "#/features/workspaces/upload/workspace-file-upload-normalization";
 import { apiError, apiJson, getRequestId } from "#/lib/api/http";
 import { getSessionFromRequest } from "#/lib/auth-queries.server";
 
@@ -124,6 +117,7 @@ async function handleWorkspaceFileUpload(request: Request, workspaceId: string) 
 			objectKey,
 			contentType: upload.contentType,
 			assetKind: upload.descriptor.assetKind,
+			source: upload.source,
 			clientMutationId,
 		});
 
@@ -165,14 +159,10 @@ async function handleWorkspaceFileUpload(request: Request, workspaceId: string) 
 			return apiError(requestId, error.status, error.code, error.message);
 		}
 
-		if (error instanceof OfficePdfConversionError) {
-			return apiError(
-				requestId,
-				422,
-				"CONVERSION_FAILED",
-				"Unable to convert this file to PDF right now.",
-				{ message: error.message },
-			);
+		if (error instanceof WorkspaceFileConversionError) {
+			return apiError(requestId, 422, "CONVERSION_FAILED", error.userMessage, {
+				message: error.message,
+			});
 		}
 
 		return apiError(
@@ -224,60 +214,6 @@ async function createWorkspaceDocumentFromUpload(input: {
 		actorUserId: input.userId,
 		clientMutationId: input.clientMutationId,
 	});
-}
-
-async function prepareWorkspaceFileUpload(input: {
-	descriptor: WorkspaceFileTypeDescriptor;
-	env: Cloudflare.Env;
-	file: File;
-}): Promise<{
-	body: ArrayBuffer | File;
-	contentType: string;
-	descriptor: WorkspaceFileTypeDescriptor;
-	fileName: string;
-	fileSize: number;
-}> {
-	if (
-		!requiresWorkspaceFilePdfConversion({
-			fileName: input.file.name,
-			contentType: input.file.type,
-		})
-	) {
-		return {
-			body: input.file,
-			contentType: input.file.type || "application/octet-stream",
-			descriptor: input.descriptor,
-			fileName: input.file.name,
-			fileSize: input.file.size,
-		};
-	}
-
-	const conversion = await convertOfficeFileToPdf(input.env, {
-		file: input.file,
-		fileName: input.file.name,
-	});
-
-	if (conversion.sizeBytes > workspaceFileUploadLimits.maxBytesPerSelection) {
-		throw new WorkspaceFileUploadError({
-			code: "SELECTION_TOO_LARGE",
-			message: "Converted PDF is outside the supported upload limit.",
-			status: 413,
-		});
-	}
-
-	const pdfFileName = getWorkspaceConvertedPdfFileName(input.file.name);
-	const pdfDescriptor = requireWorkspaceFileTypeFromHint({
-		fileName: pdfFileName,
-		contentType: conversion.contentType,
-	});
-
-	return {
-		body: conversion.bytes,
-		contentType: conversion.contentType,
-		descriptor: pdfDescriptor,
-		fileName: pdfFileName,
-		fileSize: conversion.sizeBytes,
-	};
 }
 
 function getNullableString(value: FormDataEntryValue | null) {

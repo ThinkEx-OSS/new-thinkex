@@ -1,5 +1,8 @@
 import { Container, getRandom } from "@cloudflare/containers";
 
+import { convertFileWithContainer } from "#/features/workspaces/conversion/container-file-conversion";
+import { WorkspaceFileConversionError } from "#/features/workspaces/conversion/errors";
+
 const gotenbergPort = 3000;
 const gotenbergLibreOfficeConvertPath = "/forms/libreoffice/convert";
 const pdfContentType = "application/pdf";
@@ -28,9 +31,9 @@ export interface ConvertOfficeFileToPdfResult {
 	sizeBytes: number;
 }
 
-export class OfficePdfConversionError extends Error {
+export class OfficePdfConversionError extends WorkspaceFileConversionError {
 	constructor(message: string) {
-		super(message);
+		super(message, "Unable to convert this file to PDF right now.");
 		this.name = "OfficePdfConversionError";
 	}
 }
@@ -40,43 +43,19 @@ export async function convertOfficeFileToPdf(
 	input: ConvertOfficeFileToPdfInput,
 ): Promise<ConvertOfficeFileToPdfResult> {
 	const converter = await getRandom(env.OFFICE_PDF_CONVERTER, converterPoolSize);
-	await converter.startAndWaitForPorts({
-		cancellationOptions: {
-			portReadyTimeoutMS: 60_000,
-		},
+	const bytes = await convertFileWithContainer({
+		container: converter,
+		emptyMessage: "Office file conversion returned an empty PDF.",
+		error: (message) => new OfficePdfConversionError(message),
+		file: input.file,
+		fileName: input.fileName,
+		formFieldName: "files",
+		url: `http://office-pdf-converter${gotenbergLibreOfficeConvertPath}`,
 	});
-
-	const formData = new FormData();
-	formData.set("files", input.file, input.fileName);
-
-	const response = await converter.fetch(
-		new Request(`http://office-pdf-converter${gotenbergLibreOfficeConvertPath}`, {
-			body: formData,
-			method: "POST",
-		}),
-	);
-
-	if (!response.ok) {
-		throw new OfficePdfConversionError(await getConversionErrorMessage(response));
-	}
-
-	const bytes = await response.arrayBuffer();
-
-	if (bytes.byteLength === 0) {
-		throw new OfficePdfConversionError("Office file conversion returned an empty PDF.");
-	}
 
 	return {
 		bytes,
 		contentType: pdfContentType,
 		sizeBytes: bytes.byteLength,
 	};
-}
-
-async function getConversionErrorMessage(response: Response) {
-	const fallback = `Office file conversion failed with status ${response.status}.`;
-	const body = await response.text().catch(() => "");
-	const message = body.trim();
-
-	return message ? `${fallback} ${message}` : fallback;
 }
