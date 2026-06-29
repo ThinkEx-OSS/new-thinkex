@@ -231,7 +231,7 @@ function getAttachmentDescription(data: AttachmentData) {
 	}
 
 	if (data.status === "loading") {
-		return "Uploading";
+		return "Preparing";
 	}
 
 	return getMediaCategory(data);

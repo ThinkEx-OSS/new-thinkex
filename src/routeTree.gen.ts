@@ -21,6 +21,7 @@ import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedWorkspacesWorkspaceIdRouteImport } from './routes/_protected/workspaces.$workspaceId'
 import { Route as ApiV1WorkspacesWorkspaceIdFileUploadRouteImport } from './routes/api/v1/workspaces.$workspaceId.file-upload'
+import { Route as ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRouteImport } from './routes/api/v1/workspaces.$workspaceId.chat-attachment-normalization'
 import { Route as ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport } from './routes/api/v1/workspaces.$workspaceId.files.$itemId.preview'
 import { Route as ApiV1WorkspacesWorkspaceIdFilesItemIdContentRouteImport } from './routes/api/v1/workspaces.$workspaceId.files.$itemId.content'
 
@@ -85,6 +86,12 @@ const ApiV1WorkspacesWorkspaceIdFileUploadRoute =
     path: '/$workspaceId/file-upload',
     getParentRoute: () => ApiV1WorkspacesRoute,
   } as any)
+const ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute =
+  ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRouteImport.update({
+    id: '/$workspaceId/chat-attachment-normalization',
+    path: '/$workspaceId/chat-attachment-normalization',
+    getParentRoute: () => ApiV1WorkspacesRoute,
+  } as any)
 const ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute =
   ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRouteImport.update({
     id: '/$workspaceId/files/$itemId/preview',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
+  '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/content': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
   '/api/v1/workspaces/$workspaceId/files/$itemId/preview': typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/_protected/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/api/v1/workspaces'
+    | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/content'
     | '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRouteImport
       parentRoute: typeof ApiV1WorkspacesRoute
     }
+    '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': {
+      id: '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
+      path: '/$workspaceId/chat-attachment-normalization'
+      fullPath: '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
+      preLoaderRoute: typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRouteImport
+      parentRoute: typeof ApiV1WorkspacesRoute
+    }
     '/api/v1/workspaces/$workspaceId/files/$itemId/preview': {
       id: '/api/v1/workspaces/$workspaceId/files/$itemId/preview'
       path: '/$workspaceId/files/$itemId/preview'
@@ -325,12 +345,15 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 )
 
 interface ApiV1WorkspacesRouteChildren {
+  ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute: typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   ApiV1WorkspacesWorkspaceIdFileUploadRoute: typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
   ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute: typeof ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute
   ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute: typeof ApiV1WorkspacesWorkspaceIdFilesItemIdPreviewRoute
 }
 
 const ApiV1WorkspacesRouteChildren: ApiV1WorkspacesRouteChildren = {
+  ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute:
+    ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute,
   ApiV1WorkspacesWorkspaceIdFileUploadRoute:
     ApiV1WorkspacesWorkspaceIdFileUploadRoute,
   ApiV1WorkspacesWorkspaceIdFilesItemIdContentRoute:

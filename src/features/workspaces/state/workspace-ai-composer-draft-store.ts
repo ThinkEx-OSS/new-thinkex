@@ -2,12 +2,12 @@ import { nanoid } from "nanoid";
 import { useMemo } from "react";
 import { create } from "zustand";
 import type { FileAttachmentData } from "#/features/workspaces/components/ai-chat/ai-chat-attachments";
+import { normalizeWorkspaceAiChatAttachmentFile } from "#/features/workspaces/components/ai-chat/chat-attachment-normalization";
 import {
 	normalizeWorkspaceSelectedQuote,
 	type WorkspaceSelectedQuote,
 } from "#/features/workspaces/model/workspace-selected-quotes";
 import { acceptIncomingFiles } from "#/lib/accept-files";
-import { readFileAsDataUrl } from "#/lib/read-file-as-data-url";
 
 export type WorkspaceAiComposerDraftFile = FileAttachmentData;
 
@@ -73,15 +73,18 @@ export const useWorkspaceAiComposerDraftStore = create<WorkspaceAiComposerDraftS
 					continue;
 				}
 
-				void readFileAsDataUrl(file)
-					.then((dataUrl) => {
-						set((state) => markDraftFileReady(state, workspaceId, placeholder.id, dataUrl));
+				void normalizeWorkspaceAiChatAttachmentFile({ file, workspaceId })
+					.then((attachment) => {
+						set((state) => markDraftFileReady(state, workspaceId, placeholder.id, attachment));
 					})
-					.catch(() => {
+					.catch((error) => {
 						set((state) => removeDraftFile(state, workspaceId, placeholder.id));
 						options?.onError?.({
 							code: "read",
-							message: `Could not read "${file.name}".`,
+							message:
+								error instanceof Error && error.message.trim()
+									? error.message
+									: `Could not prepare "${file.name}".`,
 						});
 					});
 			}
@@ -215,7 +218,7 @@ function markDraftFileReady(
 	state: WorkspaceAiComposerDraftState,
 	workspaceId: string,
 	fileId: string,
-	url: string,
+	attachment: { fileName: string; mediaType: string; url: string },
 ) {
 	const files = state.filesByWorkspaceId[workspaceId];
 	if (!files) {
@@ -230,8 +233,10 @@ function markDraftFileReady(
 	const nextFiles = [...files];
 	nextFiles[index] = {
 		...nextFiles[index],
+		filename: attachment.fileName,
+		mediaType: attachment.mediaType,
 		status: "ready",
-		url,
+		url: attachment.url,
 	};
 
 	return {
