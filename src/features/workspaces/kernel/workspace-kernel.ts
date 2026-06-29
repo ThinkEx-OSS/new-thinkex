@@ -1,5 +1,5 @@
 import { Workspace as ShellWorkspace } from "@cloudflare/shell";
-import { Agent, callable, type Connection, type ConnectionContext } from "agents";
+import { Agent, type Connection, type ConnectionContext } from "agents";
 
 import type { WorkspaceItemSummary } from "#/features/workspaces/contracts";
 import { getDocumentSessionFromEnv } from "#/features/workspaces/document-session-access";
@@ -183,7 +183,6 @@ export class WorkspaceKernel extends Agent<Cloudflare.Env> {
 		return this.events.getEventsSince({ afterRevision, limit });
 	}
 
-	@callable()
 	async purgeForDeletion(): Promise<void> {
 		const workspaceId = this.name;
 		const documentItemIds = this.store.getAllDocumentItemIds();
