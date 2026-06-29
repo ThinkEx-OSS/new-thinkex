@@ -23,6 +23,11 @@ import {
 } from "#/integrations/posthog/feedback-survey";
 import { getErrorMessage } from "#/lib/error-message";
 
+const feedbackDialogTitle = "Feedback";
+const feedbackDialogDescription = "We read every note!";
+const feedbackQuestionLabel = "How can we improve ThinkEx?";
+const feedbackPlaceholder = "Share what is confusing, missing, slow, or not working well...";
+
 interface FeedbackDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -83,19 +88,16 @@ function FeedbackDialogForm({
 					{openQuestions.map((question) => (
 						<Field key={question.id}>
 							<FieldLabel htmlFor={`${formId}-${question.id}`}>
-								{question.question}
+								{feedbackQuestionLabel}
 								{question.optional ? (
 									<span className="font-normal text-muted-foreground"> (optional)</span>
 								) : null}
 							</FieldLabel>
-							{question.description ? (
-								<p className="text-sm text-muted-foreground">{question.description}</p>
-							) : null}
 							<Textarea
 								id={`${formId}-${question.id}`}
 								name={question.id}
 								value={responses[question.id] ?? ""}
-								placeholder="Share your thoughts..."
+								placeholder={feedbackPlaceholder}
 								rows={4}
 								required={!question.optional}
 								onChange={(event) => {
@@ -168,15 +170,11 @@ function FeedbackDialogContent({ onOpenChange }: Pick<FeedbackDialogProps, "onOp
 		};
 	}, []);
 
-	const title = survey?.name ?? "Feedback";
-	const description =
-		survey?.description ?? "Tell us what you think. You can submit feedback as often as you like.";
-
 	return (
 		<DialogContent className="sm:max-w-lg">
 			<DialogHeader>
-				<DialogTitle>{title}</DialogTitle>
-				<DialogDescription>{description}</DialogDescription>
+				<DialogTitle>{feedbackDialogTitle}</DialogTitle>
+				<DialogDescription>{feedbackDialogDescription}</DialogDescription>
 			</DialogHeader>
 
 			{isLoading ? (
