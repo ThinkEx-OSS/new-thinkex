@@ -18,6 +18,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ProtectedSettingsRouteImport } from './routes/_protected/settings'
 import { Route as ProtectedHomeRouteImport } from './routes/_protected/home'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
+import { Route as ApiPosthogSurveyFeedbackRouteImport } from './routes/api/posthog/survey-feedback'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedWorkspacesWorkspaceIdRouteImport } from './routes/_protected/workspaces.$workspaceId'
 import { Route as ApiV1WorkspacesWorkspaceIdFileUploadRouteImport } from './routes/api/v1/workspaces.$workspaceId.file-upload'
@@ -69,6 +70,12 @@ const ApiV1WorkspacesRoute = ApiV1WorkspacesRouteImport.update({
   path: '/api/v1/workspaces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPosthogSurveyFeedbackRoute =
+  ApiPosthogSurveyFeedbackRouteImport.update({
+    id: '/api/posthog/survey-feedback',
+    path: '/api/posthog/survey-feedback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/posthog/survey-feedback': typeof ApiPosthogSurveyFeedbackRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/posthog/survey-feedback': typeof ApiPosthogSurveyFeedbackRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -149,6 +158,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/_protected/workspaces/$workspaceId': typeof ProtectedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/posthog/survey-feedback': typeof ApiPosthogSurveyFeedbackRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRouteWithChildren
   '/api/v1/workspaces/$workspaceId/chat-attachment-normalization': typeof ApiV1WorkspacesWorkspaceIdChatAttachmentNormalizationRoute
   '/api/v1/workspaces/$workspaceId/file-upload': typeof ApiV1WorkspacesWorkspaceIdFileUploadRoute
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
+    | '/api/posthog/survey-feedback'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
+    | '/api/posthog/survey-feedback'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -200,6 +212,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/_protected/workspaces/$workspaceId'
     | '/api/auth/$'
+    | '/api/posthog/survey-feedback'
     | '/api/v1/workspaces'
     | '/api/v1/workspaces/$workspaceId/chat-attachment-normalization'
     | '/api/v1/workspaces/$workspaceId/file-upload'
@@ -215,6 +228,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPosthogSurveyFeedbackRoute: typeof ApiPosthogSurveyFeedbackRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRouteWithChildren
 }
 
@@ -281,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/workspaces'
       fullPath: '/api/v1/workspaces'
       preLoaderRoute: typeof ApiV1WorkspacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/posthog/survey-feedback': {
+      id: '/api/posthog/survey-feedback'
+      path: '/api/posthog/survey-feedback'
+      fullPath: '/api/posthog/survey-feedback'
+      preLoaderRoute: typeof ApiPosthogSurveyFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -374,6 +395,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPosthogSurveyFeedbackRoute: ApiPosthogSurveyFeedbackRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
