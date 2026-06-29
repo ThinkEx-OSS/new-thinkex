@@ -85,7 +85,7 @@ export function WorkspaceSkeletonContent() {
 	return (
 		<div className="h-full min-h-0 overflow-hidden">
 			<div className="space-y-5 px-4 py-3">
-				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-6">
+				<section className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-5">
 					{workspaceSkeletonCardKeys.map((key) => (
 						<WorkspaceCardSkeleton key={key} />
 					))}
