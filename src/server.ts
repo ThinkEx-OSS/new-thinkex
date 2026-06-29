@@ -7,6 +7,7 @@ import { posthogHost, posthogHostOrigin, posthogProjectToken } from "#/integrati
 import { capturePostHogServerException } from "#/integrations/posthog/server";
 
 export { CodemodeRuntime } from "@cloudflare/codemode";
+export { Sandbox } from "@cloudflare/sandbox";
 export { AIThread, UserAIStore } from "#/features/workspaces/ai/user-ai-agents";
 export { OfficePdfConverter } from "#/features/workspaces/conversion/office-pdf-converter";
 export { DocumentSession } from "#/features/workspaces/documents/document-session";

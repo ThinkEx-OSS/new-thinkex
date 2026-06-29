@@ -71,6 +71,12 @@
 	],
 	"containers": [
 		{
+			"class_name": "Sandbox",
+			"image": "./containers/sandbox/Dockerfile",
+			"instance_type": "lite",
+			"max_instances": 1,
+		},
+		{
 			"class_name": "OfficePdfConverter",
 			"image": "./containers/gotenberg/Dockerfile",
 			"instance_type": "standard-1",
@@ -91,6 +97,10 @@
 			{
 				"name": "DocumentSession",
 				"class_name": "DocumentSession",
+			},
+			{
+				"name": "CODE_SANDBOX",
+				"class_name": "Sandbox",
 			},
 			{
 				"name": "OFFICE_PDF_CONVERTER",
@@ -114,6 +124,10 @@
 		{
 			"tag": "v5_office_pdf_converter",
 			"new_sqlite_classes": ["OfficePdfConverter"],
+		},
+		{
+			"tag": "v6_code_sandbox",
+			"new_sqlite_classes": ["Sandbox"],
 		},
 	],
 	"d1_databases": [
@@ -183,6 +197,12 @@
 			],
 			"containers": [
 				{
+					"class_name": "Sandbox",
+					"image": "./containers/sandbox/Dockerfile",
+					"instance_type": "lite",
+					"max_instances": 1,
+				},
+				{
 					"class_name": "OfficePdfConverter",
 					"image": "./containers/gotenberg/Dockerfile",
 					"instance_type": "standard-1",
@@ -202,6 +222,10 @@
 					{
 						"name": "DocumentSession",
 						"class_name": "DocumentSession",
+					},
+					{
+						"name": "CODE_SANDBOX",
+						"class_name": "Sandbox",
 					},
 					{
 						"name": "OFFICE_PDF_CONVERTER",
@@ -275,6 +299,12 @@
 			],
 			"containers": [
 				{
+					"class_name": "Sandbox",
+					"image": "./containers/sandbox/Dockerfile",
+					"instance_type": "lite",
+					"max_instances": 1,
+				},
+				{
 					"class_name": "OfficePdfConverter",
 					"image": "./containers/gotenberg/Dockerfile",
 					"instance_type": "standard-1",
@@ -294,6 +324,10 @@
 					{
 						"name": "DocumentSession",
 						"class_name": "DocumentSession",
+					},
+					{
+						"name": "CODE_SANDBOX",
+						"class_name": "Sandbox",
 					},
 					{
 						"name": "OFFICE_PDF_CONVERTER",
