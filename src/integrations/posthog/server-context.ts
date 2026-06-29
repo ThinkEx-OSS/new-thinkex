@@ -7,7 +7,6 @@ export interface TelemetryRequestContextProperties {
 	$session_id?: string;
 	request_method?: string;
 	request_path?: string;
-	request_url?: string;
 	exception_source?: string;
 }
 
@@ -28,6 +27,10 @@ export interface TelemetryRequestDetails {
 	url?: string;
 }
 
+function sanitizeTelemetryRequestPath(path: string) {
+	return path.replace(/^\/invite\/[^/?#]+(?=\/?$)/, "/invite/[redacted]");
+}
+
 export function getTelemetryRequestContext(
 	request: TelemetryRequestDetails = {},
 ): TelemetryRequestContext {
@@ -46,11 +49,7 @@ export function getTelemetryRequestContext(
 	}
 
 	if (request.path) {
-		properties.request_path = request.path;
-	}
-
-	if (request.url) {
-		properties.request_url = request.url;
+		properties.request_path = sanitizeTelemetryRequestPath(request.path);
 	}
 
 	if (request.source) {
