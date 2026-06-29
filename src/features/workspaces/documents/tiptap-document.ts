@@ -1,4 +1,5 @@
 import { type JsonValue } from "#/features/workspaces/contracts";
+import { getTiptapDocumentSchema } from "#/features/workspaces/documents/tiptap-schema";
 
 export interface TiptapDocumentJson {
 	type: "doc";
@@ -86,14 +87,32 @@ function normalizeTiptapDocumentJson(value: unknown): TiptapDocumentProjection {
 			})
 		: undefined;
 
-	return {
-		document: {
+	const document = coerceProseMirrorDocumentJson(
+		{
 			...(value as Record<string, JsonValue>),
 			type: "doc",
 			content: content && content.length > 0 ? content : [{ type: "paragraph" }],
 		},
 		warnings,
-	};
+	);
+
+	return { document, warnings };
+}
+
+function coerceProseMirrorDocumentJson(
+	document: TiptapDocumentJson,
+	warnings: string[],
+): TiptapDocumentJson {
+	const schema = getTiptapDocumentSchema();
+
+	try {
+		const node = schema.nodeFromJSON(document);
+		node.check();
+		return node.toJSON() as TiptapDocumentJson;
+	} catch {
+		warnings.push("Repaired invalid document structure.");
+		return createInitialTiptapDocumentJson();
+	}
 }
 
 function describeDroppedNode(node: unknown) {
